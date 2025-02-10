@@ -1,0 +1,129 @@
+header nav a:any-link {
+    text-decoration: none;
+    padding: 0 var(--lumo-space-s);
+    border-radius: var(--lumo-border-radius-m);
+    outline: 0;
+}
+
+header nav a:hover {
+    color: #EB59057F; /*var(--lumo-header-text-color);*/
+    background-color: #f3f3f3;
+    /*color: var(--lumo-error-color-50pct);*/
+}
+
+header nav a:active {
+    background-color: var(--lumo-contrast-5pct);
+}
+
+header nav a:focus-visible {
+    box-shadow: 0 0 0 2px var(--lumo-primary-color-50pct);
+}
+
+header nav a[highlight] vaadin-icon {
+    color: var(--lumo-primary-text-color);
+}
+
+header nav a[highlight] {
+    background-color: var(--lumo-primary-color-10pct);
+}
+
+.userMenuHeader {
+    background: var(--lumo-contrast-5pct);
+    padding: var(--lumo-space-s);
+    padding-inline-end: var(--lumo-space-l);
+    margin: 2px;
+    align-items: center;
+    gap: var(--lumo-space-s);
+    line-height: var(--lumo-line-height-s);
+
+    & .userMenuNickname {
+        font-size: var(--lumo-font-size-s);
+        color: var(--lumo-secondary-text-color);
+    }
+}
+
+.userMenuLinks {
+    padding-bottom: var(--lumo-space-xs);
+    align-items: stretch;
+
+    & a {
+        padding: var(--lumo-space-xs) var(--lumo-space-m);
+        color: var(--lumo-body-text-color);
+        text-decoration: none;
+
+        &:hover {
+            background: var(--lumo-contrast-5pct);
+        }
+    }
+}
+
+
+.sideMenuLinks {
+    padding-bottom: var(--lumo-space-xs);
+    padding-top: var(--lumo-space-xs);
+
+    align-items: stretch;
+    overflow: hidden;
+    /*background-color: var(--lumo-shade-5pct);*/
+
+    & button {
+        /*padding: var(--lumo-space-xs) var(--lumo-space-m);*/
+        /*color: var(--lumo-shade-40pct);*/
+        /*background-color: inherit;*/
+        color: #8d4c7c; /* var(--lumo-primary-color);*/
+        background: bisque;
+        text-decoration: none;
+
+        &:hover {
+            /*color: var(--lumo-primary-text-color);*/
+            /*background: var(--lumo-contrast-10pct);*/
+            background-color: #8d4c7c; /* var(--lumo-primary-color);*/
+            color: bisque;
+        }
+    }
+}
+
+
+vaadin-side-nav-item.left-menu::part(link) {
+    color: var(--lumo-shade-60pct);
+    /*font-weight: normal;*/
+    font-family: "DejaVu Sans Mono", "Bitstream Vera Sans Mono", "Liberation Mono", "Nimbus Mono L", serif;
+    /*margin-top: 2px;*/
+    /*margin-bottom: 2px;*/
+    text-decoration: none;
+/*var(--lumo-primary-text-color);*/
+}
+
+/*vaadin-side-nav-item.left-menu > icon {*/
+/*    color: #8d4c7c; !* var(--lumo-primary-color);*!*/
+/*    background-color: bisque;*/
+/*}*/
+
+/*vaadin-side-nav-item.left-menu::part(svg) {*/
+/*    color: #8d4c7c; !* var(--lumo-primary-color);*!*/
+/*    background-color: bisque;*/
+/*}*/
+
+/*vaadin-side-nav-item.left-menu > vaadin-icon:hover {*/
+/*    background-color: #8d4c7c; !* var(--lumo-primary-color);*!*/
+/*    color: bisque;*/
+/*}*/
+
+vaadin-side-nav-item.left-menu::part(link):hover {
+    color: var(--lumo-primary-text-color);
+    background-color: var(--lumo-shade-5pct);
+    text-decoration: none;
+}
+
+
+/*.side-nav-sample {*/
+/*    overflow: hidden;*/
+/*    background: var(--lumo-shade-5pct);*/
+/*}*/
+/*.side-nav-sample > * {*/
+/*    background: var(--lumo-base-color);*/
+/*    !*box-shadow: var(--lumo-box-shadow-s);*!*/
+/*    !*padding: var(--lumo-space-m);*!*/
+/*    !*width: 15em;*!*/
+/*}*/
+
