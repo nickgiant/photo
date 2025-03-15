@@ -1,0 +1,72 @@
+
+.upload-view ol {
+    /*grid-template-columns: 1fr repeat(2, 80px);*/
+            /*repeat(3, minmax(440px, 1fr)); !*  minmax(440px, 1fr)  *!*/
+    /*grid-template-columns: repeat(auto-fill, minmax(440px, 1fr)); !*  minmax(440px, 1fr)  *!*/
+}
+
+.upload-view li {
+    transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    transition-property: background-color, box-shadow;
+}
+
+.upload-view li:hover {
+    background-color: var(--lumo-base-color);
+    box-shadow: var(--lumo-box-shadow-s);
+    /*border: #9fafd5 dotted;*/
+}
+
+.upload-view .category{
+    font-family: 'Times-New-Roman', serif;
+    color: var(--lumo-tertiary-text-color);
+    font-weight: normal;
+    border-radius: var(--lumo-border-radius-m);
+    padding: var(--lumo-space-xs);
+}
+
+.upload-view .external-links {
+    padding: 1px;
+    margin: 3px;
+    /*padding-bottom: var(--lumo-space-xs);*/
+    align-items: center;
+    justify-items: center;
+
+    & a {
+        /*padding: var(--lumo-space-xs); !* var(--lumo-space-m);*!*/
+        padding: 1px;
+        margin: 1px;
+        color: #9fafd5; /* rgba(231, 24, 24, 0.1);*/
+                /*#9fafd5;*/
+                /*var(--lumo-body-text-color);*/
+        text-decoration: none;
+
+        &:hover {
+            background: inherit;
+            color: var(--lumo-primary-color-50pct);
+        }
+    }
+}
+
+.upload-view .actions vaadin-button
+{
+
+    margin-left: var(--lumo-size-m);
+    margin-right: var(--lumo-size-m);
+    color: #80a7bf;
+    transition: 8ms;
+
+    border-radius: var(--lumo-border-radius-m);
+}
+
+.upload-view .actions vaadin-button:hover
+{
+    color: #0e5673;
+    background-color: #80a7bf;
+    transition-duration: 6ms;
+}
+
+.upload-view .footer div{
+    font-family: "Times New Roman", Times, serif;
+    background-color: #dcd9d5;
+    color: #4d4d4d;
+}

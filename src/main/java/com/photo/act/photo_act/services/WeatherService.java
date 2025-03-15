@@ -261,7 +261,7 @@ public class WeatherService {
             final String Open_weather_geocoding = "http://api.openweathermap.org/geo/1.0/direct";
             ERROR_LOCATION = false;
 
-            logger.info(" loc_name: "+loc_name+" state_name: "+state_name+" country_code: "+country_code);
+            logger.info("lookUpLocation: loc_name: "+loc_name+" state_name: "+state_name+" country_code: "+country_code);
             // Start building the query
             StringBuilder query = new StringBuilder("q=" + loc_name);
 
@@ -295,24 +295,27 @@ public class WeatherService {
                 JsonElement json_element = json_array.get(0);
                 String latitude = json_element.getAsJsonObject().get("lat").getAsString();
                 String longitude = json_element.getAsJsonObject().get("lon").getAsString();
-                String Country = json_element.getAsJsonObject().get("country").getAsString();
+                String country = json_element.getAsJsonObject().get("country").getAsString();
                 String state = ""; // Default value is an empty string
                 JsonElement stateElement = json_element.getAsJsonObject().get("state");
                 if (stateElement != null) {
                     state = stateElement.getAsString(); // Update state if it's present in the JSON
                 }
-                return new String[] {latitude, longitude,state,Country};
+                logger.info("lookUpLocation: latitude: "+latitude+" longitude: "+longitude+" country: "+country+"  .   "+address);
+                return new String[] {latitude, longitude,state,country};
             }
 
             catch(IOException e){
-                e.printStackTrace();
+//                e.printStackTrace();
                 ERROR_LOCATION = true;
-                System.out.println("Catch block IOException is executed");
+                logger.error("IOException  "+e.getMessage()+"  .   "+address);
+//                System.out.println("Catch block IOException is executed");
                 return null;
             }
             catch (JsonSyntaxException | NoSuchElementException | IndexOutOfBoundsException e) {
                 ERROR_LOCATION = true;
-                System.out.println("Error API query due to mismatched loc_name and country_code");
+//                System.out.println("Error API query due to mismatched loc_name and country_code");
+                logger.error("Error API query due to mismatched loc_name and country_code "+e.getMessage()+"  .   "+address);
                 return null;
             }
 

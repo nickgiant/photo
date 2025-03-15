@@ -12,7 +12,7 @@ import org.apache.commons.imaging.formats.tiff.TiffImageMetadata;
 import org.apache.commons.imaging.formats.tiff.constants.ExifTagConstants;
 import org.apache.commons.imaging.formats.tiff.constants.GpsTagConstants;
 import org.apache.commons.imaging.formats.tiff.constants.TiffTagConstants;
-import org.apache.commons.imaging.formats.tiff.taginfos.TagInfo;
+import org.apache.commons.imaging.formats.tiff.taginfos.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -158,6 +158,7 @@ public class ImageUtilsMeta {
             }
     }
 
+
     public StringBuilder getMetadataInfo(final File file) throws ImagingException, IOException {
         // get all metadata stored in EXIF format (ie. from JPEG or TIFF).
         final ImageMetadata metadata = Imaging.getMetadata(file);
@@ -174,16 +175,111 @@ public class ImageUtilsMeta {
             // see the TiffConstants file for a list of TIFF tags.
 
             lstInfo = new ArrayList<>();
-            lstInfo.add(getTagValue(jpegMetadata, TiffTagConstants.TIFF_TAG_DATE_TIME)); // date time
+            lstInfo.add(getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_DATE_TIME_ORIGINAL)); // date time
             lstInfo.add(getTagValue(jpegMetadata, TiffTagConstants.TIFF_TAG_MAKE)); // camera make
             lstInfo.add(getTagValue(jpegMetadata, TiffTagConstants.TIFF_TAG_MODEL)); // camera model
-            lstInfo.add(getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_LENS_MAKE)); // lens make
-            lstInfo.add(getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_LENS_MODEL)); // camera model
+            lstInfo.add(getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_LENS_MAKE).replaceAll(", , , , ,","").trim()); // lens make
+
+            String lensModel = getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_LENS_MODEL).replaceAll(", ","").trim();
+            if (lensModel.length() > 0) {
+                if(lensModel.startsWith("'") && lensModel.endsWith("'")) {
+                    lstInfo.add(lensModel); // camera model
+                }else {
+                    lstInfo.add("'"+lensModel+"'");
+                }
+            }
+
             lstInfo.add(getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_FOCAL_LENGTH)); // focal length
             lstInfo.add(getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_FOCAL_LENGTH_IN_35MM_FORMAT)); // focal length in ff
             lstInfo.add(getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_ISO)); // iso
             lstInfo.add(getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_SHUTTER_SPEED_VALUE)); // shutter speed
             lstInfo.add(getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_APERTURE_VALUE)); // aperture
+
+            lstInfo.add(getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_METERING_MODE));
+//
+//            ExifTagConstants.EXIF_TAG_ISO;
+//            public static final TagInfoSRational EXIF_TAG_SHUTTER_SPEED_VALUE;
+//            public static final TagInfoRational EXIF_TAG_APERTURE_VALUE;
+//            public static final TagInfoSRational EXIF_TAG_BRIGHTNESS_VALUE;
+//            public static final TagInfoSRational EXIF_TAG_EXPOSURE_COMPENSATION;
+//            public static final TagInfoRational EXIF_TAG_MAX_APERTURE_VALUE;
+//            public static final TagInfoRationals EXIF_TAG_SUBJECT_DISTANCE;
+//            public static final TagInfoShort EXIF_TAG_METERING_MODE;
+//            public static final int METERING_MODE_VALUE_AVERAGE = 1;
+//            public static final int METERING_MODE_VALUE_CENTER_WEIGHTED_AVERAGE = 2;
+//            public static final int METERING_MODE_VALUE_SPOT = 3;
+//            public static final int METERING_MODE_VALUE_MULTI_SPOT = 4;
+//            public static final int METERING_MODE_VALUE_MULTI_SEGMENT = 5;
+//            public static final int METERING_MODE_VALUE_PARTIAL = 6;
+//            public static final int METERING_MODE_VALUE_OTHER = 255;
+//            public static final TagInfoShort EXIF_TAG_LIGHT_SOURCE;
+//            public static final int LIGHT_SOURCE_VALUE_DAYLIGHT = 1;
+//            public static final int LIGHT_SOURCE_VALUE_FLUORESCENT = 2;
+//            public static final int LIGHT_SOURCE_VALUE_TUNGSTEN = 3;
+//            public static final int LIGHT_SOURCE_VALUE_FLASH = 4;
+//            public static final int LIGHT_SOURCE_VALUE_FINE_WEATHER = 9;
+//            public static final int LIGHT_SOURCE_VALUE_CLOUDY = 10;
+//            public static final int LIGHT_SOURCE_VALUE_SHADE = 11;
+//            public static final int LIGHT_SOURCE_VALUE_DAYLIGHT_FLUORESCENT = 12;
+//            public static final int LIGHT_SOURCE_VALUE_DAY_WHITE_FLUORESCENT = 13;
+//            public static final int LIGHT_SOURCE_VALUE_COOL_WHITE_FLUORESCENT = 14;
+//            public static final int LIGHT_SOURCE_VALUE_WHITE_FLUORESCENT = 15;
+//            public static final int LIGHT_SOURCE_VALUE_STANDARD_LIGHT_A = 17;
+//            public static final int LIGHT_SOURCE_VALUE_STANDARD_LIGHT_B = 18;
+//            public static final int LIGHT_SOURCE_VALUE_STANDARD_LIGHT_C = 19;
+//            public static final int LIGHT_SOURCE_VALUE_D55 = 20;
+//            public static final int LIGHT_SOURCE_VALUE_D65 = 21;
+//            public static final int LIGHT_SOURCE_VALUE_D75 = 22;
+//            public static final int LIGHT_SOURCE_VALUE_D50 = 23;
+//            public static final int LIGHT_SOURCE_VALUE_ISO_STUDIO_TUNGSTEN = 24;
+//            public static final int LIGHT_SOURCE_VALUE_OTHER = 255;
+//            public static final TagInfoShort EXIF_TAG_FLASH;
+//            public static final int FLASH_VALUE_NO_FLASH = 0;
+//            public static final int FLASH_VALUE_FIRED = 1;
+//            public static final int FLASH_VALUE_FIRED_RETURN_NOT_DETECTED = 5;
+//            public static final int FLASH_VALUE_FIRED_RETURN_DETECTED = 7;
+//            public static final int FLASH_VALUE_ON_DID_NOT_FIRE = 8;
+//            public static final int FLASH_VALUE_ON = 9;
+//            public static final int FLASH_VALUE_ON_RETURN_NOT_DETECTED = 13;
+//            public static final int FLASH_VALUE_ON_RETURN_DETECTED = 15;
+//            public static final int FLASH_VALUE_OFF = 16;
+//            public static final int FLASH_VALUE_OFF_DID_NOT_FIRE_RETURN_NOT_DETECTED = 20;
+//            public static final int FLASH_VALUE_AUTO_DID_NOT_FIRE = 24;
+//            public static final int FLASH_VALUE_AUTO_FIRED = 25;
+//            public static final int FLASH_VALUE_AUTO_FIRED_RETURN_NOT_DETECTED = 29;
+//            public static final int FLASH_VALUE_AUTO_FIRED_RETURN_DETECTED = 31;
+//            public static final int FLASH_VALUE_NO_FLASH_FUNCTION = 32;
+//            public static final int FLASH_VALUE_OFF_NO_FLASH_FUNCTION = 48;
+//            public static final int FLASH_VALUE_FIRED_RED_EYE_REDUCTION = 65;
+//            public static final int FLASH_VALUE_FIRED_RED_EYE_REDUCTION_RETURN_NOT_DETECTED = 69;
+//            public static final int FLASH_VALUE_FIRED_RED_EYE_REDUCTION_RETURN_DETECTED = 71;
+//            public static final int FLASH_VALUE_ON_RED_EYE_REDUCTION = 73;
+//            public static final int FLASH_VALUE_ON_RED_EYE_REDUCTION_RETURN_NOT_DETECTED = 77;
+//            public static final int FLASH_VALUE_ON_RED_EYE_REDUCTION_RETURN_DETECTED = 79;
+//            public static final int FLASH_VALUE_OFF_RED_EYE_REDUCTION = 80;
+//            public static final int FLASH_VALUE_AUTO_DID_NOT_FIRE_RED_EYE_REDUCTION = 88;
+//            public static final int FLASH_VALUE_AUTO_FIRED_RED_EYE_REDUCTION = 89;
+//            public static final int FLASH_VALUE_AUTO_FIRED_RED_EYE_REDUCTION_RETURN_NOT_DETECTED = 93;
+//            public static final int FLASH_VALUE_AUTO_FIRED_RED_EYE_REDUCTION_RETURN_DETECTED = 95;
+//            public static final TagInfoRationals EXIF_TAG_FOCAL_LENGTH;
+//            public static final TagInfoShorts EXIF_TAG_SUBJECT_AREA;
+//
+//
+////            ExifTagConstants.ALL_EXIF_TAGS
+//
+//            public static final int EXPOSURE_PROGRAM_VALUE_MANUAL = 1;
+//            public static final int EXPOSURE_PROGRAM_VALUE_PROGRAM_AE = 2;
+//            public static final int EXPOSURE_PROGRAM_VALUE_APERTURE_PRIORITY_AE = 3;
+//            public static final int EXPOSURE_PROGRAM_VALUE_SHUTTER_SPEED_PRIORITY_AE = 4;
+//            public static final int EXPOSURE_PROGRAM_VALUE_CREATIVE_SLOW_SPEED = 5;
+//            public static final int EXPOSURE_PROGRAM_VALUE_ACTION_HIGH_SPEED = 6;
+//            public static final int EXPOSURE_PROGRAM_VALUE_PORTRAIT = 7;
+//            public static final int EXPOSURE_PROGRAM_VALUE_LANDSCAPE = 8;
+
+
+            logger.warn(" check field format :  "+ lstInfo.get(2)+"  ---  "+ lstInfo.get(3)+"  ---  "+lstInfo.get(4)+"  ---  "+ lstInfo.get(5)+"  ---  "+
+                    lstInfo.get(lstInfo.size() - 4)+"  ---  "+lstInfo.get(lstInfo.size() - 3)+"  ---  "+lstInfo.get(lstInfo.size() - 2)
+                    +"  ---  "+lstInfo.get(lstInfo.size() - 1)+"  ---  size: "+lstInfo.size());
 
             System.out.println("file: " + file.getPath());
 
@@ -198,7 +294,7 @@ public class ImageUtilsMeta {
             metadataInfo.append(getTagValueAsHtml(jpegMetadata, ExifTagConstants.EXIF_TAG_SERIAL_NUMBER));
             metadataInfo.append(getTagValueAsHtml(jpegMetadata, ExifTagConstants.EXIF_TAG_RAW_FILE));
             metadataInfo.append(getTagValueAsHtml(jpegMetadata, ExifTagConstants.EXIF_TAG_LENS_MAKE));
-            metadataInfo.append(getTagValueAsHtml(jpegMetadata, ExifTagConstants.EXIF_TAG_LENS_MODEL));
+            metadataInfo.append(getTagValueAsHtml(jpegMetadata, ExifTagConstants.EXIF_TAG_LENS_MODEL).replaceAll(", ","").trim()); // camera model
             metadataInfo.append(getTagValueAsHtml(jpegMetadata, ExifTagConstants.EXIF_TAG_LENS_SPECIFICATION));
             metadataInfo.append(getTagValueAsHtml(jpegMetadata, ExifTagConstants.EXIF_TAG_LENS_SERIAL_NUMBER));
             metadataInfo.append(getTagValueAsHtml(jpegMetadata, ExifTagConstants.EXIF_TAG_DATE_TIME_ORIGINAL));
@@ -218,6 +314,8 @@ public class ImageUtilsMeta {
             metadataInfo.append(getTagValueAsHtml(jpegMetadata, GpsTagConstants.GPS_TAG_GPS_LONGITUDE_REF));
             metadataInfo.append(getTagValueAsHtml(jpegMetadata, GpsTagConstants.GPS_TAG_GPS_LONGITUDE));
 
+            metadataInfo.append(getTagValueAsHtml(jpegMetadata, ExifTagConstants.EXIF_TAG_METERING_MODE));
+
             final List<ImageMetadataItem> items = jpegMetadata.getItems();
             for (final ImageMetadataItem item : items) {
                // System.out.println("    " + "item: " + item);
@@ -228,6 +326,7 @@ public class ImageUtilsMeta {
         }
         return metadataInfo;
     }
+    
 
     private String getTagValueAsHtml(final JpegImageMetadata jpegMetadata, final TagInfo tagInfo) {
         final TiffField field = jpegMetadata.findExifValueWithExactMatch(tagInfo);

@@ -1,0 +1,143 @@
+
+.learnings-view .header-layout {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); /*minmax(min(70px, 8vw), 1fr)); /*repeat(auto-fit, minmax(80px, 1fr));*/
+    grid-gap: 17px;
+
+    padding-top: 5px;
+    padding-bottom: 9px;
+
+            a{
+                padding: 8px;
+                text-decoration: none;
+                font-size: var(--lumo-font-size-m);
+                letter-spacing: 1px;
+                text-align: center;
+                font-family: Times-New-Roman, serif;
+                font-weight: bold;
+                color: #6c9494; /*var(--lumo-tertiary-text-color);*/
+                background-color: #d7efe8; /*var(--lumo-contrast-5pct);;*/
+                border: #d7efe8 1px solid;
+                box-shadow: 1px 1px 6px lightgrey;
+                border-radius: var(--lumo-border-radius-l);
+                transition: 0.5s;
+                &:hover {
+                    color: #00a3b3; /*#edf9f1; /*  #cd5c5c; /*#a62f03; /*#cd5c5c;*/
+                    background-color: #d7efe8; /* #edf9f1;*/
+                    border: #00a3b3 1px solid;
+                    box-shadow: 2px 2px 10px lightgrey;
+                    transition: 0.4s;
+                    cursor: pointer;
+                }
+            }
+}
+
+.learnings-view .video-container {
+    position: relative;
+    overflow: hidden;
+    /*width: 100%;*/
+    /*width: fit-content;*/
+    width: 600px; /*100%;*/
+    height: 320px;
+    /*padding-top: 56.25%;  !*16:9 (9/16 = 0.5625)*!*/
+    border-radius: var(--lumo-border-radius-l);
+
+    box-shadow: var(--lumo-box-shadow-m)
+}
+
+.learnings-view .video-iframe {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: var(--lumo-border-radius-l);
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+}
+
+.learnings-view .bottom-radius-shadow{
+    /*border-top-left-radius: 12px;*/
+    /*border-top-right-radius: 2px;*/
+
+    /*border-bottom-left-radius: 10px;*/
+    /*border-bottom-right-radius: 45px;*/
+    border-radius: 48px;
+    box-shadow: 1px 1px 4px lightgrey;
+
+    border: none;
+    /*border-bottom: var(--lumo-contrast-20pct) dotted 4px;*/
+    /*transition: 0.7s;*/
+    /*&:hover{*/
+    /*    !*box-shadow: 1px 1px 6px lightgrey;*!*/
+    /*    transition: 0.8s;*/
+    /*}*/
+}
+
+.learnings-view .item-id-info a{
+    text-decoration: none;
+    padding: 3px;
+    padding-left: 5px;
+    padding-right: 5px;
+    color: var(--lumo-contrast-50pct); /*#2D2C29;*/
+    background-color: var(--lumo-contrast-5pct);
+    border: transparent 1px solid;
+    border-radius: 6px;
+    transition: 0.5s;
+    &:hover {
+        color: var(--lumo-contrast-80pct);
+        background-color: var(--lumo-contrast-10pct);
+        border: transparent 1px solid;
+        transition: 0.4s;
+        cursor: pointer;
+    }
+}
+
+.learnings-view .item-id-info .external-links {
+        padding: 1px;
+        margin: 1px;
+        /*gap: 5px;*/
+        /*padding-bottom: var(--lumo-space-xs);*/
+        /*align-items: center;*/
+        /*justify-items: center;*/
+        a{
+            /*padding: var(--lumo-space-xs); !* var(--lumo-space-m);*!*/
+            padding: 4px;
+            margin: 0px;
+            border-radius: 6px;
+            color: var(--lumo-tertiary-text-color);
+            border: transparent 1px solid;
+            text-decoration: none;
+            &:hover {
+                /*background: inherit;*/
+                background-color: transparent;
+                border: var(--lumo-contrast-5pct) 1px solid;
+                color: #cd5c5c;  /*#9fafd5; */
+            }
+        }
+}
+
+.learnings-view .actions-toolbar{
+    gap: 1rem;
+}
+
+.learnings-view .actions-toolbar vaadin-button{
+    /*padding-top: 1rem;*/
+    /*padding-bottom: 1rem;*/
+    padding-left: 17px;
+    padding-right: 17px;
+
+    text-decoration: none;
+    color: var(--lumo-tertiary-text-color);
+    background-color: var(--lumo-contrast-5pct);;
+    /*border: var(--lumo-contrast-5pct) 1px solid;*/
+    border-radius: 6px;
+    transition: 0.5s;
+        &:hover {
+            color:   #cd5c5c; /*#a62f03; /*#cd5c5c;*/
+            background-color: var(--lumo-contrast-10pct);
+            /*border: var(--lumo-contrast-20pct) 1px solid;*/
+            transition: 0.4s;
+            cursor: pointer;
+        }
+}

@@ -1,29 +1,34 @@
 package com.photo.act.photo_act.views.components;
 
 import com.photo.act.photo_act.db.RecordService;
+import com.photo.act.photo_act.services.WeatherService;
 import com.photo.act.photo_act.utils.ImageUtils;
 import com.photo.act.photo_act.utils.ImageUtilsMeta;
+import com.photo.act.photo_act.utils.MailSend;
+import com.photo.act.photo_act.utils.UtilsDate;
 import com.vaadin.flow.component.Html;
-import com.vaadin.flow.component.HtmlComponent;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.upload.Upload;
-import com.vaadin.flow.component.upload.receivers.MemoryBuffer;
-import com.vaadin.flow.component.upload.receivers.MultiFileBuffer;
 import com.vaadin.flow.dom.Style;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.theme.lumo.LumoUtility;
-import org.apache.commons.imaging.formats.tiff.constants.ExifTagConstants;
-import org.apache.commons.imaging.formats.tiff.constants.TiffTagConstants;
+import org.apache.commons.io.FileUtils;
+import org.imgscalr.Scalr;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.FileCopyUtils;
 import org.springframework.util.StreamUtils;
 
 import javax.imageio.ImageIO;
@@ -31,14 +36,11 @@ import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.URL;
 import java.nio.file.FileSystems;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.UUID;
 
 import static com.photo.act.photo_act.views.ImageGalleryView.*;
+import static com.photo.act.photo_act.views.MainLayout.HOSTNAME_LAPTOP;
 
 public class UploadImageCard extends VerticalLayout {
 
@@ -48,24 +50,59 @@ public class UploadImageCard extends VerticalLayout {
     private String mimeType;
     private RecordService recordService;
 
-    private MultiFileBuffer multiFileBuffer = new MultiFileBuffer();
+//    private MultiFileBuffer multiFileBuffer = new MultiFileBuffer();
 
     //MultiFileMemoryBuffer multiFileMemoryBuffer = new MultiFileMemoryBuffer();
 
     private static final Logger logger = LoggerFactory.getLogger(UploadImageCard.class);
+    private UtilsDate utilsDate;
+
     private String dirChar = FileSystems.getDefault().getSeparator();
 
     private int userId;
     private String strUserName;
+    private String publicIp;
+    private String hostname;
     private String sessionId;
+    private String sessionDateTime;
+    private WeatherService weatherService;
 
-    //    https://cookbook.vaadin.com/upload-image-to-file
-    public VerticalLayout getUploadImageCard(int userId, String strUserName, long sessionCreation, String hostname, RecordService recordService) {
-        this.recordService = recordService;
+    private MailSend mailSend;
+
+    public UploadImageCard(int userId, String strUserName, long sessionCreation, String publicIp, String hostname) {
+        this.publicIp = publicIp;
+        this.hostname = hostname;
         this.userId = userId;
         this.strUserName = strUserName;
-        VerticalLayout layout = new VerticalLayout();
         this.sessionId = Long.toString(sessionCreation);
+
+        weatherService = new WeatherService("metric");
+
+        utilsDate = new UtilsDate();
+
+        this.sessionDateTime = utilsDate.calcDateTimeFromLong(sessionCreation, "UTC");
+        mailSend = new MailSend();
+    }
+
+    //    https://cookbook.vaadin.com/upload-image-to-file
+    public VerticalLayout getUploadImageCard(RecordService recordService) {
+        this.recordService = recordService;
+
+        if(hostname.equalsIgnoreCase(HOSTNAME_LAPTOP)){
+            DIR_PHOTOS_SERVER = "/home/mike/Pictures/lazy-photos";
+        }
+        else if(hostname.equalsIgnoreCase("piot")) {
+            DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
+        }
+        else{
+            DIR_PHOTOS_SERVER = "/home/sammy/lazy-photos";
+
+        }
+
+        VerticalLayout layout = new VerticalLayout();
+        layout.addClassNames(LumoUtility.Width.FULL, LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER,
+                LumoUtility.BorderRadius.MEDIUM, LumoUtility.BorderColor.CONTRAST_5);
+
 //        MemoryBuffer buffer = new MemoryBuffer();
 //        Upload upload = new Upload(buffer);
 
@@ -73,60 +110,29 @@ public class UploadImageCard extends VerticalLayout {
 //        Upload upload = new Upload(multiFileBuffer);
 
         Upload upload = new Upload(this::receiveUpload);
+        upload.addClassNames(LumoUtility.Width.FULL, LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER,
+                LumoUtility.BorderRadius.SMALL, LumoUtility.BorderColor.CONTRAST_5);
+
         upload.setMaxFiles(3);
 
         int maxFileSizeInBytes = 12 * 1024 * 1024; // 12MB
         upload.setMaxFileSize(maxFileSizeInBytes);
 
-
-        Div output = new Div(new Text("(no image file uploaded yet) (max size:12MB)"));
+        Div output = new Div(new Text("(no image file uploaded yet)"));
         output.getStyle().setAlignItems(Style.AlignItems.CENTER);
         output.getStyle().setJustifyContent(Style.JustifyContent.CENTER);
         layout.add(upload, output);
 
         upload.setAcceptedFileTypes("image/jpeg", "image/png");//, "image/gif");
 
+
         upload.addSucceededListener(event -> {
             output.removeAll();
 
             Image image = new Image();
-            output.add(new Text("Uploaded: "+originalFileName+" to "+ file.getAbsolutePath()+ " Type: "+mimeType+" Size: "+file.length()));
+//            output.add(new Text("Uploaded: "+originalFileName+" to "+ file.getAbsolutePath()+ " Type: "+mimeType+" Size: "+file.length()));
 
-//            // Determine which file was uploaded
-//            String fileName = event.getFileName();
-//            // Read the data for that specific file.
-//            InputStream inputStream = multiFileMemoryBuffer.getInputStream(fileName);
-//            // Get other information about the file.
-//            String mimeType = event.getMIMEType();
-//            long contentLength = event.getContentLength();
-//            image.setSrc(inputStream.toString());
-
-            /*
-            ImageService imageService = new ImageService();
-           String  strPathUploads =DIR_PHOTOS_SERVER + dirChar + subPathUploads;
-         String strResult = imageService.copyImage(fileName, inputStream, strPathUploads);
-           // imageService.uploadImage()
-            logger.info(strResult);
-*/
-//            FileInputStream fileInputStream = null;
-//            try {
-//                fileInputStream = new FileInputStream(uploadFileName);
-//            } catch (FileNotFoundException e) {
-//                logger.error(" uploadFileName:"+uploadFileName+" "+e.getMessage());
-//                throw new RuntimeException(e);
-//            }
-//
-//            //StreamResource streamResource = new StreamResource(uploadFileName,loadFile());
-//            logger.info("to Image.  path: "+absolutePath+" filename: "+uploadFileName);
-//
-//            StreamResource streamResource = new StreamResource(uploadFileName,this::loadFile);
-//
-//          //  Image img = new Image(new StreamResource(this.originalFileName,this::loadFile),"Uploaded image");
-//
-//            String strImgPath = absolutePath + dirChar + uploadFileName;
-//            image.setSrc(absolutePath);
-
-            StreamResource streamResource = new StreamResource(this.originalFileName,this::loadFile);
+            StreamResource streamResource = new StreamResource(this.originalFileName, this::loadFile);
             image.setSrc(streamResource);
             image.setWidth("68%");
             image.setHeight("auto");
@@ -141,24 +147,37 @@ public class UploadImageCard extends VerticalLayout {
 
             ArrayList<String> lstPhotoMetaData = new ArrayList<>();
 
-            String strPathUpload = DIR_PHOTOS_SERVER + dirChar+subPathUpload;
+            String strPathUpload = DIR_PHOTOS_SERVER + dirChar + subPathUpload;
 
-            UUID uuid= UUID.randomUUID();
+            UUID uuid = UUID.randomUUID();
             String strUUID = uuid.toString();
-            String strNewFileName = userId+"_"+strUserName+"_"+strUUID+".jpg";
+            String strNewFileName = userId + "_" + strUserName + "_" + strUUID + ".jpg";
+
+            Button btnSave = new Button("Upload Photo");
 
             InputStream isUpload = loadFile(file.getAbsolutePath());
             OutputStream outUpload = null;
-            String outputUploadFileName = strPathUpload+dirChar+strNewFileName;
+            String outputUploadFileName = strPathUpload + dirChar + strNewFileName;
             File outputUploadFile = new File(outputUploadFileName);
             try {
                 outUpload = new FileOutputStream(outputUploadFile);
                 StreamUtils.copy(isUpload, outUpload);
-                logger.info(" uploadPhoto upload: "+strNewFileName+" size: "+getFileSizeAsString(outputUploadFile));
-            } catch (IOException e) {
-                logErrorInDb(e,"getUploadImageCard copy to upload",this.file.getAbsolutePath(),userId,strUserName);
-                logger.error(" copy to upload "+e.getMessage());
-                throw new RuntimeException(e);
+                logger.info(" upload Photo Success to: "+this.originalFileName + " ---> " + strNewFileName + " size: " + getFileSizeAsString(outputUploadFile));
+            } catch (Exception e) {
+
+                String errorMessage = "Upload failed: " + e.getMessage();
+
+                Notification notification = Notification.show(
+                        errorMessage,
+                        5000,
+                        Notification.Position.MIDDLE
+                );
+                notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+
+                logErrorInDb(e, "getUploadImageCard to upload", this.file.getAbsolutePath(), userId, strUserName);
+                mailSend.sendSimpleMail("nickgiant@yahoo.com","getUploadImageCard to upload  "+errorMessage+"  -  "+publicIp, " "+publicIp+" "+hostname+"  -  "+errorMessage);
+                logger.error(" upload " + e.getMessage());
+//                throw new RuntimeException(e);
             }
 
             ImageUtilsMeta imageUtilsMeta = new ImageUtilsMeta();
@@ -167,94 +186,139 @@ public class UploadImageCard extends VerticalLayout {
             try {
                 strImageMetaInfo.append(imageUtilsMeta.getMetadataInfo(imgFile));
                 lstPhotoMetaData = imageUtilsMeta.getListImageInfo();
-                Html imageInfo = new Html(strImageMetaInfo.toString());
-                layoutImageInfo.add(imageInfo);
-                imageUtilsMeta.printPhotoMetadataValue(imgFile);
+                if(lstPhotoMetaData != null && lstPhotoMetaData.size() > 0) {
+                    Html imageInfo = new Html(strImageMetaInfo.toString());
+                    layoutImageInfo.add(imageInfo);
+                    btnSave.setVisible(true);
+                }else{
 
-            } catch (IOException e) {
-                logErrorInDb(e,"getUploadImageCard  strImageMetaInfo "+e.getMessage(),this.file.getAbsolutePath(),userId,strUserName);
-                logger.error(" strImageMetaInfo "+e.getMessage());
-                throw new RuntimeException(e);
+                    btnSave.setVisible(true);
+
+//                    Notification notification = Notification.show(
+//                            "Photo contains no metadata.",
+//                            5000,
+//                            Notification.Position.MIDDLE
+//                    );
+//                    notification.addThemeVariants(NotificationVariant.LUMO_WARNING);
+
+
+
+                }
+
+            } catch (Exception e) {
+
+                btnSave.setVisible(false);
+
+                String errorMessage = "Upload failed: " + e.getMessage();
+                Notification notification = Notification.show(
+                        errorMessage,
+                        5000,
+                        Notification.Position.MIDDLE
+                );
+                notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+
+                logErrorInDb(e, "getUploadImageCard  strImage Meta Info " + e.getMessage(), this.file.getAbsolutePath(), userId, strUserName);
+
+                mailSend.sendSimpleMail("nickgiant@yahoo.com","getUploadImageCard  strImage Meta Info  "+errorMessage+"  -  "+publicIp, " "+publicIp+" "+hostname+"  -  "+errorMessage);
+                logger.error(" strImage Meta Info " + e.getMessage());
+//                throw new RuntimeException(e);
             }
 
-            Button btnSave = new Button("Save");
-            VerticalLayout photoToAddLayout = new VerticalLayout(image, layoutImageInfo,btnSave);
-            photoToAddLayout.setWidthFull();
-            photoToAddLayout.setSpacing(true);
-            photoToAddLayout.setMargin(false);
-            photoToAddLayout.setPadding(false);
-            photoToAddLayout.getStyle().setAlignItems(Style.AlignItems.CENTER);
-            photoToAddLayout.getStyle().setJustifyContent(Style.JustifyContent.CENTER);
+
+
+            VerticalLayout photoToAddLayout = new VerticalLayout();
+            photoToAddLayout.addClassNames(LumoUtility.Width.FULL, LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER,
+//                    LumoUtility.Background.CONTRAST_5,
+                    LumoUtility.Padding.XLARGE,
+                    LumoUtility.BorderRadius.LARGE,
+                    LumoUtility.Background.CONTRAST_5);
+
 
             ArrayList<String> finalLstPhotoMetaData = lstPhotoMetaData;
             btnSave.addClickListener(clickevent -> {
-                InputStream is2 = loadFile(file.getAbsolutePath());
-                String strPathShow = DIR_PHOTOS_SERVER + dirChar+subPathShow;
-                String outputShowFileName = strPathShow+dirChar+strNewFileName;
-                logger.info(" to: outputUploadFileName: "+ outputUploadFileName);
+                if (confirmedUploadPhoto(strNewFileName, finalLstPhotoMetaData, publicIp, hostname, strImageMetaInfo)) {
+                    photoToAddLayout.removeAll();
+                    upload.clearFileList();
+                    output.remove(photoToAddLayout);
 
-                String strPathThumbs = DIR_PHOTOS_SERVER + dirChar+subPathThumbs;
-                String outputThumbsFileName = strPathThumbs+dirChar+strNewFileName;
-                OutputStream outShow = null;
 
-                File outputShowFile = new File(outputShowFileName);
-                try{
-                    outShow = new FileOutputStream(outputShowFile);
-                    StreamUtils.copy(is2, outShow);
-                    logger.info(" uploadPhoto show A: "+strNewFileName+" size: "+getFileSizeAsString(outputShowFile));
-                    ImageUtils.convertImageToJPG(outputShowFile.toPath());
-                    logger.info(" uploadPhoto show B: "+strNewFileName+" size: "+getFileSizeAsString(outputShowFile));
-                } catch (IOException e) {
-                    logErrorInDb(e,"getUploadImageCard copy to show",this.file.getAbsolutePath(),userId,strUserName);
-                    logger.error(" copy to show "+e.getMessage());
-                    throw new RuntimeException(e);
+                    double dblSize = Double.parseDouble(event.getContentLength() + "");
+                    String strFilesize = String.format("%.2f", dblSize);
+                    String message = "Photo Uploaded ! (" + strFilesize + ")";
+
+                    Notification notification = Notification.show(message, 4000, Notification.Position.MIDDLE);
+                    notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+
+                    mailSend.sendSimpleMail("nickgiant@yahoo.com",message, " "+publicIp+" "+hostname+" "+strImageMetaInfo);
+
+
                 }
-
-                BufferedImage bImage;
-                try {
-                    bImage = ImageIO.read(outputShowFile);
-                    // BufferedImage bufferedThumb= Scalr.resize(bImage, Scalr.Method.AUTOMATIC, Scalr.Mode.FIT_EXACT, 800,Scalr.OP_ANTIALIAS);   //  Imgscalr    https://www.baeldung.com/java-resize-image
-                    File outputFileThumb = new File(outputThumbsFileName);
-                    ImageIO.write(bImage, "jpg", outputFileThumb);
-                    logger.info(" uploadPhoto thumbs: "+strNewFileName+" size: "+getFileSizeAsString(outputFileThumb));
-                } catch (IOException e) {
-                    logErrorInDb(e,"getUploadImageCard   try to write thumbs: "+e.getMessage(),this.file.getAbsolutePath(),userId,strUserName);
-                    logger.error(" try to write thumbs:  "+e.getMessage());
-                    throw new RuntimeException(e);
-                }
-                logger.info(" written:  "+outputThumbsFileName);
-
-                String ip = getClientPublicIp();
-
-//                lstInfo.add(getTagValue(jpegMetadata, TiffTagConstants.TIFF_TAG_DATE_TIME)); // date time
-//                lstInfo.add(getTagValue(jpegMetadata, TiffTagConstants.TIFF_TAG_MAKE)); // camera make
-//                lstInfo.add(getTagValue(jpegMetadata, TiffTagConstants.TIFF_TAG_MODEL)); // camera model
-//                lstInfo.add(getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_LENS_MAKE)); // lens make
-//                lstInfo.add(getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_LENS_MODEL)); // camera model
-//                lstInfo.add(getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_FOCAL_LENGTH)); // focal length
-//                lstInfo.add(getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_FOCAL_LENGTH_IN_35MM_FORMAT)); // focal length in ff
-//                lstInfo.add(getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_ISO)); // iso
-//                lstInfo.add(getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_SHUTTER_SPEED_VALUE)); // shutter speed
-//                lstInfo.add(getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_APERTURE_VALUE)); // aperture
-
-                logger.info(" "+finalLstPhotoMetaData.get(0)+" "+finalLstPhotoMetaData.get(1)+" "+finalLstPhotoMetaData.get(2)+" "+finalLstPhotoMetaData.get(3) + " "
-                + finalLstPhotoMetaData.get(4)+" "+finalLstPhotoMetaData.get(5)+" "+finalLstPhotoMetaData.get(6)+" "+finalLstPhotoMetaData.get(7)+" "
-                        + finalLstPhotoMetaData.get(8)+" "+finalLstPhotoMetaData.get(9));
-
-                insertImageToDb(ip,sessionCreation,strNewFileName,hostname, strImageMetaInfo.toString(), finalLstPhotoMetaData.get(0), finalLstPhotoMetaData.get(1),
-                        finalLstPhotoMetaData.get(2), finalLstPhotoMetaData.get(3), finalLstPhotoMetaData.get(4), (int) Integer.parseInt(finalLstPhotoMetaData.get(5)),
-                        (int) Integer.parseInt(finalLstPhotoMetaData.get(6)), (int) Integer.parseInt(finalLstPhotoMetaData.get(7)),
-                        (Double) Double.parseDouble(finalLstPhotoMetaData.get(8)), (Double) Double.parseDouble(finalLstPhotoMetaData.get(9)));
             });
 
+            upload.clearFileList();
+            photoToAddLayout.add(image);
+//            photoToAddLayout.add(image, layoutImageInfo);
+
+//            HorizontalLayout layoutLocationSearch = new HorizontalLayout();
+//            layoutLocationSearch.addClassNames(LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER, //LumoUtility.Width.FULL,
+//                    LumoUtility.Padding.LARGE,
+//                    LumoUtility.Background.TINT_10,
+//                    LumoUtility.BorderRadius.LARGE);
+//            Div divLocation = new Div("Location:");
+//            TextField txtLocation = new TextField();
+//
+//
+//            VerticalLayout locationResultLayout = new VerticalLayout();
+//            locationResultLayout.addClassNames(LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER, //LumoUtility.Width.FULL,
+//                    LumoUtility.Margin.LARGE,
+//                    LumoUtility.Background.TINT_10,
+//                    LumoUtility.BorderRadius.LARGE);
+//
+//            Button btnSearchLocation = new Button("Find");
+//            btnSearchLocation.addThemeVariants(ButtonVariant.LUMO_SMALL);
+//            btnSearchLocation.addClickListener(clickevent -> {
+//                locationResultLayout.removeAll();
+////                locationResultLayout.add(showLocationLayout(txtLocation.getValue()));
+//
+//            });
+//
+//            layoutLocationSearch.removeAll();
+//            layoutLocationSearch.add(divLocation, txtLocation, btnSearchLocation);
+//
+//            VerticalLayout layoutLocation = new VerticalLayout();
+//            layoutLocation.addClassNames(LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER, //LumoUtility.Width.FULL,
+//                    LumoUtility.Margin.NONE, LumoUtility.Padding.NONE, LumoUtility.Gap.MEDIUM,
+//                    LumoUtility.Background.CONTRAST_5,
+//                    LumoUtility.BorderRadius.LARGE);
+//
+//
+//            layoutLocation.add(layoutLocationSearch,locationResultLayout);
+
+            photoToAddLayout.add( btnSave);
+//            photoToAddLayout.add(layoutLocation, btnSave);
             output.add(photoToAddLayout);
+
         });
 
         upload.addFailedListener(event -> {
-            Notification.show("Upload failed: addFailedListener: " + event.getReason()+ " getContentLength: "+event.getContentLength());
+//            Notification.show("Upload failed: addFailedListener: " + event.getReason()+ " getContentLength: "+event.getContentLength());
+            String errorMessage = "Upload failed: " + event.getReason();
+
+            Notification notification = Notification.show(
+                    errorMessage,
+                    5000,
+                    Notification.Position.MIDDLE
+            );
+            notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+
+
+
+            String strMessage = "Upload failed: " + event.getReason();
             output.removeAll();
-            output.add(new Text("Upload failed: " + event.getReason()));
-            logErrorInDb(null,"addFailedListener "+event.getReason(),this.file.getAbsolutePath(),userId,strUserName);
+            output.add(new Text(strMessage));
+            logErrorInDb(null, "addFailedListener " + event.getReason(), this.file.getAbsolutePath(), userId, strUserName);
+
+            mailSend.sendSimpleMail("nickgiant@yahoo.com",strMessage+"  -  "+publicIp, " "+publicIp+" "+hostname+"  -  "+strMessage);
 
         });
 
@@ -267,37 +331,113 @@ public class UploadImageCard extends VerticalLayout {
                     Notification.Position.MIDDLE
             );
             notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
-            logErrorInDb(null,"addFileRejectedListener "+event.getErrorMessage(),this.file.getAbsolutePath(),userId,strUserName);
+            logErrorInDb(null, "addFileRejectedListener " + event.getErrorMessage(), this.file.getAbsolutePath(), userId, strUserName);
+
+            mailSend.sendSimpleMail("nickgiant@yahoo.com",errorMessage+"  -  "+publicIp, " "+publicIp+" "+hostname+"  -  "+errorMessage);
         });
 
         return layout;
     }
 
 
+    private VerticalLayout showLocationLayout(String value) {
+        String[] location = null;
+        location = weatherService.lookUpLocation(value, "", "");
+
+        Div divSelectedLocation = new Div();
+        if (location != null && location.length != 0) {
+            divSelectedLocation.setText("Area: " + location[2] + " Country: " + location[3]);
+        }
+
+        VerticalLayout layoutWeather = new VerticalLayout();
+        layoutWeather.addClassNames( LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER);
+
+        Button btnSelectLocation = new Button("Show Weather");
+        String[] finalLocation = location;
+        btnSelectLocation.addClickListener(clickevent -> {
+
+            StringBuilder locationInfo = new StringBuilder();
+            locationInfo.append(value);
+            for (String s : finalLocation) {
+                locationInfo.append(", ").append(s);
+            }
+
+            Notification notification = Notification.show(locationInfo.toString(), 4000, Notification.Position.MIDDLE);
+            notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+
+            String[] currentWeatherData = weatherService.getCurrentWeather(Double.parseDouble(finalLocation[0]), Double.parseDouble(finalLocation[1]));
+
+            Div divTime = new Div(currentWeatherData[14]);
+            divTime.getStyle().setFontWeight(Style.FontWeight.BOLDER);
+
+            Div divSunRise = new Div(currentWeatherData[12]);
+            divSunRise.getStyle().setFontWeight(Style.FontWeight.BOLD);
+
+            Div divSunset = new Div(currentWeatherData[13]);
+            divSunset.getStyle().setFontWeight(Style.FontWeight.BOLD);
+
+            Div divFeelsLike = new Div(currentWeatherData[1]);
+            divFeelsLike.getStyle().setFontWeight(Style.FontWeight.BOLDER);
+
+            Div divHumidity = new Div(currentWeatherData[4]);
+            divHumidity.getStyle().setFontWeight(Style.FontWeight.BOLDER);
+
+            Div divWindSpeed = new Div(currentWeatherData[7]);
+            divWindSpeed.getStyle().setFontWeight(Style.FontWeight.BOLDER);
+
+            Div divClouds = new Div(currentWeatherData[15]);
+            divClouds.getStyle().setFontWeight(Style.FontWeight.BOLDER);
+
+
+            layoutWeather.removeAll();
+
+            layoutWeather.setMinWidth("180px");
+            layoutWeather.setMargin(false);
+            layoutWeather.setSpacing(false);
+            layoutWeather.setPadding(false);
+            layoutWeather.add(new HorizontalLayout(new Div("Sunrise: "), divSunRise));
+            layoutWeather.add(new HorizontalLayout(new Div("Sunset: "), divSunset));
+            layoutWeather.add(new HorizontalLayout(new Div("Feels like: "), divFeelsLike));
+            layoutWeather.add(new HorizontalLayout(new Div("Clouds: "), divClouds));
+            layoutWeather.add(new HorizontalLayout(new Div("Humidity: "), divHumidity));
+            layoutWeather.add(new HorizontalLayout(new Div("Wind speed: "), divWindSpeed));
+
+        });
+
+        VerticalLayout layout = new VerticalLayout(divSelectedLocation, btnSelectLocation, layoutWeather);
+        layout.setSpacing(false);
+        layout.setAlignItems(FlexComponent.Alignment.CENTER);
+        layout.getStyle().set("padding", "var(--lumo-space-m) var(--lumo-space-m) var(--lumo-space-xs)");
+
+        return layout;
+    }
+
 
     public InputStream loadFile(String fileName) {
         try {
             return new FileInputStream(fileName);
         } catch (FileNotFoundException e) {
-            logErrorInDb(e,"loadFile  fileName: "+fileName,this.file.getAbsolutePath(),userId,strUserName);
-            logger.error( "Failed to create InputStream for: '" + this.file.getAbsolutePath(), e);
+            logErrorInDb(e, "loadFile  fileName: " + fileName, this.file.getAbsolutePath(), userId, strUserName);
+            logger.error("Failed to create InputStream for: '" + this.file.getAbsolutePath(), e);
         }
         return null;
     }
 
-    /** Load a file from local filesystem.
-     *
+    /**
+     * Load a file from local filesystem.
      */
     public InputStream loadFile() {
         try {
             return new FileInputStream(file);
         } catch (FileNotFoundException e) {
-            logErrorInDb(e,"loadFile",this.file.getAbsolutePath(),userId,strUserName);
-            logger.error( "Failed to create InputStream for: '" + this.file.getAbsolutePath(), e);
+            logErrorInDb(e, "loadFile", this.file.getAbsolutePath(), userId, strUserName);
+            logger.error("Failed to create InputStream for: '" + this.file.getAbsolutePath(), e);
         }
         return null;
     }
-    /** Receive a uploaded file to a file.
+
+    /**
+     * Receive a uploaded file to a file.
      */
 //    https://cookbook.vaadin.com/upload-image-to-file
     public OutputStream receiveUpload(String originalFileName, String MIMEType) {
@@ -309,11 +449,11 @@ public class UploadImageCard extends VerticalLayout {
             file.deleteOnExit();
             return new FileOutputStream(file);
         } catch (FileNotFoundException e) {
-            logErrorInDb(e,"receiveUpload",this.file.getAbsolutePath(),userId,strUserName);
+            logErrorInDb(e, "receiveUpload", this.file.getAbsolutePath(), userId, strUserName);
             logger.error("Failed to create InputStream for: '" + this.file.getAbsolutePath(), e);
         } catch (IOException e) {
-            logErrorInDb(e,"receiveUpload",this.file.getAbsolutePath(),userId,strUserName);
-            logger.error( "Failed to create InputStream for: '" + this.file.getAbsolutePath() + "'", e);
+            logErrorInDb(e, "receiveUpload", this.file.getAbsolutePath(), userId, strUserName);
+            logger.error("Failed to create InputStream for: '" + this.file.getAbsolutePath() + "'", e);
         }
 
         return null;
@@ -321,8 +461,8 @@ public class UploadImageCard extends VerticalLayout {
 
     private void logErrorInDb(Exception e, String function, String info, int userId, String strUsername) {
 
-        Notification.show(" logErrorInDb  .  "+function+"  .  "+info);
-       // recordService.logErrorInDb(e,"",function,userId,strUsername,"","",info);
+//        Notification.show(" logErrorInDb  .  " + function + "  .  " + info);
+        recordService.logErrorInDb(e,"",function,userId,strUsername,"","",info);
     }
 
     //                lstInfo.add(getTagValue(jpegMetadata, TiffTagConstants.TIFF_TAG_DATE_TIME)); // date time
@@ -336,18 +476,107 @@ public class UploadImageCard extends VerticalLayout {
 //                lstInfo.add(getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_SHUTTER_SPEED_VALUE)); // shutter speed
 //                lstInfo.add(getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_APERTURE_VALUE)); // aperture
 
+    private boolean confirmedUploadPhoto(String strNewFileName, ArrayList<String> lstPhotoMetaData, String publicIp, String hostname,
+                                         StringBuilder strImageMetaInfo) {
 
-    private void insertImageToDb(String ip, long sessionCreation, String strNewFileName, String hostname, String strImageMetaInfo, String strPhotoDateTime, String strPhotoCameraMake,
-                                 String strPhotoCameraModel, String strPhotoLensMake, String strPhotoLensModel, int intPhotoFocalLength, int intPhotoFocalLengthFF, int intPhotoISO,
-                                 double dblPhotoShutterSpeed, double dblPhotoAperture) {
 
-//        section = section.replaceAll("'", " ");
-//        section = section.replaceAll("\"", " ");
+        String strPathUpload = DIR_PHOTOS_SERVER + dirChar + subPathUpload;
+        String outputUploadFileName = strPathUpload + dirChar + strNewFileName;
+        File fileUploaded = new File(outputUploadFileName);
 
-        //search = search.replaceAll("'"," ");
-        //search = search.replaceAll("\""," ");
+        String strPathShow = DIR_PHOTOS_SERVER + dirChar + subPathShow;
+        String outputShowFileName = strPathShow + dirChar + strNewFileName;
+        File directoryShow = new File(strPathShow);
+        File fileShow = new File(outputShowFileName);
 
-        // String ipAddress = VaadinSession.getCurrent().getBrowser().getAddress();
+
+        String strPathMedium = DIR_PHOTOS_SERVER + dirChar + subPathMedium;
+        String outputMediumFileName = strPathMedium + dirChar + strNewFileName;
+        File fileMedium = new File(outputMediumFileName);
+
+        String strPathThumbs = DIR_PHOTOS_SERVER + dirChar + subPathThumbs;
+        String outputThumbsFileName = strPathThumbs + dirChar + strNewFileName;
+        File fileThumbs = new File(outputThumbsFileName);
+        try {
+            FileUtils.copyFileToDirectory(fileUploaded, directoryShow);
+
+
+
+            BufferedImage bImage = ImageIO.read(fileUploaded);
+            BufferedImage bufferedMedium= Scalr.resize(bImage, Scalr.Method.AUTOMATIC, Scalr.Mode.FIT_TO_WIDTH, 2000, Scalr.OP_ANTIALIAS);   //  Imgscalr    https://www.baeldung.com/java-resize-image
+            ImageIO.write(bufferedMedium, "jpg", fileMedium);
+
+            BufferedImage bImageM = ImageIO.read(fileUploaded);
+            BufferedImage bufferedThumb= Scalr.resize(bImageM, Scalr.Method.AUTOMATIC, Scalr.Mode.FIT_TO_WIDTH, 890, Scalr.OP_ANTIALIAS);   //  Imgscalr    https://www.baeldung.com/java-resize-image
+            ImageIO.write(bufferedThumb, "jpg", fileThumbs);
+
+            logger.info("photo copy size: " + fileUploaded.length() +"  - >   "+fileShow.length()+"  - >  "+fileThumbs.length()+"  - >  "+fileMedium.length());
+            logger.info("photo copy size MB: " + getFileSizeAsString(fileUploaded) +"  - >   "+getFileSizeAsString(fileShow) +"  - >   "+getFileSizeAsString(fileThumbs));
+
+
+            logger.info(" before insert:  0 " + lstPhotoMetaData.get(0) + " 1 " + lstPhotoMetaData.get(1) + " 2 " + lstPhotoMetaData.get(2) + " 3 " + lstPhotoMetaData.get(3)
+                    + " 4 " + lstPhotoMetaData.get(4) + " 5 " + lstPhotoMetaData.get(5) + " 6 " + lstPhotoMetaData.get(6) + " 7 " + lstPhotoMetaData.get(7)
+                    + " 8 " + lstPhotoMetaData.get(8) + " 9 " + lstPhotoMetaData.get(9) + "  .........");
+
+           try{
+               Double.parseDouble(lstPhotoMetaData.get(5));
+           }catch(NumberFormatException e){
+               lstPhotoMetaData.set(5, "0");
+           }
+
+            try{
+                Double.parseDouble(lstPhotoMetaData.get(6));
+            }catch(NumberFormatException e){
+                lstPhotoMetaData.set(6, "0");
+            }
+
+            if (insertPhotoToDb(publicIp, sessionDateTime, strNewFileName, hostname, fileShow.length(), fileMedium.length(), fileThumbs.length(), strImageMetaInfo.toString(), lstPhotoMetaData.get(0), lstPhotoMetaData.get(1),
+                    lstPhotoMetaData.get(2), lstPhotoMetaData.get(3), lstPhotoMetaData.get(4), Double.parseDouble(lstPhotoMetaData.get(5)) ,
+                    Double.parseDouble(lstPhotoMetaData.get(6)), Integer.parseInt(lstPhotoMetaData.get(7)),
+                    lstPhotoMetaData.get(8), lstPhotoMetaData.get(9))) {
+
+
+                return true;
+            }
+            else{
+                String errorMessage = "Upload failed!";
+
+                Notification notification = Notification.show(
+                        errorMessage,
+                        5000,
+                        Notification.Position.MIDDLE
+                );
+                notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+
+            }
+
+
+        } catch (IOException e) {
+
+            String errorMessage = "Upload failed: " + e.getMessage();
+
+            Notification notification = Notification.show(
+                    errorMessage,
+                    5000,
+                    Notification.Position.MIDDLE
+            );
+            notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+            logErrorInDb(e, "getUploadImageCard upload failed. dir: ", this.file.getAbsolutePath(), userId, strUserName);
+            logger.error(" upload failed. dir: " + e.getMessage());
+            return false;
+        }
+
+        return false;
+
+    }
+
+    private boolean insertPhotoToDb(String publicIp, String sessionDateTime, String strNewFileName, String hostname, long photoSpaceSize,  long photoSpaceSizeMedium,
+                                    long photoSpaceSizeThumb,
+                                    String strImageMetaInfo, String strPhotoDateTime, String strPhotoCameraMake,
+                                    String strPhotoCameraModel, String strPhotoLensMake, String strPhotoLensModel, double dblPhotoFocalLength, double dblPhotoFocalLengthFF, int intPhotoISO,
+                                    String dblPhotoShutterSpeed, String dblPhotoAperture) {
+
+        // String publicIpAddress = VaadinSession.getCurrent().getBrowser().getAddress();
         String browser = VaadinSession.getCurrent().getBrowser().getBrowserApplication();
         int versionOfBrowserMajor = VaadinSession.getCurrent().getBrowser().getBrowserMajorVersion();
         int versionOfBrowserMinor = VaadinSession.getCurrent().getBrowser().getBrowserMinorVersion();
@@ -360,29 +589,26 @@ public class UploadImageCard extends VerticalLayout {
         if (VaadinSession.getCurrent().getBrowser().isAndroid()) {
             strOS = "Android";
         } else if (VaadinSession.getCurrent().getBrowser().isIPhone()) {
-            strOS = "iPhone";
+            strOS = "IPhone";
         } else if (VaadinSession.getCurrent().getBrowser().isWindows()) {
             strOS = "Windows";
         } else if (VaadinSession.getCurrent().getBrowser().isLinux()) {
             strOS = "Linux";
-
         } else if (VaadinSession.getCurrent().getBrowser().isMacOSX()) {
             strOS = "Mac OS X";
         } else {
             strOS = "Unknown";
         }
 
-        String sessionDateTime = calcDateTimeFromLong(sessionCreation);
 
         ArrayList<Object[]> listInsertValues = new ArrayList<>();
-        String[] imageInfo = { strImageMetaInfo };
+        String[] imageInfo = {strImageMetaInfo};
         listInsertValues.add(imageInfo);
 
         int arrLength = listInsertValues.get(0).length;
         String[] arrType = new String[arrLength];
-        for (int i = 0; i < arrLength; i++)
-        {
-            arrType[i]= "java.lang.String";
+        for (int i = 0; i < arrLength; i++) {
+            arrType[i] = "java.lang.String";
         }
 
         ArrayList<String[]> listInsertTypes = new ArrayList<>();
@@ -391,26 +617,40 @@ public class UploadImageCard extends VerticalLayout {
             listInsertTypes.add(arrType);
         }
 
-        String insertSQL = "INSERT INTO photo_meta SET id = 0,  date_fromapp = now(), uploaderId = " + userId + ", uploader = '" + strUserName + "', name_new = '"+strNewFileName+"', hostname = '"+hostname+"', "+
+        String insertSQL = "INSERT INTO photo_meta SET id = 0,  date_fromapp = now(), uploaderId = " + userId + ", uploader = '" + strUserName + "', name_new = '" + strNewFileName + "', hostname = '" + hostname + "', " +
+                " space_size = '"+photoSpaceSize+"', " +
+                " space_size_medium = '"+photoSpaceSizeMedium+"', " +
+                " space_size_thumb = '"+photoSpaceSizeThumb+"', " +
                 " meta_all = ? , " +
-                " meta_date = DATE_FORMAT("+strPhotoDateTime+", '%Y:%m:%d %h:%i:%s')," +
-                " meta_camera_make = '"+strPhotoCameraMake+"', "+
-                " meta_camera_model = '"+strPhotoCameraModel+"', "+
-                " meta_lens_make = '"+strPhotoCameraMake+"', "+
-                " meta_lens_model = '"+strPhotoCameraModel+"', "+
-                " meta_focal_length = '"+intPhotoFocalLength+"', "+
-                " meta_focal_length_ff = '"+intPhotoFocalLengthFF+"', "+
-                " meta_iso = '"+intPhotoISO+"', "+
-                " meta_shutter_speed = '"+dblPhotoShutterSpeed+"', "+
-                " meta_aperture = '"+dblPhotoAperture+"' ";
+//                " meta_date = DATE_FORMAT("+strPhotoDateTime+", '%Y:%m:%d %h:%i:%s')";
+                " meta_date = DATE_FORMAT(" + strPhotoDateTime + ", '%Y:%m:%d %H:%i:%s')," +
+                " meta_camera_make = " + strPhotoCameraMake + ", " +
+                " meta_camera_model = " + strPhotoCameraModel + ", " +
+                " meta_lens_make = " + strPhotoLensMake + ", " +
+                " meta_lens_model = " + strPhotoLensModel + ", " +
+                " meta_focal_length = '" + dblPhotoFocalLength + "', " +
+                " meta_focal_length_ff = '" + dblPhotoFocalLengthFF + "', " +
+                " meta_iso = '" + intPhotoISO + "' ";
+        if (!dblPhotoShutterSpeed.trim().equalsIgnoreCase("null")) {
+            insertSQL = insertSQL + " , meta_shutter_speed = '" + dblPhotoShutterSpeed + "' ";
+        }
+        if (!dblPhotoAperture.trim().equalsIgnoreCase("null")) {
+            insertSQL = insertSQL + " , meta_aperture = '" + dblPhotoAperture + "' ";
+        }
 
-        logger.info("  insert SQL:   "+insertSQL);
+        logger.info("  insert SQL:   " + insertSQL);
 
         ArrayList<String> lstQueryInsert = new ArrayList<String>();
         lstQueryInsert.add(insertSQL);
 
-        recordService.setGlobalInfo(hostname, userId, strUserName,  ip,  sessionId);
-        recordService.massRecordInsert(lstQueryInsert, listInsertValues, listInsertTypes);
+        recordService.setGlobalInfo(hostname, userId, strUserName, publicIp, sessionId);
+        if (recordService.massRecordInsert(lstQueryInsert, listInsertValues, listInsertTypes) == 1) {
+            return true;
+        } else {
+            logErrorInDb(null, "UploadImageCard insertPhotoToDb.",insertSQL, userId, strUserName);
+            return false;
+        }
+
     }
 
     public int[] calcTotalAvailableWidth() {
@@ -429,18 +669,8 @@ public class UploadImageCard extends VerticalLayout {
         return availWidth;
     }
 
-    private String calcDateTimeFromLong(Long datetime) {
 
-        Instant instant = Instant.ofEpochMilli(datetime);
-        LocalDateTime localDateTime =
-                LocalDateTime.ofInstant(instant, ZoneId.of("UTC"));
-
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-
-        return localDateTime.format(formatter);
-    }
-
-    private String getFileSizeAsString(File file){
+    private String getFileSizeAsString(File file) {
 
         return String.format("%.2f", getFileSizeAsDouble(file));
 
@@ -452,17 +682,49 @@ public class UploadImageCard extends VerticalLayout {
         return filesizeMB;
     }
 
-    private String getClientPublicIp() {
-        String urlString = "http://checkip.amazonaws.com/";
-        String publicIp = "";
+    private String getClientPublicpublicIp() {
+        String urlString = "http://checkpublicIp.amazonaws.com/";
+        String publicpublicIp = "";
         try {
             URL url = new URL(urlString);
             BufferedReader br = new BufferedReader(new InputStreamReader(url.openStream()));
-            publicIp = br.readLine();
+            publicpublicIp = br.readLine();
         } catch (IOException MalformedURLException) {
-            logger.error("error getClientPublicIp from " + urlString);
+            logger.error("error getClientPublicpublicIp from " + urlString);
         }
-        return publicIp;
+        return publicpublicIp;
     }
 
+    /*
+    temporary called only by ImageGalleryView
+     */
+//    public VerticalLayout getLocationSelectionLayout() {
+//        VerticalLayout verticalLayout = new VerticalLayout();
+//
+//        HorizontalLayout layoutLocationSearch = new HorizontalLayout();
+//        layoutLocationSearch.addClassNames(LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER, LumoUtility.Width.FULL,
+//                LumoUtility.Background.CONTRAST_5, LumoUtility.BorderRadius.LARGE);
+//        Div divLocation = new Div("Find:");
+//        TextField txtLocation = new TextField();
+//
+//
+//        VerticalLayout locationResultLayout = new VerticalLayout();
+//        locationResultLayout.addClassNames(LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER, LumoUtility.Width.FULL,
+//                LumoUtility.Background.CONTRAST_5, LumoUtility.BorderRadius.LARGE);
+//
+//
+//
+//        Button btnSearchLocation = new Button("Find");
+//        btnSearchLocation.addThemeVariants(ButtonVariant.LUMO_SMALL);
+//        btnSearchLocation.addClickListener(clickevent -> {
+//            locationResultLayout.add(showLocationLayout(txtLocation.getValue()));
+//
+//        });
+//
+//        layoutLocationSearch.removeAll();
+//        layoutLocationSearch.add(divLocation, txtLocation, btnSearchLocation);
+//        verticalLayout.removeAll();
+//        verticalLayout.add(layoutLocationSearch,locationResultLayout);
+//        return verticalLayout;
+//    }
 }

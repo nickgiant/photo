@@ -397,9 +397,11 @@ public class RecordService {
                 "VALUES (0,  '" + hostname + "' , " + userId + " ,'" + username + "', '" + ip + "', '" + sessionid + "', '" + function + "', '"
                 + e.getMessage().replaceAll("'", "").replaceAll("\"", "").substring(0, Math.min(e.getMessage().trim().length(), 480)).trim() + "', '"
                 + strCause
-                + "', '" + APP_VERSION + "', '" + info + "')";
+                + "', '" + APP_VERSION + "', ? )";
 
-        this.insertOneRecordWithQuery(sqlError, null, null);
+        Object[] arrValue = {info};
+        String[] arrType = {"java.lang.String"};
+        this.insertOneRecordWithQuery(sqlError, arrValue, arrType);
 
     }
 

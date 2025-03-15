@@ -16,15 +16,5 @@ public class PhotoActApplication implements AppShellConfigurator {
 		SpringApplication.run(PhotoActApplication.class, args);
 	}
 
-//	@Bean
-//	public TomcatServletWebServerFactory servletContainer() {
-//		return new TomcatServletWebServerFactory() {
-//			@Override
-//			protected void postProcessContext(org.apache.catalina.Context context) {
-//				// Allow larger file uploads
-//				context.setMaxSwallowSize(52428800); // 50MB in bytes
-//			}
-//		};
-//	}
 
 }

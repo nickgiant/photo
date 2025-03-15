@@ -5,6 +5,7 @@ import com.flickr4java.flickr.FlickrException;
 import com.flickr4java.flickr.REST;
 import com.flickr4java.flickr.galleries.GalleriesInterface;
 import com.flickr4java.flickr.photos.Photo;
+import com.flickr4java.flickr.photos.PhotoUrl;
 import com.flickr4java.flickr.photos.SearchParameters;
 import com.flickr4java.flickr.stats.StatsSort;
 import com.flickr4java.flickr.test.TestInterface;
@@ -92,12 +93,13 @@ Collection results = testInterface.echo(Collections.EMPTY_MAP);
     public ArrayList<Photo> findPhotos(String text, int count){
 
         ArrayList<Photo> photoList;
+        ArrayList<Photo> photoListSize;
         //logger.info("findPhotos "+text+"  "+f.getApiKey()+" "+f.getSharedSecret());
         try {
             SearchParameters sparams = new SearchParameters();
             sparams.setText(text);
 
-            sparams.setSort(StatsSort.views.ordinal());
+            sparams.setSort(StatsSort.favorites.ordinal());
 
             photoList = f.getPhotosInterface().search(sparams,count,1);//.search(sparams,count,1);
 

@@ -1,0 +1,103 @@
+
+/*.festivals-view ol {*/
+/*    !*grid-template-columns: 1fr repeat(2, 80px);*!*/
+/*            !*repeat(3, minmax(440px, 1fr)); !*  minmax(440px, 1fr)  *!*!*/
+/*    !*grid-template-columns: repeat(auto-fill, minmax(440px, 1fr)); !*  minmax(440px, 1fr)  *!*!*/
+/*}*/
+
+/*.festivals-view li {*/
+/*    transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);*/
+/*    transition-property: background-color, box-shadow;*/
+/*}*/
+
+/*.festivals-view li:hover {*/
+/*    background-color: var(--lumo-base-color);*/
+/*    box-shadow: var(--lumo-box-shadow-s);*/
+/*    !*border: #9fafd5 dotted;*!*/
+/*}*/
+
+.festivals-view .category{
+    font-family: 'Times-New-Roman', serif;
+    color: var(--lumo-tertiary-text-color);
+    font-weight: normal;
+    border-radius: var(--lumo-border-radius-m);
+    padding: var(--lumo-space-xs);
+}
+
+.festivals-view .external-links {
+    padding: 1px;
+    margin: 1px;
+    gap: 5px;
+    /*padding-bottom: var(--lumo-space-xs);*/
+    align-items: center;
+    justify-items: center;
+
+    & a {
+        /*padding: var(--lumo-space-xs); !* var(--lumo-space-m);*!*/
+        padding: 4px;
+        margin: 0px;
+        border-radius: 5px;
+
+        color: #9fafd5; /* rgba(231, 24, 24, 0.1);*/
+        border: transparent 1px solid;
+        text-decoration: none;
+
+        &:hover {
+            /*background: inherit;*/
+            background-color: transparent;
+            border: var(--lumo-contrast-5pct) 1px solid;
+            color: var(--lumo-primary-color);
+        }
+    }
+}
+
+.festivals-view .actions{
+    gap: 22px;
+}
+
+.festivals-view .actions-mobile{
+    gap: 9px;
+}
+
+.festivals-view .actions vaadin-button{
+    /*padding-top: 1rem;*/
+    /*padding-bottom: 1rem;*/
+    padding-left: 17px;
+    padding-right: 17px;
+    /*color: #80a7bf;*/
+    /*background-color: var(--lumo-contrast-5pct);*/
+    /*transition: 0.8s;*/
+
+    color: var(--lumo-primary-color);
+    background-color: var(--lumo-contrast-5pct);;
+    border: var(--lumo-contrast-5pct) 1px solid;
+    border-radius: 5px;
+    transition: 0.5s;
+}
+
+.festivals-view .actions vaadin-button:hover{
+    /*background-color: var(--lumo-contrast-5pct);*/
+    /*color: #cd5c5c;*/
+    /*transition: 0.5s*/
+    color: #c1121f; /* #a62f03; /*#cd5c5c;*/
+    background-color: var(--lumo-contrast-5pct);
+    border: var(--lumo-contrast-20pct) 1px solid;
+    transition: 0.4s;
+    cursor: pointer;
+}
+
+.festivals-view .actions-mobile vaadin-button{
+    /*padding-top: 1rem;*/
+    /*padding-bottom: 1rem;*/
+    padding-left: 7px;
+    padding-right: 7px;
+    /*color: #80a7bf;*/
+    /*background-color: var(--lumo-contrast-5pct);*/
+    /*transition: 0.8s;*/
+}
+
+.festivals-view .footer div{
+    font-family: "Times New Roman", Times, serif;
+    background-color: #dcd9d5;
+    color: #4d4d4d;
+}
