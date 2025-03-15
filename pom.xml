@@ -29,7 +29,7 @@
 	</scm>
 	<properties>
 		<java.version>17</java.version>
-		<vaadin.version>24.5.2</vaadin.version>
+		<vaadin.version>24.6.5</vaadin.version>
 	</properties>
 
 	<repositories>
@@ -69,7 +69,6 @@
 			<artifactId>spring-boot-devtools</artifactId>
 		</dependency>
 
-
 		<dependency>
 			<groupId>com.oracle.database.jdbc</groupId>
 			<artifactId>ojdbc11</artifactId>
@@ -90,6 +89,12 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-mail</artifactId>
+			<version>3.2.2</version>
+		</dependency>
+
 
 		<dependency>
 			<groupId>org.parttio</groupId>
@@ -97,11 +102,11 @@
 			<version>2.0.0</version>
 		</dependency>
 
-		<dependency>
-			<groupId>com.flowingcode.vaadin.addons</groupId>
-			<artifactId>upload-helper-addon</artifactId>
-			<version>1.0.0</version>
-		</dependency>
+<!--		<dependency>-->
+<!--			<groupId>com.flowingcode.vaadin.addons</groupId>-->
+<!--			<artifactId>upload-helper-addon</artifactId>-->
+<!--			<version>1.0.0</version>-->
+<!--		</dependency>-->
 
 		<dependency>
 			<groupId>com.flowingcode.addons</groupId>
@@ -119,28 +124,41 @@
 			<artifactId>xmlgraphics-commons</artifactId>
 			<version>2.9</version>
 		</dependency>
+		<dependency>
+			<groupId>org.imgscalr</groupId>
+			<artifactId>imgscalr-lib</artifactId>
+			<version>4.2</version>
+		</dependency>
 <!--		<dependency>-->
-<!--			<groupId>org.imgscalr</groupId>-->
-<!--			<artifactId>imgscalr-lib</artifactId>-->
-<!--			<version>4.2</version>-->
+<!--			<groupId>org.vaadin.addons.themeselect</groupId>-->
+<!--			<artifactId>themeselect</artifactId>-->
+<!--			<version>1.0.1</version>-->
 <!--		</dependency>-->
-		<dependency>
-			<groupId>org.vaadin.addons.themeselect</groupId>
-			<artifactId>themeselect</artifactId>
-			<version>1.0.1</version>
-		</dependency>
 
-		<dependency>
-			<groupId>com.flowingcode.vaadin.addons</groupId>
-			<artifactId>upload-helper-addon</artifactId>
-			<version>1.0.1</version>
-		</dependency>
+<!--		<dependency>-->
+<!--			<groupId>com.flowingcode.vaadin.addons</groupId>-->
+<!--			<artifactId>upload-helper-addon</artifactId>-->
+<!--			<version>1.0.1</version>-->
+<!--		</dependency>-->
 
 		<dependency>
 			<groupId>org.vaadin.addons.taefi</groupId>
 			<artifactId>toggle-button-group</artifactId>
 			<version>2.1.0</version>
 		</dependency>
+
+		<dependency>
+			<groupId>com.flowingcode.addons.carousel</groupId>
+			<artifactId>carousel-addon</artifactId>
+			<version>3.0.0</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.vaadin.tabs</groupId>
+			<artifactId>paged-tabs</artifactId>
+			<version>4.0.0</version>
+		</dependency>
+
 
 		<!--        vaadin components start-->
 <!--		<dependency>-->
