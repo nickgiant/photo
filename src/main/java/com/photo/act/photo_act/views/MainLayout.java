@@ -177,25 +177,25 @@ public class MainLayout extends AppLayout {
         // divLogo.addClassNames(Margin.Vertical.MEDIUM, AlignItems.CENTER, Margin.End.LARGE, FontSize.LARGE, FontWeight.BOLD,TextColor.TERTIARY);
         divLogo.addClassNames(  FontSize.MEDIUM, FontWeight.BOLD, TextColor.TERTIARY,
                 Padding.NONE, Margin.NONE);
-        //divLogo.getStyle().setColor("rgba(231, 24, 24, 0.5)");
-        divLogo.getStyle().setColor("#cd5c5c");
+        //divLogo.getStyle().setColor("#cd5c5c");
 
         logoLayout.add(divLogo,appName);
 
         Nav nav = new Nav();
         if(isMobile){
-            nav.addClassNames(Display.FLEX, Overflow.AUTO, Padding.Horizontal.SMALL, Padding.Vertical.XSMALL,
+            nav.addClassNames(Display.FLEX, Overflow.AUTO, Padding.Horizontal.XSMALL, Padding.Vertical.SMALL,
                     Gap.SMALL
             );
         }else {
-            nav.addClassNames(Display.FLEX, Overflow.AUTO, Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL,
+            nav.addClassNames(Display.FLEX, Overflow.AUTO, Margin.NONE, Padding.NONE, //Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL,
                     Gap.MEDIUM
             );
         }
 
         // Wrap the links in a list; improves accessibility
         UnorderedList list = new UnorderedList();
-        list.addClassNames(Display.FLEX, Gap.SMALL, ListStyleType.NONE, Margin.NONE, Padding.NONE);
+        list.addClassNames(Display.FLEX, Gap.SMALL, ListStyleType.NONE , Margin.NONE, Padding.NONE
+        );
         nav.add(list);
 
         for (MenuItemInfo menuItem : createMenuItems()) {
@@ -227,7 +227,6 @@ public class MainLayout extends AppLayout {
                 new MenuItemInfo("Gallery", LineAwesomeIcon.IMAGES_SOLID.create(), ImageGalleryView.class), //
 
                // new MenuItemInfo("Checkout Form", LineAwesomeIcon.CREDIT_CARD.create(), CheckoutFormView.class), //
-
         };
     }
 

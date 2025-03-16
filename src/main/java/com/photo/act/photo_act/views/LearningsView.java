@@ -215,7 +215,10 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         verticalLayout.add(layoutHeaderParameters);
         VerticalLayout layoutResults = loadResults(null);
         verticalLayout.add(layoutResults);
-        verticalLayout.add(genericView.loadFooter(isMobile));
+
+        this.removeAll();
+        this.add(verticalLayout);
+        this.add(genericView.loadFooter(isMobile));
 
         logVisitorToDb();
     }
@@ -292,7 +295,6 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         }
 
         this.setWidthFull();
-        this.add(verticalLayout);
     }
 
     private VerticalLayout loadResults(String inCategory){

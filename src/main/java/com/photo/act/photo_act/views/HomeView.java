@@ -248,7 +248,10 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         VerticalLayout layoutResultsB = loadResults("Thessaloniki", "Greece");
         verticalLayout.add(titleA,layoutResultsA,titleB,layoutResultsB);
 
-        verticalLayout.add(genericView.loadFooter(isMobile));
+
+        this.removeAll();
+        this.add(verticalLayout);
+        this.add(genericView.loadFooter(isMobile));
 
         logVisitorToDb();
     }
@@ -321,7 +324,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         }
 
         this.setWidthFull();
-        this.add(verticalLayout);
+
     }
 
     private VerticalLayout loadResults(String city, String country){
@@ -379,6 +382,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
                     TextColor.TERTIARY,
                     Background.CONTRAST_5,
                     BorderRadius.MEDIUM);
+            layoutPhotoUploaded.addClassName("uploaded-lines");
             Record record = lstRecords.get(r);
             String strFileName = record.getColumnData("name_new");
             String strTitle = record.getColumnData("title");

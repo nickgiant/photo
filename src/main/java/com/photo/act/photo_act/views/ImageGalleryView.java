@@ -240,8 +240,9 @@ public class ImageGalleryView extends Main implements HasUrlParameter<String>, B
     }
 
 
-
-        verticalLayout.add(genericView.loadFooter(isMobile));
+        this.removeAll();
+        this.add(verticalLayout);
+        this.add(genericView.loadFooter(isMobile));
 
         logVisitorToDb();
     }
@@ -321,7 +322,6 @@ public class ImageGalleryView extends Main implements HasUrlParameter<String>, B
         }
 
         this.setWidthFull();
-        this.add(verticalLayout);
 
     }
 

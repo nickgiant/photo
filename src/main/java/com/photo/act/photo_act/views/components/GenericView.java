@@ -34,16 +34,16 @@ public class GenericView {
 
         H1 appName = new H1(APP_NAME);
         //appName.addClassNames(Margin.Vertical.MEDIUM, AlignItems.CENTER, Margin.End.AUTO, FontSize.LARGE, FontWeight.BOLD, TextColor.TERTIARY);
-        appName.addClassNames( LumoUtility.FontSize.MEDIUM, LumoUtility.FontWeight.SEMIBOLD, LumoUtility.TextColor.TERTIARY,
+        appName.addClassNames( LumoUtility.FontSize.LARGE, LumoUtility.FontWeight.SEMIBOLD, //LumoUtility.TextColor.TERTIARY,
                 LumoUtility.Padding.NONE, LumoUtility.Margin.NONE);
         appName.getStyle().set("font-family", "Times-New-Roman, serif");
         appName.getStyle().set("font-stretch", "semi-expanded");
-        // appName.getStyle().setColor("#d64f00");//"#f9943b");//""#bd3450");
+        appName.getStyle().setColor("#eaeae8");//"#f9943b");//""#bd3450");
 
         Div divLogo = new Div();
         divLogo.add(VaadinIcon.CAMERA.create());
         // divLogo.addClassNames(Margin.Vertical.MEDIUM, AlignItems.CENTER, Margin.End.LARGE, FontSize.LARGE, FontWeight.BOLD,TextColor.TERTIARY);
-        divLogo.addClassNames(  LumoUtility.FontSize.MEDIUM, LumoUtility.FontWeight.BOLD, LumoUtility.TextColor.TERTIARY,
+        divLogo.addClassNames(  LumoUtility.FontSize.MEDIUM, LumoUtility.FontWeight.BOLD,// LumoUtility.TextColor.TERTIARY,
                 LumoUtility.Padding.NONE, LumoUtility.Margin.NONE);
         //divLogo.getStyle().setColor("rgba(231, 24, 24, 0.5)");
         //divLogo.getStyle().setColor("#d64f00");
@@ -85,6 +85,9 @@ public class GenericView {
 
 
         VerticalLayout layoutFooter = new VerticalLayout();
+        layoutFooter.setMinHeight("250px");
+        layoutFooter.getStyle().setBackgroundColor("#78868f");
+        layoutFooter.getStyle().setColor("#eaeae8");
 //        layoutFooter.addClassName("bottom-radius-shadow");
 
         if (isMobile) {
@@ -100,7 +103,7 @@ public class GenericView {
         } else {
             layoutFooter.addClassNames(
                     LumoUtility.Overflow.HIDDEN, LumoUtility.Width.FULL,
-                    LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.EVENLY,
+                    LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER,
                     LumoUtility.Margin.NONE,
                     LumoUtility.Padding.MEDIUM,
                     LumoUtility.Gap.MEDIUM,
