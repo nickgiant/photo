@@ -9,11 +9,11 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.photo.act</groupId>
-	<artifactId>photoact</artifactId>
-	<version>0</version>
+	<artifactId>photo</artifactId>
+	<version>act</version>
 	<packaging>war</packaging>
 	<name>photo-act</name>
-	<description>photo-act project for Spring Boot</description>
+	<description>photo-act project</description>
 	<url/>
 	<licenses>
 		<license/>
@@ -128,6 +128,12 @@
 			<groupId>org.imgscalr</groupId>
 			<artifactId>imgscalr-lib</artifactId>
 			<version>4.2</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.github.appreciated</groupId>
+			<artifactId>apexcharts</artifactId>
+			<version>24.0.1</version>
 		</dependency>
 <!--		<dependency>-->
 <!--			<groupId>org.vaadin.addons.themeselect</groupId>-->

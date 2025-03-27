@@ -2,7 +2,6 @@ package com.photo.act.photo_act.views.components;
 
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.services.WeatherService;
-import com.photo.act.photo_act.utils.ImageUtils;
 import com.photo.act.photo_act.utils.ImageUtilsMeta;
 import com.photo.act.photo_act.utils.MailSend;
 import com.photo.act.photo_act.utils.UtilsDate;
@@ -10,7 +9,6 @@ import com.vaadin.flow.component.Html;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.notification.Notification;
@@ -18,7 +16,6 @@ import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.upload.Upload;
 import com.vaadin.flow.dom.Style;
 import com.vaadin.flow.server.StreamResource;
@@ -28,7 +25,6 @@ import org.apache.commons.io.FileUtils;
 import org.imgscalr.Scalr;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.util.FileCopyUtils;
 import org.springframework.util.StreamUtils;
 
 import javax.imageio.ImageIO;
@@ -88,13 +84,11 @@ public class UploadImageCard extends VerticalLayout {
     public VerticalLayout getUploadImageCard(RecordService recordService) {
         this.recordService = recordService;
 
-        if(hostname.equalsIgnoreCase(HOSTNAME_LAPTOP)){
+        if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP)) {
             DIR_PHOTOS_SERVER = "/home/mike/Pictures/lazy-photos";
-        }
-        else if(hostname.equalsIgnoreCase("piot")) {
+        } else if (hostname.equalsIgnoreCase("piot")) {
             DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
-        }
-        else{
+        } else {
             DIR_PHOTOS_SERVER = "/home/sammy/lazy-photos";
 
         }
@@ -115,7 +109,7 @@ public class UploadImageCard extends VerticalLayout {
 
         upload.setMaxFiles(3);
 
-        int maxFileSizeInBytes = 12 * 1024 * 1024; // 12MB
+        int maxFileSizeInBytes = 18 * 1024 * 1024; // 18MB
         upload.setMaxFileSize(maxFileSizeInBytes);
 
         Div output = new Div(new Text("(no image file uploaded yet)"));
@@ -162,7 +156,7 @@ public class UploadImageCard extends VerticalLayout {
             try {
                 outUpload = new FileOutputStream(outputUploadFile);
                 StreamUtils.copy(isUpload, outUpload);
-                logger.info(" upload Photo Success to: "+this.originalFileName + " ---> " + strNewFileName + " size: " + getFileSizeAsString(outputUploadFile));
+                logger.info(" upload Photo Success to: " + this.originalFileName + " ---> " + strNewFileName + " size: " + getFileSizeAsString(outputUploadFile));
             } catch (Exception e) {
 
                 String errorMessage = "Upload failed: " + e.getMessage();
@@ -174,8 +168,10 @@ public class UploadImageCard extends VerticalLayout {
                 );
                 notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
 
+
+                mailSend.sendSimpleMail("nickgiant@yahoo.com", "getUploadImageCard to upload  " + errorMessage + "  -  " + publicIp, " " + publicIp + " " + hostname + "  -  " + errorMessage);
                 logErrorInDb(e, "getUploadImageCard to upload", this.file.getAbsolutePath(), userId, strUserName);
-                mailSend.sendSimpleMail("nickgiant@yahoo.com","getUploadImageCard to upload  "+errorMessage+"  -  "+publicIp, " "+publicIp+" "+hostname+"  -  "+errorMessage);
+
                 logger.error(" upload " + e.getMessage());
 //                throw new RuntimeException(e);
             }
@@ -186,11 +182,11 @@ public class UploadImageCard extends VerticalLayout {
             try {
                 strImageMetaInfo.append(imageUtilsMeta.getMetadataInfo(imgFile));
                 lstPhotoMetaData = imageUtilsMeta.getListImageInfo();
-                if(lstPhotoMetaData != null && lstPhotoMetaData.size() > 0) {
+                if (lstPhotoMetaData != null && lstPhotoMetaData.size() > 0) {
                     Html imageInfo = new Html(strImageMetaInfo.toString());
                     layoutImageInfo.add(imageInfo);
                     btnSave.setVisible(true);
-                }else{
+                } else {
 
                     btnSave.setVisible(true);
 
@@ -200,7 +196,6 @@ public class UploadImageCard extends VerticalLayout {
 //                            Notification.Position.MIDDLE
 //                    );
 //                    notification.addThemeVariants(NotificationVariant.LUMO_WARNING);
-
 
 
                 }
@@ -217,13 +212,14 @@ public class UploadImageCard extends VerticalLayout {
                 );
                 notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
 
+                mailSend.sendSimpleMail("nickgiant@yahoo.com", "getUploadImageCard  strImage Meta Info  " + errorMessage + "  -  " + publicIp, " " + publicIp + " " + hostname + "  -  " + errorMessage);
+
                 logErrorInDb(e, "getUploadImageCard  strImage Meta Info " + e.getMessage(), this.file.getAbsolutePath(), userId, strUserName);
 
-                mailSend.sendSimpleMail("nickgiant@yahoo.com","getUploadImageCard  strImage Meta Info  "+errorMessage+"  -  "+publicIp, " "+publicIp+" "+hostname+"  -  "+errorMessage);
+
                 logger.error(" strImage Meta Info " + e.getMessage());
 //                throw new RuntimeException(e);
             }
-
 
 
             VerticalLayout photoToAddLayout = new VerticalLayout();
@@ -249,7 +245,7 @@ public class UploadImageCard extends VerticalLayout {
                     Notification notification = Notification.show(message, 4000, Notification.Position.MIDDLE);
                     notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
 
-                    mailSend.sendSimpleMail("nickgiant@yahoo.com",message, " "+publicIp+" "+hostname+" "+strImageMetaInfo);
+                    mailSend.sendSimpleMail("nickgiant@yahoo.com", message, " " + publicIp + " " + hostname + " " + strImageMetaInfo);
 
 
                 }
@@ -294,7 +290,7 @@ public class UploadImageCard extends VerticalLayout {
 //
 //            layoutLocation.add(layoutLocationSearch,locationResultLayout);
 
-            photoToAddLayout.add( btnSave);
+            photoToAddLayout.add(btnSave);
 //            photoToAddLayout.add(layoutLocation, btnSave);
             output.add(photoToAddLayout);
 
@@ -312,13 +308,13 @@ public class UploadImageCard extends VerticalLayout {
             notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
 
 
-
             String strMessage = "Upload failed: " + event.getReason();
             output.removeAll();
             output.add(new Text(strMessage));
+
+            mailSend.sendSimpleMail("nickgiant@yahoo.com", strMessage + "  -  " + publicIp, " " + publicIp + " " + hostname + "  -  " + strMessage);
             logErrorInDb(null, "addFailedListener " + event.getReason(), this.file.getAbsolutePath(), userId, strUserName);
 
-            mailSend.sendSimpleMail("nickgiant@yahoo.com",strMessage+"  -  "+publicIp, " "+publicIp+" "+hostname+"  -  "+strMessage);
 
         });
 
@@ -331,9 +327,9 @@ public class UploadImageCard extends VerticalLayout {
                     Notification.Position.MIDDLE
             );
             notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
-            logErrorInDb(null, "addFileRejectedListener " + event.getErrorMessage(), this.file.getAbsolutePath(), userId, strUserName);
 
-            mailSend.sendSimpleMail("nickgiant@yahoo.com",errorMessage+"  -  "+publicIp, " "+publicIp+" "+hostname+"  -  "+errorMessage);
+            mailSend.sendSimpleMail("nickgiant@yahoo.com", errorMessage + "  -  " + publicIp, " " + publicIp + " " + hostname + "  -  " + errorMessage);
+            logErrorInDb(null, "addFileRejectedListener " + event.getErrorMessage(), this.file.getAbsolutePath(), userId, strUserName);
         });
 
         return layout;
@@ -350,7 +346,7 @@ public class UploadImageCard extends VerticalLayout {
         }
 
         VerticalLayout layoutWeather = new VerticalLayout();
-        layoutWeather.addClassNames( LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER);
+        layoutWeather.addClassNames(LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER);
 
         Button btnSelectLocation = new Button("Show Weather");
         String[] finalLocation = location;
@@ -462,7 +458,7 @@ public class UploadImageCard extends VerticalLayout {
     private void logErrorInDb(Exception e, String function, String info, int userId, String strUsername) {
 
 //        Notification.show(" logErrorInDb  .  " + function + "  .  " + info);
-        recordService.logErrorInDb(e,"",function,userId,strUsername,"","",info);
+        recordService.logErrorInDb(e, "", function, userId, strUsername, "", "", info);
     }
 
     //                lstInfo.add(getTagValue(jpegMetadata, TiffTagConstants.TIFF_TAG_DATE_TIME)); // date time
@@ -501,44 +497,42 @@ public class UploadImageCard extends VerticalLayout {
             FileUtils.copyFileToDirectory(fileUploaded, directoryShow);
 
 
-
             BufferedImage bImage = ImageIO.read(fileUploaded);
-            BufferedImage bufferedMedium= Scalr.resize(bImage, Scalr.Method.AUTOMATIC, Scalr.Mode.FIT_TO_WIDTH, 2000, Scalr.OP_ANTIALIAS);   //  Imgscalr    https://www.baeldung.com/java-resize-image
+            BufferedImage bufferedMedium = Scalr.resize(bImage, Scalr.Method.AUTOMATIC, Scalr.Mode.FIT_TO_WIDTH, 2000, Scalr.OP_ANTIALIAS);   //  Imgscalr    https://www.baeldung.com/java-resize-image
             ImageIO.write(bufferedMedium, "jpg", fileMedium);
 
             BufferedImage bImageM = ImageIO.read(fileUploaded);
-            BufferedImage bufferedThumb= Scalr.resize(bImageM, Scalr.Method.AUTOMATIC, Scalr.Mode.FIT_TO_WIDTH, 890, Scalr.OP_ANTIALIAS);   //  Imgscalr    https://www.baeldung.com/java-resize-image
+            BufferedImage bufferedThumb = Scalr.resize(bImageM, Scalr.Method.AUTOMATIC, Scalr.Mode.FIT_TO_WIDTH, 890, Scalr.OP_ANTIALIAS);   //  Imgscalr    https://www.baeldung.com/java-resize-image
             ImageIO.write(bufferedThumb, "jpg", fileThumbs);
 
-            logger.info("photo copy size: " + fileUploaded.length() +"  - >   "+fileShow.length()+"  - >  "+fileThumbs.length()+"  - >  "+fileMedium.length());
-            logger.info("photo copy size MB: " + getFileSizeAsString(fileUploaded) +"  - >   "+getFileSizeAsString(fileShow) +"  - >   "+getFileSizeAsString(fileThumbs));
+            logger.info("photo copy size: " + fileUploaded.length() + "  - >   " + fileShow.length() + "  - >  " + fileThumbs.length() + "  - >  " + fileMedium.length());
+            logger.info("photo copy size MB: " + getFileSizeAsString(fileUploaded) + "  - >   " + getFileSizeAsString(fileShow) + "  - >   " + getFileSizeAsString(fileThumbs));
 
 
             logger.info(" before insert:  0 " + lstPhotoMetaData.get(0) + " 1 " + lstPhotoMetaData.get(1) + " 2 " + lstPhotoMetaData.get(2) + " 3 " + lstPhotoMetaData.get(3)
                     + " 4 " + lstPhotoMetaData.get(4) + " 5 " + lstPhotoMetaData.get(5) + " 6 " + lstPhotoMetaData.get(6) + " 7 " + lstPhotoMetaData.get(7)
                     + " 8 " + lstPhotoMetaData.get(8) + " 9 " + lstPhotoMetaData.get(9) + "  .........");
 
-           try{
-               Double.parseDouble(lstPhotoMetaData.get(5));
-           }catch(NumberFormatException e){
-               lstPhotoMetaData.set(5, "0");
-           }
+            try {
+                Double.parseDouble(lstPhotoMetaData.get(5));
+            } catch (NumberFormatException e) {
+                lstPhotoMetaData.set(5, "0");
+            }
 
-            try{
+            try {
                 Double.parseDouble(lstPhotoMetaData.get(6));
-            }catch(NumberFormatException e){
+            } catch (NumberFormatException e) {
                 lstPhotoMetaData.set(6, "0");
             }
 
             if (insertPhotoToDb(publicIp, sessionDateTime, strNewFileName, hostname, fileShow.length(), fileMedium.length(), fileThumbs.length(), strImageMetaInfo.toString(), lstPhotoMetaData.get(0), lstPhotoMetaData.get(1),
-                    lstPhotoMetaData.get(2), lstPhotoMetaData.get(3), lstPhotoMetaData.get(4), Double.parseDouble(lstPhotoMetaData.get(5)) ,
+                    lstPhotoMetaData.get(2), lstPhotoMetaData.get(3), lstPhotoMetaData.get(4), Double.parseDouble(lstPhotoMetaData.get(5)),
                     Double.parseDouble(lstPhotoMetaData.get(6)), Integer.parseInt(lstPhotoMetaData.get(7)),
                     lstPhotoMetaData.get(8), lstPhotoMetaData.get(9))) {
 
 
                 return true;
-            }
-            else{
+            } else {
                 String errorMessage = "Upload failed!";
 
                 Notification notification = Notification.show(
@@ -570,7 +564,7 @@ public class UploadImageCard extends VerticalLayout {
 
     }
 
-    private boolean insertPhotoToDb(String publicIp, String sessionDateTime, String strNewFileName, String hostname, long photoSpaceSize,  long photoSpaceSizeMedium,
+    private boolean insertPhotoToDb(String publicIp, String sessionDateTime, String strNewFileName, String hostname, long photoSpaceSize, long photoSpaceSizeMedium,
                                     long photoSpaceSizeThumb,
                                     String strImageMetaInfo, String strPhotoDateTime, String strPhotoCameraMake,
                                     String strPhotoCameraModel, String strPhotoLensMake, String strPhotoLensModel, double dblPhotoFocalLength, double dblPhotoFocalLengthFF, int intPhotoISO,
@@ -617,10 +611,14 @@ public class UploadImageCard extends VerticalLayout {
             listInsertTypes.add(arrType);
         }
 
+        if (strPhotoLensMake.isEmpty()) {
+            strPhotoLensMake = " null ";
+        }
+
         String insertSQL = "INSERT INTO photo_meta SET id = 0,  date_fromapp = now(), uploaderId = " + userId + ", uploader = '" + strUserName + "', name_new = '" + strNewFileName + "', hostname = '" + hostname + "', " +
-                " space_size = '"+photoSpaceSize+"', " +
-                " space_size_medium = '"+photoSpaceSizeMedium+"', " +
-                " space_size_thumb = '"+photoSpaceSizeThumb+"', " +
+                " space_size = '" + photoSpaceSize + "', " +
+                " space_size_medium = '" + photoSpaceSizeMedium + "', " +
+                " space_size_thumb = '" + photoSpaceSizeThumb + "', " +
                 " meta_all = ? , " +
 //                " meta_date = DATE_FORMAT("+strPhotoDateTime+", '%Y:%m:%d %h:%i:%s')";
                 " meta_date = DATE_FORMAT(" + strPhotoDateTime + ", '%Y:%m:%d %H:%i:%s')," +
@@ -647,7 +645,7 @@ public class UploadImageCard extends VerticalLayout {
         if (recordService.massRecordInsert(lstQueryInsert, listInsertValues, listInsertTypes) == 1) {
             return true;
         } else {
-            logErrorInDb(null, "UploadImageCard insertPhotoToDb.",insertSQL, userId, strUserName);
+            logErrorInDb(null, "UploadImageCard insertPhotoToDb.", insertSQL, userId, strUserName);
             return false;
         }
 

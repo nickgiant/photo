@@ -14,14 +14,15 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
-import com.vaadin.flow.router.*;
+import com.vaadin.flow.router.AfterNavigationEvent;
+import com.vaadin.flow.router.AfterNavigationObserver;
+import com.vaadin.flow.router.Route;
 import com.vaadin.flow.theme.lumo.LumoUtility;
-
 
 import java.util.Arrays;
 import java.util.List;
 
-@PageTitle("Feed")
+//@PageTitle("Feed")
 @Route("feed")
 //@Menu(order = 2, icon = "line-awesome/svg/list-solid.svg")  //, icon = LineAwesomeIconUrl.LIST_SOLID)
 public class FeedView extends Div implements AfterNavigationObserver {
@@ -40,10 +41,10 @@ public class FeedView extends Div implements AfterNavigationObserver {
         add(grid);
     }
 
-    private VerticalLayout loadHeader(String strHeader, String strSubHeader,String strSection){
+    private VerticalLayout loadHeader(String strHeader, String strSubHeader, String strSection) {
 
         HorizontalLayout headerContainerMaster = new HorizontalLayout();
-        if(isMobile){
+        if (isMobile) {
             headerContainerMaster.addClassNames(
                     LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.EVENLY,
                     LumoUtility.Overflow.HIDDEN, LumoUtility.Width.FULL,
@@ -54,7 +55,7 @@ public class FeedView extends Div implements AfterNavigationObserver {
                     //   Background.CONTRAST_5,
                     LumoUtility.BorderRadius.NONE
             );
-        }else {
+        } else {
             headerContainerMaster.addClassNames(
                     LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.EVENLY,
                     LumoUtility.Overflow.HIDDEN, LumoUtility.Width.FULL,
@@ -72,14 +73,14 @@ public class FeedView extends Div implements AfterNavigationObserver {
                 LumoUtility.Margin.NONE, LumoUtility.Padding.NONE,
                 LumoUtility.Gap.XSMALL);
 
-        H3 header = new H3(strHeader+" ...");
+        H3 header = new H3(strHeader + " ...");
         header.addClassNames(LumoUtility.Margin.Bottom.NONE, LumoUtility.Margin.Top.NONE, LumoUtility.FontSize.LARGE, LumoUtility.FontWeight.BOLD, LumoUtility.TextColor.SECONDARY);
 //        header.getStyle().set("font-family", "Times-New-Roman, serif");
 
         Div subheader = new Div(strSubHeader);
         subheader.addClassNames(LumoUtility.Margin.Bottom.NONE, LumoUtility.Margin.Top.NONE, LumoUtility.FontSize.SMALL, LumoUtility.TextColor.SECONDARY);
 
-        headerTextContainer.add(header,subheader);
+        headerTextContainer.add(header, subheader);
 
         Select<String> sortBy = new Select<>();
         sortBy.setLabel("Sort by");
@@ -87,7 +88,7 @@ public class FeedView extends Div implements AfterNavigationObserver {
         sortBy.setValue("Most Viewed");
 
         HorizontalLayout headerContainerSecondary = new HorizontalLayout();
-        if(isMobile){
+        if (isMobile) {
             headerContainerSecondary.addClassNames(
                     LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.EVENLY,
                     LumoUtility.Overflow.HIDDEN, LumoUtility.Width.FULL,
@@ -98,7 +99,7 @@ public class FeedView extends Div implements AfterNavigationObserver {
                     //   Background.CONTRAST_5,
                     LumoUtility.BorderRadius.NONE
             );
-        }else {
+        } else {
             headerContainerSecondary.addClassNames(
                     LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.EVENLY,
                     LumoUtility.Overflow.HIDDEN, LumoUtility.Width.FULL,
@@ -113,7 +114,7 @@ public class FeedView extends Div implements AfterNavigationObserver {
 
 
         VerticalLayout layoutFilters = new VerticalLayout();
-        if(isMobile){
+        if (isMobile) {
             layoutFilters.addClassNames(
                     LumoUtility.Overflow.HIDDEN, LumoUtility.Width.FULL,
                     LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.EVENLY,
@@ -124,7 +125,7 @@ public class FeedView extends Div implements AfterNavigationObserver {
                     //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
                     //  Background.CONTRAST_5,
                     LumoUtility.BorderRadius.NONE);
-        }else {
+        } else {
             layoutFilters.addClassNames(
                     LumoUtility.Overflow.HIDDEN, LumoUtility.Width.FULL,
                     LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.EVENLY,
@@ -156,7 +157,6 @@ public class FeedView extends Div implements AfterNavigationObserver {
         layoutFilters.add(checkboxGroupFormat);
 
 
-
         CheckboxGroup<String> checkboxGroupLocation = new CheckboxGroup<>();
         checkboxGroupLocation.setTooltipText("Location");
 //         checkboxGroupLocation.setLabel("Location");
@@ -166,7 +166,7 @@ public class FeedView extends Div implements AfterNavigationObserver {
 
 
         VerticalLayout layoutHeaderParameters = new VerticalLayout();
-        if(isMobile){
+        if (isMobile) {
             layoutHeaderParameters.addClassNames(
                     LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.EVENLY,
                     LumoUtility.Overflow.HIDDEN, LumoUtility.Width.FULL,
@@ -177,7 +177,7 @@ public class FeedView extends Div implements AfterNavigationObserver {
                     //   Background.CONTRAST_5,
                     LumoUtility.BorderRadius.NONE
             );
-        }else {
+        } else {
             layoutHeaderParameters.addClassNames(
                     LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.EVENLY,
                     LumoUtility.Overflow.HIDDEN, LumoUtility.Width.FULL,
@@ -191,20 +191,18 @@ public class FeedView extends Div implements AfterNavigationObserver {
         }
 
 
-
-
         Select<String> cmbView = new Select<>();
         cmbView.setLabel("View");
 
         cmbView.setItems("Micro View", "Ordinary - No MetaData", "Ordinary - MetaData Bottom", "Ordinary - MetaData Right",
-                "Wide - No MetaData", "Wide - MetaData Bottom","Wide - MetaData Right");
+                "Wide - No MetaData", "Wide - MetaData Bottom", "Wide - MetaData Right");
         cmbView.setValue("Ordinary - No MetaData");
 
         headerContainerMaster.add(headerTextContainer, cmbView);
         headerContainerSecondary.add(layoutFilters, sortBy);
 
 
-        layoutHeaderParameters.add(headerContainerMaster,headerContainerSecondary);
+        layoutHeaderParameters.add(headerContainerMaster, headerContainerSecondary);
 
         return layoutHeaderParameters;
     }
@@ -318,7 +316,7 @@ public class FeedView extends Div implements AfterNavigationObserver {
     }
 
     private static Person createPerson(String image, String name, String date, String post, String likes,
-            String comments, String shares) {
+                                       String comments, String shares) {
         Person p = new Person();
         p.setImage(image);
         p.setName(name);

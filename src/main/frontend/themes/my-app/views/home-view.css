@@ -61,5 +61,10 @@
 
 .home-view .carousel{
     max-width: 920px;
-    height: auto
+    height: auto;
+    box-shadow: 1px 1px 6px lightgrey;
+}
+
+.home-view .uploaded-lines{
+    box-shadow: 1px 1px 6px lightgrey;
 }

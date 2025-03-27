@@ -16,16 +16,12 @@ import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.menubar.MenuBarVariant;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
-import com.vaadin.flow.component.orderedlayout.Scroller;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.popover.Popover;
 import com.vaadin.flow.component.popover.PopoverPosition;
 import com.vaadin.flow.component.popover.PopoverVariant;
-import com.vaadin.flow.component.sidenav.SideNav;
-import com.vaadin.flow.component.sidenav.SideNavItem;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.Layout;
-import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.VaadinSession;
@@ -35,7 +31,6 @@ import com.vaadin.flow.theme.lumo.LumoIcon;
 import com.vaadin.flow.theme.lumo.LumoUtility.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import org.vaadin.lineawesome.LineAwesomeIcon;
 
 import java.net.InetAddress;
@@ -59,8 +54,9 @@ public class MainLayout extends AppLayout {
 
     public static final String SECTION_HOME = "home";
     public static final String SECTION_GALLERY = "gallery";
-    public static final String SECTION_FESTIVALS  = "festivals"; // clubs festivals exhibitions photowalks schools
-    public static final String SECTION_WEBSITES  = "websites"; // clubs festivals exhibitions photowalks schools
+    public static final String SECTION_ALBUMS = "albums";
+    public static final String SECTION_FESTIVALS = "festivals"; // clubs festivals exhibitions photowalks schools
+    public static final String SECTION_WEBSITES = "websites"; // clubs festivals exhibitions photowalks schools
     public static final String SECTION_LEARNINGS = "learnings";
     public static final String SECTION_CLUBS = "clubs";
     public static final String SECTION_LOCATIONS = "locations";
@@ -71,7 +67,8 @@ public class MainLayout extends AppLayout {
     public static final String SECTION_FEED = "feed";
 
     public static final String STR_ALL_MEMBERS = "all-members";
-    public static String  STR_ALL_DESTINATIONS = "all-locations";
+    public static final String STR_ALL_ALBUMS = "all-albums";
+    public static final String STR_ALL_DESTINATIONS = "all-locations";
 
     public static final String SECTION_LOG = "log";
 
@@ -103,10 +100,10 @@ public class MainLayout extends AppLayout {
 //        this.setDrawerOpened(true);
 //
 //        this.setPrimarySection(Section.DRAWER);
-////        this.addDrawerContent();
-////        addHeaderContent();
-//    }
 
+    /// /        this.addDrawerContent();
+    /// /        addHeaderContent();
+//    }
     public MainLayout() {
 
         InetAddress inetAddress = null;
@@ -132,13 +129,13 @@ public class MainLayout extends AppLayout {
     private Component createHeaderContent() {
         Header header = new Header();
 //        header.addClassNames(BoxSizing.BORDER, Display.FLEX, FlexDirection.COLUMN, Width.FULL);
-        if(isMobile){
+        if (isMobile) {
             header.addClassNames(BoxSizing.BORDER, Display.FLEX, FlexDirection.ROW, Width.FULL,
                     Padding.Horizontal.SMALL, Padding.Vertical.XSMALL,
                     Margin.SMALL,
                     Gap.SMALL
             );
-        }else {
+        } else {
             header.addClassNames(BoxSizing.BORDER, Display.FLEX, FlexDirection.ROW, Width.FULL,
                     Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL,
                     Margin.SMALL,
@@ -165,7 +162,7 @@ public class MainLayout extends AppLayout {
 
         H1 appName = new H1(APP_NAME);
         //appName.addClassNames(Margin.Vertical.MEDIUM, AlignItems.CENTER, Margin.End.AUTO, FontSize.LARGE, FontWeight.BOLD, TextColor.TERTIARY);
-        appName.addClassNames( FontSize.MEDIUM, FontWeight.SEMIBOLD, TextColor.TERTIARY,
+        appName.addClassNames(FontSize.MEDIUM, FontWeight.SEMIBOLD, TextColor.TERTIARY,
                 Padding.NONE, Margin.NONE);
         appName.getStyle().set("font-family", "Times-New-Roman, serif");
         appName.getStyle().set("font-stretch", "semi-expanded");
@@ -175,18 +172,18 @@ public class MainLayout extends AppLayout {
         divLogo.add(VaadinIcon.CAMERA.create());
         divLogo.addClassName("logo-icon");
         // divLogo.addClassNames(Margin.Vertical.MEDIUM, AlignItems.CENTER, Margin.End.LARGE, FontSize.LARGE, FontWeight.BOLD,TextColor.TERTIARY);
-        divLogo.addClassNames(  FontSize.MEDIUM, FontWeight.BOLD, TextColor.TERTIARY,
+        divLogo.addClassNames(FontSize.MEDIUM, FontWeight.BOLD, TextColor.TERTIARY,
                 Padding.NONE, Margin.NONE);
         //divLogo.getStyle().setColor("#cd5c5c");
 
-        logoLayout.add(divLogo,appName);
+        logoLayout.add(divLogo, appName);
 
         Nav nav = new Nav();
-        if(isMobile){
+        if (isMobile) {
             nav.addClassNames(Display.FLEX, Overflow.AUTO, Padding.Horizontal.XSMALL, Padding.Vertical.SMALL,
                     Gap.SMALL
             );
-        }else {
+        } else {
             nav.addClassNames(Display.FLEX, Overflow.AUTO, Margin.NONE, Padding.NONE, //Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL,
                     Gap.MEDIUM
             );
@@ -194,8 +191,15 @@ public class MainLayout extends AppLayout {
 
         // Wrap the links in a list; improves accessibility
         UnorderedList list = new UnorderedList();
-        list.addClassNames(Display.FLEX, Gap.SMALL, ListStyleType.NONE , Margin.NONE, Padding.NONE
-        );
+        if (isMobile) {
+            list.addClassNames(Display.FLEX, Gap.XSMALL, ListStyleType.NONE, Margin.NONE, Padding.NONE,
+                    FontSize.XXSMALL, TextColor.TERTIARY
+            );
+        } else {
+            list.addClassNames(Display.FLEX, Gap.MEDIUM, ListStyleType.NONE, Margin.NONE, Padding.NONE,
+                    FontSize.MEDIUM, TextColor.TERTIARY
+            );
+        }
         nav.add(list);
 
         for (MenuItemInfo menuItem : createMenuItems()) {
@@ -221,15 +225,15 @@ public class MainLayout extends AppLayout {
     private MenuItemInfo[] createMenuItems() {
         return new MenuItemInfo[]{ //
                 new MenuItemInfo("Home", LineAwesomeIcon.HOME_SOLID.create(), HomeView.class), //  LineAwesomeIcon.PENCIL_RULER_SOLID.create(),
-
                 new MenuItemInfo("Learnings", LineAwesomeIcon.BOOK_SOLID.create(), LearningsView.class), //  LineAwesomeIcon.PENCIL_RULER_SOLID.create(),
+                // new MenuItemInfo("Festivals", LineAwesomeIcon.OBJECT_GROUP.create(), FestivalsView.class), //  LineAwesomeIcon.PENCIL_RULER_SOLID.create(),
+                new MenuItemInfo("Albums", LineAwesomeIcon.PHOTO_VIDEO_SOLID.create(), ImageAlbumsView.class), //
+                new MenuItemInfo("Photos", VaadinIcon.PICTURE.create(), ImageGalleryView.class), //
+                new MenuItemInfo("Upload", VaadinIcon.UPLOAD.create(), UploadView.class), //
 
-                new MenuItemInfo("Gallery", LineAwesomeIcon.IMAGES_SOLID.create(), ImageGalleryView.class), //
-
-               // new MenuItemInfo("Checkout Form", LineAwesomeIcon.CREDIT_CARD.create(), CheckoutFormView.class), //
+                // new MenuItemInfo("Checkout Form", LineAwesomeIcon.CREDIT_CARD.create(), CheckoutFormView.class), //
         };
     }
-
 
     private void addHeaderContent() {
 
@@ -260,7 +264,7 @@ public class MainLayout extends AppLayout {
 
         H1 appName = new H1(APP_NAME);
         //appName.addClassNames(Margin.Vertical.MEDIUM, AlignItems.CENTER, Margin.End.AUTO, FontSize.LARGE, FontWeight.BOLD, TextColor.TERTIARY);
-        appName.addClassNames( FontSize.MEDIUM, FontWeight.SEMIBOLD, TextColor.TERTIARY,
+        appName.addClassNames(FontSize.MEDIUM, FontWeight.SEMIBOLD, TextColor.TERTIARY,
                 Padding.NONE, Margin.NONE);
         appName.getStyle().set("font-family", "Times-New-Roman, serif");
         appName.getStyle().set("font-stretch", "semi-expanded");
@@ -269,18 +273,17 @@ public class MainLayout extends AppLayout {
         Div divLogo = new Div();
         divLogo.add(VaadinIcon.CAMERA.create());
         divLogo.addClassName("logo-icon");
-       // divLogo.addClassNames(Margin.Vertical.MEDIUM, AlignItems.CENTER, Margin.End.LARGE, FontSize.LARGE, FontWeight.BOLD,TextColor.TERTIARY);
-        divLogo.addClassNames(  FontSize.MEDIUM, FontWeight.BOLD, TextColor.TERTIARY,
+        // divLogo.addClassNames(Margin.Vertical.MEDIUM, AlignItems.CENTER, Margin.End.LARGE, FontSize.LARGE, FontWeight.BOLD,TextColor.TERTIARY);
+        divLogo.addClassNames(FontSize.MEDIUM, FontWeight.BOLD, TextColor.TERTIARY,
                 Padding.NONE, Margin.NONE);
         //divLogo.getStyle().setColor("rgba(231, 24, 24, 0.5)");
         //divLogo.getStyle().setColor("#d64f00");
 
-        logoLayout.add(toggle,divLogo,appName);
-
+        logoLayout.add(toggle, divLogo, appName);
 
 
         HorizontalLayout layoutControls = new HorizontalLayout();
-        if(isMobile){
+        if (isMobile) {
             layoutControls.addClassNames(
                     Gap.XSMALL,
                     Margin.NONE, Padding.NONE,
@@ -294,7 +297,6 @@ public class MainLayout extends AppLayout {
             );
         }
         layoutControls.addClassName("actions");
-
 
 
         Avatar avatar = new Avatar("User Name");
@@ -365,7 +367,6 @@ public class MainLayout extends AppLayout {
 //        avatarUser.getElement().setAttribute("tabindex", "-1");
 
 
-
         Button buttonUser = new Button(userAvatarSmallPop);
 //        buttonUser.addThemeVariants(ButtonVariant.LUMO_ICON,  ButtonVariant.LUMO_TERTIARY_INLINE);
         buttonUser.getStyle().set("margin", "var(--lumo-space-s)");
@@ -384,7 +385,6 @@ public class MainLayout extends AppLayout {
         HorizontalLayout userInfo = new HorizontalLayout();
         userInfo.addClassName("userMenuHeader");
         userInfo.setSpacing(false);
-
 
 
         Avatar userAvatarLarge = new Avatar(strNameOfUser);
@@ -427,7 +427,7 @@ public class MainLayout extends AppLayout {
             layoutControls.add(btnNotifications, btnMessages, btnSettings, popoverSettings, buttonUser, popover);
         } else {
             //layoutControls.add(avatarGroup, btnNotifications, btnMessages, btnSettings, popoverSettings, buttonUser, popover);
-            layoutControls.add( btnNotifications, btnMessages, btnSettings, popoverSettings, buttonUser, popover);
+            layoutControls.add(btnNotifications, btnMessages, btnSettings, popoverSettings, buttonUser, popover);
         }
 
         header.add(logoLayout);
@@ -435,8 +435,6 @@ public class MainLayout extends AppLayout {
 
         addToNavbar(true, header);
     }
-
-
 
 
 //    private void addDrawerContent() {
@@ -946,7 +944,6 @@ public class MainLayout extends AppLayout {
 //
 //        return leftLayout;
 //    }
-
 
 
 //    private MenuItemInfo[] createMenuItems() {

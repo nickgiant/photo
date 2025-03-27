@@ -1,6 +1,5 @@
 package com.photo.act.photo_act.views;
 
-import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.utils.NetUtils;
@@ -14,10 +13,8 @@ import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
-import com.vaadin.flow.component.orderedlayout.Scroller;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
-import com.vaadin.flow.dom.Style;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.VaadinService;
@@ -28,9 +25,10 @@ import org.slf4j.LoggerFactory;
 import org.vaadin.addons.taefi.component.ToggleButtonGroup;
 import org.vaadin.lineawesome.LineAwesomeIcon;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.net.InetAddress;
-import java.net.URL;
 import java.net.UnknownHostException;
 import java.nio.file.FileSystems;
 import java.util.ArrayList;
@@ -44,7 +42,7 @@ import static com.photo.act.photo_act.views.MainLayout.*;
 @Route(value = "clubs") //":section?")
 //@RouteAlias(value = ":section/:member?", layout = MainLayout.class)
 //@Menu(order = 0, icon = "line-awesome/svg/th-list-solid.svg")
-public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEnterObserver, HasComponents,HasDynamicTitle, HasStyle {
+public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEnterObserver, HasComponents, HasDynamicTitle, HasStyle {
 
     private String strColorOfIcons = "#a62f03"; //"#f9943b";//"#a62c5c";//"#7d1e32";
 
@@ -75,34 +73,34 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
     private String publicIp;
     private String strPath;
     private String hostname;
-    private String hostAddress ;
-    private String canonicalHostname ;
+    private String hostAddress;
+    private String canonicalHostname;
 
     private int userId;
     private String strUsername;
 
     private String strColorExternalweb = "#9fafd5";
 
-    private String[] arrClubsColumnNames = {"org_name","org_type","org_type_parent","city", "used_for", "country","url", "url_local_events", "url_fb", "url_yt", "url_insta",
-            "url_flickr", "url_wikipedia" };
+    private String[] arrClubsColumnNames = {"org_name", "org_type", "org_type_parent", "city", "used_for", "country", "url", "url_local_events", "url_fb", "url_yt", "url_insta",
+            "url_flickr", "url_wikipedia"};
     private String sqlShowClubsSelect = "SELECT id, org_name, org_type, org_type_parent , city , used_for , country , url , city, address, pc, country, map_x, map_y, url, " +
             " url_local_events, url_fb, url_yt, url_insta, url_flickr, url_wikipedia, " +
             " date_inserted, dateUpdated " +
-            " FROM organizations o " ;
-    private String sqlShowClubsWhere = " WHERE o.org_type LIKE 'Club' " ;
+            " FROM organizations o ";
+    private String sqlShowClubsWhere = " WHERE o.org_type LIKE 'Club' ";
     private String sqlShowClubsOrder = " ORDER BY o.city ASC, o.org_name ASC";
 
 
-    private String[] arrColumnNamesGallery = {"name_new", "title" , "subtitle" , "photo_type" , "uploader", "city_name", "meta_date"
-            ,"space_size","space_size_medium", "space_size_thumb","meta_camera_make", "meta_camera_model","meta_lens_make","meta_lens_model"
-            ,"meta_focal_length", "meta_focal_length_ff", "meta_iso"
-            ,"location_by_user","location_area","location_country_code","location_lat","location_lon"
-            ,"date_inserted"};
+    private String[] arrColumnNamesGallery = {"name_new", "title", "subtitle", "photo_type", "uploader", "city_name", "meta_date"
+            , "space_size", "space_size_medium", "space_size_thumb", "meta_camera_make", "meta_camera_model", "meta_lens_make", "meta_lens_model"
+            , "meta_focal_length", "meta_focal_length_ff", "meta_iso"
+            , "location_by_user", "location_area", "location_country_code", "location_lat", "location_lon"
+            , "date_inserted"};
 
     private String sqlReadGallery = "SELECT pm.name_new, pm.title, pm.subtitle, pm.photo_type, pm.uploader, d.city_name, DATE_FORMAT(pm.meta_date, '%W %D %M %Y %H:%i %p') AS meta_date, " +
-            " pm.space_size, pm.space_size_medium, pm.space_size_thumb, pm.meta_camera_make, pm.meta_camera_model, pm.meta_lens_make, pm.meta_lens_model, "+
-            " pm.meta_focal_length, pm.meta_focal_length_ff, pm.meta_iso, "+
-            "  pm.location_by_user, pm.location_area, pm.location_country_code, pm.location_lat, pm.location_lon "+
+            " pm.space_size, pm.space_size_medium, pm.space_size_thumb, pm.meta_camera_make, pm.meta_camera_model, pm.meta_lens_make, pm.meta_lens_model, " +
+            " pm.meta_focal_length, pm.meta_focal_length_ff, pm.meta_iso, " +
+            "  pm.location_by_user, pm.location_area, pm.location_country_code, pm.location_lat, pm.location_lon " +
             //, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description, DATE_FORMAT(f.dateInsert , '%D %M %Y') AS formatedDateUpdated  " +
             " FROM  photo_meta pm LEFT JOIN destination d ON pm.destination_Id = d.id ";
 
@@ -165,10 +163,9 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
             urlHost[2] = currentUrl.getRef();
             urlHost[3] = currentUrl.getUserInfo();
             urlHost[4] = currentUrl.toExternalForm();
-            urlHost[5] = currentUrl.getPort()+"";
+            urlHost[5] = currentUrl.getPort() + "";
             urlHost[6] = currentUrl.getAuthority();
             urlHost[7] = currentUrl.getQuery();
-
 
 
             logger.info("  url:" + urlHost[0] + "  url:" + urlHost[1] + "  url:" + urlHost[2] + "  url:" + urlHost[3] + "  url:" + urlHost[4]
@@ -179,7 +176,7 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
             // This is your own method that you may do something with the url.
             // Note that this method runs asynchronously
 
-            strUrlRequestToBeLogged  = currentUrl.toExternalForm();
+            strUrlRequestToBeLogged = currentUrl.toExternalForm();
 
         });
 
@@ -188,9 +185,9 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
 
         verticalLayout.removeAll();
 
-            verticalLayout.add(loadHeader("Photography Clubs", "and their events around earth.",""));
+        verticalLayout.add(loadHeader("Photography Clubs", "and their events around earth.", ""));
 
-             loadClubs(sqlShowClubsSelect+sqlShowClubsWhere+sqlShowClubsOrder,arrClubsColumnNames);
+        loadClubs(sqlShowClubsSelect + sqlShowClubsWhere + sqlShowClubsOrder, arrClubsColumnNames);
 
 
 //            verticalLayout.add(loadFooter());
@@ -199,7 +196,7 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
     }
 
     @Override
-    public void setParameter( BeforeEvent beforeEvent, @OptionalParameter String o) {
+    public void setParameter(BeforeEvent beforeEvent, @OptionalParameter String o) {
 //        section = o;//beforeEvent.getRouteParameters().get("section").orElse("pictures");
     }
 
@@ -227,13 +224,11 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
         hostAddress = inetAddress.getHostAddress();
         canonicalHostname = inetAddress.getCanonicalHostName();
 
-        if(hostname.equalsIgnoreCase(HOSTNAME_LAPTOP)){
+        if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP)) {
             DIR_PHOTOS_SERVER = "/home/mike/Pictures/lazy-photos";
-        }
-        else if(hostname.equalsIgnoreCase("piot")) {
+        } else if (hostname.equalsIgnoreCase("piot")) {
             DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
-        }
-        else{
+        } else {
             DIR_PHOTOS_SERVER = "/home/sammy/lazy-photos";
 
         }
@@ -241,7 +236,7 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
 
         verticalLayout = new VerticalLayout();
         verticalLayout.setId("verticalLayout");
-        if(isMobile){
+        if (isMobile) {
             verticalLayout.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     // Margin.LARGE, //.Left.MEDIUM, Margin.Right.MEDIUM,
@@ -252,7 +247,7 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
 //                    Gap.MEDIUM,
                     AlignItems.CENTER, JustifyContent.CENTER
             );
-        }else {
+        } else {
             verticalLayout.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     // Margin.LARGE, //.Left.MEDIUM, Margin.Right.MEDIUM,
@@ -264,19 +259,19 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
 //                    Gap.LARGE,
                     AlignItems.CENTER, JustifyContent.CENTER
             );
-            verticalLayout.getStyle().set("gap","3rem");
+            verticalLayout.getStyle().set("gap", "3rem");
         }
 
         this.setWidthFull();
         this.add(verticalLayout);
     }
 
-    private VerticalLayout loadHeader(String strHeader, String strSubHeader,String strSection){
+    private VerticalLayout loadHeader(String strHeader, String strSubHeader, String strSection) {
 
         this.strHeader = strHeader;
 
         HorizontalLayout headerContainerMaster = new HorizontalLayout();
-        if(isMobile){
+        if (isMobile) {
             headerContainerMaster.addClassNames(
                     AlignItems.CENTER, JustifyContent.EVENLY,
                     Overflow.HIDDEN, Width.FULL,
@@ -287,7 +282,7 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
                     //   Background.CONTRAST_5,
                     BorderRadius.NONE
             );
-        }else {
+        } else {
             headerContainerMaster.addClassNames(
                     AlignItems.CENTER, JustifyContent.EVENLY,
                     Overflow.HIDDEN, Width.FULL,
@@ -305,14 +300,23 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
                 Margin.NONE, Padding.NONE,
                 Gap.XSMALL);
 
-        H3 header = new H3(strHeader+" ...");
-        header.addClassNames(Margin.Bottom.NONE, Margin.Top.NONE, FontSize.LARGE, FontWeight.BOLD, TextColor.SECONDARY);
+        H2 header = new H2(strHeader);
+        header.addClassNames(
+                AlignItems.CENTER, JustifyContent.START,
+                Margin.Bottom.NONE, Margin.Top.NONE, FontSize.LARGE, FontWeight.BOLD, TextColor.SECONDARY);
 //        header.getStyle().set("font-family", "Times-New-Roman, serif");
 
         Div subheader = new Div(strSubHeader);
-        subheader.addClassNames(Margin.Bottom.NONE, Margin.Top.NONE, FontSize.SMALL, TextColor.SECONDARY);
+        subheader.addClassNames(
+                AlignItems.CENTER, JustifyContent.START,
+                Margin.Bottom.NONE, Margin.Top.NONE, FontSize.SMALL, TextColor.SECONDARY);
 
-        headerTextContainer.add(header,subheader);
+        H3 divSection = new H3(strSection);
+        divSection.addClassNames(
+                AlignItems.CENTER, JustifyContent.CENTER,
+                Margin.Bottom.MEDIUM, Margin.Top.MEDIUM);
+
+        headerTextContainer.add(header, subheader, divSection);
 
         Select<String> sortBy = new Select<>();
         sortBy.setLabel("Sort by");
@@ -320,7 +324,7 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
         sortBy.setValue("Most Viewed");
 
         HorizontalLayout headerContainerSecondary = new HorizontalLayout();
-        if(isMobile){
+        if (isMobile) {
             headerContainerSecondary.addClassNames(
                     AlignItems.CENTER, JustifyContent.EVENLY,
                     Overflow.HIDDEN, Width.FULL,
@@ -331,7 +335,7 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
                     //   Background.CONTRAST_5,
                     BorderRadius.NONE
             );
-        }else {
+        } else {
             headerContainerSecondary.addClassNames(
                     AlignItems.CENTER, JustifyContent.EVENLY,
                     Overflow.HIDDEN, Width.FULL,
@@ -346,7 +350,7 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
 
 
         VerticalLayout layoutFilters = new VerticalLayout();
-        if(isMobile){
+        if (isMobile) {
             layoutFilters.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.EVENLY,
@@ -357,7 +361,7 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
                     //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
                     //  Background.CONTRAST_5,
                     BorderRadius.NONE);
-        }else {
+        } else {
             layoutFilters.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.EVENLY,
@@ -389,7 +393,6 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
 //        layoutFilters.add(checkboxGroupFormat);
 
 
-
         CheckboxGroup<String> checkboxGroupLocation = new CheckboxGroup<>();
         checkboxGroupLocation.setTooltipText("Location");
 //         checkboxGroupLocation.setLabel("Location");
@@ -399,7 +402,7 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
 
 
         VerticalLayout layoutHeaderParameters = new VerticalLayout();
-        if(isMobile){
+        if (isMobile) {
             layoutHeaderParameters.addClassNames(
                     AlignItems.CENTER, JustifyContent.EVENLY,
                     Overflow.HIDDEN, Width.FULL,
@@ -410,7 +413,7 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
                     //   Background.CONTRAST_5,
                     BorderRadius.NONE
             );
-        }else {
+        } else {
             layoutHeaderParameters.addClassNames(
                     AlignItems.CENTER, JustifyContent.EVENLY,
                     Overflow.HIDDEN, Width.FULL,
@@ -424,13 +427,11 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
         }
 
 
-
-
         Select<String> cmbView = new Select<>();
         cmbView.setLabel("View");
 
         cmbView.setItems("Micro View", "Ordinary - No MetaData", "Ordinary - MetaData Bottom", "Ordinary - MetaData Right",
-                "Wide - No MetaData", "Wide - MetaData Bottom","Wide - MetaData Right");
+                "Wide - No MetaData", "Wide - MetaData Bottom", "Wide - MetaData Right");
         cmbView.setValue("Ordinary - No MetaData");
 
         headerContainerMaster.add(headerTextContainer);
@@ -446,9 +447,8 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
     private void loadClubs(String sqlRead, String[] arrColumnNames) {
 
 
-
         List<Record> lstRecords = getRecordsFromDb(sqlRead, arrColumnNames);
-        for (int r = 0;r< lstRecords.size();r++) {
+        for (int r = 0; r < lstRecords.size(); r++) {
 
             Record rec = lstRecords.get(r);
             verticalLayout.add(getClubItem(rec));
@@ -456,7 +456,7 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
 
     }
 
-    public VerticalLayout getClubItem( Record record) {
+    public VerticalLayout getClubItem(Record record) {
 
         // String[] arrColumnsLearning = {"org_name","org_type","city", "country"};
 
@@ -468,22 +468,20 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
 
 
         String strCountry = record.getColumnData("country");
-        String strCity  = record.getColumnData("city");
+        String strCity = record.getColumnData("city");
 
-        String strUrl  = record.getColumnData("url");
+        String strUrl = record.getColumnData("url");
 
         String strImage = record.getColumnData("picture");
 
 //        "url_local_events", "url_fb", "url_yt", "url_insta",
 //                "url_flickr", "url_wikipedia"
 
-        if(!strImage.equalsIgnoreCase("null") && !strImage.equalsIgnoreCase(""))
-        {
-            strImage = strPath+"/"+strImage;
+        if (!strImage.equalsIgnoreCase("null") && !strImage.equalsIgnoreCase("")) {
+            strImage = strPath + "/" + strImage;
         } else {
             strImage = "";
         }
-
 
 
         HorizontalLayout layoutSection = new HorizontalLayout();
@@ -521,13 +519,13 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
         titleName.addClassName(TextColor.SECONDARY);
         titleName.addClassName("lazy-result-line-title");
 
-        Div divLocation = new Div(strCity+" / "+strCountry);
+        Div divLocation = new Div(strCity + " / " + strCountry);
         divLocation.addClassNames(TextColor.SECONDARY);
 //        H6 dayUpdated = new H6("updated: "+strDate);
 //        dayUpdated.getStyle().setColor("#8b94a0");
 
         HorizontalLayout layoutPostTitle = new HorizontalLayout();
-        if(isMobile) {
+        if (isMobile) {
             layoutPostTitle.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.AROUND,
@@ -537,7 +535,7 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
                     //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
                     Background.CONTRAST_10,
                     Border.BOTTOM, Border.RIGHT, BorderColor.CONTRAST_20, BorderRadius.FULL);
-        }else{
+        } else {
             layoutPostTitle.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.AROUND,
@@ -557,10 +555,10 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
 //        layoutPostTitle.setSpacing(true);
 //        layoutPostTitle.setMargin(true);
         //layoutPostTitle.addClassName("lazy-result-line-title-align");
-        layoutPostTitle.add(layoutSection, titleName,divLocation);
+        layoutPostTitle.add(layoutSection, titleName, divLocation);
 
         VerticalLayout layoutClubInfo = new VerticalLayout();
-        if(isMobile){
+        if (isMobile) {
             layoutClubInfo.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.CENTER,
@@ -570,7 +568,7 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
                     Width.FULL,
                     //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
                     Background.CONTRAST_5, BorderRadius.NONE);
-        }else {
+        } else {
             layoutClubInfo.addClassName("bottom-radius-shadow");
             layoutClubInfo.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
@@ -586,17 +584,13 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
         HorizontalLayout layoutImage = new HorizontalLayout();
         layoutImage.addClassNames(Border.ALL, BorderColor.CONTRAST_10, BorderRadius.LARGE);
 
-        if(!strImage.equalsIgnoreCase("null") && !strImage.equalsIgnoreCase(""))
-        {
+        if (!strImage.equalsIgnoreCase("null") && !strImage.equalsIgnoreCase("")) {
             String finalStrImage = strImage;
             final StreamResource imageResource = new StreamResource("image", () -> {
-                try
-                {
+                try {
                     return new FileInputStream(new File(finalStrImage));
-                }
-                catch(final FileNotFoundException e)
-                {
-                    logger.error("FileNotFoundException learning "+e.getMessage());
+                } catch (final FileNotFoundException e) {
+                    logger.error("FileNotFoundException learning " + e.getMessage());
                     return null;
                 }
             });
@@ -665,10 +659,9 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
         String strDescription = record.getColumnData("description");
 
         Paragraph parDescription = new Paragraph(strDescription);
-        if(!strDescription.equalsIgnoreCase("null") && !strDescription.equalsIgnoreCase("")) {
+        if (!strDescription.equalsIgnoreCase("null") && !strDescription.equalsIgnoreCase("")) {
             parDescription.setVisible(true);
-        }
-        else{
+        } else {
             parDescription.setVisible(false);
         }
 
@@ -677,7 +670,7 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
         urlLink.setClassName("lazy-api-link");
         urlLink.setHref(strUrl);
         urlLink.setTarget("_blank");
-        urlLink.setText(strUrl.toLowerCase().replace("https://","").replace("http://",""));
+        urlLink.setText(strUrl.toLowerCase().replace("https://", "").replace("http://", ""));
 
 
 //        HorizontalLayout layoutExtLinks = new HorizontalLayout();
@@ -691,18 +684,17 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
 //        );
 
 
-
 //        HorizontalLayout layoutPostRelated = new HorizontalLayout();
 //        layoutPostRelated.setWidthFull();
 //        layoutPostRelated.setPadding(false);
 //        layoutPostRelated.setSpacing(false);
 
-        layoutClubInfo.add(layoutPostTitle,parDescription,urlLink,getSubTabs("Photoclub",strName,record),getActions());
+        layoutClubInfo.add(layoutPostTitle, parDescription, urlLink, getSubTabs("Photoclub", strName, record), getActions());
 
         return layoutClubInfo;
     }
 
-    private HorizontalLayout getActions(){
+    private HorizontalLayout getActions() {
 
         StreamResource iconLike = new StreamResource("star-empty-icon.svg",
                 () -> getClass().getResourceAsStream("/icons/star-empty-icon.svg"));
@@ -736,7 +728,7 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
         btnShare.setTooltipText("Share it");
 
         HorizontalLayout layoutActions = new HorizontalLayout();
-        if(isMobile) {
+        if (isMobile) {
             layoutActions.addClassNames(
                     Overflow.HIDDEN, //Width.FULL,
                     AlignItems.CENTER, JustifyContent.CENTER,
@@ -749,7 +741,7 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
             );
             layoutActions.addClassName("actions");// AlignItems.STRETCH, JustifyContent.EVENLY ,LumoUtility.Gap.Column.XSMALL);
             layoutActions.addClassName("actions-mobile");// AlignItems.STRETCH, JustifyContent.EVENLY ,LumoUtility.Gap.Column.XSMALL);
-        }else{
+        } else {
             layoutActions.addClassNames(
                     Overflow.HIDDEN, //Width.FULL,
                     AlignItems.CENTER, JustifyContent.CENTER,
@@ -765,18 +757,16 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
         //layoutActions.setWidthFull();
 
 
-        layoutActions.add(btnLike,btnMoreAction, btnComment,btnMoreInfo,btnShare);
+        layoutActions.add(btnLike, btnMoreAction, btnComment, btnMoreInfo, btnShare);
 
         return layoutActions;
     }
 
 
-
-
-    private VerticalLayout getSubTabs (String strContentType, String strContentTitle, Record record) {
+    private VerticalLayout getSubTabs(String strContentType, String strContentTitle, Record record) {
 
         VerticalLayout layoutTabsInfo = new VerticalLayout();
-        if(isMobile) {
+        if (isMobile) {
             layoutTabsInfo.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.CENTER,
@@ -784,7 +774,7 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
                     Padding.NONE,
                     Gap.MEDIUM
             );
-        }else{
+        } else {
             layoutTabsInfo.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.CENTER,
@@ -809,7 +799,6 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
         lstLocationTabs.add("Additional Sources");
 
 
-
         ToggleButtonGroup btnGroup = new ToggleButtonGroup();
         btnGroup.addClassNames(Width.SMALL,
                 Overflow.HIDDEN, Width.AUTO,
@@ -829,19 +818,17 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
                 Height.LARGE
         );
 
-        btnGroup.addValueChangeListener(event->{
-            if(event.getValue().toString().equalsIgnoreCase("My Notes")){
-                divTabContent.setText(" my notes ... of "+strContentTitle+" in "+strContentType);
-            }
-            else if(event.getValue().toString().equalsIgnoreCase("Reviews")){
-                divTabContent.setText(strUsername+" users review 1 ...");
-            }
-            else{
-                divTabContent.setText(strContentTitle+" ....... in "+strContentType);
+        btnGroup.addValueChangeListener(event -> {
+            if (event.getValue().toString().equalsIgnoreCase("My Notes")) {
+                divTabContent.setText(" my notes ... of " + strContentTitle + " in " + strContentType);
+            } else if (event.getValue().toString().equalsIgnoreCase("Reviews")) {
+                divTabContent.setText(strUsername + " users review 1 ...");
+            } else {
+                divTabContent.setText(strContentTitle + " ....... in " + strContentType);
             }
         });
 
-        layoutTabsInfo.add(btnGroup,divTabContent);
+        layoutTabsInfo.add(btnGroup, divTabContent);
 
 
         return layoutTabsInfo;
@@ -851,12 +838,12 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
     private List<Record> getRecordsFromDb(String sql, String[] arrColumnNames) {
 
         logger.info(" photo  getRecordsFromDb:   " + sql);
-        return recordService.findAll(sql,arrColumnNames);
+        return recordService.findAll(sql, arrColumnNames);
     }
 
     private List<Record> getRecordsFromDb(String sql, String[] arrColumnNames, Object[] sqlParValue, String[] sqlParType) {
         logger.info(" photo  getRecordsFromDb with params:   " + sql);
-        return recordService.findAll(sql,arrColumnNames, sqlParValue, sqlParType);
+        return recordService.findAll(sql, arrColumnNames, sqlParValue, sqlParType);
     }
 
     private void logVisitorToDb() {
@@ -893,27 +880,26 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
             strOS = "Unknown";
         }
 
-        if(strUrlRequestToBeLogged == null || strUrlRequestToBeLogged.isEmpty())
-        {
+        if (strUrlRequestToBeLogged == null || strUrlRequestToBeLogged.isEmpty()) {
             strUrlRequestToBeLogged = "NULL";
-        }else{
-            strUrlRequestToBeLogged = "'"+strUrlRequestToBeLogged+"'";
+        } else {
+            strUrlRequestToBeLogged = "'" + strUrlRequestToBeLogged + "'";
         }
 
-        if(strPath == null || strPath.isEmpty()){
+        if (strPath == null || strPath.isEmpty()) {
             strPath = "NULL";
-        }else{
-            strPath = "'"+strPath+"'";
+        } else {
+            strPath = "'" + strPath + "'";
         }
 
 
-        logger.info("photo visitor:" + publicIp + " . " + hostname + " . " + hostAddress + " . " + canonicalHostname +"  .   "+ browser + " " + sessionid);
+        logger.info("photo visitor:" + publicIp + " . " + hostname + " . " + hostAddress + " . " + canonicalHostname + "  .   " + browser + " " + sessionid);
 
         String insertSQL = "INSERT INTO dbvisitor_log SET visitorlogId = 0,  timeOfVisit = now(), ipAddress = '" + publicIp + "', browserName = '" + browser + "', "
                 + " browserVersionMajor = '" + versionOfBrowserMajor + "', browserVersionMinor = '" + versionOfBrowserMinor + "', urlParameter = NULL , timeZoneId = '" + timeZoneId + "', "
                 + "appVersion = '" + APP_NAME + "-" + APP_VERSION + "', sessionId = '" + sessionid + "', sessionCreationTime = '" + sessionDateTime + "', hostname = '" + hostname + "', "
-                + "hostAddress = '" + hostAddress + "', os = '" + strOS + "', section = '" +section+"',"
-                + " item = " +strPath+", ref = "+strUrlRequestToBeLogged+", "
+                + "hostAddress = '" + hostAddress + "', os = '" + strOS + "', section = '" + section + "',"
+                + " item = " + strPath + ", ref = " + strUrlRequestToBeLogged + ", "
                 + " locale = '" + locale + "', localeName ='" + localeName + "' ";
 
         ArrayList<String> lstQueryInsert = new ArrayList<String>();
@@ -939,9 +925,7 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
     }
 
 
-
-
-    private String getFileSize(File file){
+    private String getFileSize(File file) {
 
         return String.format("%.2f", getFileSizeDouble(file));
 
@@ -955,7 +939,7 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
 
     private String getMBFromLong(long size) {
 
-        double filesizeMB = (double)  size / (1024 * 1024);// + " mb";
+        double filesizeMB = (double) size / (1024 * 1024);// + " mb";
         return String.format("%.2f", filesizeMB);
     }
 

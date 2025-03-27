@@ -23,24 +23,32 @@
 /*    display: none;*/
 /*}*/
 
-nav a:any-link {
-    color: darkslategray;
+vaadin-app-layout::part(navbar) {
+    /*background-color: darkseagreen; !* #8ca775; !*var(--lumo-shade-20pct);*!*/
+    /*opacity: 0.3;*/
+    background: linear-gradient(transparent, #f2f1f0); /* var(--lumo-contrast-10pct)); /*#81ac91*/
+    padding: 0px;
+    margin: 0px;
+}
+
+nav a{     /* :any-link */
+    color: #d7efe8; /*darkslategray;*/
+    font-weight: bold;
     text-decoration: none;
-    padding: 0 var(--lumo-space-s);
-    border-radius: 5px; /*var(--lumo-border-radius-m);*/
+    padding: 7px 2px ; /*0 var(--lumo-space-s);*/
+    border-radius: 4px; /*var(--lumo-border-radius-m);*/
     outline: 0;
     border: transparent 1px solid;
 }
 
-
 nav a:hover{
-    color: #cd5c5c; /* #a62f03; !*#cd5c5c;*/
-    background-color: var(--lumo-contrast-5pct);
-    /*border: var(--lumo-contrast-10pct) 1px solid;*/
+    color: var(--lumo-contrast-70pct);  /*var(--lumo-secondary-text-color); /*#cd5c5c; /* #a62f03; !*#cd5c5c;*/
+    background-color: var(--lumo-contrast-10pct);
     transition: 0.4s;
     cursor: pointer;
+    text-decoration: none;
     vaadin-icon{
-        color: var(--lumo-contrast-80pct);
+        color: var(--lumo-contrast-70pct);
     }
 }
 
@@ -50,16 +58,76 @@ nav a:hover{
 /*}*/
 
 nav a:focus-visible {
-    box-shadow: 0 0 0 2px var(--lumo-primary-color-50pct);
+    box-shadow: 0 0 0 2px var(--lumo-primary-color); /*--lumo-primary-color-50pct*/
 }
 
+
 nav a[highlight] vaadin-icon {
-    color: var(--lumo-primary-text-color);
+    color: darkred; /* #cd5c5c; /*var(--lumo-contrast-50pct);*/
 }
 
 nav a[highlight] {
-    color: darkslategray;
-    background-color: var(--lumo-primary-color-10pct);
+    font-weight: bolder;
+    color: var(--lumo-contrast-70pct); /*darkslategray;*/
+    background-color: var(--lumo-contrast-10pct);
+}
+
+.lazy-poll-container{
+    color: var(--lumo-secondary-text-color); /*#626d7c;*/
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+
+    display: flex;
+    flex-flow: row wrap;
+
+    row-gap: 9px;
+    column-gap: 9px;
+    padding: 2px;
+}
+
+.lazy-poll-graph
+{
+    font-size: 14px;
+    color: var(--lumo-tertiary-text-color);  /*#626d7c;*/
+
+    margin: 2px;
+    padding: 7px;
+
+    border-style: solid;
+    border-color: #ecf0f5;
+    border-width: 2px;
+    border-radius: 10px;
+}
+
+.lazy-tab-panel{
+    width: 100%;
+
+    background-color: #f9f9f9; /*#f9f9f9;*/
+    border-radius: 14px;
+    border-color: #e7ebef;
+    border-style: solid;
+    border-width: 1px;
+
+    align-items: center;
+    justify-content: center; /*evenly*/
+}
+
+.lazy-tab{
+    width: 100%;
+    padding: 10px;
+    margin: 0px;
+    border: #f9f9f9 1px solid;
+    border-radius: 5px;
+    /*background-color: #f9f9f9;*/
+    transition: 0.2s;
+}
+
+.lazy-tab:hover{
+    cursor: pointer;
+    background-color: #e7ebef; /* var(--lumo-contrast-10pct);*/
+    border: #e7ebef 1px solid;
+    transition: 0.2s;
 }
 
 /*.left-menu vaadin-side-nav-item[focused]{*/

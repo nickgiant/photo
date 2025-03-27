@@ -2,11 +2,10 @@
 @import url('./views/image-gallery-view.css');
 /*@import url('./views/feed-view.css');*/
 /*@import url('./views/clubs-view.css');*/
-/*@import url('./views/festivals-view.css');*/
+@import url('./views/festivals-view.css');
 @import url('./views/learnings-view.css');
 @import url('./views/home-view.css');
-/*@import url('./views/upload-view.css');*/
-
+@import url('./views/upload-view.css');
 
 html {
     --lumo-font-family: Consolas, "Andale Mono WT", "Andale Mono", "Lucida Console", "Lucida Sans Typewriter", "DejaVu Sans Mono", "Bitstream Vera Sans Mono", "Liberation Mono", "Nimbus Mono L", Monaco, "Courier New", Courier, monospace;

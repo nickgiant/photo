@@ -1,6 +1,5 @@
 package com.photo.act.photo_act.views;
 
-import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.utils.NetUtils;
@@ -9,30 +8,23 @@ import com.photo.act.photo_act.views.components.UploadImageCard;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.HasStyle;
 import com.vaadin.flow.component.UI;
-import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.CheckboxGroup;
-import com.vaadin.flow.component.html.*;
-import com.vaadin.flow.component.icon.SvgIcon;
-import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.html.H3;
+import com.vaadin.flow.component.html.Main;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
-import com.vaadin.flow.component.orderedlayout.Scroller;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
-import com.vaadin.flow.dom.Style;
 import com.vaadin.flow.router.*;
-import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.theme.lumo.LumoUtility.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.vaadin.addons.taefi.component.ToggleButtonGroup;
-import org.vaadin.lineawesome.LineAwesomeIcon;
 
-import java.io.*;
+import java.io.File;
 import java.net.InetAddress;
-import java.net.URL;
 import java.net.UnknownHostException;
 import java.nio.file.FileSystems;
 import java.util.ArrayList;
@@ -44,9 +36,10 @@ import static com.photo.act.photo_act.views.MainLayout.*;
 //@PageTitle("Image Gallery")
 //@RouteAlias("") // empty on homepage
 @Route(value = "upload") //":section?")
+@RouteAlias(value = "upload/member/:member?", layout = MainLayout.class)
 //@RouteAlias(value = ":section/:member?", layout = MainLayout.class)
 //@Menu(order = 0, icon = "line-awesome/svg/th-list-solid.svg")
-public class UploadView extends Main implements HasUrlParameter<String>, BeforeEnterObserver, HasComponents,HasDynamicTitle, HasStyle {
+public class UploadView extends Main implements HasUrlParameter<String>, BeforeEnterObserver, HasComponents, HasDynamicTitle, HasStyle {
 
     private String strColorOfIcons = "#a62f03"; //"#f9943b";//"#a62c5c";//"#7d1e32";
 
@@ -77,8 +70,8 @@ public class UploadView extends Main implements HasUrlParameter<String>, BeforeE
     private String publicIp;
     private String strPath;
     private String hostname;
-    private String hostAddress ;
-    private String canonicalHostname ;
+    private String hostAddress;
+    private String canonicalHostname;
 
     private int userId;
     private String strUsername;
@@ -87,33 +80,32 @@ public class UploadView extends Main implements HasUrlParameter<String>, BeforeE
 
     private String strColorExternalweb = "#9fafd5";
 
-    private String[] arrClubsColumnNames = {"org_name","org_type","org_type_parent","city", "used_for", "country","url", "url_local_events", "url_fb", "url_yt", "url_insta",
-            "url_flickr", "url_wikipedia" };
+    private String[] arrClubsColumnNames = {"org_name", "org_type", "org_type_parent", "city", "used_for", "country", "url", "url_local_events", "url_fb", "url_yt", "url_insta",
+            "url_flickr", "url_wikipedia"};
     private String sqlShowClubsSelect = "SELECT id, org_name, org_type, org_type_parent , city , used_for , country , url , city, address, pc, country, map_x, map_y, url, " +
             " url_local_events, url_fb, url_yt, url_insta, url_flickr, url_wikipedia, " +
             " date_inserted, dateUpdated " +
-            " FROM organizations o " ;
-    private String sqlShowClubsWhere = " WHERE o.org_type LIKE 'Club' " ;
+            " FROM organizations o ";
+    private String sqlShowClubsWhere = " WHERE o.org_type LIKE 'Club' ";
     private String sqlShowClubsOrder = " ORDER BY o.city ASC, o.org_name ASC";
 
 
-    private String[] arrColumnNamesGallery = {"name_new", "title" , "subtitle" , "photo_type" , "uploader", "city_name", "meta_date"
-            ,"space_size","space_size_medium", "space_size_thumb","meta_camera_make", "meta_camera_model","meta_lens_make","meta_lens_model"
-            ,"meta_focal_length", "meta_focal_length_ff", "meta_iso"
-            ,"location_by_user","location_area","location_country_code","location_lat","location_lon"
-            ,"date_inserted"};
+    private String[] arrColumnNamesGallery = {"name_new", "title", "subtitle", "photo_type", "uploader", "city_name", "meta_date"
+            , "space_size", "space_size_medium", "space_size_thumb", "meta_camera_make", "meta_camera_model", "meta_lens_make", "meta_lens_model"
+            , "meta_focal_length", "meta_focal_length_ff", "meta_iso"
+            , "location_by_user", "location_area", "location_country_code", "location_lat", "location_lon"
+            , "date_inserted"};
 
     private String sqlReadGallery = "SELECT pm.name_new, pm.title, pm.subtitle, pm.photo_type, pm.uploader, d.city_name, DATE_FORMAT(pm.meta_date, '%W %D %M %Y %H:%i %p') AS meta_date, " +
-            " pm.space_size, pm.space_size_medium, pm.space_size_thumb, pm.meta_camera_make, pm.meta_camera_model, pm.meta_lens_make, pm.meta_lens_model, "+
-            " pm.meta_focal_length, pm.meta_focal_length_ff, pm.meta_iso, "+
-            "  pm.location_by_user, pm.location_area, pm.location_country_code, pm.location_lat, pm.location_lon "+
+            " pm.space_size, pm.space_size_medium, pm.space_size_thumb, pm.meta_camera_make, pm.meta_camera_model, pm.meta_lens_make, pm.meta_lens_model, " +
+            " pm.meta_focal_length, pm.meta_focal_length_ff, pm.meta_iso, " +
+            "  pm.location_by_user, pm.location_area, pm.location_country_code, pm.location_lat, pm.location_lon " +
             //, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description, DATE_FORMAT(f.dateInsert , '%D %M %Y') AS formatedDateUpdated  " +
             " FROM  photo_meta pm LEFT JOIN destination d ON pm.destination_Id = d.id ";
 
 
     UtilsDate utilsDate;
     String sessionDateTime;
-
 
 
     public UploadView(RecordService recordService) {
@@ -169,7 +161,7 @@ public class UploadView extends Main implements HasUrlParameter<String>, BeforeE
             urlHost[2] = currentUrl.getRef();
             urlHost[3] = currentUrl.getUserInfo();
             urlHost[4] = currentUrl.toExternalForm();
-            urlHost[5] = currentUrl.getPort()+"";
+            urlHost[5] = currentUrl.getPort() + "";
             urlHost[6] = currentUrl.getAuthority();
             urlHost[7] = currentUrl.getQuery();
 
@@ -180,7 +172,7 @@ public class UploadView extends Main implements HasUrlParameter<String>, BeforeE
         UI.getCurrent().getPage().fetchCurrentURL(currentUrl -> {
             // This is your own method that you may do something with the url.
             // Note that this method runs asynchronously
-            strUrlRequestToBeLogged  = currentUrl.toExternalForm();
+            strUrlRequestToBeLogged = currentUrl.toExternalForm();
         });
 
         userId = 1;
@@ -188,8 +180,8 @@ public class UploadView extends Main implements HasUrlParameter<String>, BeforeE
 
         verticalLayout.removeAll();
 
-            verticalLayout.add(loadHeader("Upload Photos", "Upload my photos.",""));
-            loadUploadView();
+        verticalLayout.add(loadHeader("Upload Photos", "", ""));
+        loadUploadView();
 //            verticalLayout.add(loadFooter());
 
 
@@ -198,7 +190,7 @@ public class UploadView extends Main implements HasUrlParameter<String>, BeforeE
     }
 
     @Override
-    public void setParameter( BeforeEvent beforeEvent, @OptionalParameter String o) {
+    public void setParameter(BeforeEvent beforeEvent, @OptionalParameter String o) {
 //        section = o;//beforeEvent.getRouteParameters().get("section").orElse("pictures");
     }
 
@@ -225,13 +217,11 @@ public class UploadView extends Main implements HasUrlParameter<String>, BeforeE
         hostAddress = inetAddress.getHostAddress();
         canonicalHostname = inetAddress.getCanonicalHostName();
 
-        if(hostname.equalsIgnoreCase(HOSTNAME_LAPTOP)){
+        if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP)) {
             DIR_PHOTOS_SERVER = "/home/mike/Pictures/lazy-photos";
-        }
-        else if(hostname.equalsIgnoreCase("piot")) {
+        } else if (hostname.equalsIgnoreCase("piot")) {
             DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
-        }
-        else{
+        } else {
             DIR_PHOTOS_SERVER = "/home/sammy/lazy-photos";
 
         }
@@ -239,7 +229,7 @@ public class UploadView extends Main implements HasUrlParameter<String>, BeforeE
 
         verticalLayout = new VerticalLayout();
         verticalLayout.setId("verticalLayout");
-        if(isMobile){
+        if (isMobile) {
             verticalLayout.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     // Margin.LARGE, //.Left.MEDIUM, Margin.Right.MEDIUM,
@@ -250,7 +240,7 @@ public class UploadView extends Main implements HasUrlParameter<String>, BeforeE
 //                    Gap.MEDIUM,
                     AlignItems.CENTER, JustifyContent.CENTER
             );
-        }else {
+        } else {
             verticalLayout.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     // Margin.LARGE, //.Left.MEDIUM, Margin.Right.MEDIUM,
@@ -262,21 +252,21 @@ public class UploadView extends Main implements HasUrlParameter<String>, BeforeE
 //                    Gap.LARGE,
                     AlignItems.CENTER, JustifyContent.CENTER
             );
-            verticalLayout.getStyle().set("gap","3rem");
+            verticalLayout.getStyle().set("gap", "3rem");
         }
 
         this.setWidthFull();
         this.add(verticalLayout);
     }
 
-    private VerticalLayout loadHeader(String strHeader, String strSubHeader,String strSection){
+    private VerticalLayout loadHeader(String strHeader, String strSubHeader, String strSection) {
 
         this.strHeader = strHeader;
 
         HorizontalLayout headerContainerMaster = new HorizontalLayout();
-        if(isMobile){
+        if (isMobile) {
             headerContainerMaster.addClassNames(
-                    AlignItems.CENTER, JustifyContent.EVENLY,
+                    AlignItems.CENTER, JustifyContent.CENTER,
                     Overflow.HIDDEN, Width.FULL,
                     Margin.NONE,
                     Padding.NONE,
@@ -285,9 +275,9 @@ public class UploadView extends Main implements HasUrlParameter<String>, BeforeE
                     //   Background.CONTRAST_5,
                     BorderRadius.NONE
             );
-        }else {
+        } else {
             headerContainerMaster.addClassNames(
-                    AlignItems.CENTER, JustifyContent.EVENLY,
+                    AlignItems.CENTER, JustifyContent.CENTER,
                     Overflow.HIDDEN, Width.FULL,
                     Margin.NONE,
                     Padding.NONE,
@@ -303,14 +293,23 @@ public class UploadView extends Main implements HasUrlParameter<String>, BeforeE
                 Margin.NONE, Padding.NONE,
                 Gap.XSMALL);
 
-        H3 header = new H3(strHeader+" ...");
-        header.addClassNames(Margin.Bottom.NONE, Margin.Top.NONE, FontSize.LARGE, FontWeight.BOLD, TextColor.SECONDARY);
+        H2 header = new H2(strHeader);
+        header.addClassNames(
+                AlignItems.CENTER, JustifyContent.CENTER,
+                Margin.Bottom.NONE, Margin.Top.NONE, FontSize.LARGE, FontWeight.BOLD, TextColor.SECONDARY);
 //        header.getStyle().set("font-family", "Times-New-Roman, serif");
 
         Div subheader = new Div(strSubHeader);
-        subheader.addClassNames(Margin.Bottom.NONE, Margin.Top.NONE, FontSize.SMALL, TextColor.SECONDARY);
+        subheader.addClassNames(
+                AlignItems.CENTER, JustifyContent.CENTER,
+                Margin.Bottom.NONE, Margin.Top.NONE, FontSize.SMALL, TextColor.SECONDARY);
 
-        headerTextContainer.add(header,subheader);
+        H3 divSection = new H3(strSection);
+        divSection.addClassNames(
+                AlignItems.CENTER, JustifyContent.CENTER,
+                Margin.Bottom.MEDIUM, Margin.Top.MEDIUM);
+
+        headerTextContainer.add(header, subheader, divSection);
 
         Select<String> sortBy = new Select<>();
         sortBy.setLabel("Sort by");
@@ -318,9 +317,9 @@ public class UploadView extends Main implements HasUrlParameter<String>, BeforeE
         sortBy.setValue("Most Viewed");
 
         HorizontalLayout headerContainerSecondary = new HorizontalLayout();
-        if(isMobile){
+        if (isMobile) {
             headerContainerSecondary.addClassNames(
-                    AlignItems.CENTER, JustifyContent.EVENLY,
+                    AlignItems.CENTER, JustifyContent.CENTER,
                     Overflow.HIDDEN, Width.FULL,
                     Margin.NONE,
                     Padding.NONE,
@@ -329,9 +328,9 @@ public class UploadView extends Main implements HasUrlParameter<String>, BeforeE
                     //   Background.CONTRAST_5,
                     BorderRadius.NONE
             );
-        }else {
+        } else {
             headerContainerSecondary.addClassNames(
-                    AlignItems.CENTER, JustifyContent.EVENLY,
+                    AlignItems.CENTER, JustifyContent.CENTER,
                     Overflow.HIDDEN, Width.FULL,
                     Margin.NONE,
                     Padding.NONE,
@@ -343,10 +342,10 @@ public class UploadView extends Main implements HasUrlParameter<String>, BeforeE
         }
 
         VerticalLayout layoutFilters = new VerticalLayout();
-        if(isMobile){
+        if (isMobile) {
             layoutFilters.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
-                    AlignItems.CENTER, JustifyContent.EVENLY,
+                    AlignItems.CENTER, JustifyContent.CENTER,
                     Margin.NONE,
                     Padding.NONE,
                     Gap.SMALL,
@@ -354,10 +353,10 @@ public class UploadView extends Main implements HasUrlParameter<String>, BeforeE
                     //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
                     //  Background.CONTRAST_5,
                     BorderRadius.NONE);
-        }else {
+        } else {
             layoutFilters.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
-                    AlignItems.CENTER, JustifyContent.EVENLY,
+                    AlignItems.CENTER, JustifyContent.CENTER,
                     Margin.NONE,
                     Padding.NONE,
                     Gap.SMALL,
@@ -392,7 +391,7 @@ public class UploadView extends Main implements HasUrlParameter<String>, BeforeE
         layoutFilters.add(checkboxGroupLocation);
 
         VerticalLayout layoutHeaderParameters = new VerticalLayout();
-        if(isMobile){
+        if (isMobile) {
             layoutHeaderParameters.addClassNames(
                     AlignItems.CENTER, JustifyContent.EVENLY,
                     Overflow.HIDDEN, Width.FULL,
@@ -403,7 +402,7 @@ public class UploadView extends Main implements HasUrlParameter<String>, BeforeE
                     //   Background.CONTRAST_5,
                     BorderRadius.NONE
             );
-        }else {
+        } else {
             layoutHeaderParameters.addClassNames(
                     AlignItems.CENTER, JustifyContent.EVENLY,
                     Overflow.HIDDEN, Width.FULL,
@@ -420,7 +419,7 @@ public class UploadView extends Main implements HasUrlParameter<String>, BeforeE
         cmbView.setLabel("View");
 
         cmbView.setItems("Micro View", "Ordinary - No MetaData", "Ordinary - MetaData Bottom", "Ordinary - MetaData Right",
-                "Wide - No MetaData", "Wide - MetaData Bottom","Wide - MetaData Right");
+                "Wide - No MetaData", "Wide - MetaData Bottom", "Wide - MetaData Right");
         cmbView.setValue("Ordinary - No MetaData");
 
         headerContainerMaster.add(headerTextContainer);
@@ -433,8 +432,8 @@ public class UploadView extends Main implements HasUrlParameter<String>, BeforeE
         return layoutHeaderParameters;
     }
 
-    private void loadUploadView(){
-        UploadImageCard uploadImageCard = new UploadImageCard(userId,strUsername,sessionCreation,publicIp,hostname);
+    private void loadUploadView() {
+        UploadImageCard uploadImageCard = new UploadImageCard(userId, strUsername, sessionCreation, publicIp, hostname);
 
         uploadImageCard.addClassNames(
                 Overflow.HIDDEN, Width.FULL,
@@ -453,12 +452,12 @@ public class UploadView extends Main implements HasUrlParameter<String>, BeforeE
     private List<Record> getRecordsFromDb(String sql, String[] arrColumnNames) {
 
         logger.info(" photo  getRecordsFromDb:   " + sql);
-        return recordService.findAll(sql,arrColumnNames);
+        return recordService.findAll(sql, arrColumnNames);
     }
 
     private List<Record> getRecordsFromDb(String sql, String[] arrColumnNames, Object[] sqlParValue, String[] sqlParType) {
         logger.info(" photo  getRecordsFromDb with params:   " + sql);
-        return recordService.findAll(sql,arrColumnNames, sqlParValue, sqlParType);
+        return recordService.findAll(sql, arrColumnNames, sqlParValue, sqlParType);
     }
 
     private void logVisitorToDb() {
@@ -496,17 +495,16 @@ public class UploadView extends Main implements HasUrlParameter<String>, BeforeE
             strOS = "Unknown";
         }
 
-        if(strUrlRequestToBeLogged == null || strUrlRequestToBeLogged.isEmpty())
-        {
+        if (strUrlRequestToBeLogged == null || strUrlRequestToBeLogged.isEmpty()) {
             strUrlRequestToBeLogged = "NULL";
-        }else{
-            strUrlRequestToBeLogged = "'"+strUrlRequestToBeLogged+"'";
+        } else {
+            strUrlRequestToBeLogged = "'" + strUrlRequestToBeLogged + "'";
         }
 
-        if(strPath == null || strPath.isEmpty()){
+        if (strPath == null || strPath.isEmpty()) {
             strPath = "NULL";
-        }else{
-            strPath = "'"+strPath+"'";
+        } else {
+            strPath = "'" + strPath + "'";
         }
 
         logger.info("photo visitor:" + publicIp + " . " + hostname + " . " + hostAddress + " . " + canonicalHostname + " .  " + browser + " " + sessionid);
@@ -514,8 +512,8 @@ public class UploadView extends Main implements HasUrlParameter<String>, BeforeE
         String insertSQL = "INSERT INTO dbvisitor_log SET visitorlogId = 0,  timeOfVisit = now(), ipAddress = '" + publicIp + "', browserName = '" + browser + "', "
                 + " browserVersionMajor = '" + versionOfBrowserMajor + "', browserVersionMinor = '" + versionOfBrowserMinor + "', urlParameter = NULL , timeZoneId = '" + timeZoneId + "', "
                 + "appVersion = '" + APP_NAME + "-" + APP_VERSION + "', sessionId = '" + sessionid + "', sessionCreationTime = '" + sessionDateTime + "', hostname = '" + hostname + "', "
-                + "hostAddress = '" + hostAddress + "', os = '" + strOS + "', section = '" +section+"',"
-                + " item = " +strPath+", ref = "+strUrlRequestToBeLogged+", "
+                + "hostAddress = '" + hostAddress + "', os = '" + strOS + "', section = '" + section + "',"
+                + " item = " + strPath + ", ref = " + strUrlRequestToBeLogged + ", "
                 + " locale = '" + locale + "', localeName ='" + localeName + "' ";
 
         ArrayList<String> lstQueryInsert = new ArrayList<String>();
@@ -540,7 +538,7 @@ public class UploadView extends Main implements HasUrlParameter<String>, BeforeE
         return availWidth;
     }
 
-    private String getFileSize(File file){
+    private String getFileSize(File file) {
 
         return String.format("%.2f", getFileSizeDouble(file));
 
@@ -554,7 +552,7 @@ public class UploadView extends Main implements HasUrlParameter<String>, BeforeE
 
     private String getMBFromLong(long size) {
 
-        double filesizeMB = (double)  size / (1024 * 1024);// + " mb";
+        double filesizeMB = (double) size / (1024 * 1024);// + " mb";
         return String.format("%.2f", filesizeMB);
     }
 }

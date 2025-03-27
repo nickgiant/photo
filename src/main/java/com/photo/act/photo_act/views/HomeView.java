@@ -2,20 +2,18 @@ package com.photo.act.photo_act.views;
 
 import com.flickr4java.flickr.people.User;
 import com.flickr4java.flickr.photos.Photo;
-import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
+import com.flowingcode.vaadin.addons.carousel.Carousel;
+import com.flowingcode.vaadin.addons.carousel.Slide;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.services.PhotoFlickrService;
 import com.photo.act.photo_act.services.WeatherImageService;
 import com.photo.act.photo_act.services.WeatherService;
-import com.photo.act.photo_act.utils.ImageUtilsMeta;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.photo.act.photo_act.views.components.GenericView;
-import com.photo.act.photo_act.views.components.ImageGalleryViewCard;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.HasStyle;
-import com.vaadin.flow.component.Html;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.avatar.Avatar;
 import com.vaadin.flow.component.avatar.AvatarVariant;
@@ -32,28 +30,21 @@ import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.dom.Style;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.StreamResource;
-import com.vaadin.flow.server.VaadinRequest;
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.theme.lumo.LumoUtility.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.security.core.parameters.P;
 import org.vaadin.addons.taefi.component.ToggleButtonGroup;
-import com.flowingcode.vaadin.addons.carousel.Carousel;
-import com.flowingcode.vaadin.addons.carousel.Slide;
-import org.vaadin.lineawesome.LineAwesomeIcon;
 
-import javax.swing.border.Border;
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.net.InetAddress;
-import java.net.URL;
 import java.net.UnknownHostException;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -70,7 +61,7 @@ import static com.photo.act.photo_act.views.MainLayout.*;
 //@RouteAlias(value = "learnings/category/:category/tutor/:tutor?", layout = MainLayout.class)
 
 //@Menu(order = 0, icon = "line-awesome/svg/th-list-solid.svg")
-public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnterObserver, HasComponents,HasDynamicTitle, HasStyle {
+public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnterObserver, HasComponents, HasDynamicTitle, HasStyle {
 
     private String strColorOfIcons = "#a62f03"; //"#f9943b";//"#a62c5c";//"#7d1e32";
 
@@ -85,7 +76,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
     private String locale;
     private String localeName;
     private String section = SECTION_LEARNINGS;
-//    private String forMemberName;
+    //    private String forMemberName;
     private RecordService recordService;
     private String strHeader;
 
@@ -107,16 +98,16 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
     private String publicIp;
     private String strPath;
     private String hostname;
-    private String hostAddress ;
-    private String canonicalHostname ;
+    private String hostAddress;
+    private String canonicalHostname;
 
     private int userId;
     private String strUsername;
 
     private String strColorExternalweb = "#9fafd5";
 
-    String[] arrColumnsLearning = {"title", "picture" , "section" , "category" , "format" , "url" , "artists_ref" , "description" , "duration" , "pages" , "published",
-            "tutor_name" , "website" , "url_fb" , "url_yt" , "url_insta" , "url_flickr" , "url_wikipedia", "url_ref1", "url_ref2", "url_ref3",
+    String[] arrColumnsLearning = {"title", "picture", "section", "category", "format", "url", "artists_ref", "description", "duration", "pages", "published",
+            "tutor_name", "website", "url_fb", "url_yt", "url_insta", "url_flickr", "url_wikipedia", "url_ref1", "url_ref2", "url_ref3",
             "dateInsert"};
 
     // learnings: l.id, l.title, l.picture, l.section , l.category, l.format, l.url, l.parent_id, l.child_index, l.tutor_id, l.artists_ref, l.description, l.duration, l.pages, l.published, l.userIdInsert, l.username, l.dateInsert
@@ -161,7 +152,6 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         isMobile = VaadinSession.getCurrent().getBrowser().isAndroid() || VaadinSession.getCurrent().getBrowser().isIPhone();
 
 
-
         UI.getCurrent().getPage().retrieveExtendedClientDetails(extendedClientDetails -> {
             if (extendedClientDetails == null) {
                 logger.info("Image gallery - error timeZoneId: Cannot retrieve client details:" + extendedClientDetails);
@@ -188,7 +178,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
             urlHost[2] = currentUrl.getRef();
             urlHost[3] = currentUrl.getUserInfo();
             urlHost[4] = currentUrl.toExternalForm();
-            urlHost[5] = currentUrl.getPort()+"";
+            urlHost[5] = currentUrl.getPort() + "";
             urlHost[6] = currentUrl.getAuthority();
             urlHost[7] = currentUrl.getQuery();
 
@@ -200,53 +190,52 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         userId = 1;
         strUsername = "visitor-user";
         verticalLayout.removeAll();
-        VerticalLayout layoutHeaderParameters = loadHeader("", "","");
+        VerticalLayout layoutHeaderParameters = loadHeader("", "", "");
 
         verticalLayout.add(layoutHeaderParameters);
 
 
+        String[] arrColumnNamesGallery = {"name_org", "name_new", "title", "subtitle", "photo_type", "uploader", "uploaderId", "photo_type", "contains",
+                "space_size", "space_size_medium", "space_size_thumb", "city_name", "meta_date", "date_inserted"};
 
-            String[] arrColumnNamesGallery = {"name_org", "name_new", "title" , "subtitle" , "photo_type" , "uploader", "uploaderId", "photo_type", "contains" ,
-                    "space_size", "space_size_medium" , "space_size_thumb" , "city_name", "meta_date", "date_inserted" };
-
-            String sqlReadGallery = "SELECT pm.name_org, pm.name_new, pm.title, pm.subtitle, pm.photo_type, pm.uploader, pm.uploaderId, pm.photo_type, pm.contains, " +
-                    " pm.space_size, pm.space_size_medium, pm.space_size_thumb,  d.city_name, DATE_FORMAT(pm.meta_date, '%W %D %M %Y %H:%i %p') AS meta_date, " + //, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description, DATE_FORMAT(f.dateInsert , '%D %M %Y') AS formatedDateUpdated  " +
-                    " case \n" +
-                    "\t\tWHEN TIMEDIFF(NOW(), pm.date_inserted) <= '00:04:00' THEN 'almost now'\n" +
-                    "\t\tWHEN TIMEDIFF(NOW(), pm.date_inserted) <= '00:09:00' THEN 'less than 10 minutes ago'\n" +
-                    "\t\tWHEN TIMEDIFF(NOW(), pm.date_inserted) <= '00:29:00' THEN 'less than 30 minutes ago'\n" +
-                    "      WHEN TIMEDIFF(NOW(), pm.date_inserted) <= '00:44:00' THEN 'less than 45 minutes ago'\n" +
-                    "      WHEN TIMEDIFF(NOW(), pm.date_inserted) <= '00:59:00' THEN 'almost an hour ago'\n" +
-                    "\t\twhen DATE(NOW()) = DATE(pm.date_inserted)  then CONCAT('today at ' , DATE_FORMAT(pm.date_inserted, '%H:%i %p') )\n" +
-                    "\t\twhen DATE(NOW()+1) < DATE(pm.date_inserted) then CONCAT('yesterday ' , DATE_FORMAT(pm.date_inserted, '%W %D of %M at about %H %p') )\n" +
-                    " \t\twhen DATE(NOW()) > DATE(pm.date_inserted)  then CONCAT(' on ' , DATE_FORMAT(pm.date_inserted, '%W %D of %M %Y') )\n" +
-                    "\t\tELSE DATE_FORMAT(pm.date_inserted, '%W %D %M %Y %H:%i %p')\n" +
-                    " END"+
-                    " AS date_inserted "+
-                    " FROM  photo_meta pm LEFT JOIN destination d ON pm.destination_Id = d.id ";
+        String sqlReadGallery = "SELECT pm.name_org, pm.name_new, pm.title, pm.subtitle, pm.photo_type, pm.uploader, pm.uploaderId, pm.photo_type, pm.contains, " +
+                " pm.space_size, pm.space_size_medium, pm.space_size_thumb,  d.city_name, DATE_FORMAT(pm.meta_date, '%W %D %M %Y %H:%i %p') AS meta_date, " + //, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description, DATE_FORMAT(f.dateInsert , '%D %M %Y') AS formatedDateUpdated  " +
+                " case \n" +
+                "\t\tWHEN TIMEDIFF(NOW(), pm.date_inserted) <= '00:04:00' THEN 'almost now'\n" +
+                "\t\tWHEN TIMEDIFF(NOW(), pm.date_inserted) <= '00:09:00' THEN 'less than 10 minutes ago'\n" +
+                "\t\tWHEN TIMEDIFF(NOW(), pm.date_inserted) <= '00:29:00' THEN 'less than 30 minutes ago'\n" +
+                "      WHEN TIMEDIFF(NOW(), pm.date_inserted) <= '00:44:00' THEN 'less than 45 minutes ago'\n" +
+                "      WHEN TIMEDIFF(NOW(), pm.date_inserted) <= '00:59:00' THEN 'almost an hour ago'\n" +
+                "\t\twhen DATE(NOW()) = DATE(pm.date_inserted)  then CONCAT('today at ' , DATE_FORMAT(pm.date_inserted, '%H:%i %p') )\n" +
+                "\t\twhen DATE(NOW()+1) < DATE(pm.date_inserted) then CONCAT('yesterday ' , DATE_FORMAT(pm.date_inserted, '%W %D of %M at about %H %p') )\n" +
+                " \t\twhen DATE(NOW()) > DATE(pm.date_inserted)  then CONCAT(' on ' , DATE_FORMAT(pm.date_inserted, '%W %D of %M %Y') )\n" +
+                "\t\tELSE DATE_FORMAT(pm.date_inserted, '%W %D %M %Y %H:%i %p')\n" +
+                " END" +
+                " AS date_inserted " +
+                " FROM  photo_meta pm LEFT JOIN destination d ON pm.destination_Id = d.id ";
 //                    " WHERE pm.hostname like '"+hostname+"' "+
 //                    " ORDER BY pm.title ASC ";
         String sqlGalleryAll = sqlReadGallery + " WHERE pm.hostname like '" + hostname + "' AND pm.visible_to = 'ALL' ";
 //        if(!strDestination.equalsIgnoreCase(STR_ALL_DESTINATIONS)) {
 //            sqlGalleryAll = sqlGalleryAll + " AND d.city_name LIKE '" + strDestination + "' ";
 //        }
-        sqlGalleryAll = sqlGalleryAll +  " ORDER BY pm.date_inserted DESC, pm.title ASC, pm.meta_date DESC, pm.name_new ASC ";
+        sqlGalleryAll = sqlGalleryAll + " ORDER BY pm.date_inserted DESC, pm.title ASC, pm.meta_date DESC, pm.name_new ASC ";
 
-        ArrayList<Image> lstImage = loadImagesFromDbToCarousel(sqlGalleryAll, arrColumnNamesGallery, false,true);
+        ArrayList<Image> lstImage = loadImagesFromDbToCarousel(sqlGalleryAll + " LIMIT 10 ", arrColumnNamesGallery, false, false);
 
 
-        H3 titlePage = new H3("Sample Photos");
+        H3 titlePage = new H3("10 Sample Photos");
         verticalLayout.add(titlePage, getCarousel(lstImage));
 
         H3 titleLastPhotos = new H3("Last 6 Photos uploaded");
-        VerticalLayout layoutLastPhotos = loadUploadedPhotos(sqlGalleryAll, arrColumnNamesGallery, false,true);
-        verticalLayout.add(titleLastPhotos,layoutLastPhotos);
+        VerticalLayout layoutLastPhotos = loadUploadedPhotos(sqlGalleryAll + " LIMIT 6 ", arrColumnNamesGallery, false, true);
+        verticalLayout.add(titleLastPhotos, layoutLastPhotos);
 
         H3 titleA = new H3("Current Weather in Athens");
         VerticalLayout layoutResultsA = loadResults("Athens", "Greece");
         H3 titleB = new H3("Current Weather in Thessaloniki");
         VerticalLayout layoutResultsB = loadResults("Thessaloniki", "Greece");
-        verticalLayout.add(titleA,layoutResultsA,titleB,layoutResultsB);
+        verticalLayout.add(titleA, layoutResultsA, titleB, layoutResultsB);
 
 
         this.removeAll();
@@ -257,7 +246,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
     }
 
     @Override
-    public void setParameter( BeforeEvent beforeEvent, @OptionalParameter String o) {
+    public void setParameter(BeforeEvent beforeEvent, @OptionalParameter String o) {
 //        category = o;//beforeEvent.getRouteParameters().get("category").orElse("pictures");
     }
 
@@ -285,20 +274,18 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         hostAddress = inetAddress.getHostAddress();
         canonicalHostname = inetAddress.getCanonicalHostName();
 
-        if(hostname.equalsIgnoreCase(HOSTNAME_LAPTOP)){
+        if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP)) {
             DIR_PHOTOS_SERVER = "/home/mike/Pictures/lazy-photos";
-        }
-        else if(hostname.equalsIgnoreCase("piot")) {
+        } else if (hostname.equalsIgnoreCase("piot")) {
             DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
-        }
-        else{
+        } else {
             DIR_PHOTOS_SERVER = "/home/sammy/lazy-photos";
 
         }
 
         verticalLayout = new VerticalLayout();
         verticalLayout.setId("verticalLayout-home");
-        if(isMobile){
+        if (isMobile) {
             verticalLayout.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     // Margin.LARGE, //.Left.MEDIUM, Margin.Right.MEDIUM,
@@ -309,7 +296,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 //                    Gap.MEDIUM,
                     AlignItems.CENTER, JustifyContent.CENTER
             );
-        }else {
+        } else {
             verticalLayout.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     // Margin.LARGE, //.Left.MEDIUM, Margin.Right.MEDIUM,
@@ -327,7 +314,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
     }
 
-    private VerticalLayout loadResults(String city, String country){
+    private VerticalLayout loadResults(String city, String country) {
 
 //        String strWhereSubClause ="";
 //
@@ -342,28 +329,26 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 //        String sqlRead = sqlLearningsRead + strWhereSubClause + sqlLearningsReadOrderBy;
 
 
-          VerticalLayout  layoutWeather = getWeatherCurrent(city,country);
+        VerticalLayout layoutWeather = getWeatherCurrent(city, country);
 
 //        HorizontalLayout  layoutPhotos = getDestinationPhotos(city,4);
 
-        VerticalLayout  layoutResults =  new VerticalLayout();
+        VerticalLayout layoutResults = new VerticalLayout();
         layoutResults.add(layoutWeather);
 
         return layoutResults;
     }
 
 
-    private VerticalLayout loadUploadedPhotos(String sqlRead, String[] arrColumnNames,boolean isEditable,boolean isThumbnails) {
+    private VerticalLayout loadUploadedPhotos(String sqlRead, String[] arrColumnNames, boolean isEditable, boolean isThumbnails) {
 
-        sqlRead = sqlRead + " LIMIT 6";
 
         strPath = DIR_PHOTOS_SERVER + dirChar;
         String strPath;
-        if(!isThumbnails)
-        {
-            strPath =  DIR_PHOTOS_SERVER + dirChar + subPathShow;
-        }else{
-            strPath  = DIR_PHOTOS_SERVER + dirChar + subPathThumbs;
+        if (!isThumbnails) {
+            strPath = DIR_PHOTOS_SERVER + dirChar + subPathShow;
+        } else {
+            strPath = DIR_PHOTOS_SERVER + dirChar + subPathThumbs;
         }
 
 
@@ -393,20 +378,19 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
             String strUploader = record.getColumnData("uploader");
             String strDateUploaded = record.getColumnData("date_inserted");
 
-            Image image = getImageThumbFromDb(record,strPath);
+            Image image = getImageThumbFromDb(record, strPath);
             image.getStyle().setMaxWidth("auto");
             image.getStyle().setMaxHeight("80px");
             image.addClassNames(BorderRadius.SMALL);
 
             Icon iconLocation = VaadinIcon.LOCATION_ARROW_CIRCLE_O.create();
             iconLocation.getStyle().set("padding", "var(--lumo-space-xs)");
-            if(strCityName==null || strCityName.trim().equalsIgnoreCase("") || strCityName.trim().equalsIgnoreCase("null") ||strCityName.isEmpty()){
-                strCityName="not defined";
+            if (strCityName == null || strCityName.trim().equalsIgnoreCase("") || strCityName.trim().equalsIgnoreCase("null") || strCityName.isEmpty()) {
+                strCityName = "not defined";
             }
 
 
-
-            Span badgeLocation = new Span(iconLocation,new Span(strCityName));
+            Span badgeLocation = new Span(iconLocation, new Span(strCityName));
             // badgeLocation.getElement().setAttribute("theme", "badge");
             badgeLocation.getElement().getThemeList().add("badge contrast");
 
@@ -419,32 +403,32 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
             userAvatar.addThemeVariants(AvatarVariant.LUMO_SMALL);
 
             Span divUser = new Span(strUploader);
-            Span divUserObject = new Span(userAvatar,divUser);
-            divUserObject.addClassNames( AlignContent.CENTER, JustifyContent.CENTER,
+            Span divUserObject = new Span(userAvatar, divUser);
+            divUserObject.addClassNames(AlignContent.CENTER, JustifyContent.CENTER,
                     Padding.SMALL,
-                    BorderRadius.SMALL,Background.CONTRAST_5);
+                    BorderRadius.SMALL, Background.CONTRAST_5);
 
             Icon iconDateTime = VaadinIcon.CALENDAR_CLOCK.create();
             iconDateTime.getStyle().set("padding", "var(--lumo-space-xs)");
-            Span badgeDateTime = new Span(iconDateTime,new Span(strDateUploaded));
-            if(strDateUploaded.trim().isEmpty() || strDateUploaded.equalsIgnoreCase("null")) {
+            Span badgeDateTime = new Span(iconDateTime, new Span(strDateUploaded));
+            if (strDateUploaded.trim().isEmpty() || strDateUploaded.equalsIgnoreCase("null")) {
                 badgeDateTime.setText("");
                 badgeDateTime.setVisible(false);
             }
             badgeDateTime.getElement().getThemeList().add("badge contrast");
 
-            layoutPhotoUploaded.add(image,divUserAvatar,divUserObject,badgeDateTime,divLocation,badgeLocation);
+            layoutPhotoUploaded.add(image, divUserAvatar, divUserObject, badgeDateTime, divLocation, badgeLocation);
 
             layoutLastPhotos.add(layoutPhotoUploaded);
         }
         return layoutLastPhotos;
     }
 
-    private VerticalLayout loadHeader(String strHeader, String strSubHeader, String strSection){
+    private VerticalLayout loadHeader(String strHeader, String strSubHeader, String strSection) {
 
         this.strHeader = strHeader;
         HorizontalLayout headerContainerMaster = new HorizontalLayout();
-        if(isMobile){
+        if (isMobile) {
             headerContainerMaster.addClassNames(
                     AlignItems.CENTER, JustifyContent.EVENLY,
                     Overflow.HIDDEN, Width.FULL,
@@ -455,7 +439,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
                     //   Background.CONTRAST_5,
                     BorderRadius.NONE
             );
-        }else {
+        } else {
             headerContainerMaster.addClassNames(
                     AlignItems.CENTER, JustifyContent.EVENLY,
                     Overflow.HIDDEN, Width.FULL,
@@ -473,14 +457,19 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
                 Margin.NONE, Padding.NONE,
                 Gap.XSMALL);
 
-        H3 header = new H3(strHeader+" ...");
+        H3 header = new H3(strHeader);
         header.addClassNames(Margin.Bottom.NONE, Margin.Top.NONE, FontSize.LARGE, FontWeight.BOLD, TextColor.SECONDARY);
         //header.getStyle().set("font-family", "Times-New-Roman, serif");  //"'Brush Script MT', cursive");
 
         Div subheader = new Div(strSubHeader);
         subheader.addClassNames(Margin.Bottom.NONE, Margin.Top.NONE, FontSize.SMALL, TextColor.SECONDARY);
 
-        headerTextContainer.add(header,subheader);
+        Div divSection = new Div(strSection);
+        divSection.addClassNames(
+                AlignItems.CENTER, JustifyContent.CENTER,
+                Margin.Bottom.NONE, Margin.Top.NONE, FontSize.MEDIUM, FontWeight.BOLD, TextColor.PRIMARY);
+
+        headerTextContainer.add(header, subheader, divSection);
 
         Select<String> sortBy = new Select<>();
         sortBy.setLabel("Sort by");
@@ -488,7 +477,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         sortBy.setValue("Most Viewed");
 
         HorizontalLayout headerContainerSecondary = new HorizontalLayout();
-        if(isMobile){
+        if (isMobile) {
             headerContainerSecondary.addClassNames(
                     AlignItems.CENTER, JustifyContent.BETWEEN,
                     Overflow.HIDDEN, Width.FULL,
@@ -499,7 +488,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
                     //   Background.CONTRAST_5,
                     BorderRadius.NONE
             );
-        }else {
+        } else {
             headerContainerSecondary.addClassNames(
                     AlignItems.CENTER, JustifyContent.BETWEEN,
                     Overflow.HIDDEN, Width.FULL,
@@ -513,7 +502,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         }
 
         Div layoutFilters = new Div();
-        if(isMobile){
+        if (isMobile) {
             layoutFilters.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.CENTER,
@@ -524,7 +513,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
                     //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
                     //  Background.CONTRAST_5,
                     BorderRadius.NONE);
-        }else {
+        } else {
             layoutFilters.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.BETWEEN,
@@ -544,10 +533,10 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         lstCategories.add("Landscape Photography");
         lstCategories.add("Techniques");
 
-        for(int c=0;c<lstCategories.size();c++){
+        for (int c = 0; c < lstCategories.size(); c++) {
             String captionCategory = lstCategories.get(c);
             RouteParam routeCategory = new RouteParam("category", captionCategory);
-            RouterLink linkPhotoCategory = new RouterLink(captionCategory, HomeView.class,new RouteParameters(routeCategory));
+            RouterLink linkPhotoCategory = new RouterLink(captionCategory, HomeView.class, new RouteParameters(routeCategory));
             layoutFilters.add(linkPhotoCategory);
         }
 
@@ -558,14 +547,13 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         checkboxGroupFormat.setItems("Book", "Youtube");
 
 
-
         CheckboxGroup<String> checkboxGroupLocation = new CheckboxGroup<>();
         checkboxGroupLocation.setTooltipText("Location");
 //         checkboxGroupLocation.setLabel("Location");
         checkboxGroupLocation.setItems("Hungary", "UK", "Greece");//, "Thursday",
 
         VerticalLayout layoutHeaderParameters = new VerticalLayout();
-        if(isMobile){
+        if (isMobile) {
             layoutHeaderParameters.addClassNames(
                     AlignItems.CENTER, JustifyContent.EVENLY,
                     Overflow.HIDDEN, Width.FULL,
@@ -576,7 +564,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
                     //   Background.CONTRAST_5,
                     BorderRadius.NONE
             );
-        }else {
+        } else {
             layoutHeaderParameters.addClassNames(
                     AlignItems.CENTER, JustifyContent.EVENLY,
                     Overflow.HIDDEN, Width.FULL,
@@ -593,7 +581,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         cmbView.setLabel("View");
 
         cmbView.setItems("Micro View", "Ordinary - No MetaData", "Ordinary - MetaData Bottom", "Ordinary - MetaData Right",
-                "Wide - No MetaData", "Wide - MetaData Bottom","Wide - MetaData Right");
+                "Wide - No MetaData", "Wide - MetaData Bottom", "Wide - MetaData Right");
         cmbView.setValue("Ordinary - No MetaData");
 
         headerContainerMaster.add(headerTextContainer);
@@ -616,7 +604,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         layoutCarousel.addClassName("carousel");
 
         Slide[] slides = new Slide[lstImage.size()];
-        for(int i=0;i<lstImage.size();i++){
+        for (int i = 0; i < lstImage.size(); i++) {
 
             Image image = lstImage.get(i);
             image.addClassNames(Width.FULL, Height.AUTO, BorderRadius.LARGE);
@@ -634,20 +622,19 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
                 BorderRadius.LARGE,
                 AlignItems.CENTER, JustifyContent.CENTER);
 
-        Div titleImg = new Div((lstImage.size())+" photos");
-        layoutCarousel.add(carousel,titleImg);
+        Div titleImg = new Div((lstImage.size()) + " photos");
+        layoutCarousel.add(carousel, titleImg);
 
         return layoutCarousel;
     }
 
-    private ArrayList<Image> loadImagesFromDbToCarousel(String sqlRead, String[] arrColumnNames,boolean isEditable,boolean isThumbnails) {
+    private ArrayList<Image> loadImagesFromDbToCarousel(String sqlRead, String[] arrColumnNames, boolean isEditable, boolean isThumbnails) {
         strPath = DIR_PHOTOS_SERVER + dirChar;
         String strPath;
-        if(!isThumbnails)
-        {
-            strPath =  DIR_PHOTOS_SERVER + dirChar + subPathShow;
-        }else{
-            strPath  = DIR_PHOTOS_SERVER + dirChar + subPathThumbs;
+        if (!isThumbnails) {
+            strPath = DIR_PHOTOS_SERVER + dirChar + subPathMedium;
+        } else {
+            strPath = DIR_PHOTOS_SERVER + dirChar + subPathThumbs;
         }
 
 //        Div divGallery = new Div();
@@ -664,7 +651,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
 
             Record rec = lstRecords.get(r);
-            lstImage.add(getImageThumbFromDb(rec,strPath));
+            lstImage.add(getImageThumbFromDb(rec, strPath));
         }
         return lstImage;
     }
@@ -689,12 +676,12 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 //        ArrayList<RouterLink> lstRouterLinks =new ArrayList<>();
 //        lstRouterLinks.add(linkDestination);
 
-        if(strTitle== null || strTitle.isEmpty()){
+        if (strTitle == null || strTitle.isEmpty()) {
             strTitle = "image";
         }
 
         String strImagePath = strPath + dirChar + strFileName;
-        logger.info(" strImagePath "+strImagePath);
+        logger.info(" strImagePath " + strImagePath);
 //        Image image1 = new Image("https://images.unsplash.com/photo-1536048810607-3dc7f86981cb?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80", "img2");
         //ImageGalleryViewCard imageGalleryViewCard = new ImageGalleryViewCard(record,strImagePath,isMobile,userId, strUsername, sessionCreation,hostname,publicIp, isEditable, linkUploader, lstRouterLinks, recordService);
         Image image = new Image();
@@ -725,10 +712,10 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         layoutPhotos.setSpacing(false);
         //layoutPhotos.setWidthFull();
         PhotoFlickrService photoFlickr = new PhotoFlickrService();
-        ArrayList<Photo> listPhotos = photoFlickr.findPhotos(destination,count);
-        for(int p=0;p<listPhotos.size();p++) {
+        ArrayList<Photo> listPhotos = photoFlickr.findPhotos(destination, count);
+        for (int p = 0; p < listPhotos.size(); p++) {
 
-            Photo photo =  listPhotos.get(p);
+            Photo photo = listPhotos.get(p);
             Image image = new Image();
             image.addClassNames(BorderRadius.LARGE);
 
@@ -738,10 +725,10 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 //                image.setMaxHeight("90px");
 //                image.setWidth("auto");
 //            }else{
-                String thumbUrl = photo.getMedium640Url();//.getThumbnailUrl();//.getSmallUrl(); //.getThumbnailUrl();
-                image.setSrc(thumbUrl);
-                image.setMaxHeight("340px");
-                image.setWidth("auto");
+            String thumbUrl = photo.getMedium640Url();//.getThumbnailUrl();//.getSmallUrl(); //.getThumbnailUrl();
+            image.setSrc(thumbUrl);
+            image.setMaxHeight("340px");
+            image.setWidth("auto");
 //            }
 
 
@@ -756,15 +743,13 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
             String strTitle = photo.getTitle();
 
 
-
-
             VerticalLayout photoLayout = new VerticalLayout();
             photoLayout.addClassNames(Width.FULL,
                     AlignItems.CENTER, JustifyContent.BETWEEN,
                     Margin.NONE, Padding.SMALL,
                     BorderRadius.LARGE,
                     Background.CONTRAST_5
-                    );
+            );
 
 
             HorizontalLayout layoutUser = new HorizontalLayout();
@@ -777,12 +762,12 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
             String userId = user.getId();
             String userName = user.getRealName(); //photoFlickr.getUserName(userId); //user.getUsername();
 
-            strTitle = (strTitle != null ? photo.getTitle() : "" );
+            strTitle = (strTitle != null ? photo.getTitle() : "");
             strRealName = strRealName != null ? strRealName : userId;
 
-            logger.info("  "+userName+"  "+userId+"  ");
+            logger.info("  " + userName + "  " + userId + "  ");
 
-            String userUrl = "https://www.flickr.com/photos/"+userId;
+            String userUrl = "https://www.flickr.com/photos/" + userId;
             Anchor linkUserInNewTab = new Anchor(userUrl, "");
             linkUserInNewTab.getElement().setAttribute("target", "_blank");
             linkUserInNewTab.addComponentAtIndex(0, VaadinIcon.USER.create());
@@ -793,17 +778,14 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
             //divUser.setText("flickr user: ");
             //divUser.setClassName("lazy-result-line-button");
 
-            layoutUser.add(linkUserInNewTab,new Div(strRealName));
-            photoLayout.add(layoutUser, image,new Div(strTitle));
+            layoutUser.add(linkUserInNewTab, new Div(strRealName));
+            photoLayout.add(layoutUser, image, new Div(strTitle));
             layoutPhotos.add(photoLayout);
-
 
 
 //
 //                photoUrls.add(photoList.get(i).getThumbnailUrl());//.getSmall320Url());
 //             //   layoutPhotos.add(photoList.get(i).getThumbnailUrl());
-
-
 
 
 //            Image image = new Image(listPhotosLayout.get(p),destination);
@@ -817,7 +799,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
     }
 
-    public VerticalLayout getWeatherCurrent(String destination, String country){
+    public VerticalLayout getWeatherCurrent(String destination, String country) {
         HorizontalLayout layoutWeather = new HorizontalLayout();
         layoutWeather.getStyle().setColor("#8b94a0");
         layoutWeather.addClassNames(
@@ -828,10 +810,10 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
         WeatherService weatherService = new WeatherService("metric");
 
-        String[] locations = weatherService.lookUpLocation(destination,"",country);
+        String[] locations = weatherService.lookUpLocation(destination, "", country);
 
-        for(int i = 0;i<locations.length;i++) {
-            logger.info("locations  "+locations[i]);
+        for (int i = 0; i < locations.length; i++) {
+            logger.info("locations  " + locations[i]);
         }
         String[] currentWeatherData = weatherService.getCurrentWeatherDataMetric(locations);
         //String[][] dailyForecast =weatherService.getDailyForecastMetric(locations);
@@ -934,46 +916,46 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         Div divClouds = new Div(currentWeatherData[15]);
         divClouds.getStyle().setFontWeight(Style.FontWeight.BOLDER);
 
-        Div divRain= new Div();
+        Div divRain = new Div();
         String rain = currentWeatherData[16];
 
         Div divVisibility = new Div(currentWeatherData[17]);
         divVisibility.getStyle().setFontWeight(Style.FontWeight.BOLDER);
 
 
-        layoutRight.add(new HorizontalLayout(new Div("L: "), divL, new Div("H: "),divH ));
+        layoutRight.add(new HorizontalLayout(new Div("L: "), divL, new Div("H: "), divH));
         Div divNow = new Div("Now");
         divNow.getStyle().setFontSize("11px");
         layoutRight.add(new HorizontalLayout(divNow));
 
         layoutRight.add(new HorizontalLayout(new Div("Feels like: "), divFeelsLike));
-        layoutRight.add(new HorizontalLayout(new Div("Clouds: "),divClouds));
+        layoutRight.add(new HorizontalLayout(new Div("Clouds: "), divClouds));
 
-        if(!rain.equalsIgnoreCase("")) {
+        if (!rain.equalsIgnoreCase("")) {
             divRain.setText(currentWeatherData[16]);
             divRain.getStyle().setFontWeight(Style.FontWeight.BOLDER);
-            layoutRight.add(new HorizontalLayout(new Div("Rain: "),divRain));
+            layoutRight.add(new HorizontalLayout(new Div("Rain: "), divRain));
         }
 
         layoutRight.add(new HorizontalLayout(new Div("Humidity: "), divHumidity));
         layoutRight.add(new HorizontalLayout(new Div("Wind speed: "), divWindSpeed));
 
-        layoutWeather.add(layoutLeft,layoutRight);
+        layoutWeather.add(layoutLeft, layoutRight);
 
         VerticalLayout layout = new VerticalLayout();
         layout.setMargin(false);
         layout.setSpacing(false);
         layout.setPadding(false);
-        layout.addClassNames(AlignItems.CENTER,JustifyContent.CENTER);
+        layout.addClassNames(AlignItems.CENTER, JustifyContent.CENTER);
 
         Anchor apiLink = new Anchor();
         apiLink.getStyle().setColor("#8b94a0");
         apiLink.setClassName("lazy-api-link");
         apiLink.setHref(weatherService.getUrlReference());
         apiLink.setTarget("_blank");
-        apiLink.setText("Weather data by: "+weatherService.getTitleReference());
+        apiLink.setText("Weather data by: " + weatherService.getTitleReference());
 
-        layout.add(layoutWeather,apiLink);
+        layout.add(layoutWeather, apiLink);
 
         return layout;
 
@@ -990,8 +972,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 //    }
 
 
-
-    private HorizontalLayout getActions(){
+    private HorizontalLayout getActions() {
 
         StreamResource iconLike = new StreamResource("star-empty-icon.svg",
                 () -> getClass().getResourceAsStream("/icons/star-empty-icon.svg"));
@@ -1025,7 +1006,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         btnShare.setTooltipText("Share it");
 
         HorizontalLayout layoutActions = new HorizontalLayout();
-        if(isMobile) {
+        if (isMobile) {
             layoutActions.addClassNames(
                     Overflow.HIDDEN, //Width.FULL,
                     AlignItems.CENTER, JustifyContent.CENTER,
@@ -1037,7 +1018,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 //                    BorderRadius.LARGE
             );
             layoutActions.addClassName("actions-toolbar");// AlignItems.STRETCH, JustifyContent.EVENLY ,LumoUtility.Gap.Column.XSMALL);
-        }else{
+        } else {
             layoutActions.addClassNames(
                     Overflow.HIDDEN, //Width.FULL,
                     AlignItems.CENTER, JustifyContent.CENTER,
@@ -1053,15 +1034,15 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         //layoutActions.setWidthFull();
 
 
-        layoutActions.add(btnLike,btnMoreAction, btnComment,btnMoreInfo,btnShare);
+        layoutActions.add(btnLike, btnMoreAction, btnComment, btnMoreInfo, btnShare);
 
         return layoutActions;
     }
 
-    private VerticalLayout getSubTabs (String strContentType, String strContentTitle, Record record) {
+    private VerticalLayout getSubTabs(String strContentType, String strContentTitle, Record record) {
 
         VerticalLayout layoutTabsInfo = new VerticalLayout();
-        if(isMobile) {
+        if (isMobile) {
             layoutTabsInfo.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.CENTER,
@@ -1069,7 +1050,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
                     Padding.NONE,
                     Gap.MEDIUM
             );
-        }else{
+        } else {
             layoutTabsInfo.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.CENTER,
@@ -1094,7 +1075,6 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         lstLocationTabs.add("Additional Sources");
 
 
-
         ToggleButtonGroup btnGroup = new ToggleButtonGroup();
         btnGroup.addClassNames(Width.SMALL,
                 Overflow.HIDDEN, Width.AUTO,
@@ -1114,19 +1094,17 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
                 Height.LARGE
         );
 
-        btnGroup.addValueChangeListener(event->{
-            if(event.getValue().toString().equalsIgnoreCase("My Notes")){
-                divTabContent.setText(" my notes ... of "+strContentTitle+" in "+strContentType);
-            }
-            else if(event.getValue().toString().equalsIgnoreCase("Reviews")){
-                divTabContent.setText(strUsername+" users review 1 ...");
-            }
-            else{
-                divTabContent.setText(strContentTitle+" ....... in "+strContentType);
+        btnGroup.addValueChangeListener(event -> {
+            if (event.getValue().toString().equalsIgnoreCase("My Notes")) {
+                divTabContent.setText(" my notes ... of " + strContentTitle + " in " + strContentType);
+            } else if (event.getValue().toString().equalsIgnoreCase("Reviews")) {
+                divTabContent.setText(strUsername + " users review 1 ...");
+            } else {
+                divTabContent.setText(strContentTitle + " ....... in " + strContentType);
             }
         });
 
-        layoutTabsInfo.add(btnGroup,divTabContent);
+        layoutTabsInfo.add(btnGroup, divTabContent);
 
 
         return layoutTabsInfo;
@@ -1136,7 +1114,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
     private List<Record> getRecordsFromDb(String sql, String[] arrColumnNames) {
 
         logger.info(" photo  getRecordsFromDb:   " + sql);
-        return recordService.findAll(sql,arrColumnNames);
+        return recordService.findAll(sql, arrColumnNames);
     }
 
 //    private List<Record> getRecordsFromDb(String sql, String[] arrColumnNames, Object[] sqlParValue, String[] sqlParType) {
@@ -1156,12 +1134,11 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
             // This is your own method that you may do something with the url.
             // Note that this method runs asynchronously
 
-            strUrlRequestToBeLogged  = currentUrl.toExternalForm();
+            strUrlRequestToBeLogged = currentUrl.toExternalForm();
 
         });
 
         sysUserName = System.getProperty("user.name");
-
 
 
         // String ipAddress = VaadinSession.getCurrent().getBrowser().getAddress();
@@ -1172,7 +1149,6 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
 
         int[] availWidth = calcTotalAvailableWidth();
-
 
 
         String strOS = "";
@@ -1193,27 +1169,26 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         }
 
 
-        if(strUrlRequestToBeLogged == null || strUrlRequestToBeLogged.isEmpty() || strUrlRequestToBeLogged.equalsIgnoreCase("null"))
-        {
+        if (strUrlRequestToBeLogged == null || strUrlRequestToBeLogged.isEmpty() || strUrlRequestToBeLogged.equalsIgnoreCase("null")) {
             strUrlRequestToBeLogged = "NULL";
-        }else{
-            strUrlRequestToBeLogged = "'"+strUrlRequestToBeLogged+"'";
+        } else {
+            strUrlRequestToBeLogged = "'" + strUrlRequestToBeLogged + "'";
         }
 
-        if(strPath == null || strPath.isEmpty()){
+        if (strPath == null || strPath.isEmpty()) {
             strPath = "NULL";
-        }else{
-            strPath = "'"+strPath+"'";
+        } else {
+            strPath = "'" + strPath + "'";
         }
 
 
-        logger.info("photo visitor:" + publicIp + " . " + hostname + " . " + hostAddress + " . " + canonicalHostname + "  .  "+ browser + " " + sessionid);
+        logger.info("photo visitor:" + publicIp + " . " + hostname + " . " + hostAddress + " . " + canonicalHostname + "  .  " + browser + " " + sessionid);
 
         String insertSQL = "INSERT INTO dbvisitor_log SET visitorlogId = 0,  timeOfVisit = now(), ipAddress = '" + publicIp + "', browserName = '" + browser + "', "
                 + " browserVersionMajor = '" + versionOfBrowserMajor + "', browserVersionMinor = '" + versionOfBrowserMinor + "', urlParameter = NULL , timeZoneId = '" + timeZoneId + "', "
                 + " appVersion = '" + APP_NAME + "-" + APP_VERSION + "', sessionId = '" + sessionid + "', sessionCreationTime = '" + sessionDateTime + "', hostname = '" + hostname + "', "
-                + " hostAddress = '" + hostAddress + "', os = '" + strOS + "', section = '" +section+"',"
-                + " item = " +strPath+", ref = "+strUrlRequestToBeLogged+", "
+                + " hostAddress = '" + hostAddress + "', os = '" + strOS + "', section = '" + section + "',"
+                + " item = " + strPath + ", ref = " + strUrlRequestToBeLogged + ", "
                 + " locale = '" + locale + "', localeName ='" + localeName + "' ";
 
         ArrayList<String> lstQueryInsert = new ArrayList<String>();
@@ -1239,9 +1214,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
     }
 
 
-
-
-    private String getFileSize(File file){
+    private String getFileSize(File file) {
 
         return String.format("%.2f", getFileSizeDouble(file));
 
@@ -1255,7 +1228,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
     private String getMBFromLong(long size) {
 
-        double filesizeMB = (double)  size / (1024 * 1024);// + " mb";
+        double filesizeMB = (double) size / (1024 * 1024);// + " mb";
         return String.format("%.2f", filesizeMB);
     }
 
