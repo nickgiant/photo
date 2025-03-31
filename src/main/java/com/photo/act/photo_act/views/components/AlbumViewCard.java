@@ -2,7 +2,7 @@ package com.photo.act.photo_act.views.components;
 
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
-import com.photo.act.photo_act.views.ImageAlbumsView;
+import com.photo.act.photo_act.views.AlbumsView;
 import com.vaadin.flow.component.avatar.Avatar;
 import com.vaadin.flow.component.avatar.AvatarVariant;
 import com.vaadin.flow.component.button.Button;
@@ -77,10 +77,10 @@ public class AlbumViewCard extends RouterLink {
 
         RouteParam routeAlbum = new RouteParam("title", strTitle);
         RouteParam routeUploader = new RouteParam("member", strUploader);
-        //RouterLink linkUploader = new RouterLink(strUploader, ImageAlbumsView.class, new RouteParameters(routeAlbum, routeUploader));
-        //RouterLink linkAlbum = new RouterLink(strTitle, ImageAlbumsView.class, new RouteParameters(routeAlbum, routeUploader));
+        //RouterLink linkUploader = new RouterLink(strUploader, AlbumsView.class, new RouteParameters(routeAlbum, routeUploader));
+        //RouterLink linkAlbum = new RouterLink(strTitle, AlbumsView.class, new RouteParameters(routeAlbum, routeUploader));
 
-        this.setRoute(ImageAlbumsView.class, new RouteParameters(routeAlbum, routeUploader));
+        this.setRoute(AlbumsView.class, new RouteParameters(routeAlbum, routeUploader));
 
         if (strPhoto1 != null && !strPhoto1.isEmpty() && !strPhoto1.equalsIgnoreCase("null")) {
             strPhotoUrl = strPhoto1;
@@ -97,7 +97,7 @@ public class AlbumViewCard extends RouterLink {
 
                 return new FileInputStream(file);
             } catch (final FileNotFoundException e) {
-                logErrorInDb(e, "ImageGalleryViewCard StreamResource FileNotFoundException", hostname, userId, strUserName, publicIp, sessionCreation, file.getAbsolutePath());
+                logErrorInDb(e, "GalleryImageViewCard StreamResource FileNotFoundException", hostname, userId, strUserName, publicIp, sessionCreation, file.getAbsolutePath());
                 // logErrorInDb(e,hostname,"CreationsViewCard StreamResource",userId,strUserName,file.getAbsolutePath());
                 logger.error("FileNotFoundException  " + e.getMessage());
             }

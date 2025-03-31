@@ -1,19 +1,23 @@
 package com.photo.act.photo_act.views;
 
-import com.photo.act.photo_act.services.*;
 import com.flickr4java.flickr.people.User;
 import com.flickr4java.flickr.photos.Photo;
 import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
+import com.photo.act.photo_act.services.PhotoFlickrService;
+import com.photo.act.photo_act.services.WeatherImageService;
+import com.photo.act.photo_act.services.WeatherService;
 import com.photo.act.photo_act.utils.UtilsDate;
-import com.photo.act.photo_act.views.components.ImageGalleryViewCard;
+import com.photo.act.photo_act.views.components.GalleryImageViewCard;
 import com.photo.act.photo_act.views.components.UploadImageCard;
-import com.vaadin.flow.component.*;
-import com.vaadin.flow.component.checkbox.CheckboxGroup;
+import com.vaadin.flow.component.HasComponents;
+import com.vaadin.flow.component.HasStyle;
+import com.vaadin.flow.component.Html;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.checkbox.CheckboxGroup;
 import com.vaadin.flow.component.html.*;
-import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
@@ -23,7 +27,6 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.dom.Style;
 import com.vaadin.flow.router.*;
-import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
@@ -37,9 +40,10 @@ import java.io.*;
 import java.net.InetAddress;
 import java.net.URL;
 import java.net.UnknownHostException;
-import java.nio.file.*;
-import java.util.*;
+import java.nio.file.FileSystems;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import static com.photo.act.photo_act.views.MainLayout.*;
 
@@ -49,7 +53,7 @@ import static com.photo.act.photo_act.views.MainLayout.*;
 @Route(value = "commons")
 //@RouteAlias(value = ":section/:member?", layout = MainLayout.class)
 @Menu(order = 0, icon = "line-awesome/svg/th-list-solid.svg")
-public class CommonsView extends Main implements HasUrlParameter<String>, BeforeEnterObserver, HasComponents,HasDynamicTitle, HasStyle {
+public class CommonsView extends Main implements HasUrlParameter<String>, BeforeEnterObserver, HasComponents, HasDynamicTitle, HasStyle {
 
     private String strColorOfIcons = "#a62f03"; //"#f9943b";//"#a62c5c";//"#7d1e32";
 
@@ -80,34 +84,34 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
     private String publicIp;
     private String strPath;
     private String hostname;
-    private String hostAddress ;
-    private String canonicalHostname ;
+    private String hostAddress;
+    private String canonicalHostname;
 
     private int userId;
     private String strUsername;
 
     private String strColorExternalweb = "#9fafd5";
 
-    private String[] arrClubsColumnNames = {"org_name","org_type","org_type_parent","city", "used_for", "country","url", "url_local_events", "url_fb", "url_yt", "url_insta",
-            "url_flickr", "url_wikipedia" };
+    private String[] arrClubsColumnNames = {"org_name", "org_type", "org_type_parent", "city", "used_for", "country", "url", "url_local_events", "url_fb", "url_yt", "url_insta",
+            "url_flickr", "url_wikipedia"};
     private String sqlShowClubsSelect = "SELECT id, org_name, org_type, org_type_parent , city , used_for , country , url , city, address, pc, country, map_x, map_y, url, " +
             " url_local_events, url_fb, url_yt, url_insta, url_flickr, url_wikipedia, " +
             " date_inserted, dateUpdated " +
-            " FROM organizations o " ;
-    private String sqlShowClubsWhere = " WHERE o.org_type LIKE 'Club' " ;
+            " FROM organizations o ";
+    private String sqlShowClubsWhere = " WHERE o.org_type LIKE 'Club' ";
     private String sqlShowClubsOrder = " ORDER BY o.city ASC, o.org_name ASC";
 
 
-    private String[] arrColumnNamesGallery = {"name_new", "title" , "subtitle" , "photo_type" , "uploader", "city_name", "meta_date"
-            ,"space_size","space_size_medium", "space_size_thumb","meta_camera_make", "meta_camera_model","meta_lens_make","meta_lens_model"
-            ,"meta_focal_length", "meta_focal_length_ff", "meta_iso"
-            ,"location_by_user","location_area","location_country_code","location_lat","location_lon"
-            ,"date_inserted"};
+    private String[] arrColumnNamesGallery = {"name_new", "title", "subtitle", "photo_type", "uploader", "city_name", "meta_date"
+            , "space_size", "space_size_medium", "space_size_thumb", "meta_camera_make", "meta_camera_model", "meta_lens_make", "meta_lens_model"
+            , "meta_focal_length", "meta_focal_length_ff", "meta_iso"
+            , "location_by_user", "location_area", "location_country_code", "location_lat", "location_lon"
+            , "date_inserted"};
 
     private String sqlReadGallery = "SELECT pm.name_new, pm.title, pm.subtitle, pm.photo_type, pm.uploader, d.city_name, DATE_FORMAT(pm.meta_date, '%W %D %M %Y %H:%i %p') AS meta_date, " +
-            " pm.space_size, pm.space_size_medium, pm.space_size_thumb, pm.meta_camera_make, pm.meta_camera_model, pm.meta_lens_make, pm.meta_lens_model, "+
-            " pm.meta_focal_length, pm.meta_focal_length_ff, pm.meta_iso, "+
-            "  pm.location_by_user, pm.location_area, pm.location_country_code, pm.location_lat, pm.location_lon "+
+            " pm.space_size, pm.space_size_medium, pm.space_size_thumb, pm.meta_camera_make, pm.meta_camera_model, pm.meta_lens_make, pm.meta_lens_model, " +
+            " pm.meta_focal_length, pm.meta_focal_length_ff, pm.meta_iso, " +
+            "  pm.location_by_user, pm.location_area, pm.location_country_code, pm.location_lat, pm.location_lon " +
             //, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description, DATE_FORMAT(f.dateInsert , '%D %M %Y') AS formatedDateUpdated  " +
             " FROM  photo_meta pm LEFT JOIN destination d ON pm.destination_Id = d.id ";
 
@@ -146,10 +150,10 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         strUsername = "visitor-user";
 
         verticalLayout.removeAll();
-        if(section.equalsIgnoreCase(SECTION_HOME)) {
-            verticalLayout.add(loadHeader("Welcome!", "",SECTION_HOME));
-        }else if(section.equalsIgnoreCase(SECTION_GALLERY)) {
-            verticalLayout.add(loadHeader("Gallery of Images","To please your eyes",SECTION_GALLERY));
+        if (section.equalsIgnoreCase(SECTION_HOME)) {
+            verticalLayout.add(loadHeader("Welcome!", "", SECTION_HOME));
+        } else if (section.equalsIgnoreCase(SECTION_GALLERY)) {
+            verticalLayout.add(loadHeader("Gallery of Images", "To please your eyes", SECTION_GALLERY));
 
             //strPath = DIR_PHOTOS_SERVER + dirChar + subPathThumbs;
 
@@ -159,18 +163,18 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
 //                    " FROM  photo_meta pm LEFT JOIN destination d ON pm.destination_Id = d.id" +
 //                    " WHERE pm.hostname like '"+hostname+"' "+
 //                    " ORDER BY pm.title ASC ";
-            String sqlGalleryAll = sqlReadGallery+
-                    " WHERE pm.hostname like '"+hostname+"' "+
+            String sqlGalleryAll = sqlReadGallery +
+                    " WHERE pm.hostname like '" + hostname + "' " +
                     " ORDER BY pm.title ASC ";
 
-            loadImagesFromDb(sqlGalleryAll, arrColumnNamesGallery,false);
+            loadImagesFromDb(sqlGalleryAll, arrColumnNamesGallery, false);
 
 
             verticalLayout.add(loadFooter());
-        }else if(section.equalsIgnoreCase(SECTION_FESTIVALS)) {
-            verticalLayout.add(loadHeader("Festivals and Exhibitions", "Around the World, being prepared for visitors",SECTION_FESTIVALS));
+        } else if (section.equalsIgnoreCase(SECTION_FESTIVALS)) {
+            verticalLayout.add(loadHeader("Festivals and Exhibitions", "Around the World, being prepared for visitors", SECTION_FESTIVALS));
 
-            String[] arrColumnNames = {"nameShort", "location" , "country" , "periodOfYear" , "type" , "website" , "url_facebook" , "url_instagram" , "url_youtube" , "activities" , "image_top",  "image_logo" , "dateInsert" , "title" , "subtitle" , "formatedDateFrom" , "formatedDateTo" , "edition_description","formatedDateUpdated"};
+            String[] arrColumnNames = {"nameShort", "location", "country", "periodOfYear", "type", "website", "url_facebook", "url_instagram", "url_youtube", "activities", "image_top", "image_logo", "dateInsert", "title", "subtitle", "formatedDateFrom", "formatedDateTo", "edition_description", "formatedDateUpdated"};
 
             String sqlRead = "SELECT  f.nameShort, f.location, f.country, f.periodOfYear, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, " +
                     "e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description, DATE_FORMAT(f.dateInsert , '%D %M %Y') AS formatedDateUpdated  " +
@@ -179,11 +183,10 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
 
 
             verticalLayout.add(loadFooter());
-        }
-        else if(section.equalsIgnoreCase(SECTION_LEARNINGS)){
-            verticalLayout.add(loadHeader("Learnings", "In order to improve ourselves",SECTION_LEARNINGS));
-            String[] arrColumnNames = {"title", "picture" , "section" , "subject" , "format" , "url" , "artists_ref" , "description" , "duration" , "pages" , "published",
-                    "tutor_name" , "website" , "url_fb" , "url_yt" , "url_insta" , "url_flickr" , "url_wikipedia", "url_ref1", "url_ref2", "url_ref3"};
+        } else if (section.equalsIgnoreCase(SECTION_LEARNINGS)) {
+            verticalLayout.add(loadHeader("Learnings", "In order to improve ourselves", SECTION_LEARNINGS));
+            String[] arrColumnNames = {"title", "picture", "section", "subject", "format", "url", "artists_ref", "description", "duration", "pages", "published",
+                    "tutor_name", "website", "url_fb", "url_yt", "url_insta", "url_flickr", "url_wikipedia", "url_ref1", "url_ref2", "url_ref3"};
 
 // learnings: l.id, l.title, l.picture, l.section , l.subject, l.format, l.url, l.parent_id, l.child_index, l.tutor_id, l.artists_ref, l.description, l.duration, l.pages, l.published, l.userIdInsert, l.username, l.dateInsert
 // learnings_tutor:  lt.id, lt.tutor_name, lt.learnings_team_id, lt.website, lt.url_fb, lt.url_yt, lt.url_insta, lt.url_flickr, lt.url_wikipedia, lt.url_ref1, lt.url_ref2, lt.url_ref3, lt.url_flckr, lt.city_base, lt.country_base, lt.userIdInsert, lt.username, lt.date_inserted
@@ -194,84 +197,74 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
             loadLearnings(sqlRead, arrColumnNames);
 
             verticalLayout.add(loadFooter());
-        }
-        else if(section.equalsIgnoreCase(SECTION_CLUBS)){
-            verticalLayout.add(loadHeader("Photography Clubs", "Clubs and their events around earth.",SECTION_CLUBS));
+        } else if (section.equalsIgnoreCase(SECTION_CLUBS)) {
+            verticalLayout.add(loadHeader("Photography Clubs", "Clubs and their events around earth.", SECTION_CLUBS));
 
-             loadClubs(sqlShowClubsSelect+sqlShowClubsWhere+sqlShowClubsOrder,arrClubsColumnNames);
+            loadClubs(sqlShowClubsSelect + sqlShowClubsWhere + sqlShowClubsOrder, arrClubsColumnNames);
 
 
             verticalLayout.add(loadFooter());
 
-        }
-        else if(section.equalsIgnoreCase(SECTION_LOCATIONS)){
-            verticalLayout.add(loadHeader("Locations", "Browse before visiting.",SECTION_LOCATIONS));
-            String[] arrLocationColumnNames = {"city_name","city_name_local","perfecture", "country", "nameShort", "location" , "country" }; //, "periodOfYear" , "type" , "website" , "url_facebook" , "url_instagram" , "url_youtube" , "activities" , "image_top",  "image_logo" , "dateInsert" , "title" , "subtitle" , "formatedDateFrom" , "formatedDateTo" , "edition_description","formatedDateUpdated"};
+        } else if (section.equalsIgnoreCase(SECTION_LOCATIONS)) {
+            verticalLayout.add(loadHeader("Locations", "Browse before visiting.", SECTION_LOCATIONS));
+            String[] arrLocationColumnNames = {"city_name", "city_name_local", "perfecture", "country", "nameShort", "location", "country"}; //, "periodOfYear" , "type" , "website" , "url_facebook" , "url_instagram" , "url_youtube" , "activities" , "image_top",  "image_logo" , "dateInsert" , "title" , "subtitle" , "formatedDateFrom" , "formatedDateTo" , "edition_description","formatedDateUpdated"};
 
             String sqlShowLocations = "SELECT d.id, d.city_name, d.city_name_local, d.perfecture, d.country, d.longitude, d.latitude, d.url_googlemap, d.url_openstreetmap, d.url_1, d.url_2, d.url_3, d.url_weather1, d.url_transportation1, d.url_transportation2, d.dateInsert " +
-                   // " f.nameShort, f.location, f.country, f.periodOfYear, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, " +
-                   // " e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description, DATE_FORMAT(f.dateInsert , '%D %M %Y') AS formatedDateUpdated  " +
+                    // " f.nameShort, f.location, f.country, f.periodOfYear, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, " +
+                    // " e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description, DATE_FORMAT(f.dateInsert , '%D %M %Y') AS formatedDateUpdated  " +
                     " FROM destination d " + //LEFT JOIN festivals f ON d.id = f.destination_id LEFT JOIN festivals_edition e ON f.id = e.festival_id ORDER BY d.city_name DESC ";
                     " ORDER BY d.city_name DESC ";
-            loadLocations(sqlShowLocations,arrLocationColumnNames);
+            loadLocations(sqlShowLocations, arrLocationColumnNames);
 
             verticalLayout.add(loadFooter());
-        }
-        else if(section.equalsIgnoreCase(SECTION_WEBSITES)){
-            verticalLayout.add(loadHeader("Interesting Sites", "List of Interesting Websites.",SECTION_WEBSITES));
-            String[] arrColumnNames = {"org_name","org_type","org_type_parent","city", "used_for", "country","url"};
+        } else if (section.equalsIgnoreCase(SECTION_WEBSITES)) {
+            verticalLayout.add(loadHeader("Interesting Sites", "List of Interesting Websites.", SECTION_WEBSITES));
+            String[] arrColumnNames = {"org_name", "org_type", "org_type_parent", "city", "used_for", "country", "url"};
             String sqlShowSites = "SELECT id, org_name, org_type, org_type_parent , city , used_for , country , url , city, address, pc, country, map_x, map_y, url, date_inserted, dateUpdated\n" +
                     "FROM organizations o " +
                     "WHERE o.org_type_parent LIKE 'Website' " +
                     "ORDER BY o.city ASC, o.org_name ASC";
-            loadWebSites(sqlShowSites,arrColumnNames);
+            loadWebSites(sqlShowSites, arrColumnNames);
 
 
             verticalLayout.add(loadFooter());
 
-        }
-        else if(section.equalsIgnoreCase(SECTION_MY_FAVOURITES)){
-            verticalLayout.add(loadHeader("My Favourites", "Lists of my Favourites.",SECTION_MY_FAVOURITES));
+        } else if (section.equalsIgnoreCase(SECTION_MY_FAVOURITES)) {
+            verticalLayout.add(loadHeader("My Favourites", "Lists of my Favourites.", SECTION_MY_FAVOURITES));
 
             verticalLayout.add(loadFooter());
-        }
-        else if(section.equalsIgnoreCase(SECTION_MY_TEAMS)){
-            verticalLayout.add(loadHeader("My Teams", "The Teams I Participate.",SECTION_MY_TEAMS));
+        } else if (section.equalsIgnoreCase(SECTION_MY_TEAMS)) {
+            verticalLayout.add(loadHeader("My Teams", "The Teams I Participate.", SECTION_MY_TEAMS));
 
             verticalLayout.add(loadFooter());
-        }
-        else if(section.equalsIgnoreCase(SECTION_MY_PHOTOS)){
-            verticalLayout.add(loadHeader("My Photos", "Manage my photos and Albums.",SECTION_MY_PHOTOS));
+        } else if (section.equalsIgnoreCase(SECTION_MY_PHOTOS)) {
+            verticalLayout.add(loadHeader("My Photos", "Manage my photos and Albums.", SECTION_MY_PHOTOS));
 
 
-            String sqlGalleryUser = sqlReadGallery+
-                    " WHERE pm.hostname like '"+hostname+"' AND pm.uploader LIKE '"+strUsername+"' "+
+            String sqlGalleryUser = sqlReadGallery +
+                    " WHERE pm.hostname like '" + hostname + "' AND pm.uploader LIKE '" + strUsername + "' " +
                     " ORDER BY pm.date_inserted ASC ";
 
-            loadImagesFromDb(sqlGalleryUser, arrColumnNamesGallery,true);
+            loadImagesFromDb(sqlGalleryUser, arrColumnNamesGallery, true);
 
             verticalLayout.add(loadFooter());
-        }
-        else if(section.equalsIgnoreCase(SECTION_LOG)){
-            verticalLayout.add(loadHeader("logs", "View",SECTION_LOG));
+        } else if (section.equalsIgnoreCase(SECTION_LOG)) {
+            verticalLayout.add(loadHeader("logs", "View", SECTION_LOG));
 
             String arrColumns[] = {"visitorLogId", "timeOfVisit", "browserName"};
 
             String sqlRead = "SELECT  visitorLogId, timeOfVisit, browserName " +
                     " from journey.dbvisitor_log " +
                     " Order By visitorLogId desc";
-            recordService.findAll(sqlRead,arrColumns);
+            recordService.findAll(sqlRead, arrColumns);
 
             verticalLayout.add(loadFooter());
-        }
-        else if(section.equalsIgnoreCase(SECTION_UPLOAD)){
+        } else if (section.equalsIgnoreCase(SECTION_UPLOAD)) {
 
-            verticalLayout.add(loadHeader("Upload Photos", "Upload my photos.",SECTION_MY_PHOTOS));
-
+            verticalLayout.add(loadHeader("Upload Photos", "Upload my photos.", SECTION_MY_PHOTOS));
 
 
-
-            UploadImageCard uploadImageCard = new UploadImageCard(userId,strUsername,sessionCreation,publicIp,hostname);
+            UploadImageCard uploadImageCard = new UploadImageCard(userId, strUsername, sessionCreation, publicIp, hostname);
 
             uploadImageCard.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
@@ -287,15 +280,14 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
             verticalLayout.add(uploadImageCard.getUploadImageCard(recordService));
 
             verticalLayout.add(loadFooter());
-        }
-        else{
-            verticalLayout.add(loadHeader("- -","",""));
+        } else {
+            verticalLayout.add(loadHeader("- -", "", ""));
         }
         logVisitorToDb();
     }
 
     @Override
-    public void setParameter( BeforeEvent beforeEvent, @OptionalParameter String o) {
+    public void setParameter(BeforeEvent beforeEvent, @OptionalParameter String o) {
         section = o;//beforeEvent.getRouteParameters().get("section").orElse("pictures");
     }
 
@@ -313,7 +305,6 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         );
 
 
-
         InetAddress inetAddress = null;
         try {
             inetAddress = InetAddress.getLocalHost();
@@ -324,13 +315,11 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         hostAddress = inetAddress.getHostAddress();
         canonicalHostname = inetAddress.getCanonicalHostName();
 
-        if(hostname.equalsIgnoreCase(HOSTNAME_LAPTOP)){
+        if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP)) {
             DIR_PHOTOS_SERVER = "/home/mike/Pictures/lazy-photos";
-        }
-        else if(hostname.equalsIgnoreCase("piot")) {
+        } else if (hostname.equalsIgnoreCase("piot")) {
             DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
-        }
-        else{
+        } else {
             DIR_PHOTOS_SERVER = "/home/sammy/lazy-photos";
 
         }
@@ -344,7 +333,6 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
             timeZoneId = extendedClientDetails.getTimeZoneId();
 
         });
-
 
 
         sessionDateTime = utilsDate.calcDateTimeFromLong(sessionCreation, "UTC");
@@ -368,12 +356,11 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         logger.info("  url:" + urlHost[0] + "  url:" + urlHost[1] + "  url:" + urlHost[2] + "  url:" + urlHost[3] + "  url:" + urlHost[4]);
 
 
-
         publicIp = getClientPublicIp();
 
         verticalLayout = new VerticalLayout();
         verticalLayout.setId("verticalLayout");
-        if(isMobile){
+        if (isMobile) {
             verticalLayout.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     // Margin.LARGE, //.Left.MEDIUM, Margin.Right.MEDIUM,
@@ -384,7 +371,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
 //                    Gap.MEDIUM,
                     AlignItems.CENTER, JustifyContent.CENTER
             );
-        }else {
+        } else {
             verticalLayout.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     // Margin.LARGE, //.Left.MEDIUM, Margin.Right.MEDIUM,
@@ -396,30 +383,28 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
 //                    Gap.LARGE,
                     AlignItems.CENTER, JustifyContent.CENTER
             );
-            verticalLayout.getStyle().set("gap","3rem");
+            verticalLayout.getStyle().set("gap", "3rem");
         }
 
 
-        if(isMobile){
+        if (isMobile) {
 //            imageContainer.setWidthFull();
             this.setWidthFull();
-        }else{
+        } else {
             //           imageContainer.setWidthFull();
             this.setWidthFull();
         }
 
 
-
-
         this.add(verticalLayout);
     }
 
-    private VerticalLayout loadHeader(String strHeader, String strSubHeader,String strSection){
+    private VerticalLayout loadHeader(String strHeader, String strSubHeader, String strSection) {
 
         this.strHeader = strHeader;
 
         HorizontalLayout headerContainerMaster = new HorizontalLayout();
-        if(isMobile){
+        if (isMobile) {
             headerContainerMaster.addClassNames(
                     AlignItems.CENTER, JustifyContent.EVENLY,
                     Overflow.HIDDEN, Width.FULL,
@@ -427,10 +412,10 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
                     Padding.NONE,
                     Gap.MEDIUM,
                     // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
-                 //   Background.CONTRAST_5,
+                    //   Background.CONTRAST_5,
                     BorderRadius.NONE
             );
-        }else {
+        } else {
             headerContainerMaster.addClassNames(
                     AlignItems.CENTER, JustifyContent.EVENLY,
                     Overflow.HIDDEN, Width.FULL,
@@ -438,7 +423,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
                     Padding.SMALL,
                     Gap.MEDIUM,
                     // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
-                 //   Background.CONTRAST_5,
+                    //   Background.CONTRAST_5,
                     BorderRadius.LARGE
             );
         }
@@ -453,7 +438,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         Div subheader = new Div(strSubHeader);
         subheader.addClassNames(Margin.Bottom.NONE, Margin.Top.NONE, FontSize.MEDIUM, TextColor.SECONDARY);
 
-        headerTextContainer.add(header,subheader);
+        headerTextContainer.add(header, subheader);
 
         Select<String> sortBy = new Select<>();
         sortBy.setLabel("Sort by");
@@ -461,7 +446,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         sortBy.setValue("Most Viewed");
 
         HorizontalLayout headerContainerSecondary = new HorizontalLayout();
-        if(isMobile){
+        if (isMobile) {
             headerContainerSecondary.addClassNames(
                     AlignItems.CENTER, JustifyContent.EVENLY,
                     Overflow.HIDDEN, Width.FULL,
@@ -472,7 +457,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
                     //   Background.CONTRAST_5,
                     BorderRadius.NONE
             );
-        }else {
+        } else {
             headerContainerSecondary.addClassNames(
                     AlignItems.CENTER, JustifyContent.EVENLY,
                     Overflow.HIDDEN, Width.FULL,
@@ -487,7 +472,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
 
 
         VerticalLayout layoutFilters = new VerticalLayout();
-        if(isMobile){
+        if (isMobile) {
             layoutFilters.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.EVENLY,
@@ -498,7 +483,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
                     //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
                     //  Background.CONTRAST_5,
                     BorderRadius.NONE);
-        }else {
+        } else {
             layoutFilters.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.EVENLY,
@@ -518,7 +503,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         //   "Friday", "Saturday", "Sunday");
         // checkboxGroup.addThemeVariants(CheckboxGroupVariant.LUMO_VERTICAL);
 //        Div lblFilterSubject = new Div("Subject");
-        if( !strSection.equalsIgnoreCase(SECTION_UPLOAD)) {
+        if (!strSection.equalsIgnoreCase(SECTION_UPLOAD)) {
             layoutFilters.add(checkboxGroupSubject);
         }
 
@@ -527,7 +512,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
 //        checkboxGroupFormat.setLabel("Format");
         checkboxGroupFormat.setItems("Book", "Youtube");
 //        Div lblFilterFormat = new Div("Format");
-        if(strSection.equalsIgnoreCase(SECTION_LEARNINGS)) {
+        if (strSection.equalsIgnoreCase(SECTION_LEARNINGS)) {
             layoutFilters.add(checkboxGroupFormat);
         }
 
@@ -539,13 +524,13 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         //        "Friday", "Saturday", "Sunday");
         // checkboxGroup.addThemeVariants(CheckboxGroupVariant.LUMO_VERTICAL);
 //        Div lblFilterLocation = new Div("Location");
-        if(!strSection.equalsIgnoreCase(SECTION_LEARNINGS) && !strSection.equalsIgnoreCase(SECTION_WEBSITES)
-                && !strSection.equalsIgnoreCase(SECTION_HOME)  && !strSection.equalsIgnoreCase(SECTION_UPLOAD) ){
+        if (!strSection.equalsIgnoreCase(SECTION_LEARNINGS) && !strSection.equalsIgnoreCase(SECTION_WEBSITES)
+                && !strSection.equalsIgnoreCase(SECTION_HOME) && !strSection.equalsIgnoreCase(SECTION_UPLOAD)) {
             layoutFilters.add(checkboxGroupLocation);
         }
 
         VerticalLayout layoutHeaderParameters = new VerticalLayout();
-        if(isMobile){
+        if (isMobile) {
             layoutHeaderParameters.addClassNames(
                     AlignItems.CENTER, JustifyContent.EVENLY,
                     Overflow.HIDDEN, Width.FULL,
@@ -556,7 +541,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
                     //   Background.CONTRAST_5,
                     BorderRadius.NONE
             );
-        }else {
+        } else {
             layoutHeaderParameters.addClassNames(
                     AlignItems.CENTER, JustifyContent.EVENLY,
                     Overflow.HIDDEN, Width.FULL,
@@ -564,40 +549,38 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
                     Padding.SMALL,
                     Gap.XSMALL,
                     // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
-                       Background.CONTRAST_5,
+                    Background.CONTRAST_5,
                     BorderRadius.LARGE
             );
         }
 
 
-
-
         Select<String> cmbView = new Select<>();
         cmbView.setLabel("View");
-        if(strSection.equalsIgnoreCase(SECTION_GALLERY) || strSection.equalsIgnoreCase(SECTION_MY_PHOTOS) ) {
+        if (strSection.equalsIgnoreCase(SECTION_GALLERY) || strSection.equalsIgnoreCase(SECTION_MY_PHOTOS)) {
             cmbView.setItems("Micro View", "Ordinary - No MetaData", "Ordinary - MetaData Bottom", "Ordinary - MetaData Right",
-                    "Wide - No MetaData", "Wide - MetaData Bottom","Wide - MetaData Right");
+                    "Wide - No MetaData", "Wide - MetaData Bottom", "Wide - MetaData Right");
             cmbView.setValue("Ordinary - No MetaData");
-        }else{
+        } else {
             cmbView.setItems("Micro View", "Ordinary View", "Wide View");
             cmbView.setValue("Ordinary View");
         }
 
 
-        if( strSection.equalsIgnoreCase(SECTION_UPLOAD)) {
+        if (strSection.equalsIgnoreCase(SECTION_UPLOAD)) {
             headerContainerMaster.add(headerTextContainer);
             headerContainerSecondary.add(layoutFilters);
-        }else{
+        } else {
             headerContainerMaster.add(headerTextContainer, sortBy);
             headerContainerSecondary.add(layoutFilters, cmbView);
         }
 
-        layoutHeaderParameters.add(headerContainerMaster,headerContainerSecondary);
+        layoutHeaderParameters.add(headerContainerMaster, headerContainerSecondary);
 
         return layoutHeaderParameters;
     }
 
-    private void loadImagesFromDb(String sqlRead, String[] arrColumnNames,boolean isEditable) {
+    private void loadImagesFromDb(String sqlRead, String[] arrColumnNames, boolean isEditable) {
         strPath = DIR_PHOTOS_SERVER + dirChar;
 
         Div divGallery = new Div();
@@ -607,13 +590,13 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         for (int r = 0; r < lstRecords.size(); r++) {
 
             Record rec = lstRecords.get(r);
-            divGallery.add(loadImageGalleryThumbsFromDb(rec,isEditable));
+            divGallery.add(loadImageGalleryThumbsFromDb(rec, isEditable));
         }
         verticalLayout.add(divGallery);
 
     }
 
-    private ImageGalleryViewCard loadImageGalleryThumbsFromDb(Record record, boolean isEditable) {
+    private GalleryImageViewCard loadImageGalleryThumbsFromDb(Record record, boolean isEditable) {
         strPath = DIR_PHOTOS_SERVER + dirChar + subPathThumbs;
 
 
@@ -626,24 +609,23 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         String strUploader = record.getColumnData("uploader");
 
         RouteParam routeUploader = new RouteParam("member", strUploader);
-        RouterLink linkUploader = new RouterLink(strUploader, ImageGalleryView.class,new RouteParameters(routeUploader));
+        RouterLink linkUploader = new RouterLink(strUploader, GalleryView.class, new RouteParameters(routeUploader));
 
         RouteParam routeDestination = new RouteParam("destination", strCityName);
-        RouterLink linkDestination = new RouterLink(strCityName, ImageGalleryView.class,new RouteParameters(routeDestination));
+        RouterLink linkDestination = new RouterLink(strCityName, GalleryView.class, new RouteParameters(routeDestination));
 
 //        ArrayList<RouterLink> lstRouterLinks =new ArrayList<>();
 //        lstRouterLinks.add(linkDestination);
 
 
         String strImagePath = strPath + dirChar + strFileName;
-        logger.info(" strImagePath "+strImagePath);
+        logger.info(" strImagePath " + strImagePath);
 
-        ImageGalleryViewCard imageGalleryViewCard = new ImageGalleryViewCard(record,strImagePath,isMobile,userId, strUsername, sessionCreation,hostname,publicIp, isEditable,linkUploader,
-                linkDestination , recordService);
+        GalleryImageViewCard imageGalleryViewCard = new GalleryImageViewCard(record, strImagePath, isMobile, userId, strUsername, sessionCreation, hostname, publicIp, isEditable, linkUploader,
+                linkDestination, recordService);
         imageGalleryViewCard.addClassNames(Background.CONTRAST_5, BorderColor.CONTRAST_10, TextColor.TERTIARY);
         imageGalleryViewCard.addClassName("image-card");
         imageGalleryViewCard.addClassName("bottom-radius-shadow");
-
 
 
         return imageGalleryViewCard;
@@ -676,7 +658,8 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
 //                    Gap.MEDIUM,
 //                    BorderRadius.NONE,
 //                    AlignItems.START, JustifyContent.BETWEEN,
-////                    Display.GRID,
+
+    /// /                    Display.GRID,
 //                    Display.FLEX, FlexWrap.WRAP,
 //                    ListStyleType.NONE
 //            );
@@ -690,28 +673,25 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
 //                            String strImagePath = strPath + dirChar + strFileName;
 //                            logger.info(" strImagePath "+strImagePath);
 //
-//                            ImageGalleryViewCard imageGalleryViewCard = new ImageGalleryViewCard(record,strImagePath,isMobile,userId, strUsername, sessionCreation,hostname,publicIp,isEditable , recordService);
+//                            GalleryImageViewCard imageGalleryViewCard = new GalleryImageViewCard(record,strImagePath,isMobile,userId, strUsername, sessionCreation,hostname,publicIp,isEditable , recordService);
 //
 //                            imageContainer.add(imageGalleryViewCard);
 //
 //        return imageContainer;
 //    }
-
-
     private void loadLocations(String sqlRead, String[] arrColumnNames) {
-
 
 
         List<Record> lstRecords = getRecordsFromDb(sqlRead, arrColumnNames);
         List<String> lstStrLocation = new ArrayList<String>();
 
-        for(int r = 0;r< lstRecords.size();r++) {
+        for (int r = 0; r < lstRecords.size(); r++) {
 
             Record rec = lstRecords.get(r);
 
             String strCityName = rec.getColumnData("city_name");
             String strCountry = rec.getColumnData("country");
-            String destination = strCityName+"."+strCountry;
+            String destination = strCityName + "." + strCountry;
 
             verticalLayout.add(getLocation(rec));
 
@@ -736,9 +716,8 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
     private void loadClubs(String sqlRead, String[] arrColumnNames) {
 
 
-
         List<Record> lstRecords = getRecordsFromDb(sqlRead, arrColumnNames);
-        for (int r = 0;r< lstRecords.size();r++) {
+        for (int r = 0; r < lstRecords.size(); r++) {
 
             Record rec = lstRecords.get(r);
             verticalLayout.add(getClubItem(rec));
@@ -751,7 +730,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
 
         List<Record> lstRecords = getRecordsFromDb(sqlRead, arrColumnNames);
 
-        for (int r = 0;r< lstRecords.size();r++) {
+        for (int r = 0; r < lstRecords.size(); r++) {
             Record rec = lstRecords.get(r);
 
             verticalLayout.add(getFestival(rec));
@@ -765,7 +744,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
 
 
         List<Record> lstRecords = getRecordsFromDb(sqlRead, arrColumnNames);
-        for (int r = 0;r< lstRecords.size();r++) {
+        for (int r = 0; r < lstRecords.size(); r++) {
 
             Record rec = lstRecords.get(r);
             verticalLayout.add(getLearningsItem(rec));
@@ -777,9 +756,8 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
     private void loadWebSites(String sqlRead, String[] arrColumnNames) {
 
 
-
         List<Record> lstRecords = getRecordsFromDb(sqlRead, arrColumnNames);
-        for (int r = 0;r< lstRecords.size();r++) {
+        for (int r = 0; r < lstRecords.size(); r++) {
 
             Record rec = lstRecords.get(r);
             verticalLayout.add(getWebsiteItem(rec));
@@ -790,7 +768,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
 
     public VerticalLayout loadFooter() {
 
-        H2  divTitle = new H2(APP_NAME);
+        H2 divTitle = new H2(APP_NAME);
 //        divTitle.addClassName(TextColor.TERTIARY);
 
         Div divPhotoact = new Div("Act around Photography");
@@ -851,7 +829,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         }
 //        layoutFooter.addClassName("footer");
 
-        layoutFooter.add(divTitle,divPhotoact);
+        layoutFooter.add(divTitle, divPhotoact);
         return layoutFooter;
     }
 
@@ -862,7 +840,6 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         layoutSection.addClassName("category");
 //        layoutSection.addClassNames(AlignItems.CENTER, JustifyContent.CENTER);
         String strType = record.getColumnData("type");
-
 
 
         Div divImage = new Div();
@@ -881,11 +858,11 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         String strDate = "";
         String dt = record.getColumnData("formatedDateUpdated");
 
-        Div dayUpdated = new Div("updated: "+dt);
+        Div dayUpdated = new Div("updated: " + dt);
         dayUpdated.addClassName(TextColor.TERTIARY);
 
         HorizontalLayout layoutPostTitle = new HorizontalLayout();
-        if(isMobile) {
+        if (isMobile) {
             layoutPostTitle.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.AROUND,
@@ -895,7 +872,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
                     //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
                     Background.CONTRAST_10,
                     Border.BOTTOM, Border.RIGHT, BorderColor.CONTRAST_20, BorderRadius.FULL);
-        }else{
+        } else {
             layoutPostTitle.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.AROUND,
@@ -907,11 +884,11 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
                     Border.BOTTOM, Border.RIGHT, BorderColor.CONTRAST_20, BorderRadius.FULL);
         }
 
-        layoutPostTitle.add(layoutSection, titleName,dayUpdated);
+        layoutPostTitle.add(layoutSection, titleName, dayUpdated);
 
         VerticalLayout layoutFestivalInfo = new VerticalLayout();
         layoutFestivalInfo.addClassName("bottom-radius-shadow");
-        if(isMobile){
+        if (isMobile) {
             layoutFestivalInfo.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.CENTER,
@@ -921,7 +898,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
                     Width.FULL,
                     //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
                     Background.CONTRAST_5, BorderRadius.NONE);
-        }else {
+        } else {
             layoutFestivalInfo.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.CENTER,
@@ -933,35 +910,32 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
                     Background.CONTRAST_5, BorderRadius.LARGE);
         }
 
-        layoutFestivalInfo.add(layoutPostTitle,getFestivalItem(record),getSubTabs("festival",strName,record),getFestivalActions());
+        layoutFestivalInfo.add(layoutPostTitle, getFestivalItem(record), getSubTabs("festival", strName, record), getFestivalActions());
 
         return layoutFestivalInfo;
     }
 
-    private VerticalLayout getFestivalItem(Record record){
+    private VerticalLayout getFestivalItem(Record record) {
 
         String strPeriodOfYear = record.getColumnData("periodOfYear");
 
         String location = record.getColumnData("location");
-        String strCuntry =  record.getColumnData("country");
+        String strCuntry = record.getColumnData("country");
         String strImageLogo;
         String strImageTop;
-
 
 
         String strImgLogoPath = record.getColumnData("image_logo");
         String strImgTopPath = record.getColumnData("image_top");
 
-        if(!strImgLogoPath.equalsIgnoreCase("null") && !strImgLogoPath.equalsIgnoreCase(""))
-        {
-            strImageLogo = strPath+"/"+strImgLogoPath;
+        if (!strImgLogoPath.equalsIgnoreCase("null") && !strImgLogoPath.equalsIgnoreCase("")) {
+            strImageLogo = strPath + "/" + strImgLogoPath;
         } else {
             strImageLogo = "";
         }
 
-        if(!strImgTopPath.equalsIgnoreCase("null") && !strImgTopPath.equalsIgnoreCase(""))
-        {
-            strImageTop = strPath+"/"+strImgTopPath;
+        if (!strImgTopPath.equalsIgnoreCase("null") && !strImgTopPath.equalsIgnoreCase("")) {
+            strImageTop = strPath + "/" + strImgTopPath;
         } else {
             strImageTop = "";
         }
@@ -987,17 +961,13 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
 
         scrFestImages.setScrollDirection(Scroller.ScrollDirection.HORIZONTAL);
 
-        if(!strImageLogo.equalsIgnoreCase("null") && !strImageLogo.equalsIgnoreCase(""))
-        {
+        if (!strImageLogo.equalsIgnoreCase("null") && !strImageLogo.equalsIgnoreCase("")) {
 
             final StreamResource imageResourceLogo = new StreamResource("image-logo", () -> {
-                try
-                {
+                try {
                     return new FileInputStream(new File(strImageLogo));
-                }
-                catch(final FileNotFoundException e)
-                {
-                    logger.error("FileNotFoundException club-festival logo "+e.getMessage());
+                } catch (final FileNotFoundException e) {
+                    logger.error("FileNotFoundException club-festival logo " + e.getMessage());
                     return null;
                 }
             });
@@ -1005,21 +975,18 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
             Image imgLogo = new Image(imageResourceLogo, "image-logo");
             imgLogo.setHeight("200px");
             imgLogo.getStyle().set("border-radius", "50%");
-            imgLogo.getStyle().set("box-shadow","0 10px 50px rgba(207, 208, 208, 0.65)");
+            imgLogo.getStyle().set("box-shadow", "0 10px 50px rgba(207, 208, 208, 0.65)");
 
             layoutImage.add(imgLogo);
         }
 
-        if(!strImageTop.equalsIgnoreCase("null") && !strImageTop.equalsIgnoreCase("")) {
+        if (!strImageTop.equalsIgnoreCase("null") && !strImageTop.equalsIgnoreCase("")) {
 
             final StreamResource imageResourceTop = new StreamResource("image-top", () -> {
-                try
-                {
+                try {
                     return new FileInputStream(new File(strImageTop));
-                }
-                catch(final FileNotFoundException e)
-                {
-                    logger.error("FileNotFoundException club-festival top "+e.getMessage());
+                } catch (final FileNotFoundException e) {
+                    logger.error("FileNotFoundException club-festival top " + e.getMessage());
                     return null;
                 }
             });
@@ -1033,14 +1000,13 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
 
 
         String strActivities = record.getColumnData("activities");
-        if(strActivities!=null && !strActivities.trim().equalsIgnoreCase("") && !strActivities.trim().equalsIgnoreCase("null")) {
+        if (strActivities != null && !strActivities.trim().equalsIgnoreCase("") && !strActivities.trim().equalsIgnoreCase("null")) {
 
-        }
-        else {
+        } else {
             strActivities = "";
         }
 
-        Paragraph parDescription = new Paragraph("It takes place each year  in "+location+" ("+strCuntry+") usually during "+strPeriodOfYear+". "+strActivities);
+        Paragraph parDescription = new Paragraph("It takes place each year  in " + location + " (" + strCuntry + ") usually during " + strPeriodOfYear + ". " + strActivities);
         parDescription.addClassNames(TextColor.SECONDARY);
 
         VerticalLayout layoutSourceCard = new VerticalLayout();
@@ -1076,26 +1042,24 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
 //        linkWebsite.setClassName("external-links");
         String festUrl = record.getColumnData("website");
         //"fest url: "+ festUrl);
-        if(!festUrl.equalsIgnoreCase("null") && !festUrl.equalsIgnoreCase(""))
-        {
+        if (!festUrl.equalsIgnoreCase("null") && !festUrl.equalsIgnoreCase("")) {
 //            linkWebsite.setText("Website");
             //link1InNewTab.setTarget(festUrl);
             linkWebsite.setHref(festUrl);
             linkWebsite.setTarget("_blank");
             //link1InNewTab.getElement().setAttribute("target", "_blank");
             linkWebsite.setVisible(true);
-        }
-        else{
+        } else {
             linkWebsite.setVisible(false);
         }
 
         Anchor linkTutorWikipedia = new Anchor();
         linkTutorWikipedia.add(FontAwesome.Brands.WIKIPEDIA_W.create());
-      //  linkTutorWikipedia.getStyle().setColor(strColorExternalweb);
+        //  linkTutorWikipedia.getStyle().setColor(strColorExternalweb);
 //        linkTutorWikipedia.addClassName("external-links");
         linkTutorWikipedia.setVisible(false);
         String strUrlTutorWikipedia = record.getColumnData("url_wikipedia");
-        if(!strUrlTutorWikipedia.equalsIgnoreCase("null") && !strUrlTutorWikipedia.equalsIgnoreCase("")) {
+        if (!strUrlTutorWikipedia.equalsIgnoreCase("null") && !strUrlTutorWikipedia.equalsIgnoreCase("")) {
 
             //linkTutorYt.setText("YouTube");
             //strUrlTutorWikipedia = "https://www.youtube.com/"+strUrlTutorYt;
@@ -1105,36 +1069,32 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         }
 
         Anchor linkFacebookNewTab = new Anchor();
-       // linkFacebookNewTab.getStyle().setColor(strColorExternalweb);
-       // linkFacebookNewTab.addClassName("external-links");
+        // linkFacebookNewTab.getStyle().setColor(strColorExternalweb);
+        // linkFacebookNewTab.addClassName("external-links");
         linkFacebookNewTab.add(FontAwesome.Brands.FACEBOOK.create());
         String festUrlFace = record.getColumnData("url_facebook");
         //"fest url: "+ festUrl);
-        if(!festUrlFace.equalsIgnoreCase("null") && !festUrlFace.equalsIgnoreCase(""))
-        {
+        if (!festUrlFace.equalsIgnoreCase("null") && !festUrlFace.equalsIgnoreCase("")) {
             //linkFacebookNewTab.setText("Facebook");
             linkFacebookNewTab.setHref(festUrlFace);
             linkFacebookNewTab.setTarget("_blank");
             linkFacebookNewTab.setVisible(true);
-        }
-        else{
+        } else {
             linkFacebookNewTab.setVisible(false);
         }
 
         Anchor linkInstaNewTab = new Anchor();
         linkInstaNewTab.add(FontAwesome.Brands.INSTAGRAM.create());
         //linkInstaNewTab.getStyle().setColor(strColorExternalweb);
-       // linkInstaNewTab.setClassName("external-links");
+        // linkInstaNewTab.setClassName("external-links");
         String festUrlInsta = record.getColumnData("url_instagram");
         //"fest url: "+ festUrl);
-        if(!festUrlInsta.equalsIgnoreCase("null") && !festUrlInsta.equalsIgnoreCase(""))
-        {
-           // linkInstaNewTab.setText("Instagram");
+        if (!festUrlInsta.equalsIgnoreCase("null") && !festUrlInsta.equalsIgnoreCase("")) {
+            // linkInstaNewTab.setText("Instagram");
             linkInstaNewTab.setHref(festUrlInsta);
             linkInstaNewTab.setTarget("_blank");
             linkInstaNewTab.setVisible(true);
-        }
-        else{
+        } else {
             linkInstaNewTab.setVisible(false);
         }
 
@@ -1144,18 +1104,16 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
 //        linkYTNewTab.setClassName("external-links");
         String festUrlYT = record.getColumnData("url_youtube");
         //"fest url: "+ festUrl);
-        if(!festUrlYT.equalsIgnoreCase("null") && !festUrlYT.equalsIgnoreCase(""))
-        {
-           // linkYTNewTab.setText("YouTube");
+        if (!festUrlYT.equalsIgnoreCase("null") && !festUrlYT.equalsIgnoreCase("")) {
+            // linkYTNewTab.setText("YouTube");
             linkYTNewTab.setHref(festUrlYT);
             linkYTNewTab.setTarget("_blank");
             linkYTNewTab.setVisible(true);
-        }
-        else{
+        } else {
             linkYTNewTab.setVisible(false);
         }
 
-        layoutExtLinks.add(linkWebsite,linkFacebookNewTab, linkInstaNewTab, linkYTNewTab);
+        layoutExtLinks.add(linkWebsite, linkFacebookNewTab, linkInstaNewTab, linkYTNewTab);
 
         StreamResource iconInfo = new StreamResource("info-circle-line-icon.svg",
                 () -> getClass().getResourceAsStream("/icons/info-circle-line-icon.svg"));
@@ -1163,7 +1121,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
 
         Div imgInfo = new Div(svgInfo);
 
-        layoutSourceCard.add(imgInfo,layoutExtLinks);
+        layoutSourceCard.add(imgInfo, layoutExtLinks);
 
         Paragraph parTab1 = new Paragraph("activities planned");
 
@@ -1181,12 +1139,12 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         Div h5Title = new Div(strTitle);
         h5Title.addClassNames(//FontWeight.SEMIBOLD,
                 TextColor.SECONDARY
-                );
+        );
 
         Div h6DateFrom = new Div(strDateFrom);
         h6DateFrom.addClassNames(FontWeight.SEMIBOLD,
                 TextColor.SECONDARY
-                );
+        );
         Div h6DateTo = new Div(strDateTo);
         h6DateTo.addClassNames(FontWeight.SEMIBOLD,
                 TextColor.SECONDARY
@@ -1194,7 +1152,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
 
         String strTakesPlace = "takes place between";
 
-        Div  divTakesPlace = new Div(strTakesPlace);
+        Div divTakesPlace = new Div(strTakesPlace);
         divTakesPlace.addClassNames(
                 TextColor.TERTIARY
         );
@@ -1204,7 +1162,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
                 TextColor.TERTIARY
         );
 
-        layoutPlannedTitle.add(h5Title, divTakesPlace ,h6DateFrom, divAnd ,h6DateTo);
+        layoutPlannedTitle.add(h5Title, divTakesPlace, h6DateFrom, divAnd, h6DateTo);
 
         Div divSubTitle = new Div(strSubTitle);
         divSubTitle.setWidthFull();
@@ -1226,10 +1184,9 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
                 BorderRadius.LARGE
         );
 
-        if(!strDateFrom.trim().isEmpty() && !strDateFrom.trim().equalsIgnoreCase("null")) {
+        if (!strDateFrom.trim().isEmpty() && !strDateFrom.trim().equalsIgnoreCase("null")) {
             layoutPlanned.add(layoutPlannedTitle);//, divSubTitle, parEdDescription);
-        }
-        else {
+        } else {
             Div divNoEvents = new Div("Currently we have no info on future events. If you have any specific indication inform us here.");
             divNoEvents.addClassNames(TextColor.TERTIARY);
             layoutPlanned.add(divNoEvents);
@@ -1257,7 +1214,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         layoutInfoAbout.add(layoutDetails, layoutSourceCard);
 
         VerticalLayout layoutFestivalInfo = new VerticalLayout();
-        if(isMobile){
+        if (isMobile) {
             layoutFestivalInfo.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.EVENLY,
@@ -1266,8 +1223,8 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
                     Gap.MEDIUM,
                     Width.FULL,
                     //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                     BorderRadius.NONE);
-        }else {
+                    BorderRadius.NONE);
+        } else {
             layoutFestivalInfo.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.EVENLY,
@@ -1276,15 +1233,15 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
                     Gap.MEDIUM,
                     Width.FULL,
                     //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                     BorderRadius.LARGE);
+                    BorderRadius.LARGE);
         }
-        layoutFestivalInfo.add(scrFestImages,layoutInfoAbout);
+        layoutFestivalInfo.add(scrFestImages, layoutInfoAbout);
 
 
         return layoutFestivalInfo;
     }
 
-    private HorizontalLayout getFestivalActions(){
+    private HorizontalLayout getFestivalActions() {
 
         StreamResource iconLike = new StreamResource("star-empty-icon.svg",
                 () -> getClass().getResourceAsStream("/icons/star-empty-icon.svg"));
@@ -1330,26 +1287,25 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
                 BorderRadius.LARGE);
         layoutActions.addClassNames("actions");
 
-        layoutActions.add(btnLike,btnMoreAction, btnComment,btnMoreInfo,btnShare);
+        layoutActions.add(btnLike, btnMoreAction, btnComment, btnMoreInfo, btnShare);
 
         return layoutActions;
     }
 
-    public VerticalLayout getLearningsItem( Record record) {
+    public VerticalLayout getLearningsItem(Record record) {
 
         String strTitle = record.getColumnData("title");
         String strSubject = record.getColumnData("subject");
 
         String strFormat = record.getColumnData("format");
-        String strDuration  = record.getColumnData("duration");
-        String strPages  = record.getColumnData("pages");
+        String strDuration = record.getColumnData("duration");
+        String strPages = record.getColumnData("pages");
 
         String strTutor = record.getColumnData("tutor_name");
         Div divTutor = new Div();
         divTutor.addClassName(TextColor.SECONDARY);
         divTutor.setVisible(false);
-        if(!strTutor.equalsIgnoreCase("null") && !strTutor.isEmpty())
-        {
+        if (!strTutor.equalsIgnoreCase("null") && !strTutor.isEmpty()) {
             divTutor.setText(strTutor);
             divTutor.setVisible(true);
         }
@@ -1358,17 +1314,15 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         Div divTutorTeam = new Div();
         divTutorTeam.addClassName(TextColor.SECONDARY);
         divTutorTeam.setVisible(false);
-        if(!strTutorTeam.equalsIgnoreCase("null") && !strTutorTeam.isEmpty())
-        {
+        if (!strTutorTeam.equalsIgnoreCase("null") && !strTutorTeam.isEmpty()) {
             divTutorTeam.setText(strTutorTeam);
             divTutorTeam.setVisible(true);
         }
 
         String strImage = record.getColumnData("picture");
 
-        if(!strImage.equalsIgnoreCase("null") && !strImage.equalsIgnoreCase(""))
-        {
-            strImage = strPath+"/"+strImage;
+        if (!strImage.equalsIgnoreCase("null") && !strImage.equalsIgnoreCase("")) {
+            strImage = strPath + "/" + strImage;
         } else {
             strImage = "";
         }
@@ -1382,7 +1336,6 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
 //        divImage.getStyle().setColor("#c20853");
 //        Div divSection = new Div(section);
 //        divSection.getStyle().setColor("#c20853");
-
 
 
         HorizontalLayout layoutSection = new HorizontalLayout();
@@ -1424,7 +1377,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
 //        dayUpdated.getStyle().setColor("#8b94a0");
 
         HorizontalLayout layoutPostTitle = new HorizontalLayout();
-        if(isMobile) {
+        if (isMobile) {
             layoutPostTitle.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.AROUND,
@@ -1434,7 +1387,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
                     //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
                     Background.CONTRAST_10,
                     Border.BOTTOM, Border.RIGHT, BorderColor.CONTRAST_20, BorderRadius.FULL);
-        }else{
+        } else {
             layoutPostTitle.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.AROUND,
@@ -1454,13 +1407,13 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
 //        layoutPostTitle.setSpacing(true);
 //        layoutPostTitle.setMargin(true);
         //layoutPostTitle.addClassName("lazy-result-line-title-align");
-        layoutPostTitle.add(layoutSection, titleName,divTutor);
+        layoutPostTitle.add(layoutSection, titleName, divTutor);
 
 
         VerticalLayout layoutLearningInfo = new VerticalLayout();
         layoutLearningInfo.addClassName("bottom-radius-shadow");
 
-        if(isMobile) {
+        if (isMobile) {
             layoutLearningInfo.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.EVENLY,
@@ -1469,7 +1422,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
                     Gap.MEDIUM,
                     //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
                     Background.CONTRAST_5, BorderRadius.NONE);
-        }else{
+        } else {
             layoutLearningInfo.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.EVENLY,
@@ -1483,17 +1436,13 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         HorizontalLayout layoutImage = new HorizontalLayout();
         layoutImage.addClassNames(Border.ALL, BorderColor.CONTRAST_10, BorderRadius.LARGE);
 
-        if(!strImage.equalsIgnoreCase("null") && !strImage.equalsIgnoreCase(""))
-        {
+        if (!strImage.equalsIgnoreCase("null") && !strImage.equalsIgnoreCase("")) {
             String finalStrImage = strImage;
             final StreamResource imageResource = new StreamResource("image", () -> {
-                try
-                {
+                try {
                     return new FileInputStream(new File(finalStrImage));
-                }
-                catch(final FileNotFoundException e)
-                {
-                    logger.error("FileNotFoundException learning "+e.getMessage());
+                } catch (final FileNotFoundException e) {
+                    logger.error("FileNotFoundException learning " + e.getMessage());
                     return null;
                 }
             });
@@ -1507,49 +1456,44 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         }
 
         Div divFormat = new Div();
-        if(strFormat.equalsIgnoreCase("YouTube"))
-        {
-            if(!strDuration.equalsIgnoreCase("null") && !strDuration.equalsIgnoreCase(""))
-            {
-                divFormat.setText(strFormat+"("+strDuration+")");
-            }else {
+        if (strFormat.equalsIgnoreCase("YouTube")) {
+            if (!strDuration.equalsIgnoreCase("null") && !strDuration.equalsIgnoreCase("")) {
+                divFormat.setText(strFormat + "(" + strDuration + ")");
+            } else {
                 divFormat.setText(strFormat);
             }
-        }
-        else if(strFormat.equalsIgnoreCase("book"))
-        {
+        } else if (strFormat.equalsIgnoreCase("book")) {
             layoutImage.setMaxWidth("250px");
-            if(!strPages.equalsIgnoreCase("null") && !strPages.equalsIgnoreCase(""))
-            {
-                divFormat.setText(strFormat+"("+strPages+" pages)");
-            }else {
+            if (!strPages.equalsIgnoreCase("null") && !strPages.equalsIgnoreCase("")) {
+                divFormat.setText(strFormat + "(" + strPages + " pages)");
+            } else {
                 divFormat.setText(strFormat);
             }
         }
 
         Anchor linkTutor = new Anchor();
         linkTutor.add(FontAwesome.Solid.LINK.create());
-       // linkTutor.getStyle().setColor(strColorExternalweb);
-      //  linkTutor.setClassName("lazy-result-line-button");
+        // linkTutor.getStyle().setColor(strColorExternalweb);
+        //  linkTutor.setClassName("lazy-result-line-button");
 
         String strUrlTutorExt = record.getColumnData("website");
-        if(!strUrlTutorExt.equalsIgnoreCase("null") && !strUrlTutorExt.equalsIgnoreCase("")) {
+        if (!strUrlTutorExt.equalsIgnoreCase("null") && !strUrlTutorExt.equalsIgnoreCase("")) {
 
-           // linkTutor.setText("Website");
+            // linkTutor.setText("Website");
             linkTutor.setHref(strUrlTutorExt);
             linkTutor.setTarget("_blank");
         }
 
         Anchor linkTutorYt = new Anchor();
         linkTutorYt.add(FontAwesome.Brands.YOUTUBE.create());
-       // linkTutorYt.getStyle().setColor(strColorExternalweb);
-       // linkTutorYt.setClassName("lazy-result-line-button");
+        // linkTutorYt.getStyle().setColor(strColorExternalweb);
+        // linkTutorYt.setClassName("lazy-result-line-button");
         linkTutorYt.setVisible(false);
         String strUrlTutorYt = record.getColumnData("url_yt");
-        if(!strUrlTutorYt.equalsIgnoreCase("null") && !strUrlTutorYt.equalsIgnoreCase("")) {
+        if (!strUrlTutorYt.equalsIgnoreCase("null") && !strUrlTutorYt.equalsIgnoreCase("")) {
 
             //linkTutorYt.setText("YouTube");
-            strUrlTutorYt = "https://www.youtube.com/"+strUrlTutorYt;
+            strUrlTutorYt = "https://www.youtube.com/" + strUrlTutorYt;
             linkTutorYt.setHref(strUrlTutorYt);
             linkTutorYt.setTarget("_blank");
             linkTutorYt.setVisible(true);
@@ -1557,11 +1501,11 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
 
         Anchor linkTutorWikipedia = new Anchor();
         linkTutorWikipedia.add(FontAwesome.Brands.WIKIPEDIA_W.create());
-       // linkTutorWikipedia.getStyle().setColor(strColorExternalweb);
-     //   linkTutorWikipedia.setClassName("lazy-result-line-button");
+        // linkTutorWikipedia.getStyle().setColor(strColorExternalweb);
+        //   linkTutorWikipedia.setClassName("lazy-result-line-button");
         linkTutorWikipedia.setVisible(false);
         String strUrlTutorWikipedia = record.getColumnData("url_wikipedia");
-        if(!strUrlTutorWikipedia.equalsIgnoreCase("null") && !strUrlTutorWikipedia.equalsIgnoreCase("")) {
+        if (!strUrlTutorWikipedia.equalsIgnoreCase("null") && !strUrlTutorWikipedia.equalsIgnoreCase("")) {
 
             //linkTutorYt.setText("YouTube");
             //strUrlTutorWikipedia = "https://www.youtube.com/"+strUrlTutorYt;
@@ -1571,14 +1515,14 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         }
 
         Anchor linkTutorInsta = new Anchor();
-      //  linkTutorInsta.setClassName("lazy-result-line-button");
+        //  linkTutorInsta.setClassName("lazy-result-line-button");
         linkTutorInsta.add(FontAwesome.Brands.INSTAGRAM.create());
-       // linkTutorInsta.getStyle().setColor(strColorExternalweb);
+        // linkTutorInsta.getStyle().setColor(strColorExternalweb);
         linkTutorInsta.setVisible(false);
         String strUrlTutorInsta = record.getColumnData("url_insta");
-        if(!strUrlTutorInsta.equalsIgnoreCase("null") && !strUrlTutorInsta.equalsIgnoreCase("")) {
+        if (!strUrlTutorInsta.equalsIgnoreCase("null") && !strUrlTutorInsta.equalsIgnoreCase("")) {
 
-           // linkTutorInsta.setText("Instagram");
+            // linkTutorInsta.setText("Instagram");
 //            strUrlTutorInsta = "https://www.instagram.com/"+ strUrlTutorInsta;
             linkTutorInsta.setHref(strUrlTutorInsta);
             linkTutorInsta.setTarget("_blank");
@@ -1588,10 +1532,9 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         String strDescription = record.getColumnData("description");
 
         Paragraph parDescription = new Paragraph(strDescription);
-        if(!strDescription.equalsIgnoreCase("null") && !strDescription.equalsIgnoreCase("")) {
+        if (!strDescription.equalsIgnoreCase("null") && !strDescription.equalsIgnoreCase("")) {
             parDescription.setVisible(true);
-        }
-        else{
+        } else {
             parDescription.setVisible(false);
         }
         Anchor link1InNewTab = new Anchor();
@@ -1600,14 +1543,14 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         String strYouTubeVideo = "https://www.youtube.com/watch?v=";
         String strVideoOnly = strUrl.replace(strYouTubeVideo, "");
 
-        String youtubeEmbedded = "<p><iframe width='660' height='390' src='https://www.youtube.com/embed/"+strVideoOnly+"' title='"+strTitle+"' frameBorder='0'   allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share'  allowFullScreen></iframe></p>";
+        String youtubeEmbedded = "<p><iframe width='660' height='390' src='https://www.youtube.com/embed/" + strVideoOnly + "' title='" + strTitle + "' frameBorder='0'   allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share'  allowFullScreen></iframe></p>";
 
-        Html video =new Html(youtubeEmbedded);
+        Html video = new Html(youtubeEmbedded);
         video.setHtmlContent(youtubeEmbedded);
 
 
         Div divVideo = new Div();
-        video.addClassNames(Padding.SMALL,Background.CONTRAST, Border.ALL, BorderColor.CONTRAST_10, BorderRadius.LARGE);
+        video.addClassNames(Padding.SMALL, Background.CONTRAST, Border.ALL, BorderColor.CONTRAST_10, BorderRadius.LARGE);
         divVideo.setClassName("lazy-video-background");
         divVideo.add(video);
 
@@ -1629,8 +1572,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         Div divTutorInfo = new Div();
         divTutorInfo.addClassName(TextColor.SECONDARY);
         divTutorInfo.setVisible(false);
-        if(!strTutor.equalsIgnoreCase("null") && !strTutor.isEmpty())
-        {
+        if (!strTutor.equalsIgnoreCase("null") && !strTutor.isEmpty()) {
             divTutorInfo.setText(strTutor);
             divTutorInfo.setVisible(true);
 
@@ -1665,30 +1607,27 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
                 Margin.SMALL,
                 Padding.NONE,
                 Gap.MEDIUM,
-             AlignItems.CENTER, JustifyContent.CENTER
+                AlignItems.CENTER, JustifyContent.CENTER
 
         );
         layoutExtLinks.addClassNames("external-links");
 
-        layoutExtLinks.add(linkTutor,linkTutorWikipedia,linkTutorInsta,linkTutorYt);
-        layoutSourceCard.add(imgInfo,divFormat, divLearningCat, imgPerson, divTutorInfo,divTutorTeam,layoutExtLinks);
+        layoutExtLinks.add(linkTutor, linkTutorWikipedia, linkTutorInsta, linkTutorYt);
+        layoutSourceCard.add(imgInfo, divFormat, divLearningCat, imgPerson, divTutorInfo, divTutorTeam, layoutExtLinks);
 
         HorizontalLayout layoutIdInfo = new HorizontalLayout();
         layoutIdInfo.getStyle().setAlignItems(Style.AlignItems.CENTER);
         layoutIdInfo.getStyle().setJustifyContent(Style.JustifyContent.CENTER);
         layoutIdInfo.setWidthFull();
-        layoutIdInfo.add(layoutImage,divVideo,layoutSourceCard);
+        layoutIdInfo.add(layoutImage, divVideo, layoutSourceCard);
 
 
-        if(!strUrl.equalsIgnoreCase("null") && !strUrl.equalsIgnoreCase(""))
-        {
-            if(strFormat.equalsIgnoreCase("YouTube"))
-            {
+        if (!strUrl.equalsIgnoreCase("null") && !strUrl.equalsIgnoreCase("")) {
+            if (strFormat.equalsIgnoreCase("YouTube")) {
                 link1InNewTab.setVisible(false);
                 divVideo.setVisible(true);
                 layoutImage.setVisible(false);
-            }
-            else {
+            } else {
                 link1InNewTab.setText(strUrl);
                 //link1InNewTab.setTarget(festUrl);
                 link1InNewTab.setHref(strUrl);
@@ -1698,13 +1637,11 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
                 divVideo.setVisible(false);
                 layoutImage.setVisible(true);
             }
-        }
-        else{
+        } else {
             link1InNewTab.setVisible(false);
             divVideo.setVisible(false);
             layoutImage.setVisible(true);
         }
-
 
 
 //        H6 headerPoll = new H6("Evaluation by Members");
@@ -1858,21 +1795,21 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         layoutActions.addClassNames("actions");
 
 
-        layoutActions.add(btnLike,btnMoreAction, btnComment,btnMoreInfo,btnShare);
+        layoutActions.add(btnLike, btnMoreAction, btnComment, btnMoreInfo, btnShare);
 
         HorizontalLayout layoutPostRelated = new HorizontalLayout();
         layoutPostRelated.setWidthFull();
         layoutPostRelated.setPadding(false);
         layoutPostRelated.setSpacing(false);
 
-        layoutLearningInfo.add(layoutPostTitle,layoutIdInfo,parDescription,getSubTabs("learning", strTitle,record), layoutActions,link1InNewTab);
+        layoutLearningInfo.add(layoutPostTitle, layoutIdInfo, parDescription, getSubTabs("learning", strTitle, record), layoutActions, link1InNewTab);
 
         return layoutLearningInfo;
     }
 
-    public VerticalLayout getClubItem( Record record) {
+    public VerticalLayout getClubItem(Record record) {
 
-       // String[] arrColumnsLearning = {"org_name","org_type","city", "country"};
+        // String[] arrColumnsLearning = {"org_name","org_type","city", "country"};
 
         String strName = record.getColumnData("org_name");
         String strType = record.getColumnData("org_type");
@@ -1882,22 +1819,20 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
 
 
         String strCountry = record.getColumnData("country");
-        String strCity  = record.getColumnData("city");
+        String strCity = record.getColumnData("city");
 
-        String strUrl  = record.getColumnData("url");
+        String strUrl = record.getColumnData("url");
 
         String strImage = record.getColumnData("picture");
 
 //        "url_local_events", "url_fb", "url_yt", "url_insta",
 //                "url_flickr", "url_wikipedia"
 
-        if(!strImage.equalsIgnoreCase("null") && !strImage.equalsIgnoreCase(""))
-        {
-            strImage = strPath+"/"+strImage;
+        if (!strImage.equalsIgnoreCase("null") && !strImage.equalsIgnoreCase("")) {
+            strImage = strPath + "/" + strImage;
         } else {
             strImage = "";
         }
-
 
 
         HorizontalLayout layoutSection = new HorizontalLayout();
@@ -1935,13 +1870,13 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         titleName.addClassName(TextColor.SECONDARY);
         titleName.addClassName("lazy-result-line-title");
 
-        Div divLocation = new Div(strCity+" / "+strCountry);
+        Div divLocation = new Div(strCity + " / " + strCountry);
         divLocation.addClassNames(TextColor.SECONDARY);
 //        H6 dayUpdated = new H6("updated: "+strDate);
 //        dayUpdated.getStyle().setColor("#8b94a0");
 
         HorizontalLayout layoutPostTitle = new HorizontalLayout();
-        if(isMobile) {
+        if (isMobile) {
             layoutPostTitle.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.AROUND,
@@ -1951,7 +1886,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
                     //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
                     Background.CONTRAST_10,
                     Border.BOTTOM, Border.RIGHT, BorderColor.CONTRAST_20, BorderRadius.FULL);
-        }else{
+        } else {
             layoutPostTitle.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.AROUND,
@@ -1971,12 +1906,12 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
 //        layoutPostTitle.setSpacing(true);
 //        layoutPostTitle.setMargin(true);
         //layoutPostTitle.addClassName("lazy-result-line-title-align");
-        layoutPostTitle.add(layoutSection, titleName,divLocation);
+        layoutPostTitle.add(layoutSection, titleName, divLocation);
 
         VerticalLayout layoutClubInfo = new VerticalLayout();
         layoutClubInfo.addClassName("bottom-radius-shadow");
 
-        if(isMobile) {
+        if (isMobile) {
             layoutClubInfo.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.EVENLY,
@@ -1985,7 +1920,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
                     Gap.MEDIUM,
                     //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
                     Background.CONTRAST_5, BorderRadius.NONE);
-        }else{
+        } else {
             layoutClubInfo.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.EVENLY,
@@ -1999,17 +1934,13 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         HorizontalLayout layoutImage = new HorizontalLayout();
         layoutImage.addClassNames(Border.ALL, BorderColor.CONTRAST_10, BorderRadius.LARGE);
 
-        if(!strImage.equalsIgnoreCase("null") && !strImage.equalsIgnoreCase(""))
-        {
+        if (!strImage.equalsIgnoreCase("null") && !strImage.equalsIgnoreCase("")) {
             String finalStrImage = strImage;
             final StreamResource imageResource = new StreamResource("image", () -> {
-                try
-                {
+                try {
                     return new FileInputStream(new File(finalStrImage));
-                }
-                catch(final FileNotFoundException e)
-                {
-                    logger.error("FileNotFoundException learning "+e.getMessage());
+                } catch (final FileNotFoundException e) {
+                    logger.error("FileNotFoundException learning " + e.getMessage());
                     return null;
                 }
             });
@@ -2078,10 +2009,9 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         String strDescription = record.getColumnData("description");
 
         Paragraph parDescription = new Paragraph(strDescription);
-        if(!strDescription.equalsIgnoreCase("null") && !strDescription.equalsIgnoreCase("")) {
+        if (!strDescription.equalsIgnoreCase("null") && !strDescription.equalsIgnoreCase("")) {
             parDescription.setVisible(true);
-        }
-        else{
+        } else {
             parDescription.setVisible(false);
         }
 
@@ -2090,7 +2020,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         urlLink.setClassName("lazy-api-link");
         urlLink.setHref(strUrl);
         urlLink.setTarget("_blank");
-        urlLink.setText(strUrl.toLowerCase().replace("https://","").replace("http://",""));
+        urlLink.setText(strUrl.toLowerCase().replace("https://", "").replace("http://", ""));
 
 
 //
@@ -2221,24 +2151,23 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
                 BorderRadius.LARGE);
         layoutActions.addClassNames("actions");
 
-        layoutActions.add(btnLike,btnMoreAction, btnComment,btnMoreInfo,btnShare);
+        layoutActions.add(btnLike, btnMoreAction, btnComment, btnMoreInfo, btnShare);
 
         HorizontalLayout layoutPostRelated = new HorizontalLayout();
         layoutPostRelated.setWidthFull();
         layoutPostRelated.setPadding(false);
         layoutPostRelated.setSpacing(false);
 
-        layoutClubInfo.add(layoutPostTitle,parDescription,urlLink,getSubTabs("photoclub",strName,record),layoutActions);
+        layoutClubInfo.add(layoutPostTitle, parDescription, urlLink, getSubTabs("photoclub", strName, record), layoutActions);
 
         return layoutClubInfo;
     }
 
-    public VerticalLayout getLocation( Record record) {
+    public VerticalLayout getLocation(Record record) {
         String strCityName = record.getColumnData("city_name");
         String strPerfecture = record.getColumnData("perfecture");
 
         String strCountry = record.getColumnData("country");
-
 
 
         HorizontalLayout layoutSection = new HorizontalLayout();
@@ -2259,7 +2188,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         divLocation.addClassNames(TextColor.SECONDARY);
 
         HorizontalLayout layoutPostTitle = new HorizontalLayout();
-        if(isMobile) {
+        if (isMobile) {
             layoutPostTitle.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.AROUND,
@@ -2269,7 +2198,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
                     //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
                     Background.CONTRAST_10,
                     Border.BOTTOM, Border.RIGHT, BorderColor.CONTRAST_20, BorderRadius.FULL);
-        }else{
+        } else {
             layoutPostTitle.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.AROUND,
@@ -2281,12 +2210,12 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
                     Border.BOTTOM, Border.RIGHT, BorderColor.CONTRAST_20, BorderRadius.FULL);
         }
 
-        layoutPostTitle.add(layoutSection, titleName,divLocation);
+        layoutPostTitle.add(layoutSection, titleName, divLocation);
         VerticalLayout layoutLocationInfo = new VerticalLayout();
         layoutLocationInfo.addClassName("bottom-radius-shadow");
 
 
-        if(isMobile) {
+        if (isMobile) {
             layoutLocationInfo.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.EVENLY,
@@ -2294,7 +2223,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
                     Padding.NONE,
                     Gap.MEDIUM,
                     Background.CONTRAST_5, BorderRadius.NONE);
-        }else{
+        } else {
             layoutLocationInfo.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.EVENLY,
@@ -2304,15 +2233,15 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
                     Background.CONTRAST_5, BorderRadius.LARGE);
         }
 
-            layoutLocationInfo.add(layoutPostTitle, getLocationItem(record), getLocationSubTabs("location",strCityName));
-            layoutLocationInfo.add(getLocationActions());
+        layoutLocationInfo.add(layoutPostTitle, getLocationItem(record), getLocationSubTabs("location", strCityName));
+        layoutLocationInfo.add(getLocationActions());
 
         return layoutLocationInfo;
     }
 
-    private VerticalLayout getLocationItem( Record record) {
+    private VerticalLayout getLocationItem(Record record) {
 
-       // String[] arrColumnsLearning = {"city_name", "city_name_local", "perfecture", "country"};
+        // String[] arrColumnsLearning = {"city_name", "city_name_local", "perfecture", "country"};
 
         //"country", "nameShort", "location" , "country" , "periodOfYear" , "type" , "website" , "url_facebook" , "url_instagram" , "url_youtube" , "activities" , "image_top",  "image_logo" , "dateInsert" , "title" , "subtitle" , "formatedDateFrom" , "formatedDateTo" , "edition_description","formatedDateUpdated"
 
@@ -2322,7 +2251,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         String strCountry = record.getColumnData("country");
 
         VerticalLayout layoutLocationInfo = new VerticalLayout();
-        if(isMobile) {
+        if (isMobile) {
             layoutLocationInfo.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.EVENLY,
@@ -2330,7 +2259,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
                     Padding.NONE,
                     Gap.MEDIUM
             );
-        }else{
+        } else {
             layoutLocationInfo.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.EVENLY,
@@ -2352,22 +2281,21 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         HorizontalLayout layoutPostRelated = new HorizontalLayout();
         layoutPostRelated.addClassNames(Width.FULL,
                 AlignItems.CENTER, JustifyContent.CENTER,
-        Margin.SMALL, Padding.NONE);
-        layoutPostRelated.add(getWeatherCurrent(strCityName,strCountry));
-        layoutPostRelated.add(getLocationMap(strCityName,strCountry));
+                Margin.SMALL, Padding.NONE);
+        layoutPostRelated.add(getWeatherCurrent(strCityName, strCountry));
+        layoutPostRelated.add(getLocationMap(strCityName, strCountry));
 
         layoutLocationInfo.add(layoutPostRelated);
 
         return layoutLocationInfo;
     }
 
-    private VerticalLayout getLocationMap(String city, String country)
-    {
+    private VerticalLayout getLocationMap(String city, String country) {
         VerticalLayout layout = new VerticalLayout();
         layout.setMargin(false);
         layout.setSpacing(false);
         layout.setPadding(false);
-        layout.addClassNames(AlignItems.CENTER,JustifyContent.CENTER);
+        layout.addClassNames(AlignItems.CENTER, JustifyContent.CENTER);
 
         String strHtml = "<!DOCTYPE html>\n" +
                 "<html>\n" +
@@ -2392,7 +2320,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
                 "    const mapboxClient = mapboxSdk({ accessToken: mapboxgl.accessToken });\n" +
                 "    mapboxClient.geocoding\n" +
                 "        .forwardGeocode({\n" +
-                "            query: '"+city+", "+country+"',\n" +
+                "            query: '" + city + ", " + country + "',\n" +
                 "            autocomplete: false,\n" +
                 "            limit: 1\n" +
                 "        })\n" +
@@ -2422,17 +2350,17 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
                 "    map.addControl(\n" +
                 "        new MapboxGeocoder({\n" +
                 "            accessToken: mapboxgl.accessToken,\n" +
-                "            language: 'en-GB',\n"+
+                "            language: 'en-GB',\n" +
                 "            mapboxgl: mapboxgl\n" +
                 "        })\n" +
-                "    );\n"+
+                "    );\n" +
                 "\n" +
                 "            // Create a marker and add it to the map.\n" +
                 "            new mapboxgl.Marker().setLngLat(feature.center).addTo(map);\n" +
                 "        });\n" +
                 "\n" +
                 "\n" +
-                "    map.addControl(new mapboxgl.FullscreenControl());\n"+
+                "    map.addControl(new mapboxgl.FullscreenControl());\n" +
                 "\n" +
                 "</script>\n" +
                 "\n" +
@@ -2453,7 +2381,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         return layout;
     }
 
-    private VerticalLayout getLocationSubFestival(Record record){
+    private VerticalLayout getLocationSubFestival(Record record) {
 
         String strName = record.getColumnData("nameShort");
         Div divTitle = new Div(strName);
@@ -2468,7 +2396,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         String strEdition_description = record.getColumnData("edition_description");
 
         HorizontalLayout layoutPlannedTitle = new HorizontalLayout();
-        if(isMobile) {
+        if (isMobile) {
             layoutPlannedTitle.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.CENTER,
@@ -2476,7 +2404,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
                     Padding.NONE,
                     Gap.XSMALL
             );
-        }else{
+        } else {
             layoutPlannedTitle.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.CENTER,
@@ -2502,7 +2430,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
 
         String strTakesPlace = "takes place between";
 
-        Div  divTakesPlace = new Div(strTakesPlace);
+        Div divTakesPlace = new Div(strTakesPlace);
         divTakesPlace.addClassNames(
                 TextColor.TERTIARY
         );
@@ -2512,7 +2440,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
                 TextColor.TERTIARY
         );
 
-        layoutPlannedTitle.add( h5Title, divTakesPlace ,h6DateFrom, divAnd ,h6DateTo);
+        layoutPlannedTitle.add(h5Title, divTakesPlace, h6DateFrom, divAnd, h6DateTo);
 
         Div divSubTitle = new Div(strSubTitle);
         divSubTitle.setWidthFull();
@@ -2525,7 +2453,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         parEdDescription.setWidthFull();
 
         VerticalLayout layoutPlanned = new VerticalLayout();
-        if(isMobile) {
+        if (isMobile) {
             layoutPlanned.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.CENTER,
@@ -2533,7 +2461,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
                     Padding.NONE,
                     Gap.XSMALL
             );
-        }else{
+        } else {
             layoutPlanned.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.CENTER,
@@ -2543,14 +2471,13 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
             );
         }
 
-        if(!strName.trim().isEmpty() && !strName.trim().equalsIgnoreCase("null")) {
+        if (!strName.trim().isEmpty() && !strName.trim().equalsIgnoreCase("null")) {
             layoutPlanned.add(divTitle);
         }
 
-        if(!strDateFrom.trim().isEmpty() && !strDateFrom.trim().equalsIgnoreCase("null")) {
+        if (!strDateFrom.trim().isEmpty() && !strDateFrom.trim().equalsIgnoreCase("null")) {
             layoutPlanned.add(layoutPlannedTitle);//, divSubTitle, parEdDescription);
-        }
-        else {
+        } else {
 //            Div divNoEvents = new Div("Currently we have no info on future events. If you have any specific indication inform us here.");
 //            divNoEvents.addClassNames(TextColor.TERTIARY);
 //            layoutPlanned.add(divNoEvents);
@@ -2559,10 +2486,10 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         return layoutPlanned;
     }
 
-    private VerticalLayout getLocationSubTabs (String strContentType, String strContentTitle) {
+    private VerticalLayout getLocationSubTabs(String strContentType, String strContentTitle) {
 
         VerticalLayout layoutTabsInfo = new VerticalLayout();
-        if(isMobile) {
+        if (isMobile) {
             layoutTabsInfo.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.CENTER,
@@ -2570,7 +2497,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
                     Padding.NONE,
                     Gap.MEDIUM
             );
-        }else{
+        } else {
             layoutTabsInfo.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.CENTER,
@@ -2591,10 +2518,9 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         );
 
         ArrayList<String> lstLocationTabs = new ArrayList<String>();
-            lstLocationTabs.add("Spots");
-            lstLocationTabs.add("Reviews");
-            lstLocationTabs.add("Additional Info");
-
+        lstLocationTabs.add("Spots");
+        lstLocationTabs.add("Reviews");
+        lstLocationTabs.add("Additional Info");
 
 
         ToggleButtonGroup btnGroup = new ToggleButtonGroup();
@@ -2617,39 +2543,36 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
 
         divTabContent.setHeight("50px");
 
-        btnGroup.addValueChangeListener(event->{
-            if(event.getValue().toString().equalsIgnoreCase("Spots")){
+        btnGroup.addValueChangeListener(event -> {
+            if (event.getValue().toString().equalsIgnoreCase("Spots")) {
                 divTabContent.removeAll();
                 divTabContent.add(getLocationSubSpots(strContentTitle));
                 divTabContent.setHeight("120px");
-            }
-            else if(event.getValue().toString().equalsIgnoreCase("Additional Info")){
-                divTabContent.setText(" info ... of "+strContentTitle+" in "+strContentType);
-            }
-            else if(event.getValue().toString().equalsIgnoreCase("Reviews")){
-                divTabContent.setText(strUsername+" users review 1 ...");
-            }
-            else{
-                divTabContent.setText(strContentTitle+" ....... in "+strContentType);
+            } else if (event.getValue().toString().equalsIgnoreCase("Additional Info")) {
+                divTabContent.setText(" info ... of " + strContentTitle + " in " + strContentType);
+            } else if (event.getValue().toString().equalsIgnoreCase("Reviews")) {
+                divTabContent.setText(strUsername + " users review 1 ...");
+            } else {
+                divTabContent.setText(strContentTitle + " ....... in " + strContentType);
             }
         });
 
-        layoutTabsInfo.add(btnGroup,divTabContent);
+        layoutTabsInfo.add(btnGroup, divTabContent);
 
 
         return layoutTabsInfo;
     }
 
-    private VerticalLayout getLocationSubSpots(String strLocation){//,String sqlRead, String[] arrColumnsLearning){
+    private VerticalLayout getLocationSubSpots(String strLocation) {//,String sqlRead, String[] arrColumnsLearning){
 
         String[] arrColumnNames = {"city_name", "perfecture", "country", "name", "entity_type", "photo_festival_ed_Id"};
 
         String readSqlDestinationSpots = "SELECT d.city_name, d.perfecture, d.country, ds.name, ds.entity_type, ds.photo_festival_ed_Id FROM destination d LEFT JOIN destination_spots ds ON d.id = ds.id_destination " +
-                " WHERE d.city_name LIKE '"+strLocation+"' "+
+                " WHERE d.city_name LIKE '" + strLocation + "' " +
                 " ORDER BY d.city_name, ds.entity_type, ds.name";
 
         VerticalLayout layoutSpotsInfo = new VerticalLayout();
-        if(isMobile) {
+        if (isMobile) {
             layoutSpotsInfo.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.CENTER,
@@ -2657,7 +2580,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
                     Padding.NONE,
                     Gap.MEDIUM
             );
-        }else{
+        } else {
             layoutSpotsInfo.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.CENTER,
@@ -2680,10 +2603,10 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         return layoutSpotsInfo;
     }
 
-    private HorizontalLayout getSpotLayout(Record record){
+    private HorizontalLayout getSpotLayout(Record record) {
 
         HorizontalLayout layoutSpot = new HorizontalLayout();
-        layoutSpot.addClassNames(Width.FULL, AlignItems.CENTER,JustifyContent.CENTER);
+        layoutSpot.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER);
         // layoutSpot.setClassName("lazy-card-overview-gradient");
 //        layoutSpot.addClassName("lazy-card-overview-align-left");
 //        layoutSpot.addClassName("lazy-card-overview-border-solid");
@@ -2694,7 +2617,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         String name = record.getColumnData("name");
 
         Div divSpot = new Div(name); // +" ("+entity_type+")");
-        divSpot.addClassNames(Width.FULL,AlignItems.CENTER,JustifyContent.CENTER);
+        divSpot.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER);
         divSpot.getStyle().setColor("#8e7138");
         divSpot.addClassName("lazy-card-overview-font-important");
 
@@ -2751,7 +2674,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
 
     }
 
-    private HorizontalLayout getLocationActions(){
+    private HorizontalLayout getLocationActions() {
 
 
         StreamResource iconLike = new StreamResource("star-empty-icon.svg",
@@ -2798,15 +2721,15 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
                 BorderRadius.LARGE);
         layoutActions.addClassNames("actions");
 
-        layoutActions.add(btnLike,btnMoreAction, btnComment,btnMoreInfo,btnShare);
+        layoutActions.add(btnLike, btnMoreAction, btnComment, btnMoreInfo, btnShare);
 
         return layoutActions;
     }
 
-    private VerticalLayout getSubTabs (String strContentType, String strContentTitle, Record record) {
+    private VerticalLayout getSubTabs(String strContentType, String strContentTitle, Record record) {
 
         VerticalLayout layoutTabsInfo = new VerticalLayout();
-        if(isMobile) {
+        if (isMobile) {
             layoutTabsInfo.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.CENTER,
@@ -2814,7 +2737,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
                     Padding.NONE,
                     Gap.MEDIUM
             );
-        }else{
+        } else {
             layoutTabsInfo.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.CENTER,
@@ -2839,7 +2762,6 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         lstLocationTabs.add("Additional Sources");
 
 
-
         ToggleButtonGroup btnGroup = new ToggleButtonGroup();
         btnGroup.addClassNames(Width.SMALL,
                 Overflow.HIDDEN, Width.AUTO,
@@ -2859,26 +2781,24 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
                 Height.LARGE
         );
 
-        btnGroup.addValueChangeListener(event->{
-            if(event.getValue().toString().equalsIgnoreCase("My Notes")){
-                divTabContent.setText(" my notes ... of "+strContentTitle+" in "+strContentType);
-            }
-            else if(event.getValue().toString().equalsIgnoreCase("Reviews")){
-                divTabContent.setText(strUsername+" users review 1 ...");
-            }
-            else{
-                divTabContent.setText(strContentTitle+" ....... in "+strContentType);
+        btnGroup.addValueChangeListener(event -> {
+            if (event.getValue().toString().equalsIgnoreCase("My Notes")) {
+                divTabContent.setText(" my notes ... of " + strContentTitle + " in " + strContentType);
+            } else if (event.getValue().toString().equalsIgnoreCase("Reviews")) {
+                divTabContent.setText(strUsername + " users review 1 ...");
+            } else {
+                divTabContent.setText(strContentTitle + " ....... in " + strContentType);
             }
         });
 
-        layoutTabsInfo.add(btnGroup,divTabContent);
+        layoutTabsInfo.add(btnGroup, divTabContent);
 
 
         return layoutTabsInfo;
     }
 
 
-    public VerticalLayout getWebsiteItem( Record record) {
+    public VerticalLayout getWebsiteItem(Record record) {
 
         // String[] arrColumnsLearning = {"org_name","org_type","city", "country"};
 
@@ -2889,21 +2809,18 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         String strCanBeUsedFor = record.getColumnData("used_for");
 
 
-
         String strCountry = record.getColumnData("country");
-        String strCity  = record.getColumnData("city");
+        String strCity = record.getColumnData("city");
 
-        String strUrl  = record.getColumnData("url");
+        String strUrl = record.getColumnData("url");
 
         String strImage = record.getColumnData("picture");
 
-        if(!strImage.equalsIgnoreCase("null") && !strImage.equalsIgnoreCase(""))
-        {
-            strImage = strPath+"/"+strImage;
+        if (!strImage.equalsIgnoreCase("null") && !strImage.equalsIgnoreCase("")) {
+            strImage = strPath + "/" + strImage;
         } else {
             strImage = "";
         }
-
 
 
         HorizontalLayout layoutSection = new HorizontalLayout();
@@ -2947,7 +2864,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
 //        dayUpdated.getStyle().setColor("#8b94a0");
 
         HorizontalLayout layoutPostTitle = new HorizontalLayout();
-        if(isMobile) {
+        if (isMobile) {
             layoutPostTitle.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.AROUND,
@@ -2957,7 +2874,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
                     //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
                     Background.CONTRAST_10,
                     Border.BOTTOM, Border.RIGHT, BorderColor.CONTRAST_20, BorderRadius.FULL);
-        }else{
+        } else {
             layoutPostTitle.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.AROUND,
@@ -2982,7 +2899,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         VerticalLayout layoutMainInfo = new VerticalLayout();
         layoutMainInfo.addClassName("bottom-radius-shadow");
 
-        if(isMobile) {
+        if (isMobile) {
             layoutMainInfo.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.EVENLY,
@@ -2991,7 +2908,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
                     Gap.MEDIUM,
                     //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
                     Background.CONTRAST_5, BorderRadius.NONE);
-        }else{
+        } else {
             layoutMainInfo.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.EVENLY,
@@ -3005,17 +2922,13 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         HorizontalLayout layoutImage = new HorizontalLayout();
         layoutImage.addClassNames(Border.ALL, BorderColor.CONTRAST_10, BorderRadius.LARGE);
 
-        if(!strImage.equalsIgnoreCase("null") && !strImage.equalsIgnoreCase(""))
-        {
+        if (!strImage.equalsIgnoreCase("null") && !strImage.equalsIgnoreCase("")) {
             String finalStrImage = strImage;
             final StreamResource imageResource = new StreamResource("image", () -> {
-                try
-                {
+                try {
                     return new FileInputStream(new File(finalStrImage));
-                }
-                catch(final FileNotFoundException e)
-                {
-                    logger.error("FileNotFoundException learning "+e.getMessage());
+                } catch (final FileNotFoundException e) {
+                    logger.error("FileNotFoundException learning " + e.getMessage());
                     return null;
                 }
             });
@@ -3088,10 +3001,9 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         String strDescription = record.getColumnData("description");
 
         Paragraph parDescription = new Paragraph(strDescription);
-        if(!strDescription.equalsIgnoreCase("null") && !strDescription.equalsIgnoreCase("")) {
+        if (!strDescription.equalsIgnoreCase("null") && !strDescription.equalsIgnoreCase("")) {
             parDescription.setVisible(true);
-        }
-        else{
+        } else {
             parDescription.setVisible(false);
         }
 
@@ -3158,7 +3070,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         urlLink.setClassName("lazy-api-link");
         urlLink.setHref(strUrl);
         urlLink.setTarget("_blank");
-        urlLink.setText(strUrl.toLowerCase().replace("https://","").replace("http://",""));
+        urlLink.setText(strUrl.toLowerCase().replace("https://", "").replace("http://", ""));
 
 //        layoutExtLinks.add(linkTutor,linkTutorWikipedia,linkTutorInsta,linkTutorYt);
 //        layoutSourceCard.add(imgInfo, divLearningCat, imgPerson, divTutorInfo,divTutorTeam,layoutExtLinks);
@@ -3188,7 +3100,6 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
 //            layoutImage.setVisible(true);
 //        }
 //
-
 
 
         StreamResource iconLike = new StreamResource("star-empty-icon.svg",
@@ -3235,7 +3146,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
                 BorderRadius.LARGE);
         layoutActions.addClassNames("actions");
 
-        layoutActions.add(btnLike,btnMoreAction, btnComment,btnMoreInfo,btnShare);
+        layoutActions.add(btnLike, btnMoreAction, btnComment, btnMoreInfo, btnShare);
 
 
         HorizontalLayout layoutPostRelated = new HorizontalLayout();
@@ -3243,7 +3154,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         layoutPostRelated.setPadding(false);
         layoutPostRelated.setSpacing(false);
 
-        layoutMainInfo.add(layoutPostTitle,divUsedFor,parDescription,urlLink,getSubTabs("websites",strName,record),layoutActions);
+        layoutMainInfo.add(layoutPostTitle, divUsedFor, parDescription, urlLink, getSubTabs("websites", strName, record), layoutActions);
 
         return layoutMainInfo;
     }
@@ -3255,10 +3166,10 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         layoutPhotos.setSpacing(false);
         //layoutPhotos.setWidthFull();
         PhotoFlickrService photoFlickr = new PhotoFlickrService();
-        ArrayList<Photo> listPhotos = photoFlickr.findPhotos(destination,count);
-        for(int p=0;p<listPhotos.size();p++) {
+        ArrayList<Photo> listPhotos = photoFlickr.findPhotos(destination, count);
+        for (int p = 0; p < listPhotos.size(); p++) {
 
-            Photo photo =  listPhotos.get(p);
+            Photo photo = listPhotos.get(p);
 
             String thumbUrl = photo.getThumbnailUrl();//.getSmallUrl(); //.getThumbnailUrl();
             String title = photo.getTitle();
@@ -3270,7 +3181,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
             user.getPhotosCount();
             user.getPhotosurl();
 
-            Image image = new Image(thumbUrl,destination);
+            Image image = new Image(thumbUrl, destination);
             image.setHeight("88px");
             image.setWidth("auto");
 
@@ -3289,9 +3200,9 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
             String userId = user.getId();
             String userName = user.getRealName(); //photoFlickr.getUserName(userId); //user.getUsername();
 
-            logger.info("  "+userName+"  "+userId+"  ");
+            logger.info("  " + userName + "  " + userId + "  ");
 
-            String userUrl = "https://www.flickr.com/photos/"+userId;
+            String userUrl = "https://www.flickr.com/photos/" + userId;
             Anchor linkUserInNewTab = new Anchor(userUrl, "");
             linkUserInNewTab.getElement().setAttribute("target", "_blank");
             linkUserInNewTab.addComponentAtIndex(0, VaadinIcon.USER.create());
@@ -3307,12 +3218,9 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
             layoutPhotos.add(photoLayout);
 
 
-
 //
 //                photoUrls.add(photoList.get(i).getThumbnailUrl());//.getSmall320Url());
 //             //   layoutPhotos.add(photoList.get(i).getThumbnailUrl());
-
-
 
 
 //            Image image = new Image(listPhotosLayout.get(p),destination);
@@ -3326,7 +3234,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
 
     }
 
-    public VerticalLayout getWeatherCurrent(String destination, String country){
+    public VerticalLayout getWeatherCurrent(String destination, String country) {
         HorizontalLayout layoutWeather = new HorizontalLayout();
         layoutWeather.getStyle().setColor("#8b94a0");
         layoutWeather.addClassNames(
@@ -3337,10 +3245,10 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
 
         WeatherService weatherService = new WeatherService("metric");
 
-        String[] locations = weatherService.lookUpLocation(destination,"",country);
+        String[] locations = weatherService.lookUpLocation(destination, "", country);
 
-        for(int i = 0;i<locations.length;i++) {
-            logger.info("locations  "+locations[i]);
+        for (int i = 0; i < locations.length; i++) {
+            logger.info("locations  " + locations[i]);
         }
         String[] currentWeatherData = weatherService.getCurrentWeatherDataMetric(locations);
         //String[][] dailyForecast =weatherService.getDailyForecastMetric(locations);
@@ -3443,46 +3351,46 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         Div divClouds = new Div(currentWeatherData[15]);
         divClouds.getStyle().setFontWeight(Style.FontWeight.BOLDER);
 
-        Div divRain= new Div();
+        Div divRain = new Div();
         String rain = currentWeatherData[16];
 
         Div divVisibility = new Div(currentWeatherData[17]);
         divVisibility.getStyle().setFontWeight(Style.FontWeight.BOLDER);
 
 
-        layoutRight.add(new HorizontalLayout(new Div("L: "), divL, new Div("H: "),divH ));
+        layoutRight.add(new HorizontalLayout(new Div("L: "), divL, new Div("H: "), divH));
         Div divNow = new Div("Now");
         divNow.getStyle().setFontSize("11px");
         layoutRight.add(new HorizontalLayout(divNow));
 
         layoutRight.add(new HorizontalLayout(new Div("Feels like: "), divFeelsLike));
-        layoutRight.add(new HorizontalLayout(new Div("Clouds: "),divClouds));
+        layoutRight.add(new HorizontalLayout(new Div("Clouds: "), divClouds));
 
-        if(!rain.equalsIgnoreCase("")) {
+        if (!rain.equalsIgnoreCase("")) {
             divRain.setText(currentWeatherData[16]);
             divRain.getStyle().setFontWeight(Style.FontWeight.BOLDER);
-            layoutRight.add(new HorizontalLayout(new Div("Rain: "),divRain));
+            layoutRight.add(new HorizontalLayout(new Div("Rain: "), divRain));
         }
 
         layoutRight.add(new HorizontalLayout(new Div("Humidity: "), divHumidity));
         layoutRight.add(new HorizontalLayout(new Div("Wind speed: "), divWindSpeed));
 
-        layoutWeather.add(layoutLeft,layoutRight);
+        layoutWeather.add(layoutLeft, layoutRight);
 
         VerticalLayout layout = new VerticalLayout();
         layout.setMargin(false);
         layout.setSpacing(false);
         layout.setPadding(false);
-        layout.addClassNames(AlignItems.CENTER,JustifyContent.CENTER);
+        layout.addClassNames(AlignItems.CENTER, JustifyContent.CENTER);
 
         Anchor apiLink = new Anchor();
         apiLink.getStyle().setColor("#8b94a0");
         apiLink.setClassName("lazy-api-link");
         apiLink.setHref(weatherService.getUrlReference());
         apiLink.setTarget("_blank");
-        apiLink.setText("Weather data by: "+weatherService.getTitleReference());
+        apiLink.setText("Weather data by: " + weatherService.getTitleReference());
 
-        layout.add(layoutWeather,apiLink);
+        layout.add(layoutWeather, apiLink);
 
         return layout;
 
@@ -3491,12 +3399,12 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
     private List<Record> getRecordsFromDb(String sql, String[] arrColumnNames) {
 
         logger.info(" photo  getRecordsFromDb:   " + sql);
-        return recordService.findAll(sql,arrColumnNames);
+        return recordService.findAll(sql, arrColumnNames);
     }
 
     private List<Record> getRecordsFromDb(String sql, String[] arrColumnNames, Object[] sqlParValue, String[] sqlParType) {
         logger.info(" photo  getRecordsFromDb with params:   " + sql);
-        return recordService.findAll(sql,arrColumnNames, sqlParValue, sqlParType);
+        return recordService.findAll(sql, arrColumnNames, sqlParValue, sqlParType);
     }
 
     private void logVisitorToDb() {
@@ -3510,7 +3418,6 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         sysUserName = System.getProperty("user.name");
 
 
-
         // String ipAddress = VaadinSession.getCurrent().getBrowser().getAddress();
         String browser = VaadinSession.getCurrent().getBrowser().getBrowserApplication();
         int versionOfBrowserMajor = VaadinSession.getCurrent().getBrowser().getBrowserMajorVersion();
@@ -3519,7 +3426,6 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
 
 
         int[] availWidth = calcTotalAvailableWidth();
-
 
 
         String strOS = "";
@@ -3540,15 +3446,13 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         }
 
 
-
-
         logger.info("photo visitor:" + publicIp + " . " + hostname + " . " + hostAddress + " . " + canonicalHostname + " .  " + browser + " " + sessionid);
 
         String insertSQL = "INSERT INTO dbvisitor_log SET visitorlogId = 0,  timeOfVisit = now(), ipAddress = '" + publicIp + "', browserName = '" + browser + "', "
                 + " browserVersionMajor = '" + versionOfBrowserMajor + "', browserVersionMinor = '" + versionOfBrowserMinor + "', urlParameter = NULL , timeZoneId = '" + timeZoneId + "', "
                 + "appVersion = '" + APP_NAME + "-" + APP_VERSION + "', sessionId = '" + sessionid + "', sessionCreationTime = '" + sessionDateTime + "', hostname = '" + hostname + "', "
-                + "hostAddress = '" + hostAddress + "', os = '" + strOS + "', section = '" +section+"',"+
-                " item = '" +strPath+"',"+
+                + "hostAddress = '" + hostAddress + "', os = '" + strOS + "', section = '" + section + "'," +
+                " item = '" + strPath + "'," +
                 " locale = '" + locale + "', localeName ='" + localeName + "' ";
 
         ArrayList<String> lstQueryInsert = new ArrayList<String>();
@@ -3588,8 +3492,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
     }
 
 
-
-    private String getFileSize(File file){
+    private String getFileSize(File file) {
 
         return String.format("%.2f", getFileSizeDouble(file));
 
@@ -3603,7 +3506,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
 
     private String getMBFromLong(long size) {
 
-        double filesizeMB = (double)  size / (1024 * 1024);// + " mb";
+        double filesizeMB = (double) size / (1024 * 1024);// + " mb";
         return String.format("%.2f", filesizeMB);
     }
 

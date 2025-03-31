@@ -3,7 +3,6 @@ package com.photo.act.photo_act.services;
 // https://medium.com/@kouomeukevin/how-to-upload-and-download-image-into-sql-database-with-spring-boot-c849ec5daec6
 
 
-import com.photo.act.photo_act.views.ImageGalleryView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -12,60 +11,51 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.zip.DataFormatException;
-
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
-
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.Objects;
+import java.nio.file.StandardCopyOption;
+import java.util.UUID;
 
 
 @Service
-public class ImageService{
+public class ImageService {
 
     private static final Logger logger = LoggerFactory.getLogger(ImageService.class);
 
-// https://medium.com/@dulanjayasandaruwan1998/uploading-images-in-a-spring-boot-project-a-step-by-step-guide-8a55248ea520
-public String uploadImage(MultipartFile file, String uploadDir) {
+    // https://medium.com/@dulanjayasandaruwan1998/uploading-images-in-a-spring-boot-project-a-step-by-step-guide-8a55248ea520
+    public String uploadImage(MultipartFile file, String uploadDir) {
 
-    String contentType = file.getContentType();
-    if (contentType != null && !contentType.equals("image/jpeg") && !contentType.equals("image/png")) {
-        logger.error("Only JPEG or PNG images are allowed");
-        throw new IllegalArgumentException("Only JPEG or PNG images are allowed");
-    }
-
-    // Save the file to the directory
-    String filePath = saveImage(file, uploadDir);
-    return "Image uploaded successfully: " + filePath;
-}
-
-private String saveImage(MultipartFile file, String uploadDir){
-    Path uploadPath = Paths.get(uploadDir);
-    try {
-
-        if (!Files.exists(uploadPath)) {
-            Files.createDirectories(uploadPath);
+        String contentType = file.getContentType();
+        if (contentType != null && !contentType.equals("image/jpeg") && !contentType.equals("image/png")) {
+            logger.error("Only JPEG or PNG images are allowed");
+            throw new IllegalArgumentException("Only JPEG or PNG images are allowed");
         }
 
-        String fileName = file.getOriginalFilename();
-        Path filePath = uploadPath.resolve(fileName);
-        Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-
-        return filePath.toString();
-    }catch (IOException e) {
-        logger.error(e.getMessage());
-        return "Error uploading image "+e.getMessage();
+        // Save the file to the directory
+        String filePath = saveImage(file, uploadDir);
+        return "Image uploaded successfully: " + filePath;
     }
-}
 
-    public String copyImage(String fileName, InputStream inputStream, String uploadDir){
+    private String saveImage(MultipartFile file, String uploadDir) {
+        Path uploadPath = Paths.get(uploadDir);
+        try {
+
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+            }
+
+            String fileName = file.getOriginalFilename();
+            Path filePath = uploadPath.resolve(fileName);
+            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+            return filePath.toString();
+        } catch (IOException e) {
+            logger.error(e.getMessage());
+            return "Error uploading image " + e.getMessage();
+        }
+    }
+
+    public String copyImage(String fileName, InputStream inputStream, String uploadDir) {
         Path uploadPath = Paths.get(uploadDir);
         try {
 
@@ -78,9 +68,9 @@ private String saveImage(MultipartFile file, String uploadDir){
             Files.copy(inputStream, filePath, StandardCopyOption.REPLACE_EXISTING);
 
             return filePath.toString();
-        }catch (IOException e) {
+        } catch (IOException e) {
             logger.error(e.getMessage());
-            return "Error uploading image "+e.getMessage();
+            return "Error uploading image " + e.getMessage();
         }
     }
 
@@ -125,13 +115,12 @@ private String saveImage(MultipartFile file, String uploadDir){
 //        if (!Arrays.asList(ALLOWED_CONTENT_TYPE).contains(file.getContentType()))
 //            throw new Exception("Unsupported image content type");
 //        if(!Objects.equals(file.getContentType(), JPG_CONTENT_TYPE)) {
-////            ConvertImageToJPG(file.getInputStream());
+/// /            ConvertImageToJPG(file.getInputStream());
 //        }
 //
 //        return storageService.saveFile(file, filename);
 //    }
 //}
-
 
 
 //@Service

@@ -12,6 +12,7 @@ import com.photo.act.photo_act.services.WeatherService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.photo.act.photo_act.views.components.GenericView;
+import com.photo.act.photo_act.views.components.HeaderFilterTabs;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.HasStyle;
 import com.vaadin.flow.component.UI;
@@ -224,18 +225,20 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         ArrayList<Image> lstImage = loadImagesFromDbToCarousel(sqlGalleryAll + " LIMIT 10 ", arrColumnNamesGallery, false, false);
 
 
-        H3 titlePage = new H3("10 Sample Photos");
+        H1 titlePage = new H1("10 Sample Photos");
         verticalLayout.add(titlePage, getCarousel(lstImage));
 
-        H3 titleLastPhotos = new H3("Last 6 Photos uploaded");
+        H1 titleLastPhotos = new H1("Last 6 Photos uploaded");
         VerticalLayout layoutLastPhotos = loadUploadedPhotos(sqlGalleryAll + " LIMIT 6 ", arrColumnNamesGallery, false, true);
         verticalLayout.add(titleLastPhotos, layoutLastPhotos);
 
-        H3 titleA = new H3("Current Weather in Athens");
+        H1 titleWeather = new H1("Current Weather");
+
+        H3 titleA = new H3("Athens");
         VerticalLayout layoutResultsA = loadResults("Athens", "Greece");
-        H3 titleB = new H3("Current Weather in Thessaloniki");
+        H3 titleB = new H3("Thessaloniki");
         VerticalLayout layoutResultsB = loadResults("Thessaloniki", "Greece");
-        verticalLayout.add(titleA, layoutResultsA, titleB, layoutResultsB);
+        verticalLayout.add(titleWeather, titleA, layoutResultsA, titleB, layoutResultsB);
 
 
         this.removeAll();
@@ -525,7 +528,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
                     //  Background.CONTRAST_5,
                     BorderRadius.LARGE);
         }
-        layoutFilters.addClassName("header-layout");
+        layoutFilters.addClassName("header-layout-filters");
 
 
         ArrayList<String> lstCategories = new ArrayList<>();
@@ -552,30 +555,30 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 //         checkboxGroupLocation.setLabel("Location");
         checkboxGroupLocation.setItems("Hungary", "UK", "Greece");//, "Thursday",
 
-        VerticalLayout layoutHeaderParameters = new VerticalLayout();
-        if (isMobile) {
-            layoutHeaderParameters.addClassNames(
-                    AlignItems.CENTER, JustifyContent.EVENLY,
-                    Overflow.HIDDEN, Width.FULL,
-                    Margin.SMALL,
-                    Padding.NONE,
-                    Gap.XSMALL,
-                    // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
-                    //   Background.CONTRAST_5,
-                    BorderRadius.NONE
-            );
-        } else {
-            layoutHeaderParameters.addClassNames(
-                    AlignItems.CENTER, JustifyContent.EVENLY,
-                    Overflow.HIDDEN, Width.FULL,
-                    Margin.SMALL,
-                    Padding.NONE,
-                    Gap.XSMALL,
-                    // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
-//                       Background.CONTRAST_5,
-                    BorderRadius.LARGE
-            );
-        }
+//        VerticalLayout layoutHeaderParameters = new VerticalLayout();
+//        if (isMobile) {
+//            layoutHeaderParameters.addClassNames(
+//                    AlignItems.CENTER, JustifyContent.EVENLY,
+//                    Overflow.HIDDEN, Width.FULL,
+//                    Margin.SMALL,
+//                    Padding.NONE,
+//                    Gap.XSMALL,
+//                    // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
+//                    //   Background.CONTRAST_5,
+//                    BorderRadius.NONE
+//            );
+//        } else {
+//            layoutHeaderParameters.addClassNames(
+//                    AlignItems.CENTER, JustifyContent.EVENLY,
+//                    Overflow.HIDDEN, Width.FULL,
+//                    Margin.SMALL,
+//                    Padding.NONE,
+//                    Gap.XSMALL,
+//                    // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
+////                       Background.CONTRAST_5,
+//                    BorderRadius.LARGE
+//            );
+//        }
 
         Select<String> cmbView = new Select<>();
         cmbView.setLabel("View");
@@ -584,8 +587,16 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
                 "Wide - No MetaData", "Wide - MetaData Bottom", "Wide - MetaData Right");
         cmbView.setValue("Ordinary - No MetaData");
 
-        headerContainerMaster.add(headerTextContainer);
-        layoutHeaderParameters.add(headerContainerMaster);
+//        headerContainerMaster.add(headerTextContainer);
+//        layoutHeaderParameters.add(headerContainerMaster);
+
+
+//        headerContainerMaster.add(headerTextContainer);
+//        headerContainerSecondary.add(layoutFilters);
+//        layoutHeaderParameters.add( headerContainerSecondary, divSection);
+
+        HeaderFilterTabs headerFilterTabs = new HeaderFilterTabs(recordService, isMobile);
+        VerticalLayout layoutHeaderParameters = headerFilterTabs.getHeader(strHeader, strSubHeader, strSection, headerContainerSecondary);
 
 //        headerContainerMaster.add(headerTextContainer, cmbView);
 //        headerContainerSecondary.add(layoutFilters, sortBy);
@@ -668,10 +679,10 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         String strUploader = record.getColumnData("uploader");
 
 //        RouteParam routeUploader = new RouteParam("member", strUploader);
-//        RouterLink linkUploader = new RouterLink(strUploader, ImageGalleryView.class,new RouteParameters(routeUploader));
+//        RouterLink linkUploader = new RouterLink(strUploader, GalleryView.class,new RouteParameters(routeUploader));
 //
 //        RouteParam routeDestination = new RouteParam("destination", strCityName);
-//        RouterLink linkDestination = new RouterLink(strCityName, ImageGalleryView.class,new RouteParameters(routeDestination));
+//        RouterLink linkDestination = new RouterLink(strCityName, GalleryView.class,new RouteParameters(routeDestination));
 //
 //        ArrayList<RouterLink> lstRouterLinks =new ArrayList<>();
 //        lstRouterLinks.add(linkDestination);
@@ -683,7 +694,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         String strImagePath = strPath + dirChar + strFileName;
         logger.info(" strImagePath " + strImagePath);
 //        Image image1 = new Image("https://images.unsplash.com/photo-1536048810607-3dc7f86981cb?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80", "img2");
-        //ImageGalleryViewCard imageGalleryViewCard = new ImageGalleryViewCard(record,strImagePath,isMobile,userId, strUsername, sessionCreation,hostname,publicIp, isEditable, linkUploader, lstRouterLinks, recordService);
+        //GalleryImageViewCard imageGalleryViewCard = new GalleryImageViewCard(record,strImagePath,isMobile,userId, strUsername, sessionCreation,hostname,publicIp, isEditable, linkUploader, lstRouterLinks, recordService);
         Image image = new Image();
 
         final StreamResource imageResource = new StreamResource("streamResource", () -> {
@@ -693,7 +704,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
                 File file = path.toFile();
                 return new FileInputStream(file);
             } catch (final FileNotFoundException e) {
-//                logErrorInDb(e, "ImageGalleryViewCard StreamResource FileNotFoundException", hostname, userId, strUserName, publicIp, sessionCreation, file.getAbsolutePath());
+//                logErrorInDb(e, "GalleryImageViewCard StreamResource FileNotFoundException", hostname, userId, strUserName, publicIp, sessionCreation, file.getAbsolutePath());
                 // logErrorInDb(e,hostname,"CreationsViewCard StreamResource",userId,strUserName,file.getAbsolutePath());
                 logger.error(e.getMessage());
             }

@@ -5,8 +5,9 @@ import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.photo.act.photo_act.views.components.AlbumViewCard;
+import com.photo.act.photo_act.views.components.GalleryImageViewCard;
 import com.photo.act.photo_act.views.components.GenericView;
-import com.photo.act.photo_act.views.components.ImageGalleryViewCard;
+import com.photo.act.photo_act.views.components.HeaderFilterTabs;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.HasStyle;
 import com.vaadin.flow.component.UI;
@@ -47,11 +48,11 @@ import static com.photo.act.photo_act.views.MainLayout.*;
 //@RouteAlias(value = "gallery/location/:destination?", layout = MainLayout.class)
 
 //@Menu(order = 0, icon = "line-awesome/svg/th-list-solid.svg")
-public class ImageAlbumsView extends Main implements HasUrlParameter<String>, BeforeEnterObserver, HasComponents, HasDynamicTitle, HasStyle {
+public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeEnterObserver, HasComponents, HasDynamicTitle, HasStyle {
 
     private String strColorOfIcons = "#a62f03"; //"#f9943b";//"#a62c5c";//"#7d1e32";
 
-    private static final Logger logger = LoggerFactory.getLogger(ImageAlbumsView.class);
+    private static final Logger logger = LoggerFactory.getLogger(AlbumsView.class);
 
     private VerticalLayout verticalLayout;
     private String sessionid;
@@ -128,7 +129,7 @@ public class ImageAlbumsView extends Main implements HasUrlParameter<String>, Be
     private String sessionDateTime;
     private GenericView genericView;
 
-    public ImageAlbumsView(RecordService recordService) {
+    public AlbumsView(RecordService recordService) {
         this.recordService = recordService;
         utilsDate = new UtilsDate();
         genericView = new GenericView();
@@ -418,13 +419,13 @@ public class ImageAlbumsView extends Main implements HasUrlParameter<String>, Be
                     //  Background.CONTRAST_5,
                     BorderRadius.LARGE);
         }
-        layoutFilters.addClassName("header-layout");
+        layoutFilters.addClassName("header-layout-filters");
 
         RouteParam routeMember = new RouteParam("member", strMember);
 
         RouteParam routeAlbumAll = new RouteParam("title", STR_ALL_ALBUMS);
         RouteParameters routeParamsAll = new RouteParameters(routeAlbumAll, routeMember);
-        RouterLink linkPhotoAlbumAll = new RouterLink("All Albums", ImageAlbumsView.class, routeParamsAll);
+        RouterLink linkPhotoAlbumAll = new RouterLink("All Albums", AlbumsView.class, routeParamsAll);
         layoutFilters.add(linkPhotoAlbumAll);
 
 
@@ -439,7 +440,7 @@ public class ImageAlbumsView extends Main implements HasUrlParameter<String>, Be
 //            String captionAlbum = lstAlbums.get(c);
 //            RouteParam routeParamAlbum = new RouteParam("title", captionAlbum);
 //
-//            RouterLink linkPhotoAlbum = new RouterLink(captionAlbum, ImageAlbumsView.class, new RouteParameters(routeParamAlbum, routeMember));
+//            RouterLink linkPhotoAlbum = new RouterLink(captionAlbum, AlbumsView.class, new RouteParameters(routeParamAlbum, routeMember));
 //            layoutFilters.add(linkPhotoAlbum);
 //        }
 
@@ -460,30 +461,30 @@ public class ImageAlbumsView extends Main implements HasUrlParameter<String>, Be
 ////        Div lblFilterFormat = new Div("Format");
 //        layoutFilters.add(checkboxGroupFormat);
 
-        VerticalLayout layoutHeaderParameters = new VerticalLayout();
-        if (isMobile) {
-            layoutHeaderParameters.addClassNames(
-                    AlignItems.CENTER, JustifyContent.EVENLY,
-                    Overflow.HIDDEN, Width.FULL,
-                    Margin.SMALL,
-                    Padding.NONE,
-                    Gap.XSMALL,
-                    // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
-                    //   Background.CONTRAST_5,
-                    BorderRadius.NONE
-            );
-        } else {
-            layoutHeaderParameters.addClassNames(
-                    AlignItems.CENTER, JustifyContent.EVENLY,
-                    Overflow.HIDDEN, Width.FULL,
-                    Margin.SMALL,
-                    Padding.NONE,
-                    Gap.XSMALL,
-                    // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
-//                       Background.CONTRAST_5,
-                    BorderRadius.LARGE
-            );
-        }
+//        VerticalLayout layoutHeaderParameters = new VerticalLayout();
+//        if (isMobile) {
+//            layoutHeaderParameters.addClassNames(
+//                    AlignItems.CENTER, JustifyContent.EVENLY,
+//                    Overflow.HIDDEN, Width.FULL,
+//                    Margin.SMALL,
+//                    Padding.NONE,
+//                    Gap.XSMALL,
+//                    // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
+//                    //   Background.CONTRAST_5,
+//                    BorderRadius.NONE
+//            );
+//        } else {
+//            layoutHeaderParameters.addClassNames(
+//                    AlignItems.CENTER, JustifyContent.EVENLY,
+//                    Overflow.HIDDEN, Width.FULL,
+//                    Margin.SMALL,
+//                    Padding.NONE,
+//                    Gap.XSMALL,
+//                    // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
+////                       Background.CONTRAST_5,
+//                    BorderRadius.LARGE
+//            );
+//        }
 
 //        Select<String> cmbView = new Select<>();
 //        cmbView.setLabel("View");
@@ -550,9 +551,16 @@ public class ImageAlbumsView extends Main implements HasUrlParameter<String>, Be
                 Margin.Bottom.MEDIUM, Margin.Top.MEDIUM);
 
 
+//        headerContainerMaster.add(headerTextContainer);
+        headerContainerSecondary.add(layoutFilters);
+//        layoutHeaderParameters.add( headerContainerSecondary, divSection);
+
+        HeaderFilterTabs headerFilterTabs = new HeaderFilterTabs(recordService, isMobile);
+        VerticalLayout layoutHeaderParameters = headerFilterTabs.getHeader(strHeader, strSubHeader, strSection, headerContainerSecondary);
+
 //        headerContainerMaster.add(headerTextContainer, cmbView);
-        headerContainerSecondary.add(layoutFilters);  //, sortBy);
-        layoutHeaderParameters.add(headerContainerMaster, headerContainerSecondary, divSection);
+//        headerContainerSecondary.add(layoutFilters, sortBy);
+//        layoutHeaderParameters.add(headerContainerMaster,headerContainerSecondary);
 
         return layoutHeaderParameters;
     }
@@ -589,8 +597,8 @@ public class ImageAlbumsView extends Main implements HasUrlParameter<String>, Be
 
 //        RouteParam routeAlbum = new RouteParam("title", strAlbumTitle);
 //        RouteParam routeUploader = new RouteParam("member", strUploader);
-//        //RouterLink linkUploader = new RouterLink(strUploader, ImageAlbumsView.class, new RouteParameters(routeAlbum, routeUploader));
-//        RouterLink linkAlbum = new RouterLink(strAlbumTitle, ImageAlbumsView.class, new RouteParameters(routeAlbum, routeUploader));
+//        //RouterLink linkUploader = new RouterLink(strUploader, AlbumsView.class, new RouteParameters(routeAlbum, routeUploader));
+//        RouterLink linkAlbum = new RouterLink(strAlbumTitle, AlbumsView.class, new RouteParameters(routeAlbum, routeUploader));
 
         String strImagePath = strPath + dirChar; // + strFileName;
         logger.info(" strImagePath " + strImagePath);
@@ -616,7 +624,7 @@ public class ImageAlbumsView extends Main implements HasUrlParameter<String>, Be
         verticalLayout.add(divGallery);
     }
 
-    private ImageGalleryViewCard getAlbumImageThumbsFromDb(Record record, boolean isEditable) {
+    private GalleryImageViewCard getAlbumImageThumbsFromDb(Record record, boolean isEditable) {
         strPath = DIR_PHOTOS_SERVER + dirChar + subPathMedium;
 
         String strFileName = record.getColumnData("name_new");
@@ -633,13 +641,13 @@ public class ImageAlbumsView extends Main implements HasUrlParameter<String>, Be
 
         RouteParam routeAlbum = new RouteParam("title", strAlbumTitle);
         RouteParam routeUploader = new RouteParam("member", strUploader);
-        RouterLink linkUploader = new RouterLink(strUploader, ImageAlbumsView.class, new RouteParameters(routeAlbum, routeUploader));
-        RouterLink linkAlbum = new RouterLink(strAlbumTitle, ImageAlbumsView.class, new RouteParameters(routeAlbum, routeUploader));
+        RouterLink linkUploader = new RouterLink(strUploader, AlbumsView.class, new RouteParameters(routeAlbum, routeUploader));
+        RouterLink linkAlbum = new RouterLink(strAlbumTitle, AlbumsView.class, new RouteParameters(routeAlbum, routeUploader));
 
         String strImagePath = strPath + dirChar + strFileName;
         logger.info(" strImagePath " + strImagePath);
 
-        ImageGalleryViewCard imageGalleryViewCard = new ImageGalleryViewCard(record, strImagePath, isMobile, userId, strUsername, sessionCreation, hostname, publicIp, isEditable,
+        GalleryImageViewCard imageGalleryViewCard = new GalleryImageViewCard(record, strImagePath, isMobile, userId, strUsername, sessionCreation, hostname, publicIp, isEditable,
                 linkAlbum, linkUploader, recordService);
         return imageGalleryViewCard;
 

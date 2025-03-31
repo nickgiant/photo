@@ -35,7 +35,7 @@ import java.nio.file.FileSystems;
 import java.util.ArrayList;
 import java.util.UUID;
 
-import static com.photo.act.photo_act.views.ImageGalleryView.*;
+import static com.photo.act.photo_act.views.GalleryView.*;
 import static com.photo.act.photo_act.views.MainLayout.HOSTNAME_LAPTOP;
 
 public class UploadImageCard extends VerticalLayout {
@@ -694,7 +694,7 @@ public class UploadImageCard extends VerticalLayout {
     }
 
     /*
-    temporary called only by ImageGalleryView
+    temporary called only by GalleryView
      */
 //    public VerticalLayout getLocationSelectionLayout() {
 //        VerticalLayout verticalLayout = new VerticalLayout();

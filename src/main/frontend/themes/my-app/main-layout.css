@@ -23,6 +23,49 @@
 /*    display: none;*/
 /*}*/
 
+.header-layout-filters {
+    display: grid;
+    align-items: center;
+    justify-content: center;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); /*minmax(min(70px, 8vw), 1fr)); /*repeat(auto-fit, minmax(80px, 1fr));*/
+    grid-gap: 17px;
+
+    max-width: 1110px;
+
+    padding-top: 5px;
+    padding-bottom: 9px;
+    padding-left: 3px;
+    padding-right: 3px;
+    margin: 0;
+
+    a {
+        padding: 5px;
+        text-decoration: none;
+        font-size: var(--lumo-font-size-m);
+        letter-spacing: 1px;
+        text-align: center;
+        font-family: Times-New-Roman, serif;
+        font-weight: bold;
+        color: #466ca8; /* #6c9494;*/
+        background-color: #c7d8f1;
+        border: #c7d8f1 1px solid;
+        box-shadow: 1px 1px 6px lightgrey;
+        border-radius: var(--lumo-border-radius-l);
+        transition: 0.5s;
+
+        &:hover {
+            color: #466ca8; /* #6c9494;*/
+            background-color: #e6ecf0; /*#edf7f5;*/
+            border: #466ca8 1px solid; /* #6c9494;*/
+            box-shadow: 2px 2px 10px lightgrey;
+            transition: 0.4s;
+            cursor: pointer;
+        }
+    }
+}
+
+
+
 vaadin-app-layout::part(navbar) {
     /*background-color: darkseagreen; !* #8ca775; !*var(--lumo-shade-20pct);*!*/
     /*opacity: 0.3;*/
@@ -36,19 +79,24 @@ nav a{     /* :any-link */
     font-weight: bold;
     text-decoration: none;
     padding: 7px 2px ; /*0 var(--lumo-space-s);*/
-    border-radius: 4px; /*var(--lumo-border-radius-m);*/
+    border-radius: 0; /*var(--lumo-border-radius-m);*/
     outline: 0;
     border: transparent 1px solid;
+
+    vaadin-icon {
+        color: var(--lumo-contrast-60pct);
+    }
 }
 
 nav a:hover{
     color: var(--lumo-contrast-70pct);  /*var(--lumo-secondary-text-color); /*#cd5c5c; /* #a62f03; !*#cd5c5c;*/
     background-color: var(--lumo-contrast-10pct);
+    border-radius: 0;
     transition: 0.4s;
     cursor: pointer;
     text-decoration: none;
     vaadin-icon{
-        color: var(--lumo-contrast-70pct);
+        color: var(--lumo-contrast-90pct);
     }
 }
 
@@ -219,28 +267,4 @@ nav a[highlight] {
 /*    align-items: center;*/
 /*    gap: var(--lumo-space-s);*/
 /*    line-height: var(--lumo-line-height-s);*/
-
-/*}*/
-
-/*.userMenuLinks {*/
-/*    padding-bottom: var(--lumo-space-xs);*/
-/*    align-items: stretch;*/
-
-/*    & a {*/
-/*        padding: var(--lumo-space-xs) var(--lumo-space-m);*/
-/*        color: var(--lumo-body-text-color);*/
-/*        text-decoration: none;*/
-
-/*        &:hover {*/
-/*            background: var(--lumo-contrast-5pct);*/
-/*        }*/
-/*    }*/
-/*}*/
-
-
-/*.footer div{*/
-/*    font-family: "Times New Roman", Times, serif;*/
-/*    background-color: #dcd9d5;*/
-/*    color: #4d4d4d;*/
-/*}*/
 

@@ -29,16 +29,16 @@ import java.io.FileNotFoundException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-public class ImageGalleryViewCard extends Div {
+public class GalleryImageViewCard extends Div {
 
-    private static final Logger logger = LoggerFactory.getLogger(ImageGalleryViewCard.class);
+    private static final Logger logger = LoggerFactory.getLogger(GalleryImageViewCard.class);
     private RecordService recordService;
     private boolean isMobile;
     private GenericView genericView;
     private RouterLink linkUploader;
     private RouterLink linkDestination;
 
-    public ImageGalleryViewCard(Record record, String strImagePath, boolean isMobile, int userId, String strUserName, long sessionCreation,
+    public GalleryImageViewCard(Record record, String strImagePath, boolean isMobile, int userId, String strUserName, long sessionCreation,
                                 String hostname, String publicIp, boolean isEditable, RouterLink linkDestination, RouterLink linkUploader, RecordService recordService) {
         this.recordService = recordService;
         this.isMobile = isMobile;
@@ -78,7 +78,7 @@ public class ImageGalleryViewCard extends Div {
 
                 return new FileInputStream(file);
             } catch (final FileNotFoundException e) {
-                logErrorInDb(e, "ImageGalleryViewCard StreamResource FileNotFoundException", hostname, userId, strUserName, publicIp, sessionCreation, file.getAbsolutePath());
+                logErrorInDb(e, "GalleryImageViewCard StreamResource FileNotFoundException", hostname, userId, strUserName, publicIp, sessionCreation, file.getAbsolutePath());
                 // logErrorInDb(e,hostname,"CreationsViewCard StreamResource",userId,strUserName,file.getAbsolutePath());
                 logger.error("FileNotFoundException  " + e.getMessage());
             }
@@ -407,7 +407,7 @@ public class ImageGalleryViewCard extends Div {
     }
 
 
-    public ImageGalleryViewCard(String strUsername, String url, boolean isMobile) {
+    public GalleryImageViewCard(String strUsername, String url, boolean isMobile) {
 //        addClassNames(
 //                Overflow.HIDDEN,
 //                //  Width.FULL,

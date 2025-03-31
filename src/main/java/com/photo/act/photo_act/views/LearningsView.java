@@ -12,6 +12,7 @@ import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.photo.act.photo_act.views.components.GenericView;
+import com.photo.act.photo_act.views.components.HeaderFilterTabs;
 import com.vaadin.flow.component.*;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.CheckboxGroup;
@@ -227,12 +228,12 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
 
         logger.info(category + "  " + tutor);
         if (category.equalsIgnoreCase(STR_ALL_CATEGORIES)) {
-            VerticalLayout layoutHeaderParameters = loadHeader("Learnings", "Filter to learn", "");
+            VerticalLayout layoutHeaderParameters = loadHeader("Learnings", "Filter by Subject", "");
             verticalLayout.add(layoutHeaderParameters);
             VerticalLayout layoutResults = loadResults(null);
             verticalLayout.add(layoutResults);
         } else if (!category.equalsIgnoreCase(STR_ALL_CATEGORIES)) {
-            VerticalLayout layoutHeaderParameters = loadHeader("Learnings", "Filter to learn", category);
+            VerticalLayout layoutHeaderParameters = loadHeader("Learnings", "Filter by Subject", category);
             verticalLayout.add(layoutHeaderParameters);
             VerticalLayout layoutResults = loadResults(null);
             verticalLayout.add(layoutResults);
@@ -454,7 +455,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         HorizontalLayout headerContainerSecondary = new HorizontalLayout();
         if (isMobile) {
             headerContainerSecondary.addClassNames(
-                    AlignItems.CENTER, JustifyContent.BETWEEN,
+                    AlignItems.CENTER, JustifyContent.CENTER,
                     Overflow.HIDDEN, Width.FULL,
                     Margin.NONE,
                     Padding.NONE,
@@ -465,7 +466,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
             );
         } else {
             headerContainerSecondary.addClassNames(
-                    AlignItems.CENTER, JustifyContent.BETWEEN,
+                    AlignItems.CENTER, JustifyContent.CENTER,
                     Overflow.HIDDEN, Width.FULL,
                     Margin.NONE,
                     Padding.NONE,
@@ -482,7 +483,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.CENTER,
                     Margin.NONE,
-                    Padding.SMALL,
+                    Padding.XSMALL,
                     Gap.SMALL,
                     Width.FULL,
                     //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
@@ -491,16 +492,16 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         } else {
             layoutFilters.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
-                    AlignItems.CENTER, JustifyContent.BETWEEN,
+                    AlignItems.CENTER, JustifyContent.CENTER,
                     Margin.NONE,
-                    Padding.MEDIUM,
+                    Padding.SMALL,
                     Gap.SMALL,
                     Width.FULL,
                     //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
                     //  Background.CONTRAST_5,
                     BorderRadius.LARGE);
         }
-        layoutFilters.addClassName("header-layout");
+        layoutFilters.addClassName("header-layout-filters");
 
 
 //        ArrayList<String> lstCategories = new ArrayList<>();
@@ -550,30 +551,30 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
 //        layoutFilters.add(checkboxGroupLocation);
 
 
-        VerticalLayout layoutHeaderParameters = new VerticalLayout();
-        if (isMobile) {
-            layoutHeaderParameters.addClassNames(
-                    AlignItems.CENTER, JustifyContent.EVENLY,
-                    Overflow.HIDDEN, Width.FULL,
-                    Margin.SMALL,
-                    Padding.NONE,
-                    Gap.XSMALL,
-                    // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
-                    //   Background.CONTRAST_5,
-                    BorderRadius.NONE
-            );
-        } else {
-            layoutHeaderParameters.addClassNames(
-                    AlignItems.CENTER, JustifyContent.EVENLY,
-                    Overflow.HIDDEN, Width.FULL,
-                    Margin.SMALL,
-                    Padding.NONE,
-                    Gap.XSMALL,
-                    // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
-//                       Background.CONTRAST_5,
-                    BorderRadius.LARGE
-            );
-        }
+//        VerticalLayout layoutHeaderParameters = new VerticalLayout();
+//        if (isMobile) {
+//            layoutHeaderParameters.addClassNames(
+//                    AlignItems.CENTER, JustifyContent.EVENLY,
+//                    Overflow.HIDDEN, Width.FULL,
+//                    Margin.SMALL,
+//                    Padding.NONE,
+//                    Gap.XSMALL,
+//                    // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
+//                    //   Background.CONTRAST_5,
+//                    BorderRadius.NONE
+//            );
+//        } else {
+//            layoutHeaderParameters.addClassNames(
+//                    AlignItems.CENTER, JustifyContent.EVENLY,
+//                    Overflow.HIDDEN, Width.FULL,
+//                    Margin.SMALL,
+//                    Padding.NONE,
+//                    Gap.XSMALL,
+//                    // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
+////                       Background.CONTRAST_5,
+//                    BorderRadius.LARGE
+//            );
+//        }
 
 
         Select<String> cmbView = new Select<>();
@@ -589,9 +590,12 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
                 AlignItems.CENTER, JustifyContent.CENTER,
                 Margin.Bottom.MEDIUM, Margin.Top.MEDIUM);
 
-        headerContainerMaster.add(headerTextContainer);
+//        headerContainerMaster.add(headerTextContainer);
         headerContainerSecondary.add(layoutFilters);
-        layoutHeaderParameters.add(headerContainerMaster, headerContainerSecondary, divSection);
+//        layoutHeaderParameters.add( headerContainerSecondary, divSection);
+
+        HeaderFilterTabs headerFilterTabs = new HeaderFilterTabs(recordService, isMobile);
+        VerticalLayout layoutHeaderParameters = headerFilterTabs.getHeader(strHeader, strSubHeader, strSection, headerContainerSecondary);
 
 //        headerContainerMaster.add(headerTextContainer, cmbView);
 //        headerContainerSecondary.add(layoutFilters, sortBy);
@@ -1504,7 +1508,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
             availWidth[1] = details.getBodyClientWidth();
             availWidth[2] = details.getScreenWidth();
 
-            logger.info("availWidth:  window inner " + details.getWindowInnerWidth() + " body client  " + details.getBodyClientWidth() + "  screen  " + details.getScreenWidth());
+            logger.info("availWidth:  window name " + details.getWindowName() + " body client  " + details.getBodyClientWidth() + "  screen  " + details.getScreenWidth());
 
         });
         return availWidth;
