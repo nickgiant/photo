@@ -1,37 +1,4 @@
 
-.learnings-view .header-layout {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); /*minmax(min(70px, 8vw), 1fr)); /*repeat(auto-fit, minmax(80px, 1fr));*/
-    grid-gap: 17px;
-
-    padding-top: 5px;
-    padding-bottom: 9px;
-
-            a{
-                padding: 5px;
-                text-decoration: none;
-                font-size: var(--lumo-font-size-m);
-                letter-spacing: 1px;
-                text-align: center;
-                font-family: Times-New-Roman, serif;
-                font-weight: bold;
-                color: #6c9494; /*var(--lumo-tertiary-text-color);*/
-                background-color: #dbf0ea;/* #d7efe8; /*var(--lumo-contrast-5pct);;*/
-                border: #d7efe8 1px solid;
-                box-shadow: 1px 1px 6px lightgrey;
-                border-radius: var(--lumo-border-radius-l);
-                transition: 0.5s;
-                &:hover {
-                    color: #6c9494;/* #00a3b3; /*#edf9f1; /*  #cd5c5c; /*#a62f03; /*#cd5c5c;*/
-                    background-color: #edf7f5; /*#d7efe8; /* #edf9f1;*/
-                    border: #6c9494 1px solid; /*#00a3b3*/
-                    box-shadow: 2px 2px 10px lightgrey;
-                    transition: 0.4s;
-                    cursor: pointer;
-                }
-            }
-}
-
 .learnings-view .video-container {
     position: relative;
     overflow: hidden;
@@ -62,6 +29,9 @@
 
     /*border-bottom-left-radius: 10px;*/
     /*border-bottom-right-radius: 45px;*/
+
+    max-width: 1110px;
+
     border-radius: 48px;
     box-shadow: 1px 1px 4px lightgrey;
 

@@ -1,6 +1,5 @@
 package com.photo.act.photo_act.utils;
 
-import com.photo.act.photo_act.views.components.ImageGalleryViewCard;
 import org.apache.commons.imaging.Imaging;
 import org.apache.commons.imaging.ImagingException;
 import org.apache.commons.imaging.common.ImageMetadata;
@@ -12,7 +11,7 @@ import org.apache.commons.imaging.formats.tiff.TiffImageMetadata;
 import org.apache.commons.imaging.formats.tiff.constants.ExifTagConstants;
 import org.apache.commons.imaging.formats.tiff.constants.GpsTagConstants;
 import org.apache.commons.imaging.formats.tiff.constants.TiffTagConstants;
-import org.apache.commons.imaging.formats.tiff.taginfos.*;
+import org.apache.commons.imaging.formats.tiff.taginfos.TagInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -153,9 +152,9 @@ public class ImageUtilsMeta {
                 logger.info(getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_DATE_TIME_ORIGINAL));
                 logger.info(" ");
             }
-            } catch(IOException e){
-                logger.error(e.getMessage());
-            }
+        } catch (IOException e) {
+            logger.error(e.getMessage());
+        }
     }
 
 
@@ -178,14 +177,14 @@ public class ImageUtilsMeta {
             lstInfo.add(getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_DATE_TIME_ORIGINAL)); // date time
             lstInfo.add(getTagValue(jpegMetadata, TiffTagConstants.TIFF_TAG_MAKE)); // camera make
             lstInfo.add(getTagValue(jpegMetadata, TiffTagConstants.TIFF_TAG_MODEL)); // camera model
-            lstInfo.add(getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_LENS_MAKE).replaceAll(", , , , ,","").trim()); // lens make
+            lstInfo.add(getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_LENS_MAKE).replaceAll(", , , , ,", "").trim()); // lens make
 
-            String lensModel = getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_LENS_MODEL).replaceAll(", ","").trim();
+            String lensModel = getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_LENS_MODEL).replaceAll(", ", "").trim();
             if (lensModel.length() > 0) {
-                if(lensModel.startsWith("'") && lensModel.endsWith("'")) {
+                if (lensModel.startsWith("'") && lensModel.endsWith("'")) {
                     lstInfo.add(lensModel); // camera model
-                }else {
-                    lstInfo.add("'"+lensModel+"'");
+                } else {
+                    lstInfo.add("'" + lensModel + "'");
                 }
             }
 
@@ -277,9 +276,9 @@ public class ImageUtilsMeta {
 //            public static final int EXPOSURE_PROGRAM_VALUE_LANDSCAPE = 8;
 
 
-            logger.warn(" check field format :  "+ lstInfo.get(2)+"  ---  "+ lstInfo.get(3)+"  ---  "+lstInfo.get(4)+"  ---  "+ lstInfo.get(5)+"  ---  "+
-                    lstInfo.get(lstInfo.size() - 4)+"  ---  "+lstInfo.get(lstInfo.size() - 3)+"  ---  "+lstInfo.get(lstInfo.size() - 2)
-                    +"  ---  "+lstInfo.get(lstInfo.size() - 1)+"  ---  size: "+lstInfo.size());
+            logger.warn(" check field format :  " + lstInfo.get(2) + "  ---  " + lstInfo.get(3) + "  ---  " + lstInfo.get(4) + "  ---  " + lstInfo.get(5) + "  ---  " +
+                    lstInfo.get(lstInfo.size() - 4) + "  ---  " + lstInfo.get(lstInfo.size() - 3) + "  ---  " + lstInfo.get(lstInfo.size() - 2)
+                    + "  ---  " + lstInfo.get(lstInfo.size() - 1) + "  ---  size: " + lstInfo.size());
 
             System.out.println("file: " + file.getPath());
 
@@ -294,7 +293,7 @@ public class ImageUtilsMeta {
             metadataInfo.append(getTagValueAsHtml(jpegMetadata, ExifTagConstants.EXIF_TAG_SERIAL_NUMBER));
             metadataInfo.append(getTagValueAsHtml(jpegMetadata, ExifTagConstants.EXIF_TAG_RAW_FILE));
             metadataInfo.append(getTagValueAsHtml(jpegMetadata, ExifTagConstants.EXIF_TAG_LENS_MAKE));
-            metadataInfo.append(getTagValueAsHtml(jpegMetadata, ExifTagConstants.EXIF_TAG_LENS_MODEL).replaceAll(", ","").trim()); // camera model
+            metadataInfo.append(getTagValueAsHtml(jpegMetadata, ExifTagConstants.EXIF_TAG_LENS_MODEL).replaceAll(", ", "").trim()); // camera model
             metadataInfo.append(getTagValueAsHtml(jpegMetadata, ExifTagConstants.EXIF_TAG_LENS_SPECIFICATION));
             metadataInfo.append(getTagValueAsHtml(jpegMetadata, ExifTagConstants.EXIF_TAG_LENS_SERIAL_NUMBER));
             metadataInfo.append(getTagValueAsHtml(jpegMetadata, ExifTagConstants.EXIF_TAG_DATE_TIME_ORIGINAL));
@@ -318,22 +317,22 @@ public class ImageUtilsMeta {
 
             final List<ImageMetadataItem> items = jpegMetadata.getItems();
             for (final ImageMetadataItem item : items) {
-               // System.out.println("    " + "item: " + item);
+                // System.out.println("    " + "item: " + item);
             }
             metadataInfo.append("</table>");
-        }else {
+        } else {
 
         }
         return metadataInfo;
     }
-    
+
 
     private String getTagValueAsHtml(final JpegImageMetadata jpegMetadata, final TagInfo tagInfo) {
         final TiffField field = jpegMetadata.findExifValueWithExactMatch(tagInfo);
         if (field == null) {
-            return "<tr><td>"+tagInfo.name+": </td><td> </td></tr>";
+            return "<tr><td>" + tagInfo.name + ": </td><td> </td></tr>";
         } else {
-            return "<tr><td>"+tagInfo.name+": </td><td>"+field.getValueDescription()+"</td></tr>";
+            return "<tr><td>" + tagInfo.name + ": </td><td>" + field.getValueDescription() + "</td></tr>";
             //System.out.println(tagInfo.name + ": " + field.getValueDescription());
         }
     }
@@ -347,7 +346,7 @@ public class ImageUtilsMeta {
         }
     }
 
-    public ArrayList<String> getListImageInfo(){
+    public ArrayList<String> getListImageInfo() {
         return lstInfo;
     }
 

@@ -4,6 +4,7 @@ import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
+import com.photo.act.photo_act.views.components.HeaderFilterTabs;
 import com.photo.act.photo_act.views.components.UploadImageCard;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.HasStyle;
@@ -390,30 +391,30 @@ public class UploadView extends Main implements HasUrlParameter<String>, BeforeE
 
         layoutFilters.add(checkboxGroupLocation);
 
-        VerticalLayout layoutHeaderParameters = new VerticalLayout();
-        if (isMobile) {
-            layoutHeaderParameters.addClassNames(
-                    AlignItems.CENTER, JustifyContent.EVENLY,
-                    Overflow.HIDDEN, Width.FULL,
-                    Margin.SMALL,
-                    Padding.NONE,
-                    Gap.XSMALL,
-                    // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
-                    //   Background.CONTRAST_5,
-                    BorderRadius.NONE
-            );
-        } else {
-            layoutHeaderParameters.addClassNames(
-                    AlignItems.CENTER, JustifyContent.EVENLY,
-                    Overflow.HIDDEN, Width.FULL,
-                    Margin.SMALL,
-                    Padding.NONE,
-                    Gap.XSMALL,
-                    // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
-//                       Background.CONTRAST_5,
-                    BorderRadius.LARGE
-            );
-        }
+//        VerticalLayout layoutHeaderParameters = new VerticalLayout();
+//        if (isMobile) {
+//            layoutHeaderParameters.addClassNames(
+//                    AlignItems.CENTER, JustifyContent.EVENLY,
+//                    Overflow.HIDDEN, Width.FULL,
+//                    Margin.SMALL,
+//                    Padding.NONE,
+//                    Gap.XSMALL,
+//                    // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
+//                    //   Background.CONTRAST_5,
+//                    BorderRadius.NONE
+//            );
+//        } else {
+//            layoutHeaderParameters.addClassNames(
+//                    AlignItems.CENTER, JustifyContent.EVENLY,
+//                    Overflow.HIDDEN, Width.FULL,
+//                    Margin.SMALL,
+//                    Padding.NONE,
+//                    Gap.XSMALL,
+//                    // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
+////                       Background.CONTRAST_5,
+//                    BorderRadius.LARGE
+//            );
+//        }
 
         Select<String> cmbView = new Select<>();
         cmbView.setLabel("View");
@@ -422,8 +423,16 @@ public class UploadView extends Main implements HasUrlParameter<String>, BeforeE
                 "Wide - No MetaData", "Wide - MetaData Bottom", "Wide - MetaData Right");
         cmbView.setValue("Ordinary - No MetaData");
 
-        headerContainerMaster.add(headerTextContainer);
-        layoutHeaderParameters.add(headerContainerMaster);
+        //        headerContainerMaster.add(headerTextContainer);
+//        layoutHeaderParameters.add(headerContainerMaster);
+
+
+//        headerContainerMaster.add(headerTextContainer);
+//        headerContainerSecondary.add(layoutFilters);
+//        layoutHeaderParameters.add( headerContainerSecondary, divSection);
+
+        HeaderFilterTabs headerFilterTabs = new HeaderFilterTabs(recordService, isMobile);
+        VerticalLayout layoutHeaderParameters = headerFilterTabs.getHeader(strHeader, strSubHeader, strSection, headerContainerSecondary);
 
 //        headerContainerMaster.add(headerTextContainer, cmbView);
 //        headerContainerSecondary.add(layoutFilters, sortBy);
