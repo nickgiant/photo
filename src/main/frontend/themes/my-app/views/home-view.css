@@ -1,14 +1,43 @@
 
 .home-view h1 {
+    font-family: "Times-New-Roman", serif; /* "'Brush Script MT', cursive";*/
     text-align: center;
-    color: var(--lumo-contrast-70pct); /*#cd5c5c;*/ /* #428bff;*/
-    font-weight: 300;
+    color: var(--lumo-primary-text-color);
+    font-weight: bold;
+    /*text-shadow: var(--lumo-contrast-20pct);*/
+    letter-spacing: 3px;
     padding: 40px 0 20px 0;
     margin: 0;
 }
 
 .home-view h3{
-    font-family:  Times-New-Roman, serif;
+    font-family: 'Open Sans', sans-serif; /* "Times-New-Roman", serif; /* "'Brush Script MT', cursive";*/
+    text-decoration: none;
+    text-align: center;
+    font-weight: bold;
+    /*text-shadow: var(--lumo-contrast-20pct);*/
+    letter-spacing: 2px;
+    font-size: 14pt;
+    /*text-decoration-color: var(--lumo-contrast-20pct);*/
+    /*text-decoration-style: dotted;*/
+    /*text-decoration-line: underline;*/
+    /*text-decoration-thickness: 30%;*/
+    color: var(--lumo-secondary-text-color);
+}
+
+
+.home-view h4 {
+    font-family: "Times-New-Roman", serif; /* "'Brush Script MT', cursive";*/
+    text-decoration: none;
+    text-align: center;
+    font-weight: normal;
+    letter-spacing: 1px;
+    font-size: 12pt;
+    /*text-decoration-color: var(--lumo-contrast-20pct);*/
+    /*text-decoration-style: dotted;*/
+    /*text-decoration-line: underline;*/
+    /*text-decoration-thickness: 30%;*/
+    color: var(--lumo-secondary-text-color);
 }
 
 .home-view .actions-toolbar{

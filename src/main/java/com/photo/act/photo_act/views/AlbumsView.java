@@ -85,6 +85,8 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
     private String hostname;
     private String hostAddress;
     private String canonicalHostname;
+    private String strOS;
+    private String strBrowser;
 
     private int userId;
     private String strUsername;
@@ -94,15 +96,18 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
     private String strColorExternalweb = "#9fafd5";
 
 
-    String[] arrColumnsAlbums = {"title", "description", "album_visible_to", "user_id", "username", "nameOfUser", "date_inserted", "album_photo_count", "album_photo_size",
-            "name_new", "photo_1", "photo_2"};
+    String[] arrColumnsAlbums = {"title", "description", "album_visible_to", "user_id", "date_inserted", "album_photo_count", "album_photo_size",
+            "name_new", "photo_1", "photo_2", "datetime_album_created"
+            , "username", "nameOfUser", "resident", "date_joined", "avatar"
+    };
 
-    String sqlAlbumsAll = "SELECT a.title, a.`description`, a.album_visible_to, a.user_id, usr.username, usr.nameOfUser, a.date_inserted, count(a.id) AS album_photo_count, SUM(pm.space_size) AS album_photo_size\n" +
+    String sqlAlbumsAll = "SELECT a.title, a.`description`, a.album_visible_to, a.user_id, a.date_inserted, count(a.id) AS album_photo_count, SUM(pm.space_size) AS album_photo_size\n" +
             "   , pm.name_new , a.photo_id1, p1.name_new AS photo_1 ,  a.photo_id2, p2.name_new  AS photo_2 " +
+            "  , DATE_FORMAT(a.date_inserted, '%d-%m-%Y %H:%i %p') AS datetime_album_created " +
+            " , usr.username, usr.nameOfUser, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined, usr.avatar " +
             //     "--  , pa.inc, pm.title, pm.id, pm.name_new, pm.title, pm.subtitle, pm.space_size, pm.location_by_user\\n\" +\n" +
             " FROM photo_album_photo pa , photo_meta pm, dbuser usr, photo_album a LEFT JOIN photo_meta p1 ON a.photo_id1 = p1.id \n" +
             "   LEFT JOIN photo_meta p2 ON a.photo_id2 = p2.id " +
-
             " WHERE a.id = pa.photo_album_id AND pa.photo_id = pm.id AND a.user_id = usr.userId " +
             "   AND a.album_visible_to = 'ALL' AND pm.visible_to  = 'ALL' " +
             " GROUP BY a.id " +
@@ -110,20 +115,24 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
 
 
     private String[] arrColumnNamesAlbumPhotos = {"album_title", "album_visible_to", "description"
-            , "name_new", "title", "subtitle", "photo_type", "uploader", "creator", "visible_to", "city_name", "meta_date"
+            , "name_new", "title", "subtitle", "photo_type", "uploader", "creator", "visible_to", "city_name", "meta_date", "photo_date", "photo_time"
             , "space_size", "space_size_medium", "space_size_thumb", "meta_camera_make", "meta_camera_model", "meta_lens_make", "meta_lens_model"
             , "meta_focal_length", "meta_focal_length_ff", "meta_iso"
             , "location_by_user", "location_area", "location_country_code", "location_lat", "location_lon"
-            , "date_inserted"};
+            , "date_inserted"
+            , "username", "nameOfUser", "resident", "date_joined", "avatar"
+    };
 
     private String sqlReadAlbumPhotos = "SELECT a.title AS album_title, a.user_id, a. album_visible_to, a.description, " +
-            " pm.name_new, pm.title, pm.subtitle, pm.photo_type, pm.uploader, pm.creator, pm.visible_to, d.city_name, d.country, DATE_FORMAT(pm.meta_date, '%W %D %M %Y %H:%i %p') AS meta_date, " +
+            " pm.name_new, pm.title, pm.subtitle, pm.photo_type, pm.uploader, pm.creator, pm.visible_to, d.city_name, d.country, " +
+            " DATE_FORMAT(pm.meta_date, '%W %D %M %Y %H:%i %p') AS meta_date, DATE_FORMAT(pm.meta_date, '%d-%m-%Y') AS photo_date, DATE_FORMAT(pm.meta_date, '%H:%i %p') AS photo_time, " +
             " pm.space_size, pm.space_size_medium, pm.space_size_thumb, pm.meta_camera_make, pm.meta_camera_model, pm.meta_lens_make, pm.meta_lens_model, " +
             " pm.meta_focal_length, pm.meta_focal_length_ff, pm.meta_iso, " +
             "  pm.location_by_user, pm.location_area, pm.location_country_code, pm.location_lat, pm.location_lon " +
+            " , usr.username, usr.nameOfUser, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined, usr.avatar " +
             //, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description, DATE_FORMAT(f.dateInsert , '%D %M %Y') AS formatedDateUpdated  " +
-            " FROM photo_album a , photo_album_photo pa , photo_meta pm LEFT JOIN destination d ON pm.destination_Id = d.id " +
-            " WHERE a.id = pa.photo_album_id AND pa.photo_id = pm.id ";
+            " FROM dbuser usr, photo_album a , photo_album_photo pa , photo_meta pm LEFT JOIN destination d ON pm.destination_Id = d.id " +
+            " WHERE  pm.uploaderId = usr.userId AND a.id = pa.photo_album_id AND pa.photo_id = pm.id ";
 
     private UtilsDate utilsDate;
     private String sessionDateTime;
@@ -147,50 +156,8 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
         strMember = event.getRouteParameters().get("member").orElse(STR_ALL_MEMBERS);
         strAlbumTitle = event.getRouteParameters().get("title").orElse(STR_ALL_ALBUMS);
 
-        sessionid = VaadinSession.getCurrent().getSession().getId();
-        sessionCreation = VaadinSession.getCurrent().getSession().getCreationTime();
-        isMobile = VaadinSession.getCurrent().getBrowser().isAndroid() || VaadinSession.getCurrent().getBrowser().isIPhone();
+        getUserClientInfo();
 
-        UI.getCurrent().getPage().retrieveExtendedClientDetails(extendedClientDetails -> {
-            if (extendedClientDetails == null) {
-                logger.info("Image gallery - error timeZoneId: Cannot retrieve client details:" + extendedClientDetails);
-                return;
-            }
-            timeZoneId = extendedClientDetails.getTimeZoneId();
-
-        });
-
-        sessionDateTime = utilsDate.calcDateTimeFromLong(sessionCreation, "UTC");
-        Locale loc = VaadinService.getCurrentRequest().getLocales().nextElement();
-        locale = loc.getLanguage() + "." + loc.getCountry();
-        localeName = loc.getDisplayName();
-
-        final String[] urlHost = {"", "", "", "", "", "", "", ""};
-
-        UI.getCurrent().getPage().fetchCurrentURL(currentUrl -> {
-            // This is your own method that you may do something with the url.
-            // Note that this method runs asynchronously
-            urlHost[0] = currentUrl.getHost();
-            urlHost[1] = currentUrl.getProtocol();
-            urlHost[2] = currentUrl.getRef();
-            urlHost[3] = currentUrl.getUserInfo();
-            urlHost[4] = currentUrl.toExternalForm();
-            urlHost[5] = currentUrl.getPort() + "";
-            urlHost[6] = currentUrl.getAuthority();
-            urlHost[7] = currentUrl.getQuery();
-
-            logger.info("  url:" + urlHost[0] + "  url:" + urlHost[1] + "  url:" + urlHost[2] + "  url:" + urlHost[3] + "  url:" + urlHost[4]
-                    + "  url:" + urlHost[5] + "  url:" + urlHost[6] + "  url:" + urlHost[7]);
-        });
-
-        UI.getCurrent().getPage().fetchCurrentURL(currentUrl -> {
-            // This is your own method that you may do something with the url.
-            // Note that this method runs asynchronously
-            strUrlRequestToBeLogged = currentUrl.toExternalForm();
-        });
-
-        NetUtils netUtils = new NetUtils();
-        publicIp = netUtils.getClientPublicIp(hostname);
 
         if (strMember.equalsIgnoreCase("visitor-user")) {
             userId = 1;
@@ -245,17 +212,17 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
     }
 
     private void constructUI() {
-        addClassNames("image-gallery-view");
         addClassNames(Overflow.HIDDEN, Width.FULL,
                 // Margin.LARGE, //.Left.MEDIUM, Margin.Right.MEDIUM,
                 //  Padding.Left.MEDIUM, Padding.Left.MEDIUM,
                 Margin.NONE,
                 Padding.NONE,
                 Gap.MEDIUM,
+                AlignItems.CENTER, JustifyContent.CENTER
                 //  Padding.NONE, //.Left.MEDIUM, Padding.Right.MEDIUM,
                 //Margin.Vertical.MEDIUM, Padding.Vertical.NONE,
-                AlignItems.CENTER, JustifyContent.CENTER
         );
+        addClassName("image-gallery-view");
 
         InetAddress inetAddress = null;
         try {
@@ -308,7 +275,7 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
                     //Margin.Vertical.MEDIUM, Padding.Vertical.NONE,
                     AlignItems.CENTER, JustifyContent.CENTER
             );
-            verticalLayout.getStyle().set("gap", "3rem");
+//            verticalLayout.getStyle().set("gap", "3rem");
         }
 
         this.setWidthFull();
@@ -370,7 +337,7 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
         sortBy.setItems("Most Viewed", "Least Viewed", "Most Favourite", "Least Favourite", "Newest First", "Oldest First", "Most Liked", "Least Liked");
         sortBy.setValue("Most Viewed");
 
-        HorizontalLayout headerContainerSecondary = new HorizontalLayout();
+        Div headerContainerSecondary = new Div();
         if (isMobile) {
             headerContainerSecondary.addClassNames(
                     AlignItems.CENTER, JustifyContent.EVENLY,
@@ -410,7 +377,7 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
         } else {
             layoutFilters.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
-                    AlignItems.CENTER, JustifyContent.BETWEEN,
+                    AlignItems.CENTER, JustifyContent.CENTER,
                     Margin.NONE,
                     Padding.MEDIUM,
                     Gap.SMALL,
@@ -421,12 +388,12 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
         }
         layoutFilters.addClassName("header-layout-filters");
 
-        RouteParam routeMember = new RouteParam("member", strMember);
-
-        RouteParam routeAlbumAll = new RouteParam("title", STR_ALL_ALBUMS);
-        RouteParameters routeParamsAll = new RouteParameters(routeAlbumAll, routeMember);
-        RouterLink linkPhotoAlbumAll = new RouterLink("All Albums", AlbumsView.class, routeParamsAll);
-        layoutFilters.add(linkPhotoAlbumAll);
+//        RouteParam routeMember = new RouteParam("member", strMember);
+//
+//        RouteParam routeAlbumAll = new RouteParam("title", STR_ALL_ALBUMS);
+//        RouteParameters routeParamsAll = new RouteParameters(routeAlbumAll, routeMember);
+//        RouterLink linkPhotoAlbumAll = new RouterLink("All Albums", AlbumsView.class, routeParamsAll);
+//        layoutFilters.add(linkPhotoAlbumAll);
 
 
         List<Record> recAlbums = getRecordsFromDb(sqlAlbumsAll, arrColumnsAlbums);
@@ -653,6 +620,82 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
 
     }
 
+    private void getUserClientInfo() {
+
+        sessionid = VaadinSession.getCurrent().getSession().getId();
+        sessionCreation = VaadinSession.getCurrent().getSession().getCreationTime();
+        isMobile = VaadinSession.getCurrent().getBrowser().isAndroid() || VaadinSession.getCurrent().getBrowser().isIPhone() || VaadinSession.getCurrent().getBrowser().isWindowsPhone();
+
+        if (VaadinSession.getCurrent().getBrowser().isAndroid()) {
+            strOS = "Android";
+        } else if (VaadinSession.getCurrent().getBrowser().isIPhone()) {
+            strOS = "iPhone";
+        } else if (VaadinSession.getCurrent().getBrowser().isWindows()) {
+            strOS = "Windows";
+        } else if (VaadinSession.getCurrent().getBrowser().isLinux()) {
+            strOS = "Linux";
+        } else if (VaadinSession.getCurrent().getBrowser().isMacOSX()) {
+            strOS = "Mac OS X";
+        } else if (VaadinSession.getCurrent().getBrowser().isChromeOS()) {
+            strOS = "ChromeOS";
+        } else {
+            strOS = "Unknown";
+        }
+
+        if (VaadinSession.getCurrent().getBrowser().isChrome()) {
+            strBrowser = "Chrome";
+        } else if (VaadinSession.getCurrent().getBrowser().isFirefox()) {
+            strBrowser = "Firefox";
+        } else if (VaadinSession.getCurrent().getBrowser().isEdge()) {
+            strBrowser = "Edge";
+        } else if (VaadinSession.getCurrent().getBrowser().isSafari()) {
+            strBrowser = "Safari";
+        } else if (VaadinSession.getCurrent().getBrowser().isOpera()) {
+            strBrowser = "Opera";
+        } else if (VaadinSession.getCurrent().getBrowser().isIE()) {
+            strBrowser = "IE";
+        } else {
+            strBrowser = "not known";
+        }
+
+
+        UI.getCurrent().getPage().retrieveExtendedClientDetails(extendedClientDetails -> {
+            if (extendedClientDetails == null) {
+                logger.info("Image gallery - error timeZoneId: Cannot retrieve client details:" + extendedClientDetails);
+                return;
+            }
+            timeZoneId = extendedClientDetails.getTimeZoneId();
+        });
+
+        sessionDateTime = utilsDate.calcDateTimeFromLong(sessionCreation, "UTC");
+        Locale loc = VaadinService.getCurrentRequest().getLocales().nextElement();
+        locale = loc.getLanguage() + "." + loc.getCountry();
+        localeName = loc.getDisplayName();
+
+        NetUtils netUtils = new NetUtils();
+        publicIp = netUtils.getClientPublicIp(hostname);
+
+        final String[] urlHost = {"", "", "", "", "", "", "", ""};
+
+        UI.getCurrent().getPage().fetchCurrentURL(currentUrl -> {
+            // This is your own method that you may do something with the url.
+            // Note that this method runs asynchronously
+            urlHost[0] = currentUrl.getHost();
+            urlHost[1] = currentUrl.getProtocol();
+            urlHost[2] = currentUrl.getRef();
+            urlHost[3] = currentUrl.getUserInfo();
+            urlHost[4] = currentUrl.toExternalForm();
+            urlHost[5] = currentUrl.getPort() + "";
+            urlHost[6] = currentUrl.getAuthority();
+            urlHost[7] = currentUrl.getQuery();
+
+            logger.info("  url:" + urlHost[0] + "  url:" + urlHost[1] + "  url:" + urlHost[2] + "  url:" + urlHost[3] + "  url:" + urlHost[4]
+                    + "  url:" + urlHost[5] + "  url:" + urlHost[6] + "  url:" + urlHost[7]);
+        });
+
+    }
+
+
     private List<Record> getRecordsFromDb(String sql, String[] arrColumnNames) {
         logger.info(" photo  getRecordsFromDb:   " + sql);
         return recordService.findAll(sql, arrColumnNames);
@@ -665,13 +708,22 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
 
     private void logVisitorToDb() {
 
-//        member = member.replaceAll("'", " ");
-//        member = member.replaceAll("\"", " ");
+//        category = category.replaceAll("'", " ");
+//        category = category.replaceAll("\"", " ");
 
         //search = search.replaceAll("'"," ");
         //search = search.replaceAll("\""," ");
 
+        UI.getCurrent().getPage().fetchCurrentURL(currentUrl -> {
+            // This is your own method that you may do something with the url.
+            // Note that this method runs asynchronously
+
+            strUrlRequestToBeLogged = currentUrl.toExternalForm();
+
+        });
+
         sysUserName = System.getProperty("user.name");
+
 
         // String ipAddress = VaadinSession.getCurrent().getBrowser().getAddress();
         String browser = VaadinSession.getCurrent().getBrowser().getBrowserApplication();
@@ -679,30 +731,11 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
         int versionOfBrowserMinor = VaadinSession.getCurrent().getBrowser().getBrowserMinorVersion();
         int intUiId = VaadinSession.getCurrent().getNextUIid();
 
+
         int[] availWidth = calcTotalAvailableWidth();
 
-        String strOS = "";
 
-        if (VaadinSession.getCurrent().getBrowser().isAndroid()) {
-            strOS = "Android";
-        } else if (VaadinSession.getCurrent().getBrowser().isIPhone()) {
-            strOS = "iPhone";
-        } else if (VaadinSession.getCurrent().getBrowser().isWindows()) {
-            strOS = "Windows";
-        } else if (VaadinSession.getCurrent().getBrowser().isLinux()) {
-            strOS = "Linux";
-
-        } else if (VaadinSession.getCurrent().getBrowser().isMacOSX()) {
-            strOS = "Mac OS X";
-        } else {
-            strOS = "Unknown";
-        }
-
-        if (!strMember.equalsIgnoreCase("visitor-user")) {
-            strUsername = "view-all";
-        }
-
-        if (strUrlRequestToBeLogged == null || strUrlRequestToBeLogged.isEmpty()) {
+        if (strUrlRequestToBeLogged == null || strUrlRequestToBeLogged.isEmpty() || strUrlRequestToBeLogged.equalsIgnoreCase("null")) {
             strUrlRequestToBeLogged = "NULL";
         } else {
             strUrlRequestToBeLogged = "'" + strUrlRequestToBeLogged + "'";
@@ -714,14 +747,14 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
             strPath = "'" + strPath + "'";
         }
 
-        logger.info("photo visitor:" + publicIp + " . " + hostname + " . " + hostAddress + " . " + canonicalHostname + " .  " + browser + " " + sessionid);
+
+        logger.info("photo visitor:" + publicIp + " . " + hostname + " . " + hostAddress + " . " + canonicalHostname + "  .  " + browser + " " + sessionid);
 
         String insertSQL = "INSERT INTO dbvisitor_log SET visitorlogId = 0,  timeOfVisit = now(), ipAddress = '" + publicIp + "', browserName = '" + browser + "', "
                 + " browserVersionMajor = '" + versionOfBrowserMajor + "', browserVersionMinor = '" + versionOfBrowserMinor + "', urlParameter = NULL , timeZoneId = '" + timeZoneId + "', "
-                + "appVersion = '" + APP_NAME + "-" + APP_VERSION + "', sessionId = '" + sessionid + "', sessionCreationTime = '" + sessionDateTime + "', hostname = '" + hostname + "', "
-                + "hostAddress = '" + hostAddress + "', os = '" + strOS + "', section = '" + section + "',"
+                + " appVersion = '" + APP_NAME + "-" + APP_VERSION + "', sessionId = '" + sessionid + "', sessionCreationTime = '" + sessionDateTime + "', hostname = '" + hostname + "', "
+                + " hostAddress = '" + hostAddress + "', os = '" + strOS + "', browser = '" + strBrowser + "', section = '" + section + "',"
                 + " item = " + strPath + ", ref = " + strUrlRequestToBeLogged + ", "
-                + " username = '" + strUsername + "', "
                 + " locale = '" + locale + "', localeName ='" + localeName + "' ";
 
         ArrayList<String> lstQueryInsert = new ArrayList<String>();
@@ -741,6 +774,7 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
             availWidth[2] = details.getScreenWidth();
 
             logger.info("availWidth:  window inner " + details.getWindowInnerWidth() + " body client  " + details.getBodyClientWidth() + "  screen  " + details.getScreenWidth());
+
         });
         return availWidth;
     }

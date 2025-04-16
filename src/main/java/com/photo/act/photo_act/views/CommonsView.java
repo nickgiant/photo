@@ -362,7 +362,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         verticalLayout.setId("verticalLayout");
         if (isMobile) {
             verticalLayout.addClassNames(
-                    Overflow.HIDDEN, Width.FULL,
+                    Overflow.HIDDEN,
                     // Margin.LARGE, //.Left.MEDIUM, Margin.Right.MEDIUM,
                     //  Padding.Left.MEDIUM, Padding.Left.MEDIUM,
                     // Margin.Horizontal.SMALL,
@@ -373,7 +373,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
             );
         } else {
             verticalLayout.addClassNames(
-                    Overflow.HIDDEN, Width.FULL,
+                    Overflow.HIDDEN,
                     // Margin.LARGE, //.Left.MEDIUM, Margin.Right.MEDIUM,
                     //  Padding.Left.MEDIUM, Padding.Left.MEDIUM,
                     // Margin.Horizontal.SMALL,
@@ -385,15 +385,16 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
             );
             verticalLayout.getStyle().set("gap", "3rem");
         }
+        verticalLayout.setMaxWidth("1220px");
 
 
-        if (isMobile) {
-//            imageContainer.setWidthFull();
-            this.setWidthFull();
-        } else {
-            //           imageContainer.setWidthFull();
-            this.setWidthFull();
-        }
+//        if (isMobile) {
+////            imageContainer.setWidthFull();
+//            this.setWidthFull();
+//        } else {
+//            //           imageContainer.setWidthFull();
+//            this.setWidthFull();
+//        }
 
 
         this.add(verticalLayout);

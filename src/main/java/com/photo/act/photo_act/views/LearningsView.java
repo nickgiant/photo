@@ -21,13 +21,16 @@ import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.component.select.Select;
+import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.tabs.TabSheetVariant;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
+import com.vaadin.flow.theme.lumo.LumoUtility;
 import com.vaadin.flow.theme.lumo.LumoUtility.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,8 +42,6 @@ import java.io.FileNotFoundException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.FileSystems;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -51,7 +52,9 @@ import static com.photo.act.photo_act.views.MainLayout.*;
 //@RouteAlias("") // empty on homepage
 @Route(value = "learnings") //":category?")
 @RouteAlias(value = "learnings/category/:category?", layout = MainLayout.class)
+@RouteAlias(value = "learnings/genre/:genre?", layout = MainLayout.class)
 @RouteAlias(value = "learnings/tutor/:tutor?", layout = MainLayout.class)
+@RouteAlias(value = "learnings/title/:title?", layout = MainLayout.class)
 //@RouteAlias(value = "learnings/tutors/:tutor?", layout = MainLayout.class) // when tutors team
 //@RouteAlias(value = "learnings/category/:category/tutor/:tutor?", layout = MainLayout.class)
 
@@ -63,6 +66,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
     private static final Logger logger = LoggerFactory.getLogger(LearningsView.class);
 
     private VerticalLayout verticalLayout;
+    private VerticalLayout filtersColumn;
     private String sessionid;
     private long sessionCreation;
     private String sysUserName;
@@ -76,12 +80,22 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
     private String strHeader;
 
     private String category;
+    private String genre;
     private String tutor;
+    private String title;
+
+    //private String strOrderBy;
+
 
     private String dirChar = FileSystems.getDefault().getSeparator();
 
     public static String STR_ALL_TUTORS = "all-tutors";
     public static String STR_ALL_CATEGORIES = "all-categories";
+    public static String STR_ALL_GENRES = "all-genres";
+    public static String STR_ALL_TITLES = "all";
+
+    public static String STR_ORDER_BY_NEWEST = "newest";
+    public static String STR_ORDER_BY_OLDER = "older";
 
     public static String subPathThumbs = "photo-thumbs";
     public static String subPathMedium = "photo-medium";
@@ -126,30 +140,67 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
             //, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description, DATE_FORMAT(f.dateInsert , '%D %M %Y') AS formatedDateUpdated  " +
             " FROM  photo_meta pm LEFT JOIN destination d ON pm.destination_Id = d.id ";
 
-    String[] arrColLearningCategories = {"cat_title", "cat_title_type", "type", "cat_count"};
+    String[] arrColumnsLearningTypes = {"cat_title", "cat_title2", "cat_title_type", "cat_title_type2", "cat_type", "cat_type2", "cat_type_count", "cat_type_count2"};
 
-    String sqlLearningCategoriesRead = "SELECT  " //f.nameShort, f.location, f.country, f.periodOfYear, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description  " +
-            + " lc.cat_title, lc.cat_title_type, lc.type, count (lc.cat_title) AS cat_count "
+    String sqlLearningTypes = "SELECT "
+            + " lc.cat_title, lc.cat_title_type, lc.cat_type "
+//            + " lc2.cat_title AS cat_title2, lc2.cat_title_type AS cat_title_type2, lc2.cat_type AS cat_type2, count (lc2.cat_type) AS cat_type_count2 "
 //            + " l.id, l.title, l.picture, l.section , l.category, l.format, l.url, l.parent_id, l.child_index, l.tutor_id, l.artists_ref, l.description, l.duration, l.pages, l.published, l.userIdInsert, l.username, l.dateInsert "
 //            + ", l.tutor_id, l.tutor_id_team, t.tutor_name, t.website, t.url_fb, t.url_yt, t.url_insta, t.url_flickr, t.url_wikipedia, t.url_ref1, t.url_ref2, t.url_ref3, t.city_base, t.country_base, t.userIdInsert, t.username, t.date_inserted "
-            + " FROM learnings l LEFT JOIN learnings_categories lc ON lc.id = l.category_id "
+//            + " FROM learnings_categories lc2 RIGHT JOIN learnings l ON lc2.id = l.category_id2 LEFT JOIN learnings_categories lc ON lc.id = l.category_id "
+            + " FROM learnings l, learnings_categories lc "
+            + " WHERE 1 = 1 AND lc.id = l.category_id "
+            + " AND lc.cat_type NOT LIKE '%genre%' "
+            + " GROUP BY lc.cat_type "
+            + " ORDER BY lc.cat_type ASC ";
+
+
+    String[] arrColLearningCategories = {"cat_title", "cat_title2", "cat_title_type", "cat_type", "cat_count"};
+
+    String sqlLearningCategoriesRead = "SELECT  " //f.nameShort, f.location, f.country, f.periodOfYear, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description  " +
+            + " lc.cat_title, lc.cat_title_type, lc.cat_type, count (lc.cat_title) AS cat_count, "
+            + " lc2.cat_title AS cat_title2, lc2.cat_title_type AS cat_title_type2, lc2.cat_type AS cat_type2, count (lc2.cat_title) AS cat_count2 "
+//            + " l.id, l.title, l.picture, l.section , l.category, l.format, l.url, l.parent_id, l.child_index, l.tutor_id, l.artists_ref, l.description, l.duration, l.pages, l.published, l.userIdInsert, l.username, l.dateInsert "
+//            + ", l.tutor_id, l.tutor_id_team, t.tutor_name, t.website, t.url_fb, t.url_yt, t.url_insta, t.url_flickr, t.url_wikipedia, t.url_ref1, t.url_ref2, t.url_ref3, t.city_base, t.country_base, t.userIdInsert, t.username, t.date_inserted "
+            + " FROM learnings_categories lc2 RIGHT JOIN learnings l ON lc2.id = l.category_id2 LEFT JOIN learnings_categories lc ON lc.id = l.category_id "
             + " WHERE 1 = 1 "
-            + " GROUP BY lc.cat_title ORDER BY lc.cat_title ASC";
+            + " AND ( lc.cat_type LIKE '%genre%') "
+            + " GROUP BY lc.cat_title ORDER BY lc.cat_title ASC ";
 
 
-    String[] arrColumnsLearning = {"title", "picture", "cat_title", "cat_title_type", "type", "format", "url", "artists_ref", "description", "duration", "pages", "published",
-            "tutor_name", "website", "url_fb", "url_yt", "url_insta", "url_flickr", "url_wikipedia", "url_ref1", "url_ref2", "url_ref3",
-            "dateInsert"};
+    String[] arrColumnsLearning = {"title", "picture", "cat_title", "cat_title2", "cat_title_type", "cat_title_type2", "cat_type", "format", "url", "artists_ref", "description", "duration", "pages", "published", "year_published",
+            "category_id", "category_id2", "tutor_name", "website", "url_fb", "url_yt", "url_insta", "url_flickr", "url_wikipedia", "url_ref1", "url_ref2", "url_ref3",
+            "dateInsert", "date_created"};
 
     // learnings: l.id, l.title, l.picture, l.section , l.category, l.format, l.url, l.parent_id, l.child_index, l.tutor_id, l.artists_ref, l.description, l.duration, l.pages, l.published, l.userIdInsert, l.username, l.dateInsert
 // learnings_tutor:  lt.id, lt.tutor_name, lt.learnings_team_id, lt.website, lt.url_fb, lt.url_yt, lt.url_insta, lt.url_flickr, lt.url_wikipedia, lt.url_ref1, lt.url_ref2, lt.url_ref3, lt.url_flckr, lt.city_base, lt.country_base, lt.userIdInsert, lt.username, lt.date_inserted
     String sqlLearningsRead = "SELECT  " //f.nameShort, f.location, f.country, f.periodOfYear, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description  " +
-            + " lc.cat_title, lc.cat_title_type, lc.type "
-            + " , l.id, l.title, l.picture, l.format, l.url, l.parent_id, l.child_index, l.tutor_id, l.artists_ref, l.description, l.duration, l.pages, l.published, l.userIdInsert, l.username, l.dateInsert "
-            + " , l.tutor_id, l.tutor_id_team, t.tutor_name, t.website, t.url_fb, t.url_yt, t.url_insta, t.url_flickr, t.url_wikipedia, t.url_ref1, t.url_ref2, t.url_ref3, t.city_base, t.country_base, t.userIdInsert, t.username, t.date_inserted "
-            + " FROM learnings_categories lc, learnings l LEFT JOIN tutor t ON l.tutor_id = t.id "
+            + " lc.cat_title, lc.cat_title_type, lc.cat_type "
+            + " , lc2.cat_title AS cat_title2, lc2.cat_title_type AS cat_title_type2 "
+            + " , l.id, l.title, l.picture, l.format, l.url, l.parent_id, l.child_index, l.tutor_id, l.artists_ref, l.description, l.duration, l.pages, l.published, DATE_FORMAT(l.published, '%Y') AS year_published,  l.userIdInsert, l.username "
+            + " , l.dateInsert, " +
+            "                 ( case " +
+            "                WHEN TIMEDIFF(NOW(), l.dateInsert) <= '00:06:00' THEN 'almost now'" +
+            "                WHEN TIMEDIFF(NOW(), l.dateInsert) <= '00:18:00' THEN '10 minutes ago'" +
+            "                WHEN TIMEDIFF(NOW(), l.dateInsert) <= '00:48:00' THEN '30 minutes ago'" +
+            "                WHEN TIMEDIFF(NOW(), l.dateInsert) <= '01:37:00' THEN 'an hour ago'" +
+            "                WHEN TIMEDIFF(NOW(), l.dateInsert) <= '02:40:00' THEN 'two hours ago'" +
+            "                WHEN TIMEDIFF(NOW(), l.dateInsert) <= '03:42:00' THEN 'three hours ago'" +
+            "                WHEN TIMEDIFF(NOW(), l.dateInsert) <= '04:28:00' THEN 'four hours ago'" +
+            "                WHEN TIMEDIFF(NOW(), l.dateInsert) <= '05:35:00' THEN 'five hours ago'" +
+            "                WHEN TIMEDIFF(NOW(), l.dateInsert) <= '06:35:00' THEN 'six hours ago'" +
+            "                WHEN TIMEDIFF(NOW(), l.dateInsert) <= '07:35:00' THEN 'seven hours ago'" +
+            "                WHEN TIMEDIFF(NOW(), l.dateInsert) <= '08:35:00' THEN 'eight hours ago'" +
+            "                when DATE(l.dateInsert) = DATE(NOW())  then CONCAT('today at ' , DATE_FORMAT(l.dateInsert, '%H:%i %p') )" +
+            "                when DATE(l.dateInsert) = DATE(NOW()+1) then CONCAT(' Yesterday ' , DATE_FORMAT(l.dateInsert, '%W %D of %M') )" +
+            "                when DATE(l.dateInsert) < DATE(NOW()+1)  then CONCAT('' , DATE_FORMAT(l.dateInsert, '%D of %M %Y') )" +
+            "                ELSE DATE_FORMAT(l.dateInsert, '%D %M %Y') " +
+            "              END ) " +
+            " AS date_created "
+            + " , l.tutor_id, l.tutor_id_team, l.category_id, l.category_id2, t.tutor_name, t.website, t.url_fb, t.url_yt, t.url_insta, t.url_flickr, t.url_wikipedia, t.url_ref1, t.url_ref2, t.url_ref3, t.city_base, t.country_base, t.userIdInsert, t.username, t.date_inserted "
+            + " FROM learnings_categories lc, learnings l LEFT JOIN learnings_categories lc2 ON lc2.id = l.category_id2, tutor t  "
             + " WHERE 1 = 1 "
-            + " AND lc.id = l.category_id ";
+            + " AND lc.id = l.category_id AND l.tutor_id = t.id ";
 
     String sqlLearningsReadOrderBy;
 
@@ -157,6 +208,9 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
     private String sessionDateTime;
     private String strUrlRequestToBeLogged;
     private GenericView genericView;
+
+    private String strOS;
+    private String strBrowser;
 
 
     public LearningsView(RecordService recordService) {
@@ -180,69 +234,54 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
     public void beforeEnter(@OptionalParameter BeforeEnterEvent event) {
         category = event.getRouteParameters().get("category").orElse(STR_ALL_CATEGORIES);
         tutor = event.getRouteParameters().get("tutor").orElse(STR_ALL_TUTORS);
+        title = event.getRouteParameters().get("title").orElse(STR_ALL_TITLES);
+        genre = event.getRouteParameters().get("genre").orElse(STR_ALL_GENRES);
 
+//        strOrderBy = event.getRouteParameters().get("order").orElse(STR_ORDER_BY_NEWEST);
 
-        sessionid = VaadinSession.getCurrent().getSession().getId();
-        sessionCreation = VaadinSession.getCurrent().getSession().getCreationTime();
-        isMobile = VaadinSession.getCurrent().getBrowser().isAndroid() || VaadinSession.getCurrent().getBrowser().isIPhone();
-
-        UI.getCurrent().getPage().retrieveExtendedClientDetails(extendedClientDetails -> {
-            if (extendedClientDetails == null) {
-                logger.info("Image gallery - error timeZoneId: Cannot retrieve client details:" + extendedClientDetails);
-                return;
-            }
-            timeZoneId = extendedClientDetails.getTimeZoneId();
-
-        });
-
-        sessionDateTime = utilsDate.calcDateTimeFromLong(sessionCreation, "UTC");
-        Locale loc = VaadinService.getCurrentRequest().getLocales().nextElement();
-        locale = loc.getLanguage() + "." + loc.getCountry();
-        localeName = loc.getDisplayName();
-
-        NetUtils netUtils = new NetUtils();
-        publicIp = netUtils.getClientPublicIp(hostname);
-
-        final String[] urlHost = {"", "", "", "", "", "", "", ""};
-
-        UI.getCurrent().getPage().fetchCurrentURL(currentUrl -> {
-            // This is your own method that you may do something with the url.
-            // Note that this method runs asynchronously
-            urlHost[0] = currentUrl.getHost();
-            urlHost[1] = currentUrl.getProtocol();
-            urlHost[2] = currentUrl.getRef();
-            urlHost[3] = currentUrl.getUserInfo();
-            urlHost[4] = currentUrl.toExternalForm();
-            urlHost[5] = currentUrl.getPort() + "";
-            urlHost[6] = currentUrl.getAuthority();
-            urlHost[7] = currentUrl.getQuery();
-
-            logger.info("  url:" + urlHost[0] + "  url:" + urlHost[1] + "  url:" + urlHost[2] + "  url:" + urlHost[3] + "  url:" + urlHost[4]
-                    + "  url:" + urlHost[5] + "  url:" + urlHost[6] + "  url:" + urlHost[7]);
-        });
+        getUserClientInfo();
 
         userId = 1;
         strUsername = "visitor-user";
 
+        VerticalLayout layoutHeaderParameters;
         verticalLayout.removeAll();
 
-        logger.info(category + "  " + tutor);
-        if (category.equalsIgnoreCase(STR_ALL_CATEGORIES)) {
-            VerticalLayout layoutHeaderParameters = loadHeader("Learnings", "Filter by Subject", "");
-            verticalLayout.add(layoutHeaderParameters);
-            VerticalLayout layoutResults = loadResults(null);
+        if (!category.equalsIgnoreCase(STR_ALL_CATEGORIES)) {
+            layoutHeaderParameters = loadHeader("Learnings", "", category);
+            VerticalLayout layoutResults = loadResults();
             verticalLayout.add(layoutResults);
-        } else if (!category.equalsIgnoreCase(STR_ALL_CATEGORIES)) {
-            VerticalLayout layoutHeaderParameters = loadHeader("Learnings", "Filter by Subject", category);
-            verticalLayout.add(layoutHeaderParameters);
-            VerticalLayout layoutResults = loadResults(null);
+        } else if (!genre.equalsIgnoreCase(STR_ALL_GENRES)) {
+            layoutHeaderParameters = loadHeader("Learnings", "", genre);
+            VerticalLayout layoutResults = loadResults();
+            verticalLayout.add(layoutResults);
+        } else if (category.equalsIgnoreCase(STR_ALL_CATEGORIES) || genre.equalsIgnoreCase(STR_ALL_GENRES)) {
+            layoutHeaderParameters = loadHeader("Learnings", "", "");
+            VerticalLayout layoutResults = loadResults();
             verticalLayout.add(layoutResults);
         } else {
-            logger.warn(category + "  " + tutor);
+            layoutHeaderParameters = loadHeader("Learnings", "", "");
+            logger.warn(category + "  " + tutor + "  " + genre);
         }
 
+        HorizontalLayout layoutContent = new HorizontalLayout();
+        layoutContent.addClassNames(Width.FULL,
+                AlignItems.START, JustifyContent.CENTER,
+                Padding.LARGE, Margin.NONE,
+                Gap.XSMALL
+        );
+        filtersColumn.removeAll();
+        filtersColumn.setMaxWidth("290px");
+        verticalLayout.setMaxWidth("1040px");
+        filtersColumn.add(loadFiltersColumn(sqlLearningTypes, arrColumnsLearningTypes));
+        filtersColumn.add(loadFiltersGenresColumn(sqlLearningCategoriesRead, arrColLearningCategories));
+
+        layoutContent.add(filtersColumn, verticalLayout);
+//        layoutContent.setMaxWidth("1200px");
+
         this.removeAll();
-        this.add(verticalLayout);
+        this.add(layoutHeaderParameters);
+        this.add(layoutContent);
         this.add(genericView.loadFooter(isMobile));
 
         logVisitorToDb();
@@ -254,8 +293,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
     }
 
     private void constructUI() {
-        addClassNames("learnings-view");
-        addClassNames(Overflow.HIDDEN, Width.FULL,
+        this.addClassNames(Overflow.HIDDEN, Width.FULL,
                 // Margin.LARGE, //.Left.MEDIUM, Margin.Right.MEDIUM,
                 //  Padding.Left.MEDIUM, Padding.Left.MEDIUM,
                 Margin.NONE,
@@ -285,12 +323,45 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
 
         }
 
+        filtersColumn = new VerticalLayout();
+        if (isMobile) {
+            filtersColumn.addClassNames(
+                    Overflow.HIDDEN,
+                    // Margin.LARGE, //.Left.MEDIUM, Margin.Right.MEDIUM,
+                    //  Padding.Left.MEDIUM, Padding.Left.MEDIUM,
+                    // Margin.Horizontal.SMALL,
+                    Margin.NONE,
+                    Padding.NONE,
+                    Padding.Top.XSMALL,
+                    Gap.XSMALL,
+                    AlignItems.START, JustifyContent.CENTER,
+                    LumoUtility.FontSize.SMALL, LumoUtility.TextColor.SECONDARY,
+//                Background.CONTRAST_5,
+                    TextAlignment.CENTER
+            );
+        } else {
+            filtersColumn.addClassNames(
+                    Overflow.HIDDEN,
+                    // Margin.LARGE, //.Left.MEDIUM, Margin.Right.MEDIUM,
+                    //  Padding.Left.MEDIUM, Padding.Left.MEDIUM,
+                    // Margin.Horizontal.SMALL,
+                    Margin.NONE,
+                    Padding.NONE,  //<---
+                    Padding.Top.MEDIUM,
+                    Gap.SMALL,
+                    AlignItems.START, JustifyContent.CENTER,
+                    LumoUtility.FontSize.SMALL, LumoUtility.TextColor.SECONDARY,
+//                Background.CONTRAST_5,
+                    TextAlignment.CENTER
+            );
+        }
+
 
         verticalLayout = new VerticalLayout();
         verticalLayout.setId("verticalLayout");
         if (isMobile) {
             verticalLayout.addClassNames(
-                    Overflow.HIDDEN, Width.FULL,
+                    Overflow.HIDDEN, //Width.FULL,
                     // Margin.LARGE, //.Left.MEDIUM, Margin.Right.MEDIUM,
                     //  Padding.Left.MEDIUM, Padding.Left.MEDIUM,
                     // Margin.Horizontal.SMALL,
@@ -302,35 +373,51 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
             );
         } else {
             verticalLayout.addClassNames(
-                    Overflow.HIDDEN, Width.FULL,
+                    Overflow.HIDDEN, //Width.FULL,
                     // Margin.LARGE, //.Left.MEDIUM, Margin.Right.MEDIUM,
                     //  Padding.Left.MEDIUM, Padding.Left.MEDIUM,
                     // Margin.Horizontal.SMALL,
                     Margin.NONE,
-                    Padding.LARGE,  //<---
+                    Padding.SMALL,  //<---
                     Padding.Top.XSMALL,
 //                    Gap.LARGE,
                     AlignItems.CENTER, JustifyContent.CENTER
             );
         }
+        verticalLayout.addClassName("learnings-view");
         this.setWidthFull();
     }
 
-    private VerticalLayout loadResults(String inCategory) {
+    private VerticalLayout loadResults() {
 
         String strWhereSubClause = "";
 
-        if (!tutor.isEmpty() && !tutor.equalsIgnoreCase(STR_ALL_TUTORS)) {
+        if (tutor.isEmpty() || tutor.equalsIgnoreCase(STR_ALL_TUTORS)) {
+        } else {
             strWhereSubClause = strWhereSubClause + " AND t.tutor_name LIKE '" + tutor + "' ";
         }
 
         if (category.isEmpty() || category.equalsIgnoreCase(STR_ALL_CATEGORIES)) {
-        } else if (inCategory != null && !inCategory.isEmpty()) {
-            strWhereSubClause = strWhereSubClause + " AND lc.cat_title LIKE '" + inCategory + "' ";
         } else {
-            strWhereSubClause = strWhereSubClause + " AND lc.cat_title LIKE '" + category + "' ";
+            strWhereSubClause = strWhereSubClause + " AND ( lc.cat_type LIKE '" + category + "' OR lc2.cat_type LIKE '" + category + "') ";
         }
+
+        if (title.isEmpty() || title.equalsIgnoreCase(STR_ALL_TITLES)) {
+        } else {
+            strWhereSubClause = strWhereSubClause + " AND l.title LIKE '" + title + "' ";
+        }
+
+        if (genre.isEmpty() || genre.equalsIgnoreCase(STR_ALL_GENRES)) {
+        } else {
+            strWhereSubClause = strWhereSubClause + " AND ( lc.cat_title LIKE '" + genre + "' OR lc2.cat_title LIKE '" + genre + "') ";
+        }
+
+//        if (strOrderBy.isEmpty() || strOrderBy.equalsIgnoreCase(STR_ORDER_BY_NEWEST)) {
         sqlLearningsReadOrderBy = " ORDER BY l.dateInsert DESC";
+//        } else {
+//            sqlLearningsReadOrderBy = " ORDER BY l.dateInsert ASC";
+//        }
+
         String sqlRead = sqlLearningsRead + strWhereSubClause + sqlLearningsReadOrderBy;
 
 //        VerticalLayout  layoutLearnings = loadLearnings(sqlRead, arrColumnsLearning);
@@ -359,10 +446,10 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
                     //  Padding.Left.MEDIUM, Padding.Left.MEDIUM,
                     // Margin.Horizontal.SMALL,
                     Margin.NONE,
-                    Padding.LARGE, // <---
+                    Padding.SMALL, // <---
 //                    Padding.Top.NONE,
 //                    Padding.XLARGE,
-                    Gap.LARGE,
+                    Gap.XLARGE,
                     //  Padding.NONE, //.Left.MEDIUM, Padding.Right.MEDIUM,
                     //Margin.Vertical.MEDIUM, Padding.Vertical.NONE,
                     AlignItems.CENTER, JustifyContent.CENTER
@@ -402,60 +489,61 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
     private VerticalLayout loadHeader(String strHeader, String strSubHeader, String strSection) {
 
         this.strHeader = strHeader;
-        HorizontalLayout headerContainerMaster = new HorizontalLayout();
+//        HorizontalLayout headerContainerMaster = new HorizontalLayout();
+//        if (isMobile) {
+//            headerContainerMaster.addClassNames(
+//                    AlignItems.CENTER, JustifyContent.BETWEEN,
+//                    Overflow.HIDDEN,// Width.FULL,
+//                    Margin.NONE,
+//                    Padding.NONE,
+//                    Gap.MEDIUM,
+//                    // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
+//                    //   Background.CONTRAST_5,
+//                    BorderRadius.NONE
+//            );
+//        } else {
+//            headerContainerMaster.addClassNames(
+//                    AlignItems.CENTER, JustifyContent.BETWEEN,
+//                    Overflow.HIDDEN, //Width.FULL,
+//                    Margin.NONE,
+//                    Padding.NONE,
+//                    Gap.MEDIUM,
+//                    // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
+//                    //   Background.CONTRAST_5,
+//                    BorderRadius.LARGE
+//            );
+//        }
+
+//        VerticalLayout headerTextContainer = new VerticalLayout();
+//        headerTextContainer.addClassNames(
+//                AlignItems.CENTER, JustifyContent.START,
+//                Margin.NONE, Padding.NONE,
+//                Gap.XSMALL);
+//
+//        H2 header = new H2(strHeader);
+//        header.addClassNames(
+//                AlignItems.CENTER, JustifyContent.START,
+//                Margin.Bottom.NONE, Margin.Top.NONE, FontSize.LARGE, FontWeight.BOLD, TextColor.SECONDARY);
+////        header.getStyle().set("font-family", "Times-New-Roman, serif");
+//
+//        Div subheader = new Div(strSubHeader);
+//        subheader.addClassNames(
+//                AlignItems.CENTER, JustifyContent.START,
+//                Margin.Bottom.NONE, Margin.Top.NONE, FontSize.SMALL, TextColor.SECONDARY);
+//
+//
+//        headerTextContainer.add(header, subheader);
+
+//        Select<String> sortBy = new Select<>();
+//        sortBy.setLabel("Sort by");
+//        sortBy.setItems("Most Viewed", "Least Viewed", "Most Favourite", "Least Favourite", "Newest First", "Oldest First", "Most Liked", "Least Liked");
+//        sortBy.setValue("Most Viewed");
+
+
+        Div headerContainer = new Div();
         if (isMobile) {
-            headerContainerMaster.addClassNames(
-                    AlignItems.CENTER, JustifyContent.BETWEEN,
-                    Overflow.HIDDEN,// Width.FULL,
-                    Margin.NONE,
-                    Padding.NONE,
-                    Gap.MEDIUM,
-                    // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
-                    //   Background.CONTRAST_5,
-                    BorderRadius.NONE
-            );
-        } else {
-            headerContainerMaster.addClassNames(
-                    AlignItems.CENTER, JustifyContent.BETWEEN,
-                    Overflow.HIDDEN, //Width.FULL,
-                    Margin.NONE,
-                    Padding.NONE,
-                    Gap.MEDIUM,
-                    // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
-                    //   Background.CONTRAST_5,
-                    BorderRadius.LARGE
-            );
-        }
-
-        VerticalLayout headerTextContainer = new VerticalLayout();
-        headerTextContainer.addClassNames(
-                AlignItems.CENTER, JustifyContent.START,
-                Margin.NONE, Padding.NONE,
-                Gap.XSMALL);
-
-        H2 header = new H2(strHeader);
-        header.addClassNames(
-                AlignItems.CENTER, JustifyContent.START,
-                Margin.Bottom.NONE, Margin.Top.NONE, FontSize.LARGE, FontWeight.BOLD, TextColor.SECONDARY);
-//        header.getStyle().set("font-family", "Times-New-Roman, serif");
-
-        Div subheader = new Div(strSubHeader);
-        subheader.addClassNames(
-                AlignItems.CENTER, JustifyContent.START,
-                Margin.Bottom.NONE, Margin.Top.NONE, FontSize.SMALL, TextColor.SECONDARY);
-
-
-        headerTextContainer.add(header, subheader);
-
-        Select<String> sortBy = new Select<>();
-        sortBy.setLabel("Sort by");
-        sortBy.setItems("Most Viewed", "Least Viewed", "Most Favourite", "Least Favourite", "Newest First", "Oldest First", "Most Liked", "Least Liked");
-        sortBy.setValue("Most Viewed");
-
-        HorizontalLayout headerContainerSecondary = new HorizontalLayout();
-        if (isMobile) {
-            headerContainerSecondary.addClassNames(
-                    AlignItems.CENTER, JustifyContent.CENTER,
+            headerContainer.addClassNames(
+                    AlignItems.START, JustifyContent.CENTER,
                     Overflow.HIDDEN, Width.FULL,
                     Margin.NONE,
                     Padding.NONE,
@@ -465,17 +553,66 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
                     BorderRadius.NONE
             );
         } else {
-            headerContainerSecondary.addClassNames(
-                    AlignItems.CENTER, JustifyContent.CENTER,
+            headerContainer.addClassNames(
+                    AlignItems.START, JustifyContent.CENTER,
                     Overflow.HIDDEN, Width.FULL,
                     Margin.NONE,
                     Padding.NONE,
                     Gap.SMALL,
                     // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
                     //   Background.CONTRAST_5,
-                    BorderRadius.LARGE
+                    BorderRadius.NONE
             );
         }
+//        headerContainer.addClassName("header-layout");
+
+        VerticalLayout layoutSortByAll = new VerticalLayout();
+        layoutSortByAll.addClassNames(
+                LumoUtility.AlignItems.CENTER, JustifyContent.START,
+                Margin.NONE, Padding.SMALL,
+                LumoUtility.FontSize.SMALL, LumoUtility.TextColor.SECONDARY,
+                Background.CONTRAST_5,
+                TextAlignment.CENTER
+        );
+        layoutSortByAll.getStyle().setMaxWidth("125px");
+
+
+        VerticalLayout layoutSortBy = new VerticalLayout();
+        layoutSortBy.addClassNames(
+                LumoUtility.AlignItems.CENTER, JustifyContent.START,
+                Margin.NONE, Padding.SMALL,
+                LumoUtility.FontSize.SMALL, LumoUtility.TextColor.SECONDARY,
+//                Background.CONTRAST_5,
+                TextAlignment.CENTER
+        );
+        layoutSortBy.addClassName("header-layout-sort");
+
+//        RouteParam routeOrderNewest = new RouteParam("order", STR_ORDER_BY_NEWEST);
+//        RouterLink linkOrderNewest = new RouterLink("Newest First", LearningsView.class, new RouteParameters(routeOrderNewest));
+//
+//        RouteParam routeOrderOlder = new RouteParam("order", STR_ORDER_BY_OLDER);
+//        RouterLink linkOrderOlder = new RouterLink("Older First", LearningsView.class, new RouteParameters(routeOrderOlder));
+////        layoutSortBy.add(linkOrderNewest, linkOrderOlder);
+
+        List lstSortBy = new ArrayList();
+        lstSortBy.add("Newest First");
+        lstSortBy.add("Older First");
+
+        RadioButtonGroup radioSortBy = new RadioButtonGroup();
+        radioSortBy.setItems(lstSortBy);
+        radioSortBy.setValue(lstSortBy.get(0));
+
+        Div divSortTitle = new Div("Sort");
+        layoutSortByAll.add(divSortTitle, radioSortBy);
+
+        VerticalLayout layoutFiltersAll = new VerticalLayout();
+        layoutFiltersAll.addClassNames(
+                LumoUtility.AlignItems.CENTER, JustifyContent.START,
+                Margin.NONE, Padding.SMALL,
+                LumoUtility.FontSize.SMALL, LumoUtility.TextColor.SECONDARY,
+//                Background.CONTRAST_5,
+                TextAlignment.CENTER
+        );
 
         Div layoutFilters = new Div();
         if (isMobile) {
@@ -503,78 +640,37 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         }
         layoutFilters.addClassName("header-layout-filters");
 
-
+//        String sqlLearningCategories;
+//        if (type.isEmpty() || type.equalsIgnoreCase(STR_ALL_TYPES)) {
+//            sqlLearningCategories = sqlLearningCategoriesRead
+//                    + sqlLearningCategoriesReadGroup;
+//        } else {
+//            sqlLearningCategories = sqlLearningCategoriesRead +
+//                    " AND (lc.cat_type LIKE '" + type + "') "
+//                    + sqlLearningCategoriesReadGroup;
+//        }
+//
+//        List<Record> lstLearningCategoriesRecs = getRecordsFromDb(sqlLearningCategories, arrColLearningCategories);
+//
 //        ArrayList<String> lstCategories = new ArrayList<>();
-//        lstCategories.add("Street Photography");
-//        lstCategories.add("Landscape Photography");
-//        lstCategories.add("Travel Photography");
-//        lstCategories.add("Techniques");
-
-        List<Record> lstLearningCategoriesRecs = getRecordsFromDb(sqlLearningCategoriesRead, arrColLearningCategories);
-
-        ArrayList<String> lstCategories = new ArrayList<>();
-        for (int r = 0; r < lstLearningCategoriesRecs.size(); r++) {
-            lstCategories.add(lstLearningCategoriesRecs.get(r).getColumnData("cat_title"));
-        }
-
-        RouteParam routeCategoryAll = new RouteParam("category", STR_ALL_CATEGORIES);
-        RouterLink linkPhotoCategoryAll = new RouterLink("All Categories", LearningsView.class, new RouteParameters(routeCategoryAll));
-        layoutFilters.add(linkPhotoCategoryAll);
-
-        for (int c = 0; c < lstCategories.size(); c++) {
-            String captionCategory = lstCategories.get(c);
-            RouteParam routeCategory = new RouteParam("category", captionCategory);
-            RouterLink linkPhotoCategory = new RouterLink(captionCategory, LearningsView.class, new RouteParameters(routeCategory));
-            layoutFilters.add(linkPhotoCategory);
-        }
-
-
-//        CheckboxGroup<String> checkboxGroupSubject = new CheckboxGroup<>();
-//        checkboxGroupSubject.setTooltipText("Category");
-//        checkboxGroupSubject.setLabel("Subject");
-//        checkboxGroupSubject.setItems("Photography", "Street Photography", "Landscape", "Cityscape");
-//        checkboxGroupSubject.select(category);
-
-        CheckboxGroup<String> checkboxGroupFormat = new CheckboxGroup<>();
-        checkboxGroupFormat.setTooltipText("Format");
-//        checkboxGroupFormat.setLabel("Format");
-        checkboxGroupFormat.setItems("Book", "Youtube");
-//        Div lblFilterFormat = new Div("Format");
-//        layoutFilters.add(checkboxGroupFormat);
+//        for (int r = 0; r < lstLearningCategoriesRecs.size(); r++) {
+//            lstCategories.add(lstLearningCategoriesRecs.get(r).getColumnData("cat_title"));
+//        }
+//
+//        for (int c = 0; c < lstCategories.size(); c++) {
+//            String captionCategory = lstCategories.get(c);
+//            RouteParam routeCategory = new RouteParam("category", captionCategory);
+//            RouterLink linkPhotoCategory = new RouterLink(captionCategory, LearningsView.class, new RouteParameters(routeCategory));
+//            layoutFilters.add(linkPhotoCategory);
+//        }
+//
+//        Div divFiltersTitle = new Div("Filter by Subject");
+//        layoutFiltersAll.add(divFiltersTitle, layoutFilters);
 
 
         CheckboxGroup<String> checkboxGroupLocation = new CheckboxGroup<>();
         checkboxGroupLocation.setTooltipText("Location");
-//         checkboxGroupLocation.setLabel("Location");
         checkboxGroupLocation.setItems("Hungary", "UK", "Greece");//, "Thursday",
-
-//        layoutFilters.add(checkboxGroupLocation);
-
-
-//        VerticalLayout layoutHeaderParameters = new VerticalLayout();
-//        if (isMobile) {
-//            layoutHeaderParameters.addClassNames(
-//                    AlignItems.CENTER, JustifyContent.EVENLY,
-//                    Overflow.HIDDEN, Width.FULL,
-//                    Margin.SMALL,
-//                    Padding.NONE,
-//                    Gap.XSMALL,
-//                    // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
-//                    //   Background.CONTRAST_5,
-//                    BorderRadius.NONE
-//            );
-//        } else {
-//            layoutHeaderParameters.addClassNames(
-//                    AlignItems.CENTER, JustifyContent.EVENLY,
-//                    Overflow.HIDDEN, Width.FULL,
-//                    Margin.SMALL,
-//                    Padding.NONE,
-//                    Gap.XSMALL,
-//                    // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
-////                       Background.CONTRAST_5,
-//                    BorderRadius.LARGE
-//            );
-//        }
 
 
         Select<String> cmbView = new Select<>();
@@ -584,18 +680,10 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
                 "Wide - No MetaData", "Wide - MetaData Bottom", "Wide - MetaData Right");
         cmbView.setValue("Ordinary - No MetaData");
 
-
-        H3 divSection = new H3(strSection);
-        divSection.addClassNames(
-                AlignItems.CENTER, JustifyContent.CENTER,
-                Margin.Bottom.MEDIUM, Margin.Top.MEDIUM);
-
-//        headerContainerMaster.add(headerTextContainer);
-        headerContainerSecondary.add(layoutFilters);
-//        layoutHeaderParameters.add( headerContainerSecondary, divSection);
+        headerContainer.add(layoutFiltersAll);
 
         HeaderFilterTabs headerFilterTabs = new HeaderFilterTabs(recordService, isMobile);
-        VerticalLayout layoutHeaderParameters = headerFilterTabs.getHeader(strHeader, strSubHeader, strSection, headerContainerSecondary);
+        VerticalLayout layoutHeaderParameters = headerFilterTabs.getHeader(strHeader, strSubHeader, strSection, headerContainer);
 
 //        headerContainerMaster.add(headerTextContainer, cmbView);
 //        headerContainerSecondary.add(layoutFilters, sortBy);
@@ -651,7 +739,8 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
     public VerticalLayout getLearningsItem(Record record, boolean isTeam) {
 
         String strTitle = record.getColumnData("title");
-        String strCategory = record.getColumnData("category");
+        String strCategory = record.getColumnData("cat_title");
+        String strCategory2 = record.getColumnData("cat_title2");
 
         String strFormat = record.getColumnData("format");
         String strDuration = record.getColumnData("duration");
@@ -661,18 +750,21 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
 
         String strTeamName = record.getColumnData("team_name");
 
+        String strYearPublished = record.getColumnData("year_published");
+
 
         if (isTeam) {
             strTutor = strTeamName;
         }
 
         Div divTutor = new Div();
-        divTutor.addClassName(TextColor.SECONDARY);
+        divTutor.addClassNames(TextColor.SECONDARY, TextAlignment.CENTER);
         divTutor.setVisible(false);
         if (!strTutor.equalsIgnoreCase("null") && !strTutor.isEmpty()) {
             divTutor.setText(strTutor);
             divTutor.setVisible(true);
         }
+
 
 //        String strTutorTeam = record.getColumnData("learnings_team_id");
 //        Div divTutorTeam = new Div();
@@ -703,19 +795,27 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         divImage.add(LineAwesomeIcon.BOOK_SOLID.create());
         layoutSection.add(divImage, titleRelated);
 
-        H5 titleName = new H5(strTitle);
+        RouteParam routeTutor = new RouteParam("tutor", strTutor);
+        RouterLink linkLearningTutor = new RouterLink(strTutor, LearningsView.class, new RouteParameters(routeTutor));
+
+
+//        RouteParam routeTitle = new RouteParam("title", strTitle);
+//        RouterLink linkLearningTitle = new RouterLink(strTitle, LearningsView.class, new RouteParameters(routeTitle));
+
+
+        H3 titleName = new H3(strTitle);
         titleName.addClassName(TextColor.SECONDARY);
 
-        String strDate = "";
-        String dt = record.getColumnData("dateInsert");
-        SimpleDateFormat toui = new SimpleDateFormat("dd/MM/yyyy");
-        SimpleDateFormat fromdb = new SimpleDateFormat("yyyy-MM-dd");
 
-        try {
-            strDate = toui.format(fromdb.parse(dt));
-        } catch (ParseException e) {
-            logger.error(e.getMessage());
-        }
+        String dateCreated = record.getColumnData("date_created");
+//        SimpleDateFormat toui = new SimpleDateFormat("dd/MM/yyyy");
+//        SimpleDateFormat fromdb = new SimpleDateFormat("yyyy-MM-dd");
+
+//        try {
+//            strDate = toui.format(fromdb.parse(dt));
+//        } catch (ParseException e) {
+//            logger.error(e.getMessage());
+//        }
 
 
         HorizontalLayout layoutPostTitle = new HorizontalLayout();
@@ -723,26 +823,29 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
             layoutPostTitle.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.AROUND,
-                    Margin.XSMALL,
+                    Margin.NONE,
                     Padding.XSMALL,
                     Gap.XSMALL,
                     //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                    Background.CONTRAST_10,
-                    Border.BOTTOM, Border.RIGHT, BorderColor.CONTRAST_20,
+                    //Background.CONTRAST_10,
+                    Border.BOTTOM, //Border.RIGHT, //BorderColor.CONTRAST_20,
+//                    BorderColor.CONTRAST_20,
                     BorderRadius.NONE);
         } else {
             layoutPostTitle.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.AROUND,
-                    Margin.SMALL,
-                    Padding.SMALL,
+                    Margin.NONE,
+                    Padding.Horizontal.SMALL, Padding.Vertical.MEDIUM,
                     Gap.MEDIUM,
                     //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                    Background.CONTRAST_10,
-                    Border.BOTTOM, Border.RIGHT, BorderColor.CONTRAST_20,
-                    BorderRadius.FULL);
+                    // Background.CONTRAST_10,
+                    Border.BOTTOM, //Border.RIGHT,// BorderColor.CONTRAST_20,
+//                    BorderColor.CONTRAST_20,
+                    BorderRadius.LARGE);
         }
-        layoutPostTitle.add(layoutSection, titleName, divTutor);
+        layoutPostTitle.add(titleName);
+        layoutPostTitle.addClassName("post-title-bar");
 
         VerticalLayout layoutLearningInfo = new VerticalLayout();
         if (isMobile) {
@@ -751,22 +854,24 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
                     AlignItems.CENTER, JustifyContent.CENTER,
                     Margin.NONE,
                     Padding.NONE,
-                    Gap.MEDIUM,
+                    Gap.SMALL,
                     Width.FULL,
                     //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                    Background.CONTRAST_5,
-                    BorderRadius.NONE);
+                    //  Background.CONTRAST_5,
+                    BorderRadius.NONE
+            );
         } else {
             layoutLearningInfo.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.CENTER,
                     Margin.NONE,
                     Padding.MEDIUM,
-                    Gap.MEDIUM,
+                    Gap.SMALL,
                     Width.FULL,
                     //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
 //                    Background.CONTRAST_5,
-                    BorderRadius.LARGE);
+                    BorderRadius.NONE
+            );
             layoutLearningInfo.addClassName("bottom-radius-shadow");
         }
 
@@ -797,6 +902,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
 
         Anchor linkTutor = new Anchor();
         linkTutor.add(FontAwesome.Solid.LINK.create());
+        linkTutor.setVisible(false);
         // linkTutor.getStyle().setColor(strColorExternalweb);
         //  linkTutor.setClassName("lazy-result-line-button");
 
@@ -804,6 +910,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         if (!strUrlTutorExt.equalsIgnoreCase("null") && !strUrlTutorExt.equalsIgnoreCase("")) {
 
             // linkTutor.setText("Website");
+            linkTutor.setVisible(true);
             linkTutor.setHref(strUrlTutorExt);
             linkTutor.setTarget("_blank");
         }
@@ -880,8 +987,8 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         layoutSourceCard.addClassNames(
                 Overflow.HIDDEN, //Width.FULL,
                 AlignItems.CENTER, JustifyContent.CENTER,
-                Margin.SMALL,
-                Padding.MEDIUM,
+                Margin.NONE,
+                Padding.NONE,
                 Gap.MEDIUM,
                 TextColor.SECONDARY
                 //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
@@ -893,16 +1000,25 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
 
         layoutSourceCard.setMaxWidth("280px");
 
-        RouteParam routeCategory = new RouteParam("category", strCategory);
-        RouterLink linkPhotoCategory = new RouterLink(strCategory, LearningsView.class, new RouteParameters(routeCategory));
+//        RouteParam routeCategory = new RouteParam("category", strCategory);
+//        RouterLink linkPhotoCategory = new RouterLink(strCategory, LearningsView.class, new RouteParameters(routeCategory));
+//
+//        RouteParam routeCategory2 = new RouteParam("category", strCategory2);
+//        RouterLink linkPhotoCategory2 = new RouterLink(strCategory2, LearningsView.class, new RouteParameters(routeCategory2));
+//
+//        if (strCategory2 == null || strCategory2.equalsIgnoreCase("") || strCategory2.equalsIgnoreCase("null") || strCategory2.isEmpty()) {
+//            linkPhotoCategory2.setVisible(false);
+//        } else {
+//            linkPhotoCategory2.setVisible(true);
+//        }
 
-
-        RouteParam routeTutor;
-        RouterLink linkLearningTutor;
-
-        routeTutor = new RouteParam("tutor", strTutor);
-        linkLearningTutor = new RouterLink(strTutor, LearningsView.class, new RouteParameters(routeTutor));
-
+        Span spCategory = new Span(strCategory);
+        spCategory.getElement().getThemeList().add("badge contrast");
+        Span spCategory2 = new Span(strCategory2);
+        spCategory2.getElement().getThemeList().add("badge contrast");
+        if (strCategory2.isEmpty() || strCategory2.equalsIgnoreCase("null") || strCategory2.equalsIgnoreCase("")) {
+            spCategory2.setVisible(false);
+        }
 
         Div divTutorInfo = new Div();
         divTutorInfo.addClassName(TextColor.SECONDARY);
@@ -910,6 +1026,14 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         if (!strTutor.equalsIgnoreCase("null") && !strTutor.isEmpty()) {
             divTutorInfo.setText(strTutor);
             divTutorInfo.setVisible(true);
+        }
+
+        Div divYearPublished = new Div();
+        divYearPublished.addClassName(TextColor.SECONDARY);
+        divYearPublished.setVisible(false);
+        if (!strYearPublished.equalsIgnoreCase("null") && !strYearPublished.isEmpty()) {
+            divYearPublished.setText("Year Published: " + strYearPublished);
+            divYearPublished.setVisible(true);
         }
 
         StreamResource iconInfo = new StreamResource("info-circle-line-icon.svg",
@@ -936,22 +1060,6 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         layoutExtLinks.addClassNames("external-links");
         layoutExtLinks.add(linkTutor, linkTutorWikipedia, linkTutorInsta, linkTutorYt);
 
-        HorizontalLayout layoutData = new HorizontalLayout();
-        layoutData.addClassNames(AlignItems.CENTER, JustifyContent.CENTER,
-                Width.FULL);
-
-        layoutData.add(layoutImage, htmlVideo, layoutSourceCard);
-
-        VerticalLayout layoutIDData = new VerticalLayout();
-        layoutIDData.addClassNames(AlignItems.CENTER, JustifyContent.CENTER, //Width.FULL,
-                Background.TINT_10, BorderRadius.LARGE,
-                Margin.NONE, Padding.LARGE,
-                Gap.SMALL,
-                BoxShadow.XSMALL
-        );
-        layoutIDData.add(imgPerson, linkLearningTutor, layoutExtLinks);
-        layoutIDData.addClassName("item-id-info");
-
 
         Div imgInfo = new Div(svgInfo);
         Div divFormat = new Div();
@@ -962,21 +1070,21 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
                 divFormat.setText(strFormat);
             }
         } else if (strFormat.equalsIgnoreCase("book")) {
-            layoutImage.setMaxWidth("290px");
+            layoutImage.setMaxWidth("430px");
             if (!strPages.equalsIgnoreCase("null") && !strPages.equalsIgnoreCase("")) {
                 divFormat.setText("Book (" + strPages + " pages)");
             } else {
                 divFormat.setText("book");
             }
         } else if (strFormat.equalsIgnoreCase("Url with Free e-book")) {
-            layoutImage.setMaxWidth("420px");
+            layoutImage.setMaxWidth("430px");
             if (!strPages.equalsIgnoreCase("null") && !strPages.equalsIgnoreCase("")) {
                 divFormat.setText("E-Book (" + strPages + " pages)");
             } else {
                 divFormat.setText("E-Book");
             }
         } else {
-            layoutImage.setMaxWidth("290px");
+            layoutImage.setMaxWidth("430px");
             if (!strPages.equalsIgnoreCase("null") && !strPages.equalsIgnoreCase("")) {
                 divFormat.setText(strFormat + "(" + strPages + " pages)");
             } else {
@@ -984,18 +1092,42 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
             }
         }
 
-        Div dayUpdated = new Div("updated: " + strDate);
-        dayUpdated.addClassName(TextColor.SECONDARY);
+
+        HorizontalLayout layoutData = new HorizontalLayout();
+        layoutData.addClassNames(AlignItems.CENTER, JustifyContent.EVENLY,
+                Width.FULL);
+
+        layoutData.add(layoutImage, htmlVideo, layoutSourceCard);
+
+        VerticalLayout layoutIDData = new VerticalLayout();
+        layoutIDData.addClassNames(AlignItems.CENTER, JustifyContent.CENTER, //Width.FULL,
+//                Background.TINT_10,
+                BorderRadius.LARGE,
+                Margin.NONE, Padding.MEDIUM,
+                Gap.SMALL
+//                BoxShadow.XSMALL
+        );
+        layoutIDData.addClassName("item-id-info");
+        layoutIDData.add(imgPerson, divTutor, layoutExtLinks, divFormat, divYearPublished);
+
+
+        Div dayUpdatedLabel = new Div("Info Created on: ");
+        dayUpdatedLabel.addClassName(TextColor.SECONDARY);
+
+        Div dayUpdated = new Div(dateCreated);
+        dayUpdated.getElement().getThemeList().add("badge contrast");
+
 
         VerticalLayout layoutItemInfo = new VerticalLayout();
         layoutItemInfo.addClassNames(AlignItems.CENTER, JustifyContent.CENTER, //Width.FULL,
-                Background.TINT_10, BorderRadius.LARGE,
-                Margin.NONE, Padding.LARGE,
-                Gap.SMALL,
-                BoxShadow.XSMALL
+//                Background.TINT_10,
+                BorderRadius.LARGE,
+                Margin.NONE, Padding.MEDIUM,
+                Gap.SMALL
+//                BoxShadow.XSMALL
         );
-        layoutItemInfo.add(imgInfo, divFormat, dayUpdated, linkPhotoCategory);
         layoutItemInfo.addClassName("item-id-info");
+        layoutItemInfo.add(imgInfo, dayUpdatedLabel, dayUpdated, spCategory, spCategory2);
 
 
         layoutSourceCard.add(layoutIDData, layoutItemInfo);
@@ -1049,9 +1181,254 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
             }
         }
 
-        layoutLearningInfo.add(layoutPostTitle, layoutData, layoutPostRelated, getSubTabs("learning", strTitle, record));
+        VerticalLayout layoutSubTabs = getSubTabs("learning", strTitle, record);
+        HorizontalLayout layoutAggregateInfo = getViewAggregateInfo();
+
+        layoutLearningInfo.add(layoutPostTitle, layoutData, layoutPostRelated, layoutSubTabs, layoutAggregateInfo);
 
         return layoutLearningInfo;
+    }
+
+    private HorizontalLayout getViewAggregateInfo() {
+
+        HorizontalLayout layoutPhotosInfo = new HorizontalLayout();
+        layoutPhotosInfo.addClassNames(
+                Overflow.HIDDEN, Width.FULL,
+                AlignItems.CENTER, JustifyContent.EVENLY,
+                Margin.NONE,
+                Padding.XSMALL,
+                Gap.SMALL,
+                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+                //   Background.CONTRAST_5,
+                TextColor.TERTIARY,
+                BorderRadius.NONE
+        );
+
+
+        HorizontalLayout layoutViewCount = new HorizontalLayout();
+        layoutViewCount.addClassNames(
+//                Overflow.HIDDEN, Width.FULL,
+                AlignItems.CENTER, JustifyContent.CENTER,
+                Margin.NONE,
+                Padding.XSMALL,
+                Gap.XSMALL,
+                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+                //   Background.CONTRAST_5,
+                BorderRadius.NONE
+        );
+        Div divViews = new Div("1");
+        layoutViewCount.add(FontAwesome.Regular.EYE.create(), divViews);
+
+        StreamResource iconComments = new StreamResource("comments.svg",
+                () -> getClass().getResourceAsStream("/icons/comments.svg"));
+        SvgIcon svgComments = new SvgIcon(iconComments);
+
+        HorizontalLayout layoutComment = new HorizontalLayout();
+        layoutComment.addClassNames(
+//                Overflow.HIDDEN, Width.FULL,
+                AlignItems.CENTER, JustifyContent.CENTER,
+                Margin.NONE,
+                Padding.XSMALL,
+                Gap.XSMALL,
+                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+                //   Background.CONTRAST_5,
+                BorderRadius.NONE
+        );
+        Div divCommentCount = new Div("1");
+        layoutComment.add(svgComments, divCommentCount);
+
+        HorizontalLayout layoutLocationsCount = new HorizontalLayout();
+        layoutLocationsCount.addClassNames(
+//                Overflow.HIDDEN, Width.FULL,
+                AlignItems.CENTER, JustifyContent.CENTER,
+                Margin.NONE,
+                Padding.XSMALL,
+                Gap.XSMALL,
+                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+                //   Background.CONTRAST_5,
+                BorderRadius.NONE
+        );
+        Div divLocations = new Div("1");
+        layoutLocationsCount.add(FontAwesome.Regular.COMPASS.create(), divLocations);
+
+        HorizontalLayout layoutSavedInListCount = new HorizontalLayout();
+        layoutSavedInListCount.addClassNames(
+//                Overflow.HIDDEN, Width.FULL,
+                AlignItems.CENTER, JustifyContent.CENTER,
+                Margin.NONE,
+                Padding.XSMALL,
+                Gap.XSMALL,
+                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+                //   Background.CONTRAST_5,
+                BorderRadius.NONE
+        );
+        Div divDate = new Div("1");
+        layoutSavedInListCount.add(VaadinIcon.BOOKMARK.create(), divDate); // FontAwesome.Regular.CALENDAR.create()
+
+        layoutPhotosInfo.add(layoutViewCount, layoutComment, layoutLocationsCount, layoutSavedInListCount);
+
+        return layoutPhotosInfo;
+    }
+
+    private VerticalLayout loadFiltersColumn(String sqlRead, String[] arrColumnNames) {
+        VerticalLayout filtersColumn = new VerticalLayout();
+        if (isMobile) {
+            filtersColumn.addClassNames(
+                    Overflow.HIDDEN,
+                    // Margin.LARGE, //.Left.MEDIUM, Margin.Right.MEDIUM,
+                    //  Padding.Left.MEDIUM, Padding.Left.MEDIUM,
+                    // Margin.Horizontal.SMALL,
+                    Margin.NONE, Padding.NONE,
+                    Gap.SMALL,
+                    AlignItems.CENTER, JustifyContent.CENTER,
+                    LumoUtility.FontSize.SMALL, LumoUtility.TextColor.SECONDARY,
+//                Background.CONTRAST_5,
+                    TextAlignment.CENTER
+            );
+        } else {
+            filtersColumn.addClassNames(
+                    Overflow.HIDDEN,
+                    // Margin.LARGE, //.Left.MEDIUM, Margin.Right.MEDIUM,
+                    //  Padding.Left.MEDIUM, Padding.Left.MEDIUM,
+                    // Margin.Horizontal.SMALL,
+                    Margin.NONE, Padding.XSMALL,
+                    Gap.MEDIUM,
+                    AlignItems.CENTER, JustifyContent.CENTER,
+                    LumoUtility.FontSize.SMALL, LumoUtility.TextColor.SECONDARY,
+//                Background.CONTRAST_5,
+                    TextAlignment.CENTER
+            );
+        }
+//        filtersColumn.setWidth(strWidgth);
+
+
+        VerticalLayout layoutFiltersType = new VerticalLayout();
+        if (isMobile) {
+            layoutFiltersType.addClassNames(
+                    Overflow.HIDDEN,
+                    AlignItems.CENTER, JustifyContent.CENTER,
+                    Margin.NONE, Padding.NONE,
+                    Gap.SMALL,
+                    //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+                    //  Background.CONTRAST_5,
+                    BorderRadius.NONE);
+        } else {
+            layoutFiltersType.addClassNames(
+                    Overflow.HIDDEN,
+                    AlignItems.CENTER, JustifyContent.CENTER,
+                    Margin.NONE, Padding.NONE,
+                    Gap.MEDIUM,
+                    //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+                    //  Background.CONTRAST_5,
+                    BorderRadius.LARGE);
+        }
+        layoutFiltersType.addClassName("side-layout-filters");
+
+        List<Record> lstLearningCategoriesRecs = getRecordsFromDb(sqlRead, arrColumnNames);
+
+        ArrayList<String> lstCategories = new ArrayList<>();
+        for (int r = 0; r < lstLearningCategoriesRecs.size(); r++) {
+            lstCategories.add(lstLearningCategoriesRecs.get(r).getColumnData("cat_type"));
+        }
+
+//        RouteParam routeCategoryAll = new RouteParam("category", STR_ALL_CATEGORIES);
+//        RouterLink linkPhotoCategoryAll = new RouterLink("All Categories", LearningsView.class, new RouteParameters(routeCategoryAll));
+//        layoutFilters.add(linkPhotoCategoryAll);
+
+        for (int c = 0; c < lstCategories.size(); c++) {
+            String captionCategory = lstCategories.get(c);
+            RouteParam routeCategory = new RouteParam("category", captionCategory);
+            RouterLink linkPhotoCategory = new RouterLink(captionCategory, LearningsView.class, new RouteParameters(routeCategory));
+            layoutFiltersType.add(linkPhotoCategory);
+        }
+
+
+        Div divFiltersTitle = new Div("Filter by Category");
+        filtersColumn.add(divFiltersTitle, layoutFiltersType);
+
+
+        return filtersColumn;
+    }
+
+    private VerticalLayout loadFiltersGenresColumn(String sqlRead, String[] arrColumnNames) {
+        VerticalLayout filtersColumn = new VerticalLayout();
+        if (isMobile) {
+            filtersColumn.addClassNames(
+                    Overflow.HIDDEN,
+                    // Margin.LARGE, //.Left.MEDIUM, Margin.Right.MEDIUM,
+                    //  Padding.Left.MEDIUM, Padding.Left.MEDIUM,
+                    // Margin.Horizontal.SMALL,
+                    Margin.NONE,
+                    Margin.NONE, Padding.NONE,
+                    Gap.SMALL,
+                    AlignItems.CENTER, JustifyContent.CENTER,
+                    LumoUtility.FontSize.SMALL, LumoUtility.TextColor.SECONDARY,
+//                Background.CONTRAST_5,
+                    TextAlignment.CENTER
+            );
+        } else {
+            filtersColumn.addClassNames(
+                    Overflow.HIDDEN,
+                    // Margin.LARGE, //.Left.MEDIUM, Margin.Right.MEDIUM,
+                    //  Padding.Left.MEDIUM, Padding.Left.MEDIUM,
+                    // Margin.Horizontal.SMALL,
+                    Margin.NONE, Padding.XSMALL,
+                    Gap.MEDIUM,
+                    AlignItems.CENTER, JustifyContent.CENTER,
+                    LumoUtility.FontSize.SMALL, LumoUtility.TextColor.SECONDARY,
+//                Background.CONTRAST_5,
+                    TextAlignment.CENTER
+            );
+        }
+//        filtersColumn.setWidth(strWidgth);
+
+
+        VerticalLayout layoutFiltersType = new VerticalLayout();
+        if (isMobile) {
+            layoutFiltersType.addClassNames(
+                    Overflow.HIDDEN,
+                    AlignItems.CENTER, JustifyContent.CENTER,
+                    Margin.NONE, Padding.NONE,
+                    Gap.SMALL,
+                    //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+                    //  Background.CONTRAST_5,
+                    BorderRadius.NONE);
+        } else {
+            layoutFiltersType.addClassNames(
+                    Overflow.HIDDEN,
+                    AlignItems.CENTER, JustifyContent.CENTER,
+                    Margin.NONE, Padding.NONE,
+                    Gap.MEDIUM,
+                    //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+                    //  Background.CONTRAST_5,
+                    BorderRadius.LARGE);
+        }
+        layoutFiltersType.addClassName("side-layout-filters");
+
+        List<Record> lstLearningCategoriesRecs = getRecordsFromDb(sqlRead, arrColumnNames);
+
+        ArrayList<String> lstCategories = new ArrayList<>();
+        for (int r = 0; r < lstLearningCategoriesRecs.size(); r++) {
+            lstCategories.add(lstLearningCategoriesRecs.get(r).getColumnData("cat_title"));
+        }
+
+//        RouteParam routeCategoryAll = new RouteParam("category", STR_ALL_CATEGORIES);
+//        RouterLink linkPhotoCategoryAll = new RouterLink("All Categories", LearningsView.class, new RouteParameters(routeCategoryAll));
+//        layoutFilters.add(linkPhotoCategoryAll);
+
+        for (int c = 0; c < lstCategories.size(); c++) {
+            String captionCategory = lstCategories.get(c);
+            RouteParam routeCategory = new RouteParam("genre", captionCategory);
+            RouterLink linkPhotoCategory = new RouterLink(captionCategory, LearningsView.class, new RouteParameters(routeCategory));
+            layoutFiltersType.add(linkPhotoCategory);
+        }
+
+
+        Div divFiltersTitle = new Div("Filter by Genre");
+        filtersColumn.add(divFiltersTitle, layoutFiltersType);
+
+
+        return filtersColumn;
     }
 
 
@@ -1304,6 +1681,30 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         return layoutReview;
     }
 
+    private VerticalLayout getFormattedText(String strDescription) {
+
+        VerticalLayout layoutFormattedText = new VerticalLayout();
+
+        Paragraph formattedParagraph = new Paragraph(strDescription);
+        formattedParagraph.getElement().getStyle().set("white-space", "pre-wrap");
+
+//        Html html = new Html(Jsoup.clean("<p>Formatted <b>text</b><br>as <i>HTML</i></p>", Safelist.basic()));
+
+//        Paragraph elements = new Paragraph();
+//        elements.getElement().appendChild(Element.createText("Formatted "), new Element("b").setText("text"),
+//                new Element("br"), Element.createText("as "), new Element("i").setText("elements"));
+
+        layoutFormattedText.add(new Paragraph(formattedParagraph));
+//        ,
+//                new Paragraph(
+//                        "For full formatting, you can use HTML either as a string or by assembling individual elements. "
+//                                + "When using an HTML string, you should be careful to not include any user-provided values that might lead to cross-site scripting vulnerabilities."),
+//                elements, html);
+
+        return layoutFormattedText;
+    }
+
+
     private VerticalLayout getSubTabs(String strContentType, String strContentTitle, Record record) {
 
         VerticalLayout layoutTabsInfo = new VerticalLayout();
@@ -1312,15 +1713,15 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.CENTER,
                     Margin.NONE,
-                    Padding.NONE,
-                    Gap.MEDIUM
+                    Padding.XSMALL,
+                    Gap.SMALL
             );
         } else {
             layoutTabsInfo.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.CENTER,
                     Margin.NONE,
-                    Padding.MEDIUM,
+                    Padding.Horizontal.SMALL, Padding.Vertical.MEDIUM,
                     Gap.MEDIUM
             );
         }
@@ -1336,63 +1737,83 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
 
         String strDescription = record.getColumnData("description");
 
-        Paragraph parDescription = new Paragraph();
-        parDescription.addClassNames(TextColor.TERTIARY, FontSize.MEDIUM, Padding.MEDIUM);
-        if (!strDescription.equalsIgnoreCase("null") && !strDescription.equalsIgnoreCase("")) {
-            parDescription.setText(strDescription);
+//        Paragraph parDescription = new Paragraph();
+//        parDescription.addClassNames(TextColor.TERTIARY, FontSize.MEDIUM, Padding.MEDIUM);
+        if (!strDescription.equalsIgnoreCase("null") && !strDescription.isEmpty()) {
+//            parDescription.setText(strDescription);
         } else {
-            parDescription.setText(" Overview ... of " + strContentTitle + " in " + strContentType);
+            strDescription = " Overview of " + strContentTitle;
         }
+
+
+        VerticalLayout layoutSourceReview = getFormattedText(strDescription);
+        layoutSourceReview.addClassNames(TextColor.SECONDARY, FontSize.MEDIUM,
+                Margin.NONE,
+                Padding.SMALL,
+                Gap.SMALL,
+                AlignItems.CENTER, JustifyContent.CENTER
+        );
 
 //        ArrayList<String> lstLocationTabs = new ArrayList<String>();
 //        lstLocationTabs.add("Reviews");
 //        lstLocationTabs.add("Notes");
 //        lstLocationTabs.add("Related Info");
 
-        VerticalLayout layoutReviews = getReviewResults();
+        VerticalLayout layoutReviews = new VerticalLayout();
+        layoutReviews.addClassNames(TextColor.SECONDARY, FontSize.MEDIUM,
+                Margin.NONE,
+                Padding.NONE,
+                Gap.SMALL,
+                AlignItems.CENTER, JustifyContent.CENTER
+        );
+        layoutReviews.add(getFormattedText(strDescription), getReviewResults());
+
 
         TabSheet tabSheetRelated = new TabSheet();
         tabSheetRelated.addThemeVariants(TabSheetVariant.LUMO_TABS_CENTERED);
         tabSheetRelated.setClassName("lazy-tab-panel");
         tabSheetRelated.addClassNames(
                 Overflow.HIDDEN, Width.FULL,
-                Margin.SMALL,
-                Padding.NONE,
-                Gap.MEDIUM,
+                Margin.NONE,
+                Padding.SMALL,
+                Gap.SMALL,
                 AlignItems.CENTER, JustifyContent.CENTER,
                 TextColor.TERTIARY
         );
 
-        Div tab1 = new Div("Overview");
-        tab1.setClassName("lazy-tab");//.getStyle().set("color","#6a8ab0");
-        tabSheetRelated.add(tab1, parDescription);
-        Div tab2 = new Div("Reviews");
+        StreamResource iconReview = new StreamResource("review.svg",
+                () -> getClass().getResourceAsStream("/icons/review.svg"));
+        SvgIcon svgReview = new SvgIcon(iconReview);
+
+
+        Div tabOverview = new Div();
+        tabOverview.addClassName("tab-item");
+        tabOverview.setId("overview");
+        tabOverview.add(FontAwesome.Solid.EYE.create(), new Div("Overview"));
+        tabOverview.setClassName("lazy-tab");//.getStyle().set("color","#6a8ab0");
+        tabSheetRelated.add(tabOverview, layoutSourceReview);
+        Div tab2 = new Div();
+        tab2.addClassName("tab-item");
+        tab2.setId("reviews");
+        tab2.add(svgReview, new Div("Reviews"));
         tab2.setClassName("lazy-tab");//.getStyle().set("color","#6a8ab0");
         tabSheetRelated.add(tab2, layoutReviews);
-        Div tab3 = new Div("Related Info");
+        Div tab3 = new Div();
+        tab3.addClassName("tab-item");
+        tab3.setId("related-info");
+        tab3.add(FontAwesome.Solid.LINK_SLASH.create(), new Div("Related Info"));
         tab3.setClassName("lazy-tab");//.getStyle().set("color","#6a8ab0");
-        tabSheetRelated.add(tab3, new Div(new Text(strContentTitle + " ....related info... in " + strContentType)));
+        tabSheetRelated.add(tab3, new Div(new Text(strContentTitle)));
 
         layoutTabsInfo.add(tabSheetRelated);
 
-//        ToggleButtonGroup btnGroup = new ToggleButtonGroup();
-//        btnGroup.addClassNames(Width.SMALL,
-//                Overflow.HIDDEN, Width.AUTO,
-//                Margin.SMALL,
-//                Padding.NONE,
-//                Gap.MEDIUM,
-//                AlignItems.CENTER, JustifyContent.CENTER
-//        );
-//        btnGroup.setItems(lstLocationTabs);
-//        btnGroup.setToggleable(true);
-//
-//
-//        Div divTabContent = new Div();
-//        divTabContent.addClassNames(Width.FULL,
-//                AlignItems.CENTER, JustifyContent.CENTER,
-//                TextAlignment.CENTER,
-//                Height.LARGE
-//        );
+        tabSheetRelated.addSelectedChangeListener(selected -> {
+            selected.getPreviousTab();
+            Tab selectedTab = selected.getSelectedTab();
+            logger.info("Selected tab: {}", selectedTab.getId().get());
+
+        });
+
 //
 //
 //        btnGroup.addValueChangeListener(event -> {
@@ -1412,6 +1833,82 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
 
 
         return layoutTabsInfo;
+    }
+
+
+    private void getUserClientInfo() {
+
+        sessionid = VaadinSession.getCurrent().getSession().getId();
+        sessionCreation = VaadinSession.getCurrent().getSession().getCreationTime();
+        isMobile = VaadinSession.getCurrent().getBrowser().isAndroid() || VaadinSession.getCurrent().getBrowser().isIPhone() || VaadinSession.getCurrent().getBrowser().isWindowsPhone();
+
+        if (VaadinSession.getCurrent().getBrowser().isAndroid()) {
+            strOS = "Android";
+        } else if (VaadinSession.getCurrent().getBrowser().isIPhone()) {
+            strOS = "iPhone";
+        } else if (VaadinSession.getCurrent().getBrowser().isWindows()) {
+            strOS = "Windows";
+        } else if (VaadinSession.getCurrent().getBrowser().isLinux()) {
+            strOS = "Linux";
+        } else if (VaadinSession.getCurrent().getBrowser().isMacOSX()) {
+            strOS = "Mac OS X";
+        } else if (VaadinSession.getCurrent().getBrowser().isChromeOS()) {
+            strOS = "ChromeOS";
+        } else {
+            strOS = "Unknown";
+        }
+
+        if (VaadinSession.getCurrent().getBrowser().isChrome()) {
+            strBrowser = "Chrome";
+        } else if (VaadinSession.getCurrent().getBrowser().isFirefox()) {
+            strBrowser = "Firefox";
+        } else if (VaadinSession.getCurrent().getBrowser().isEdge()) {
+            strBrowser = "Edge";
+        } else if (VaadinSession.getCurrent().getBrowser().isSafari()) {
+            strBrowser = "Safari";
+        } else if (VaadinSession.getCurrent().getBrowser().isOpera()) {
+            strBrowser = "Opera";
+        } else if (VaadinSession.getCurrent().getBrowser().isIE()) {
+            strBrowser = "IE";
+        } else {
+            strBrowser = "not known";
+        }
+
+
+        UI.getCurrent().getPage().retrieveExtendedClientDetails(extendedClientDetails -> {
+            if (extendedClientDetails == null) {
+                logger.info("Image gallery - error timeZoneId: Cannot retrieve client details:" + extendedClientDetails);
+                return;
+            }
+            timeZoneId = extendedClientDetails.getTimeZoneId();
+        });
+
+        sessionDateTime = utilsDate.calcDateTimeFromLong(sessionCreation, "UTC");
+        Locale loc = VaadinService.getCurrentRequest().getLocales().nextElement();
+        locale = loc.getLanguage() + "." + loc.getCountry();
+        localeName = loc.getDisplayName();
+
+        NetUtils netUtils = new NetUtils();
+        publicIp = netUtils.getClientPublicIp(hostname);
+
+        final String[] urlHost = {"", "", "", "", "", "", "", ""};
+
+        UI.getCurrent().getPage().fetchCurrentURL(currentUrl -> {
+            // This is your own method that you may do something with the url.
+            // Note that this method runs asynchronously
+            urlHost[0] = currentUrl.getHost();
+            urlHost[1] = currentUrl.getProtocol();
+            urlHost[2] = currentUrl.getRef();
+            urlHost[3] = currentUrl.getUserInfo();
+            urlHost[4] = currentUrl.toExternalForm();
+            urlHost[5] = currentUrl.getPort() + "";
+            urlHost[6] = currentUrl.getAuthority();
+            urlHost[7] = currentUrl.getQuery();
+
+            logger.info("  url:" + urlHost[0] + "  url:" + urlHost[1] + "  url:" + urlHost[2] + "  url:" + urlHost[3] + "  url:" + urlHost[4]
+                    + "  url:" + urlHost[5] + "  url:" + urlHost[6] + "  url:" + urlHost[7]);
+        });
+
     }
 
 
@@ -1451,23 +1948,8 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         int versionOfBrowserMinor = VaadinSession.getCurrent().getBrowser().getBrowserMinorVersion();
         int intUiId = VaadinSession.getCurrent().getNextUIid();
 
+
         int[] availWidth = calcTotalAvailableWidth();
-
-        String strOS = "";
-
-        if (VaadinSession.getCurrent().getBrowser().isAndroid()) {
-            strOS = "Android";
-        } else if (VaadinSession.getCurrent().getBrowser().isIPhone()) {
-            strOS = "iPhone";
-        } else if (VaadinSession.getCurrent().getBrowser().isWindows()) {
-            strOS = "Windows";
-        } else if (VaadinSession.getCurrent().getBrowser().isLinux()) {
-            strOS = "Linux";
-        } else if (VaadinSession.getCurrent().getBrowser().isMacOSX()) {
-            strOS = "Mac OS X";
-        } else {
-            strOS = "Unknown";
-        }
 
 
         if (strUrlRequestToBeLogged == null || strUrlRequestToBeLogged.isEmpty() || strUrlRequestToBeLogged.equalsIgnoreCase("null")) {
@@ -1488,7 +1970,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         String insertSQL = "INSERT INTO dbvisitor_log SET visitorlogId = 0,  timeOfVisit = now(), ipAddress = '" + publicIp + "', browserName = '" + browser + "', "
                 + " browserVersionMajor = '" + versionOfBrowserMajor + "', browserVersionMinor = '" + versionOfBrowserMinor + "', urlParameter = NULL , timeZoneId = '" + timeZoneId + "', "
                 + " appVersion = '" + APP_NAME + "-" + APP_VERSION + "', sessionId = '" + sessionid + "', sessionCreationTime = '" + sessionDateTime + "', hostname = '" + hostname + "', "
-                + " hostAddress = '" + hostAddress + "', os = '" + strOS + "', section = '" + section + "',"
+                + " hostAddress = '" + hostAddress + "', os = '" + strOS + "', browser = '" + strBrowser + "', section = '" + section + "',"
                 + " item = " + strPath + ", ref = " + strUrlRequestToBeLogged + ", "
                 + " locale = '" + locale + "', localeName ='" + localeName + "' ";
 
@@ -1508,7 +1990,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
             availWidth[1] = details.getBodyClientWidth();
             availWidth[2] = details.getScreenWidth();
 
-            logger.info("availWidth:  window name " + details.getWindowName() + " body client  " + details.getBodyClientWidth() + "  screen  " + details.getScreenWidth());
+            logger.info("availWidth:  window inner " + details.getWindowInnerWidth() + " body client  " + details.getBodyClientWidth() + "  screen  " + details.getScreenWidth());
 
         });
         return availWidth;

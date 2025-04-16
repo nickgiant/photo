@@ -15,9 +15,12 @@
     "@vaadin/vaadin-material-styles": "24.6.4",
     "@vaadin/vaadin-themable-mixin": "24.6.4",
     "@vaadin/vaadin-usage-statistics": "2.1.3",
+    "apexcharts": "3.49.0",
     "construct-style-sheets-polyfill": "3.1.0",
     "date-fns": "2.29.3",
+    "leaflet": "1.9.4",
     "lit": "3.2.1",
+    "onecolor": "4.1.0",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-router-dom": "6.29.0"
@@ -57,9 +60,12 @@
       "@vaadin/vaadin-material-styles": "24.6.4",
       "@vaadin/vaadin-themable-mixin": "24.6.4",
       "@vaadin/vaadin-usage-statistics": "2.1.3",
+      "apexcharts": "3.49.0",
       "construct-style-sheets-polyfill": "3.1.0",
       "date-fns": "2.29.3",
+      "leaflet": "1.9.4",
       "lit": "3.2.1",
+      "onecolor": "4.1.0",
       "react": "18.3.1",
       "react-dom": "18.3.1",
       "react-router-dom": "6.29.0"
@@ -85,7 +91,7 @@
       "workbox-core": "7.3.0",
       "workbox-precaching": "7.3.0"
     },
-    "hash": "6ecc9ae329e4f82c92491141d3d2dd2104abdb5fee6f0211494eb59e43fe3f15"
+    "hash": "458f3a0db528e4363b4eea5799adc695440b3d74ace87c3b49e31b2d87b4d222"
   },
   "overrides": {
     "@vaadin/bundles": "$@vaadin/bundles",
@@ -105,6 +111,9 @@
     "@vaadin/vaadin-lumo-styles": "$@vaadin/vaadin-lumo-styles",
     "@vaadin/vaadin-material-styles": "$@vaadin/vaadin-material-styles",
     "@flowingcode/font-awesome-iron-iconset": "$@flowingcode/font-awesome-iron-iconset",
-    "@polymer/iron-a11y-keys-behavior": "$@polymer/iron-a11y-keys-behavior"
+    "@polymer/iron-a11y-keys-behavior": "$@polymer/iron-a11y-keys-behavior",
+    "apexcharts": "$apexcharts",
+    "onecolor": "$onecolor",
+    "leaflet": "$leaflet"
   }
 }

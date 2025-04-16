@@ -1,7 +1,11 @@
 package com.photo.act.photo_act.views;
 
 
+import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.model.Person;
+import com.photo.act.photo_act.utils.NetUtils;
+import com.photo.act.photo_act.utils.UtilsDate;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.checkbox.CheckboxGroup;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
@@ -17,28 +21,103 @@ import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.router.AfterNavigationEvent;
 import com.vaadin.flow.router.AfterNavigationObserver;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.server.VaadinService;
+import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.nio.file.FileSystems;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
+
+import static com.photo.act.photo_act.views.MainLayout.*;
 
 //@PageTitle("Feed")
 @Route("feed")
 //@Menu(order = 2, icon = "line-awesome/svg/list-solid.svg")  //, icon = LineAwesomeIconUrl.LIST_SOLID)
 public class FeedView extends Div implements AfterNavigationObserver {
 
+    private static final Logger logger = LoggerFactory.getLogger(FeedView.class);
+
     private Grid<Person> grid = new Grid<>();
+    private RecordService recordService;
     private boolean isMobile = false;      //TODO
     private String section = "feed";
     private String strUrlRequestToBeLogged;
+    private String strOS;
+    private String strBrowser;
+    private String sysUserName;
+    private String sessionid;
+    private long sessionCreation;
+    private String timeZoneId;
+    private Object sessionDateTime;
+    private String locale;
+    private String localeName;
+    private String publicIp;
+    private String hostname;
+    private String hostAddress;
+    private String canonicalHostname;
 
-    public FeedView() {
+
+    private String dirChar = FileSystems.getDefault().getSeparator();
+
+    public static String STR_ALL_TUTORS = "all-tutors";
+    public static String STR_ALL_CATEGORIES = "all-categories";
+    public static String STR_ALL_TITLES = "all";
+
+    public static String STR_ORDER_BY_NEWEST = "newest";
+    public static String STR_ORDER_BY_OLDER = "older";
+
+    public static String subPathThumbs = "photo-thumbs";
+    public static String subPathMedium = "photo-medium";
+    public static String subPathUpload = "photo-upload";
+    public static String subPathShow = "photo-show";
+
+    public static String DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
+    private String strPath;
+
+    private UtilsDate utilsDate;
+
+    public FeedView(RecordService recordService) {
         addClassName("feed-view");
+
+        this.recordService = recordService;
+        utilsDate = new UtilsDate();
+
+
+        constructUI();
+
         setSizeFull();
         grid.setHeight("100%");
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER, GridVariant.LUMO_NO_ROW_BORDERS);
         grid.addComponentColumn(person -> createCard(person));
         add(grid);
+    }
+
+    private void constructUI() {
+        InetAddress inetAddress = null;
+        try {
+            inetAddress = InetAddress.getLocalHost();
+        } catch (UnknownHostException e) {
+            throw new RuntimeException(e);
+        }
+        hostname = inetAddress.getHostName();
+        hostAddress = inetAddress.getHostAddress();
+        canonicalHostname = inetAddress.getCanonicalHostName();
+
+        if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP)) {
+            DIR_PHOTOS_SERVER = "/home/mike/Pictures/lazy-photos";
+        } else if (hostname.equalsIgnoreCase("piot")) {
+            DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
+        } else {
+            DIR_PHOTOS_SERVER = "/home/sammy/lazy-photos";
+
+        }
     }
 
     private VerticalLayout loadHeader(String strHeader, String strSubHeader, String strSection) {
@@ -328,5 +407,154 @@ public class FeedView extends Div implements AfterNavigationObserver {
 
         return p;
     }
+
+    private void getUserClientInfo() {
+
+        sessionid = VaadinSession.getCurrent().getSession().getId();
+        sessionCreation = VaadinSession.getCurrent().getSession().getCreationTime();
+        isMobile = VaadinSession.getCurrent().getBrowser().isAndroid() || VaadinSession.getCurrent().getBrowser().isIPhone() || VaadinSession.getCurrent().getBrowser().isWindowsPhone();
+
+        if (VaadinSession.getCurrent().getBrowser().isAndroid()) {
+            strOS = "Android";
+        } else if (VaadinSession.getCurrent().getBrowser().isIPhone()) {
+            strOS = "iPhone";
+        } else if (VaadinSession.getCurrent().getBrowser().isWindows()) {
+            strOS = "Windows";
+        } else if (VaadinSession.getCurrent().getBrowser().isLinux()) {
+            strOS = "Linux";
+        } else if (VaadinSession.getCurrent().getBrowser().isMacOSX()) {
+            strOS = "Mac OS X";
+        } else if (VaadinSession.getCurrent().getBrowser().isChromeOS()) {
+            strOS = "ChromeOS";
+        } else {
+            strOS = "Unknown";
+        }
+
+        if (VaadinSession.getCurrent().getBrowser().isChrome()) {
+            strBrowser = "Chrome";
+        } else if (VaadinSession.getCurrent().getBrowser().isFirefox()) {
+            strBrowser = "Firefox";
+        } else if (VaadinSession.getCurrent().getBrowser().isEdge()) {
+            strBrowser = "Edge";
+        } else if (VaadinSession.getCurrent().getBrowser().isSafari()) {
+            strBrowser = "Safari";
+        } else if (VaadinSession.getCurrent().getBrowser().isOpera()) {
+            strBrowser = "Opera";
+        } else if (VaadinSession.getCurrent().getBrowser().isIE()) {
+            strBrowser = "IE";
+        } else {
+            strBrowser = "not known";
+        }
+
+
+        UI.getCurrent().getPage().retrieveExtendedClientDetails(extendedClientDetails -> {
+            if (extendedClientDetails == null) {
+                logger.info("Image gallery - error timeZoneId: Cannot retrieve client details:" + extendedClientDetails);
+                return;
+            }
+            timeZoneId = extendedClientDetails.getTimeZoneId();
+        });
+
+        sessionDateTime = utilsDate.calcDateTimeFromLong(sessionCreation, "UTC");
+        Locale loc = VaadinService.getCurrentRequest().getLocales().nextElement();
+        locale = loc.getLanguage() + "." + loc.getCountry();
+        localeName = loc.getDisplayName();
+
+        NetUtils netUtils = new NetUtils();
+        publicIp = netUtils.getClientPublicIp(hostname);
+
+        final String[] urlHost = {"", "", "", "", "", "", "", ""};
+
+        UI.getCurrent().getPage().fetchCurrentURL(currentUrl -> {
+            // This is your own method that you may do something with the url.
+            // Note that this method runs asynchronously
+            urlHost[0] = currentUrl.getHost();
+            urlHost[1] = currentUrl.getProtocol();
+            urlHost[2] = currentUrl.getRef();
+            urlHost[3] = currentUrl.getUserInfo();
+            urlHost[4] = currentUrl.toExternalForm();
+            urlHost[5] = currentUrl.getPort() + "";
+            urlHost[6] = currentUrl.getAuthority();
+            urlHost[7] = currentUrl.getQuery();
+
+            logger.info("  url:" + urlHost[0] + "  url:" + urlHost[1] + "  url:" + urlHost[2] + "  url:" + urlHost[3] + "  url:" + urlHost[4]
+                    + "  url:" + urlHost[5] + "  url:" + urlHost[6] + "  url:" + urlHost[7]);
+        });
+
+    }
+
+    private void logVisitorToDb() {
+
+//        category = category.replaceAll("'", " ");
+//        category = category.replaceAll("\"", " ");
+
+        //search = search.replaceAll("'"," ");
+        //search = search.replaceAll("\""," ");
+
+        UI.getCurrent().getPage().fetchCurrentURL(currentUrl -> {
+            // This is your own method that you may do something with the url.
+            // Note that this method runs asynchronously
+
+            strUrlRequestToBeLogged = currentUrl.toExternalForm();
+
+        });
+
+        sysUserName = System.getProperty("user.name");
+
+
+        // String ipAddress = VaadinSession.getCurrent().getBrowser().getAddress();
+        String browser = VaadinSession.getCurrent().getBrowser().getBrowserApplication();
+        int versionOfBrowserMajor = VaadinSession.getCurrent().getBrowser().getBrowserMajorVersion();
+        int versionOfBrowserMinor = VaadinSession.getCurrent().getBrowser().getBrowserMinorVersion();
+        int intUiId = VaadinSession.getCurrent().getNextUIid();
+
+
+        int[] availWidth = calcTotalAvailableWidth();
+
+
+        if (strUrlRequestToBeLogged == null || strUrlRequestToBeLogged.isEmpty() || strUrlRequestToBeLogged.equalsIgnoreCase("null")) {
+            strUrlRequestToBeLogged = "NULL";
+        } else {
+            strUrlRequestToBeLogged = "'" + strUrlRequestToBeLogged + "'";
+        }
+
+        if (strPath == null || strPath.isEmpty()) {
+            strPath = "NULL";
+        } else {
+            strPath = "'" + strPath + "'";
+        }
+
+
+        logger.info("photo visitor:" + publicIp + " . " + hostname + " . " + hostAddress + " . " + canonicalHostname + "  .  " + browser + " " + sessionid);
+
+        String insertSQL = "INSERT INTO dbvisitor_log SET visitorlogId = 0,  timeOfVisit = now(), ipAddress = '" + publicIp + "', browserName = '" + browser + "', "
+                + " browserVersionMajor = '" + versionOfBrowserMajor + "', browserVersionMinor = '" + versionOfBrowserMinor + "', urlParameter = NULL , timeZoneId = '" + timeZoneId + "', "
+                + " appVersion = '" + APP_NAME + "-" + APP_VERSION + "', sessionId = '" + sessionid + "', sessionCreationTime = '" + sessionDateTime + "', hostname = '" + hostname + "', "
+                + " hostAddress = '" + hostAddress + "', os = '" + strOS + "', browser = '" + strBrowser + "', section = '" + section + "',"
+                + " item = " + strPath + ", ref = " + strUrlRequestToBeLogged + ", "
+                + " locale = '" + locale + "', localeName ='" + localeName + "' ";
+
+        ArrayList<String> lstQueryInsert = new ArrayList<String>();
+        lstQueryInsert.add(insertSQL);
+
+        recordService.massRecordInsert(lstQueryInsert, null, null);
+    }
+
+    public int[] calcTotalAvailableWidth() {
+        final int[] availWidth = {-1, -1, -1};
+
+        UI.getCurrent().getPage().retrieveExtendedClientDetails(details -> {
+            // This is your own method that you may do something with the screen width.
+            // Note that this method runs asynchronously
+            availWidth[0] = details.getWindowInnerWidth();
+            availWidth[1] = details.getBodyClientWidth();
+            availWidth[2] = details.getScreenWidth();
+
+            logger.info("availWidth:  window inner " + details.getWindowInnerWidth() + " body client  " + details.getBodyClientWidth() + "  screen  " + details.getScreenWidth());
+
+        });
+        return availWidth;
+    }
+
 
 }
