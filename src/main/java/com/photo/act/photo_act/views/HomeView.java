@@ -7,8 +7,6 @@ import com.flowingcode.vaadin.addons.carousel.Slide;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.services.PhotoFlickrService;
-import com.photo.act.photo_act.services.WeatherImageService;
-import com.photo.act.photo_act.services.WeatherService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.photo.act.photo_act.views.components.GenericView;
@@ -28,7 +26,6 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
-import com.vaadin.flow.dom.Style;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.VaadinService;
@@ -76,7 +73,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
     private String timeZoneId;
     private String locale;
     private String localeName;
-    private String section = SECTION_LEARNINGS;
+    private String section = SECTION_HOME;
     //    private String forMemberName;
     private RecordService recordService;
     private String strHeader;
@@ -85,7 +82,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
     private String dirChar = FileSystems.getDefault().getSeparator();
 
-    public static String STR_ALL_TUTORS = "all-tutors";
+
     public static String STR_ALL_CATEGORIES = "all-categories";
 
     public static String subPathThumbs = "photo-thumbs";
@@ -125,6 +122,8 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
     private String sessionDateTime;
     private String strUrlRequestToBeLogged;
     private GenericView genericView;
+    private String strOS;
+    private String strBrowser;
 
     public HomeView(RecordService recordService) {
         this.recordService = recordService;
@@ -148,9 +147,138 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 //        tutor = event.getRouteParameters().get("tutor").orElse(STR_ALL_TUTORS);
 
 
+        getUserClientInfo();
+
+
+        userId = 1;
+        strUsername = "visitor-user";
+        verticalLayout.removeAll();
+        VerticalLayout layoutHeaderParameters = loadHeader("", "", "");
+
+        verticalLayout.add(layoutHeaderParameters);
+
+
+        String[] arrColumnsLearning = {"title", "picture", "cat_title", "cat_title2", "cat_title_type", "cat_title_type2", "cat_type", "format", "url", "artists_ref", "description", "duration", "pages", "published", "year_published",
+                "category_id", "category_id2", "tutor_name", "website", "url_fb", "url_yt", "url_insta", "url_flickr", "url_wikipedia", "url_ref1", "url_ref2", "url_ref3",
+                "dateInsert",
+                "cat_count"};
+
+        // learnings: l.id, l.title, l.picture, l.section , l.category, l.format, l.url, l.parent_id, l.child_index, l.tutor_id, l.artists_ref, l.description, l.duration, l.pages, l.published, l.userIdInsert, l.username, l.dateInsert
+// learnings_tutor:  lt.id, lt.tutor_name, lt.learnings_team_id, lt.website, lt.url_fb, lt.url_yt, lt.url_insta, lt.url_flickr, lt.url_wikipedia, lt.url_ref1, lt.url_ref2, lt.url_ref3, lt.url_flckr, lt.city_base, lt.country_base, lt.userIdInsert, lt.username, lt.date_inserted
+        String sqlLearningsRead = "SELECT  " //f.nameShort, f.location, f.country, f.periodOfYear, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description  " +
+                + " lc.cat_title, lc.cat_title_type, lc.cat_type, COUNT(lc.cat_title) AS cat_count "
+                + " , lc2.cat_title AS cat_title2, lc2.cat_title_type AS cat_title_type2 "
+                // + " , l.id, l.title, l.picture, l.format, l.url, l.parent_id, l.child_index, l.tutor_id, l.artists_ref, l.description, l.duration, l.pages, l.published, DATE_FORMAT(l.published, '%Y') AS year_published,  l.userIdInsert, l.username, l.dateInsert "
+                //  + " , l.tutor_id, l.tutor_id_team, l.category_id, l.category_id2, t.tutor_name, t.website, t.url_fb, t.url_yt, t.url_insta, t.url_flickr, t.url_wikipedia, t.url_ref1, t.url_ref2, t.url_ref3, t.city_base, t.country_base, t.userIdInsert, t.username, t.date_inserted "
+                + " FROM learnings_categories lc, learnings l LEFT JOIN learnings_categories lc2 ON lc2.id = l.category_id2 " //, tutor t  "
+                + " WHERE 1 = 1 "
+                + " AND lc.id = l.category_id "  //AND l.tutor_id = t.id "
+                + " AND l.dateInsert BETWEEN NOW() - INTERVAL 5 DAY AND NOW() "
+                + " GROUP BY lc.cat_title";
+
+
+        String[] arrColumnNamesGallery = {"name_org", "name_new", "title", "subtitle", "photo_type", "uploader", "uploaderId", "photo_type", "contains",
+                "space_size", "space_size_medium", "space_size_thumb", "city_name", "meta_date", "date_inserted"};
+
+        String sqlReadGallery = "SELECT pm.name_org, pm.name_new, pm.title, pm.subtitle, pm.photo_type, pm.uploader, pm.uploaderId, pm.photo_type, pm.contains, " +
+                " pm.space_size, pm.space_size_medium, pm.space_size_thumb,  d.city_name, DATE_FORMAT(pm.meta_date, '%W %D %M %Y %H:%i %p') AS meta_date, " + //, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description, DATE_FORMAT(f.dateInsert , '%D %M %Y') AS formatedDateUpdated  " +
+                "                 ( case " +
+                "                WHEN TIMEDIFF(NOW(), pm.date_inserted) <= '00:06:00' THEN 'almost now'" +
+                "                WHEN TIMEDIFF(NOW(), pm.date_inserted) <= '00:18:00' THEN '10 minutes ago'" +
+                "                WHEN TIMEDIFF(NOW(), pm.date_inserted) <= '00:48:00' THEN '30 minutes ago'" +
+                "                WHEN TIMEDIFF(NOW(), pm.date_inserted) <= '01:37:00' THEN 'an hour ago'" +
+                "                WHEN TIMEDIFF(NOW(), pm.date_inserted) <= '02:40:00' THEN 'two hours ago'" +
+                "                WHEN TIMEDIFF(NOW(), pm.date_inserted) <= '03:42:00' THEN 'three hours ago'" +
+                "                WHEN TIMEDIFF(NOW(), pm.date_inserted) <= '04:28:00' THEN 'four hours ago'" +
+                "                WHEN TIMEDIFF(NOW(), pm.date_inserted) <= '05:35:00' THEN 'five hours ago'" +
+                "                WHEN TIMEDIFF(NOW(), pm.date_inserted) <= '06:35:00' THEN 'six hours ago'" +
+                "                WHEN TIMEDIFF(NOW(), pm.date_inserted) <= '07:35:00' THEN 'seven hours ago'" +
+                "                WHEN TIMEDIFF(NOW(), pm.date_inserted) <= '08:35:00' THEN 'eight hours ago'" +
+                "                when DATE(pm.date_inserted) = DATE(NOW())  then CONCAT('today at ' , DATE_FORMAT(pm.date_inserted, '%H:%i %p') )" +
+                "                when DATE(pm.date_inserted) = DATE(NOW()+1) then CONCAT(' Yesterday ' , DATE_FORMAT(pm.date_inserted, '%W %D of %M') )" +
+                "                when DATE(pm.date_inserted) < DATE(NOW()+1)  then CONCAT('' , DATE_FORMAT(pm.date_inserted, '%D of %M %Y') )" +
+                "                ELSE DATE_FORMAT(pm.date_inserted, '%D %M %Y') " +
+                "              END ) " +
+                " AS date_inserted " +
+                " FROM  photo_meta pm LEFT JOIN destination d ON pm.destination_Id = d.id ";
+//                    " WHERE pm.hostname like '"+hostname+"' "+
+//                    " ORDER BY pm.title ASC ";
+        String sqlGalleryAll = sqlReadGallery + " WHERE pm.hostname like '" + hostname + "' AND pm.visible_to = 'ALL' ";
+//        if(!strDestination.equalsIgnoreCase(STR_ALL_DESTINATIONS)) {
+//            sqlGalleryAll = sqlGalleryAll + " AND d.city_name LIKE '" + strDestination + "' ";
+//        }
+        sqlGalleryAll = sqlGalleryAll + " ORDER BY pm.date_inserted DESC, pm.title ASC, pm.meta_date DESC, pm.name_new ASC ";
+
+        ArrayList<Image> lstImage = loadImagesFromDbToCarousel(sqlGalleryAll + " LIMIT 10 ", arrColumnNamesGallery, false, false);
+
+        H1 titlePage = new H1("PhotoAct.net :  Act and Network around Photography");
+        verticalLayout.add(titlePage);
+
+        H3 titleCarousel = new H3("Watch most recent 10 Uploaded Photos:");
+        verticalLayout.add(titleCarousel, getCarousel(lstImage));
+
+        H3 titleLastLearnings = new H3("In previous 7 days were Posted Learnings:");
+
+        VerticalLayout layoutLastLearnings = loadLastLearnings(sqlLearningsRead, arrColumnsLearning);
+        verticalLayout.add(titleLastLearnings, layoutLastLearnings);
+
+        H3 titleLastPhotos = new H3("Last 6 Photos that Members Uploaded:");
+        VerticalLayout layoutLastPhotos = loadUploadedPhotos(sqlGalleryAll + " LIMIT 6 ", arrColumnNamesGallery, false, true);
+        verticalLayout.add(titleLastPhotos, layoutLastPhotos);
+
+        H3 titleWeather = new H3("Current Weather in:");
+
+        H4 titleA = new H4("Athens");
+        VerticalLayout layoutResultsA = loadResults("Athens", "Greece");
+        H4 titleB = new H4("Thessaloniki");
+        VerticalLayout layoutResultsB = loadResults("Thessaloniki", "Greece");
+        verticalLayout.add(titleWeather, titleA, layoutResultsA, titleB, layoutResultsB);
+
+
+        this.removeAll();
+        this.add(verticalLayout);
+        this.add(genericView.loadFooter(isMobile));
+
+        logVisitorToDb();
+    }
+
+    private void getUserClientInfo() {
+
         sessionid = VaadinSession.getCurrent().getSession().getId();
         sessionCreation = VaadinSession.getCurrent().getSession().getCreationTime();
-        isMobile = VaadinSession.getCurrent().getBrowser().isAndroid() || VaadinSession.getCurrent().getBrowser().isIPhone();
+        isMobile = VaadinSession.getCurrent().getBrowser().isAndroid() || VaadinSession.getCurrent().getBrowser().isIPhone() || VaadinSession.getCurrent().getBrowser().isWindowsPhone();
+
+        if (VaadinSession.getCurrent().getBrowser().isAndroid()) {
+            strOS = "Android";
+        } else if (VaadinSession.getCurrent().getBrowser().isIPhone()) {
+            strOS = "iPhone";
+        } else if (VaadinSession.getCurrent().getBrowser().isWindows()) {
+            strOS = "Windows";
+        } else if (VaadinSession.getCurrent().getBrowser().isLinux()) {
+            strOS = "Linux";
+        } else if (VaadinSession.getCurrent().getBrowser().isMacOSX()) {
+            strOS = "Mac OS X";
+        } else if (VaadinSession.getCurrent().getBrowser().isChromeOS()) {
+            strOS = "ChromeOS";
+        } else {
+            strOS = "Unknown";
+        }
+
+        if (VaadinSession.getCurrent().getBrowser().isChrome()) {
+            strBrowser = "Chrome";
+        } else if (VaadinSession.getCurrent().getBrowser().isFirefox()) {
+            strBrowser = "Firefox";
+        } else if (VaadinSession.getCurrent().getBrowser().isEdge()) {
+            strBrowser = "Edge";
+        } else if (VaadinSession.getCurrent().getBrowser().isSafari()) {
+            strBrowser = "Safari";
+        } else if (VaadinSession.getCurrent().getBrowser().isOpera()) {
+            strBrowser = "Opera";
+        } else if (VaadinSession.getCurrent().getBrowser().isIE()) {
+            strBrowser = "IE";
+        } else {
+            strBrowser = "not known";
+        }
 
 
         UI.getCurrent().getPage().retrieveExtendedClientDetails(extendedClientDetails -> {
@@ -187,65 +315,6 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
                     + "  url:" + urlHost[5] + "  url:" + urlHost[6] + "  url:" + urlHost[7]);
         });
 
-
-        userId = 1;
-        strUsername = "visitor-user";
-        verticalLayout.removeAll();
-        VerticalLayout layoutHeaderParameters = loadHeader("", "", "");
-
-        verticalLayout.add(layoutHeaderParameters);
-
-
-        String[] arrColumnNamesGallery = {"name_org", "name_new", "title", "subtitle", "photo_type", "uploader", "uploaderId", "photo_type", "contains",
-                "space_size", "space_size_medium", "space_size_thumb", "city_name", "meta_date", "date_inserted"};
-
-        String sqlReadGallery = "SELECT pm.name_org, pm.name_new, pm.title, pm.subtitle, pm.photo_type, pm.uploader, pm.uploaderId, pm.photo_type, pm.contains, " +
-                " pm.space_size, pm.space_size_medium, pm.space_size_thumb,  d.city_name, DATE_FORMAT(pm.meta_date, '%W %D %M %Y %H:%i %p') AS meta_date, " + //, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description, DATE_FORMAT(f.dateInsert , '%D %M %Y') AS formatedDateUpdated  " +
-                " case \n" +
-                "\t\tWHEN TIMEDIFF(NOW(), pm.date_inserted) <= '00:04:00' THEN 'almost now'\n" +
-                "\t\tWHEN TIMEDIFF(NOW(), pm.date_inserted) <= '00:09:00' THEN 'less than 10 minutes ago'\n" +
-                "\t\tWHEN TIMEDIFF(NOW(), pm.date_inserted) <= '00:29:00' THEN 'less than 30 minutes ago'\n" +
-                "      WHEN TIMEDIFF(NOW(), pm.date_inserted) <= '00:44:00' THEN 'less than 45 minutes ago'\n" +
-                "      WHEN TIMEDIFF(NOW(), pm.date_inserted) <= '00:59:00' THEN 'almost an hour ago'\n" +
-                "\t\twhen DATE(NOW()) = DATE(pm.date_inserted)  then CONCAT('today at ' , DATE_FORMAT(pm.date_inserted, '%H:%i %p') )\n" +
-                "\t\twhen DATE(NOW()+1) < DATE(pm.date_inserted) then CONCAT('yesterday ' , DATE_FORMAT(pm.date_inserted, '%W %D of %M at about %H %p') )\n" +
-                " \t\twhen DATE(NOW()) > DATE(pm.date_inserted)  then CONCAT(' on ' , DATE_FORMAT(pm.date_inserted, '%W %D of %M %Y') )\n" +
-                "\t\tELSE DATE_FORMAT(pm.date_inserted, '%W %D %M %Y %H:%i %p')\n" +
-                " END" +
-                " AS date_inserted " +
-                " FROM  photo_meta pm LEFT JOIN destination d ON pm.destination_Id = d.id ";
-//                    " WHERE pm.hostname like '"+hostname+"' "+
-//                    " ORDER BY pm.title ASC ";
-        String sqlGalleryAll = sqlReadGallery + " WHERE pm.hostname like '" + hostname + "' AND pm.visible_to = 'ALL' ";
-//        if(!strDestination.equalsIgnoreCase(STR_ALL_DESTINATIONS)) {
-//            sqlGalleryAll = sqlGalleryAll + " AND d.city_name LIKE '" + strDestination + "' ";
-//        }
-        sqlGalleryAll = sqlGalleryAll + " ORDER BY pm.date_inserted DESC, pm.title ASC, pm.meta_date DESC, pm.name_new ASC ";
-
-        ArrayList<Image> lstImage = loadImagesFromDbToCarousel(sqlGalleryAll + " LIMIT 10 ", arrColumnNamesGallery, false, false);
-
-
-        H1 titlePage = new H1("10 Sample Photos");
-        verticalLayout.add(titlePage, getCarousel(lstImage));
-
-        H1 titleLastPhotos = new H1("Last 6 Photos uploaded");
-        VerticalLayout layoutLastPhotos = loadUploadedPhotos(sqlGalleryAll + " LIMIT 6 ", arrColumnNamesGallery, false, true);
-        verticalLayout.add(titleLastPhotos, layoutLastPhotos);
-
-        H1 titleWeather = new H1("Current Weather");
-
-        H3 titleA = new H3("Athens");
-        VerticalLayout layoutResultsA = loadResults("Athens", "Greece");
-        H3 titleB = new H3("Thessaloniki");
-        VerticalLayout layoutResultsB = loadResults("Thessaloniki", "Greece");
-        verticalLayout.add(titleWeather, titleA, layoutResultsA, titleB, layoutResultsB);
-
-
-        this.removeAll();
-        this.add(verticalLayout);
-        this.add(genericView.loadFooter(isMobile));
-
-        logVisitorToDb();
     }
 
     @Override
@@ -331,8 +400,9 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 //        sqlLearningsReadOrderBy =" ORDER BY l.dateInsert DESC";
 //        String sqlRead = sqlLearningsRead + strWhereSubClause + sqlLearningsReadOrderBy;
 
+        GenericView genericView = new GenericView();
 
-        VerticalLayout layoutWeather = getWeatherCurrent(city, country);
+        VerticalLayout layoutWeather = genericView.getWeatherCurrent(city, country);
 
 //        HorizontalLayout  layoutPhotos = getDestinationPhotos(city,4);
 
@@ -342,6 +412,39 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         return layoutResults;
     }
 
+    private VerticalLayout loadLastLearnings(String sqlRead, String[] arrColumnNames) {
+
+
+        VerticalLayout layoutLastLearnings = new VerticalLayout();
+        layoutLastLearnings.addClassNames(AlignItems.CENTER, JustifyContent.CENTER,
+                Margin.Horizontal.XLARGE, Margin.Vertical.SMALL,
+                Padding.Horizontal.XLARGE, Padding.Vertical.SMALL,
+                Gap.LARGE);
+
+
+        List<Record> lstRecords = getRecordsFromDb(sqlRead, arrColumnNames);
+        for (int r = 0; r < lstRecords.size(); r++) {
+
+            HorizontalLayout layoutLearningCat = new HorizontalLayout();
+            layoutLearningCat.addClassNames(AlignItems.CENTER, JustifyContent.BETWEEN,
+                    Padding.MEDIUM, Margin.XSMALL,
+                    TextColor.TERTIARY,
+                    Background.CONTRAST_5,
+                    BorderRadius.MEDIUM);
+            layoutLearningCat.addClassName("uploaded-lines");
+            Record record = lstRecords.get(r);
+            String strCategory = record.getColumnData("cat_title");
+            String strCount = record.getColumnData("cat_count");
+
+            Div divCategory = new Div(strCount + " about " + strCategory);
+//            Div divCount = new Div("(count:" + strCount + ")");
+
+            layoutLearningCat.add(divCategory);
+
+            layoutLastLearnings.add(layoutLearningCat);
+        }
+        return layoutLastLearnings;
+    }
 
     private VerticalLayout loadUploadedPhotos(String sqlRead, String[] arrColumnNames, boolean isEditable, boolean isThumbnails) {
 
@@ -365,7 +468,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         for (int r = 0; r < lstRecords.size(); r++) {
 
             HorizontalLayout layoutPhotoUploaded = new HorizontalLayout();
-            layoutPhotoUploaded.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.BETWEEN,
+            layoutPhotoUploaded.addClassNames(AlignItems.CENTER, JustifyContent.BETWEEN,
                     Padding.MEDIUM, Margin.XSMALL,
                     TextColor.TERTIARY,
                     Background.CONTRAST_5,
@@ -398,7 +501,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
             badgeLocation.getElement().getThemeList().add("badge contrast");
 
             Div divUserAvatar = new Div("uploaded by");
-            Div divLocation = new Div("photoshoot in");
+            Div divLocation = new Div("photo shoot in");
 
             Avatar userAvatar = new Avatar(strUploader);
             userAvatar.setImage("https://randomuser.me/api/portraits/men/17.jpg");
@@ -479,7 +582,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         sortBy.setItems("Most Viewed", "Least Viewed", "Most Favourite", "Least Favourite", "Newest First", "Oldest First", "Most Liked", "Least Liked");
         sortBy.setValue("Most Viewed");
 
-        HorizontalLayout headerContainerSecondary = new HorizontalLayout();
+        Div headerContainerSecondary = new Div();
         if (isMobile) {
             headerContainerSecondary.addClassNames(
                     AlignItems.CENTER, JustifyContent.BETWEEN,
@@ -810,167 +913,6 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
     }
 
-    public VerticalLayout getWeatherCurrent(String destination, String country) {
-        HorizontalLayout layoutWeather = new HorizontalLayout();
-        layoutWeather.getStyle().setColor("#8b94a0");
-        layoutWeather.addClassNames(
-                AlignItems.CENTER, JustifyContent.CENTER
-        );
-//        layoutWeather.addClassName("lazy-card-overview-min-space");
-        //layoutWeather.addClassName("lazy-card-overview-border-solid");
-
-        WeatherService weatherService = new WeatherService("metric");
-
-        String[] locations = weatherService.lookUpLocation(destination, "", country);
-
-        for (int i = 0; i < locations.length; i++) {
-            logger.info("locations  " + locations[i]);
-        }
-        String[] currentWeatherData = weatherService.getCurrentWeatherDataMetric(locations);
-        //String[][] dailyForecast =weatherService.getDailyForecastMetric(locations);
-
-//        layoutWeather.getStyle().setAlignItems(Style.AlignItems.CENTER);
-//        layoutWeather.getStyle().setJustifyContent(Style.JustifyContent.SPACE_AROUND);
-
-        VerticalLayout layoutLeft = new VerticalLayout();
-        layoutLeft.setMargin(false);
-        layoutLeft.setSpacing(false);
-        layoutLeft.setPadding(false);
-
-        WeatherImageService weatherImage = new WeatherImageService();
-
-        Image imageWeather = new Image();
-        imageWeather.getStyle().setOpacity("62%");
-
-        StreamResource iconWeather = new StreamResource(currentWeatherData[5],
-                () -> getClass().getResourceAsStream(weatherImage.weatherImage(currentWeatherData)));
-
-        imageWeather.setSrc(iconWeather);
-        imageWeather.setMaxWidth("80px");
-        imageWeather.setAlt(currentWeatherData[5]);
-
-        VerticalLayout layoutRight = new VerticalLayout();
-        layoutRight.setMinWidth("180px");
-        layoutRight.setMargin(false);
-        layoutRight.setSpacing(false);
-        layoutRight.setPadding(false);
-
-        layoutLeft.add(imageWeather);
-        layoutLeft.setSizeFull();
-        Div hTemp = new Div(currentWeatherData[0]);
-        hTemp.addClassName("lazy-card-overview-font-big");
-        hTemp.getStyle().setFontSize("26px");
-        hTemp.getStyle().setFontWeight(Style.FontWeight.BOLDER);
-        layoutLeft.add(hTemp);
-
-        Div hCondition = new Div(currentWeatherData[5]);
-        hCondition.addClassName("lazy-card-overview-font-big");
-        hCondition.getStyle().setFontSize("16px");
-        hTemp.getStyle().setFontWeight(Style.FontWeight.BOLD);
-        layoutLeft.add(hCondition);
-
-
-        Div divTime = new Div(currentWeatherData[14]);
-        divTime.getStyle().setFontWeight(Style.FontWeight.BOLDER);
-
-        Div divSunRise = new Div(currentWeatherData[12]);
-        divSunRise.getStyle().setFontWeight(Style.FontWeight.BOLD);
-
-        Div divSunset = new Div(currentWeatherData[13]);
-        divSunset.getStyle().setFontWeight(Style.FontWeight.BOLD);
-
-        String strIconSize = "35px";
-
-        Image imageSunrise = new Image();
-        StreamResource iconSunrise = new StreamResource("Sunrise",
-                () -> getClass().getResourceAsStream("/icons/sunrise.png"));
-        imageSunrise.setSrc(iconSunrise);
-        imageSunrise.setAlt("Sunrise");
-//        imageSunrise.setClassName("lazy-card-travel-weather-icons");
-        imageSunrise.getStyle().setWidth(strIconSize);
-        imageSunrise.getStyle().setHeight(strIconSize);
-
-        Image imageSet = new Image();
-        StreamResource iconSunset = new StreamResource("Sunset",
-                () -> getClass().getResourceAsStream("/icons/sunset.png"));
-        imageSet.setSrc(iconSunset);
-        imageSet.setAlt("Sunset");
-//        imageSet.setClassName("lazy-card-travel-weather-icons");
-        imageSet.getStyle().setWidth(strIconSize);
-        imageSet.getStyle().setHeight(strIconSize);
-
-
-        Div divToday = new Div("Today");
-        divToday.getStyle().setFontSize("11px");
-        layoutRight.add(new HorizontalLayout(divToday));
-        layoutRight.add(new HorizontalLayout(new Div("Sunrise: "), divSunRise));
-        layoutRight.add(new HorizontalLayout(new Div("Sunset: "), divSunset));
-        // layoutRight.add(new HorizontalLayout(new Div("Sunset: "), divSunset));
-
-
-        Div divL = new Div(currentWeatherData[2]);
-        divL.getStyle().setFontWeight(Style.FontWeight.BOLDER);
-
-        Div divH = new Div(currentWeatherData[3]);
-        divH.getStyle().setFontWeight(Style.FontWeight.BOLDER);
-
-
-        Div divFeelsLike = new Div(currentWeatherData[1]);
-        divFeelsLike.getStyle().setFontWeight(Style.FontWeight.BOLDER);
-
-        Div divHumidity = new Div(currentWeatherData[4]);
-        divHumidity.getStyle().setFontWeight(Style.FontWeight.BOLDER);
-
-        Div divWindSpeed = new Div(currentWeatherData[7]);
-        divWindSpeed.getStyle().setFontWeight(Style.FontWeight.BOLDER);
-
-        Div divClouds = new Div(currentWeatherData[15]);
-        divClouds.getStyle().setFontWeight(Style.FontWeight.BOLDER);
-
-        Div divRain = new Div();
-        String rain = currentWeatherData[16];
-
-        Div divVisibility = new Div(currentWeatherData[17]);
-        divVisibility.getStyle().setFontWeight(Style.FontWeight.BOLDER);
-
-
-        layoutRight.add(new HorizontalLayout(new Div("L: "), divL, new Div("H: "), divH));
-        Div divNow = new Div("Now");
-        divNow.getStyle().setFontSize("11px");
-        layoutRight.add(new HorizontalLayout(divNow));
-
-        layoutRight.add(new HorizontalLayout(new Div("Feels like: "), divFeelsLike));
-        layoutRight.add(new HorizontalLayout(new Div("Clouds: "), divClouds));
-
-        if (!rain.equalsIgnoreCase("")) {
-            divRain.setText(currentWeatherData[16]);
-            divRain.getStyle().setFontWeight(Style.FontWeight.BOLDER);
-            layoutRight.add(new HorizontalLayout(new Div("Rain: "), divRain));
-        }
-
-        layoutRight.add(new HorizontalLayout(new Div("Humidity: "), divHumidity));
-        layoutRight.add(new HorizontalLayout(new Div("Wind speed: "), divWindSpeed));
-
-        layoutWeather.add(layoutLeft, layoutRight);
-
-        VerticalLayout layout = new VerticalLayout();
-        layout.setMargin(false);
-        layout.setSpacing(false);
-        layout.setPadding(false);
-        layout.addClassNames(AlignItems.CENTER, JustifyContent.CENTER);
-
-        Anchor apiLink = new Anchor();
-        apiLink.getStyle().setColor("#8b94a0");
-        apiLink.setClassName("lazy-api-link");
-        apiLink.setHref(weatherService.getUrlReference());
-        apiLink.setTarget("_blank");
-        apiLink.setText("Weather data by: " + weatherService.getTitleReference());
-
-        layout.add(layoutWeather, apiLink);
-
-        return layout;
-
-    }
 
 //
 //        List<Record> lstRecords = getRecordsFromDb(sqlRead, arrColumnNames);
@@ -1162,24 +1104,6 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         int[] availWidth = calcTotalAvailableWidth();
 
 
-        String strOS = "";
-
-        if (VaadinSession.getCurrent().getBrowser().isAndroid()) {
-            strOS = "Android";
-        } else if (VaadinSession.getCurrent().getBrowser().isIPhone()) {
-            strOS = "iPhone";
-        } else if (VaadinSession.getCurrent().getBrowser().isWindows()) {
-            strOS = "Windows";
-        } else if (VaadinSession.getCurrent().getBrowser().isLinux()) {
-            strOS = "Linux";
-
-        } else if (VaadinSession.getCurrent().getBrowser().isMacOSX()) {
-            strOS = "Mac OS X";
-        } else {
-            strOS = "Unknown";
-        }
-
-
         if (strUrlRequestToBeLogged == null || strUrlRequestToBeLogged.isEmpty() || strUrlRequestToBeLogged.equalsIgnoreCase("null")) {
             strUrlRequestToBeLogged = "NULL";
         } else {
@@ -1198,7 +1122,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         String insertSQL = "INSERT INTO dbvisitor_log SET visitorlogId = 0,  timeOfVisit = now(), ipAddress = '" + publicIp + "', browserName = '" + browser + "', "
                 + " browserVersionMajor = '" + versionOfBrowserMajor + "', browserVersionMinor = '" + versionOfBrowserMinor + "', urlParameter = NULL , timeZoneId = '" + timeZoneId + "', "
                 + " appVersion = '" + APP_NAME + "-" + APP_VERSION + "', sessionId = '" + sessionid + "', sessionCreationTime = '" + sessionDateTime + "', hostname = '" + hostname + "', "
-                + " hostAddress = '" + hostAddress + "', os = '" + strOS + "', section = '" + section + "',"
+                + " hostAddress = '" + hostAddress + "', os = '" + strOS + "', browser = '" + strBrowser + "', section = '" + section + "',"
                 + " item = " + strPath + ", ref = " + strUrlRequestToBeLogged + ", "
                 + " locale = '" + locale + "', localeName ='" + localeName + "' ";
 

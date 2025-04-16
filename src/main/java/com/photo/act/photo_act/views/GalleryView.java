@@ -22,6 +22,7 @@ import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
+import com.vaadin.flow.theme.lumo.LumoUtility;
 import com.vaadin.flow.theme.lumo.LumoUtility.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -102,26 +103,35 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
 
     private String[] arrDestinationNames = {"id", "city_name", "prefecture", "country"};
     private String sqlReadDestination = "SELECT distinct city_name, prefecture, country " +
-            " FROM destination d " +
+            " FROM  photo_meta pm LEFT JOIN destination d ON pm.destination_Id = d.id " +
             " ORDER BY city_name ASC ";
 
-    private String[] arrColumnNamesGallery = {"name_new", "title", "subtitle", "photo_type", "uploader", "creator", "visible_to", "city_name", "meta_date"
+    private String[] arrColumnNamesGallery = {"name_new", "title", "subtitle", "photo_type", "uploader", "creator", "visible_to", "city_name", "meta_date", "photo_date", "photo_time"
             , "space_size", "space_size_medium", "space_size_thumb", "meta_camera_make", "meta_camera_model", "meta_lens_make", "meta_lens_model"
             , "meta_focal_length", "meta_focal_length_ff", "meta_iso"
             , "location_by_user", "location_area", "location_country_code", "location_lat", "location_lon"
-            , "date_inserted"};
+            , "spot_name", "spot_type"
+            , "date_inserted"
+            , "username", "nameOfUser", "resident", "date_joined", "avatar"
+    };
 
-    private String sqlReadGallery = "SELECT pm.name_new, pm.title, pm.subtitle, pm.photo_type, pm.uploader, pm.creator, pm.visible_to, d.city_name, d.country, DATE_FORMAT(pm.meta_date, '%W %D %M %Y %H:%i %p') AS meta_date, " +
+    private String sqlReadGallery = "SELECT pm.name_new, pm.title, pm.subtitle, pm.photo_type, pm.uploader, pm.creator, pm.visible_to, d.city_name, d.country, " +
+            " DATE_FORMAT(pm.meta_date, '%W %D %M %Y %H:%i %p') AS meta_date, DATE_FORMAT(pm.meta_date, '%d-%m-%Y') AS photo_date, DATE_FORMAT(pm.meta_date, '%H:%i %p') AS photo_time, " +
             " pm.space_size, pm.space_size_medium, pm.space_size_thumb, pm.meta_camera_make, pm.meta_camera_model, pm.meta_lens_make, pm.meta_lens_model, " +
-            " pm.meta_focal_length, pm.meta_focal_length_ff, pm.meta_iso, " +
-            "  pm.location_by_user, pm.location_area, pm.location_country_code, pm.location_lat, pm.location_lon " +
+            " pm.meta_focal_length, pm.meta_focal_length_ff, pm.meta_iso " +
+            " , pm.location_by_user, pm.location_area, pm.location_country_code, pm.location_lat, pm.location_lon " +
+            " , usr.username, usr.nameOfUser, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined, usr.avatar " +
+//            "  ds.spot_name, ds.spot_type " +
             //, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description, DATE_FORMAT(f.dateInsert , '%D %M %Y') AS formatedDateUpdated  " +
-            " FROM  photo_meta pm LEFT JOIN destination d ON pm.destination_Id = d.id ";
+            " FROM dbuser usr, photo_meta pm LEFT JOIN destination d ON pm.destination_id = d.id " +
+            " WHERE pm.uploaderId = usr.userId ";
 
 
     private UtilsDate utilsDate;
     private String sessionDateTime;
     private GenericView genericView;
+    private String strOS;
+    private String strBrowser;
 
 
     public GalleryView(RecordService recordService) {
@@ -143,41 +153,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         strMember = event.getRouteParameters().get("member").orElse(STR_ALL_MEMBERS);
         strDestination = event.getRouteParameters().get("destination").orElse(STR_ALL_DESTINATIONS);
 
-        sessionid = VaadinSession.getCurrent().getSession().getId();
-        sessionCreation = VaadinSession.getCurrent().getSession().getCreationTime();
-        isMobile = VaadinSession.getCurrent().getBrowser().isAndroid() || VaadinSession.getCurrent().getBrowser().isIPhone();
-
-        UI.getCurrent().getPage().retrieveExtendedClientDetails(extendedClientDetails -> {
-            if (extendedClientDetails == null) {
-                logger.info("Image gallery - error timeZoneId: Cannot retrieve client details:" + extendedClientDetails);
-                return;
-            }
-            timeZoneId = extendedClientDetails.getTimeZoneId();
-
-        });
-
-        sessionDateTime = utilsDate.calcDateTimeFromLong(sessionCreation, "UTC");
-        Locale loc = VaadinService.getCurrentRequest().getLocales().nextElement();
-        locale = loc.getLanguage() + "." + loc.getCountry();
-        localeName = loc.getDisplayName();
-
-        final String[] urlHost = {"", "", "", "", "", "", "", ""};
-
-        UI.getCurrent().getPage().fetchCurrentURL(currentUrl -> {
-            // This is your own method that you may do something with the url.
-            // Note that this method runs asynchronously
-            urlHost[0] = currentUrl.getHost();
-            urlHost[1] = currentUrl.getProtocol();
-            urlHost[2] = currentUrl.getRef();
-            urlHost[3] = currentUrl.getUserInfo();
-            urlHost[4] = currentUrl.toExternalForm();
-            urlHost[5] = currentUrl.getPort() + "";
-            urlHost[6] = currentUrl.getAuthority();
-            urlHost[7] = currentUrl.getQuery();
-
-            logger.info("  url:" + urlHost[0] + "  url:" + urlHost[1] + "  url:" + urlHost[2] + "  url:" + urlHost[3] + "  url:" + urlHost[4]
-                    + "  url:" + urlHost[5] + "  url:" + urlHost[6] + "  url:" + urlHost[7]);
-        });
+        getUserClientInfo();
 
         UI.getCurrent().getPage().fetchCurrentURL(currentUrl -> {
             // This is your own method that you may do something with the url.
@@ -201,24 +177,24 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         }
 
         if (strMember.equalsIgnoreCase(STR_ALL_MEMBERS) && (strDestination.equalsIgnoreCase(STR_ALL_DESTINATIONS))) {
-            verticalLayout.add(loadHeader("Gallery of Images", "To please your eyes", ""));
+            verticalLayout.add(loadHeader("Gallery of Photos", "", ""));
 
-            String sqlGalleryAll = sqlReadGallery + " WHERE pm.hostname like '" + hostname + "' AND pm.visible_to = 'ALL' ";
+            String sqlGalleryAll = sqlReadGallery + " AND pm.hostname like '" + hostname + "' AND pm.visible_to = 'ALL' ";
             sqlGalleryAll = sqlGalleryAll + " ORDER BY pm.date_inserted DESC, pm.title ASC, meta_date DESC ";
             loadImagesFromDb(sqlGalleryAll, arrColumnNamesGallery, false);
         } else if (strMember.equalsIgnoreCase(STR_ALL_MEMBERS) && !strDestination.equalsIgnoreCase(STR_ALL_DESTINATIONS)) {
-            verticalLayout.add(loadHeader("Gallery of Images", "To please your eyes", strDestination));
-            String sqlGalleryAll = sqlReadGallery + " WHERE pm.hostname like '" + hostname + "' AND pm.visible_to = 'ALL' ";
+            verticalLayout.add(loadHeader("Gallery of Photos", "", strDestination));
+            String sqlGalleryAll = sqlReadGallery + " AND pm.hostname like '" + hostname + "' AND pm.visible_to = 'ALL' ";
 
             sqlGalleryAll = sqlGalleryAll + " AND d.city_name LIKE '" + strDestination + "' ";
 
             sqlGalleryAll = sqlGalleryAll + " ORDER BY pm.date_inserted DESC, pm.title ASC, meta_date DESC ";
             loadImagesFromDb(sqlGalleryAll, arrColumnNamesGallery, false);
         } else if (!strMember.equalsIgnoreCase(STR_ALL_MEMBERS)) {
-            verticalLayout.add(loadHeader("My Photos", "and how to manage them and my Albums.", ""));
+            verticalLayout.add(loadHeader("My Photos", "and how to manage them.", ""));
 
             String sqlGalleryUser = sqlReadGallery +
-                    " WHERE pm.hostname like '" + hostname + "' AND pm.visible_to = 'ALL' AND pm.uploader LIKE '" + strMember + "' " +
+                    " AND pm.hostname like '" + hostname + "' AND pm.visible_to = 'ALL' AND pm.uploader LIKE '" + strMember + "' " +
                     " ORDER BY pm.date_inserted DESC, meta_date DESC";
 
             loadImagesFromDb(sqlGalleryUser, arrColumnNamesGallery, true);
@@ -237,17 +213,16 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
     }
 
     private void constructUI() {
-        addClassNames("image-gallery-view");
+
         addClassNames(Overflow.HIDDEN, Width.FULL,
                 // Margin.LARGE, //.Left.MEDIUM, Margin.Right.MEDIUM,
                 //  Padding.Left.MEDIUM, Padding.Left.MEDIUM,
+                AlignItems.CENTER, JustifyContent.CENTER,
                 Margin.NONE,
                 Padding.NONE,
-                Gap.MEDIUM,
-                //  Padding.NONE, //.Left.MEDIUM, Padding.Right.MEDIUM,
-                //Margin.Vertical.MEDIUM, Padding.Vertical.NONE,
-                AlignItems.CENTER, JustifyContent.CENTER
+                Gap.MEDIUM
         );
+        addClassName("image-gallery-view");
 
         InetAddress inetAddress = null;
         try {
@@ -270,7 +245,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         verticalLayout = new VerticalLayout();
         if (isMobile) {
             verticalLayout.addClassNames(
-                    Overflow.HIDDEN, Width.FULL,
+                    Overflow.HIDDEN, Width.FULL,// not full width
                     // Margin.LARGE, //.Left.MEDIUM, Margin.Right.MEDIUM,
                     //  Padding.Left.MEDIUM, Padding.Left.MEDIUM,
                     // Margin.Horizontal.SMALL,
@@ -284,7 +259,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
             );
         } else {
             verticalLayout.addClassNames(
-                    Overflow.HIDDEN, Width.FULL,
+                    Overflow.HIDDEN, Width.FULL,// not full width
                     // Margin.LARGE, //.Left.MEDIUM, Margin.Right.MEDIUM,
                     //  Padding.Left.MEDIUM, Padding.Left.MEDIUM,
                     // Margin.Horizontal.SMALL,
@@ -296,10 +271,9 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
                     //Margin.Vertical.MEDIUM, Padding.Vertical.NONE,
                     AlignItems.CENTER, JustifyContent.CENTER
             );
-            verticalLayout.getStyle().set("gap", "3rem");
+//            verticalLayout.getStyle().set("gap", "3rem");
         }
 
-        this.setWidthFull();
 
     }
 
@@ -357,10 +331,10 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         sortBy.setItems("Most Viewed", "Least Viewed", "Most Favourite", "Least Favourite", "Newest First", "Oldest First", "Most Liked", "Least Liked");
         sortBy.setValue("Most Viewed");
 
-        HorizontalLayout headerContainerSecondary = new HorizontalLayout();
+        Div headerContainer = new Div();
         if (isMobile) {
-            headerContainerSecondary.addClassNames(
-                    AlignItems.CENTER, JustifyContent.EVENLY,
+            headerContainer.addClassNames(
+                    AlignItems.START, JustifyContent.CENTER,
                     Overflow.HIDDEN, Width.FULL,
                     Margin.NONE,
                     Padding.NONE,
@@ -370,20 +344,40 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
                     BorderRadius.NONE
             );
         } else {
-            headerContainerSecondary.addClassNames(
-                    AlignItems.CENTER, JustifyContent.EVENLY,
+            headerContainer.addClassNames(
+                    AlignItems.START, JustifyContent.CENTER,
                     Overflow.HIDDEN, Width.FULL,
                     Margin.NONE,
                     Padding.NONE,
                     Gap.SMALL,
                     // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
                     //   Background.CONTRAST_5,
-                    BorderRadius.LARGE
+                    BorderRadius.NONE
             );
         }
 
+        VerticalLayout layoutFiltersAll = new VerticalLayout();
+        layoutFiltersAll.addClassNames(
+                LumoUtility.AlignItems.CENTER, JustifyContent.START,
+                Margin.NONE, Padding.SMALL,
+                LumoUtility.FontSize.SMALL, LumoUtility.TextColor.SECONDARY,
+//                Background.CONTRAST_5,
+                TextAlignment.CENTER
+        );
+
         Div layoutFilters = new Div();
         if (isMobile) {
+            layoutFilters.addClassNames(
+                    Overflow.HIDDEN, Width.FULL,
+                    AlignItems.CENTER, JustifyContent.CENTER,
+                    Margin.NONE,
+                    Padding.XSMALL,
+                    Gap.SMALL,
+                    Width.FULL,
+                    //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+                    //  Background.CONTRAST_5,
+                    BorderRadius.NONE);
+        } else {
             layoutFilters.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.CENTER,
@@ -393,34 +387,32 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
                     Width.FULL,
                     //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
                     //  Background.CONTRAST_5,
-                    BorderRadius.NONE);
-        } else {
-            layoutFilters.addClassNames(
-                    Overflow.HIDDEN, Width.FULL,
-                    AlignItems.CENTER, JustifyContent.BETWEEN,
-                    Margin.NONE,
-                    Padding.MEDIUM,
-                    Gap.SMALL,
-                    Width.FULL,
-                    //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                    //  Background.CONTRAST_5,
                     BorderRadius.LARGE);
         }
         layoutFilters.addClassName("header-layout-filters");
+
+
+        Div divFiltersTitle = new Div("Filter by Location");
+        layoutFiltersAll.add(divFiltersTitle, layoutFilters);
 
         List<Record> lstDestinationRecs = getRecordsFromDb(sqlReadDestination, arrDestinationNames);
 
         ArrayList<String> lstDestinations = new ArrayList<>();
         for (int r = 0; r < lstDestinationRecs.size(); r++) {
-            lstDestinations.add(lstDestinationRecs.get(r).getColumnData("city_name"));
+            String strDestination = lstDestinationRecs.get(r).getColumnData("city_name");
+            if (strDestination == null || strDestination.trim().isEmpty() || strDestination.trim().equalsIgnoreCase("null")) {
+            } else {
+                lstDestinations.add(strDestination);
+            }
+
         }
 
         RouteParam routeMember = new RouteParam("member", strMember);
 
         RouteParam routeDestinationAll = new RouteParam("destination", STR_ALL_DESTINATIONS);
-        RouteParameters routeParamsAll = new RouteParameters(routeDestinationAll, routeMember);
-        RouterLink linkPhotoDestinationAll = new RouterLink("All Locations", GalleryView.class, routeParamsAll);
-        layoutFilters.add(linkPhotoDestinationAll);
+//        RouteParameters routeParamsAll = new RouteParameters(routeDestinationAll, routeMember);
+//        RouterLink linkPhotoDestinationAll = new RouterLink("All Locations", GalleryView.class, routeParamsAll);
+//        layoutFilters.add(linkPhotoDestinationAll);
 
         for (int c = 0; c < lstDestinations.size(); c++) {
             String captionDestination = lstDestinations.get(c);
@@ -538,11 +530,11 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
 
 
 //        headerContainerMaster.add(headerTextContainer);
-        headerContainerSecondary.add(layoutFilters);
+        headerContainer.add(layoutFiltersAll);
 //        layoutHeaderParameters.add( headerContainerSecondary, divSection);
 
         HeaderFilterTabs headerFilterTabs = new HeaderFilterTabs(recordService, isMobile);
-        VerticalLayout layoutHeaderParameters = headerFilterTabs.getHeader(strHeader, strSubHeader, strSection, headerContainerSecondary);
+        VerticalLayout layoutHeaderParameters = headerFilterTabs.getHeader(strHeader, strSubHeader, strSection, headerContainer);
 
 //        headerContainerMaster.add(headerTextContainer, cmbView);
 //        headerContainerSecondary.add(layoutFilters, sortBy);
@@ -597,6 +589,82 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         return imageGalleryViewCard;
     }
 
+    private void getUserClientInfo() {
+
+        sessionid = VaadinSession.getCurrent().getSession().getId();
+        sessionCreation = VaadinSession.getCurrent().getSession().getCreationTime();
+        isMobile = VaadinSession.getCurrent().getBrowser().isAndroid() || VaadinSession.getCurrent().getBrowser().isIPhone() || VaadinSession.getCurrent().getBrowser().isWindowsPhone();
+
+        if (VaadinSession.getCurrent().getBrowser().isAndroid()) {
+            strOS = "Android";
+        } else if (VaadinSession.getCurrent().getBrowser().isIPhone()) {
+            strOS = "iPhone";
+        } else if (VaadinSession.getCurrent().getBrowser().isWindows()) {
+            strOS = "Windows";
+        } else if (VaadinSession.getCurrent().getBrowser().isLinux()) {
+            strOS = "Linux";
+        } else if (VaadinSession.getCurrent().getBrowser().isMacOSX()) {
+            strOS = "Mac OS X";
+        } else if (VaadinSession.getCurrent().getBrowser().isChromeOS()) {
+            strOS = "ChromeOS";
+        } else {
+            strOS = "Unknown";
+        }
+
+        if (VaadinSession.getCurrent().getBrowser().isChrome()) {
+            strBrowser = "Chrome";
+        } else if (VaadinSession.getCurrent().getBrowser().isFirefox()) {
+            strBrowser = "Firefox";
+        } else if (VaadinSession.getCurrent().getBrowser().isEdge()) {
+            strBrowser = "Edge";
+        } else if (VaadinSession.getCurrent().getBrowser().isSafari()) {
+            strBrowser = "Safari";
+        } else if (VaadinSession.getCurrent().getBrowser().isOpera()) {
+            strBrowser = "Opera";
+        } else if (VaadinSession.getCurrent().getBrowser().isIE()) {
+            strBrowser = "IE";
+        } else {
+            strBrowser = "not known";
+        }
+
+
+        UI.getCurrent().getPage().retrieveExtendedClientDetails(extendedClientDetails -> {
+            if (extendedClientDetails == null) {
+                logger.info("Image gallery - error timeZoneId: Cannot retrieve client details:" + extendedClientDetails);
+                return;
+            }
+            timeZoneId = extendedClientDetails.getTimeZoneId();
+        });
+
+        sessionDateTime = utilsDate.calcDateTimeFromLong(sessionCreation, "UTC");
+        Locale loc = VaadinService.getCurrentRequest().getLocales().nextElement();
+        locale = loc.getLanguage() + "." + loc.getCountry();
+        localeName = loc.getDisplayName();
+
+        NetUtils netUtils = new NetUtils();
+        publicIp = netUtils.getClientPublicIp(hostname);
+
+        final String[] urlHost = {"", "", "", "", "", "", "", ""};
+
+        UI.getCurrent().getPage().fetchCurrentURL(currentUrl -> {
+            // This is your own method that you may do something with the url.
+            // Note that this method runs asynchronously
+            urlHost[0] = currentUrl.getHost();
+            urlHost[1] = currentUrl.getProtocol();
+            urlHost[2] = currentUrl.getRef();
+            urlHost[3] = currentUrl.getUserInfo();
+            urlHost[4] = currentUrl.toExternalForm();
+            urlHost[5] = currentUrl.getPort() + "";
+            urlHost[6] = currentUrl.getAuthority();
+            urlHost[7] = currentUrl.getQuery();
+
+            logger.info("  url:" + urlHost[0] + "  url:" + urlHost[1] + "  url:" + urlHost[2] + "  url:" + urlHost[3] + "  url:" + urlHost[4]
+                    + "  url:" + urlHost[5] + "  url:" + urlHost[6] + "  url:" + urlHost[7]);
+        });
+
+    }
+
+
     private List<Record> getRecordsFromDb(String sql, String[] arrColumnNames) {
         logger.info(" photo  getRecordsFromDb:   " + sql);
         return recordService.findAll(sql, arrColumnNames);
@@ -609,13 +677,22 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
 
     private void logVisitorToDb() {
 
-//        member = member.replaceAll("'", " ");
-//        member = member.replaceAll("\"", " ");
+//        category = category.replaceAll("'", " ");
+//        category = category.replaceAll("\"", " ");
 
         //search = search.replaceAll("'"," ");
         //search = search.replaceAll("\""," ");
 
+        UI.getCurrent().getPage().fetchCurrentURL(currentUrl -> {
+            // This is your own method that you may do something with the url.
+            // Note that this method runs asynchronously
+
+            strUrlRequestToBeLogged = currentUrl.toExternalForm();
+
+        });
+
         sysUserName = System.getProperty("user.name");
+
 
         // String ipAddress = VaadinSession.getCurrent().getBrowser().getAddress();
         String browser = VaadinSession.getCurrent().getBrowser().getBrowserApplication();
@@ -623,30 +700,11 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         int versionOfBrowserMinor = VaadinSession.getCurrent().getBrowser().getBrowserMinorVersion();
         int intUiId = VaadinSession.getCurrent().getNextUIid();
 
+
         int[] availWidth = calcTotalAvailableWidth();
 
-        String strOS = "";
 
-        if (VaadinSession.getCurrent().getBrowser().isAndroid()) {
-            strOS = "Android";
-        } else if (VaadinSession.getCurrent().getBrowser().isIPhone()) {
-            strOS = "iPhone";
-        } else if (VaadinSession.getCurrent().getBrowser().isWindows()) {
-            strOS = "Windows";
-        } else if (VaadinSession.getCurrent().getBrowser().isLinux()) {
-            strOS = "Linux";
-
-        } else if (VaadinSession.getCurrent().getBrowser().isMacOSX()) {
-            strOS = "Mac OS X";
-        } else {
-            strOS = "Unknown";
-        }
-
-        if (!strMember.equalsIgnoreCase("visitor-user")) {
-            strUsername = "view-all";
-        }
-
-        if (strUrlRequestToBeLogged == null || strUrlRequestToBeLogged.isEmpty()) {
+        if (strUrlRequestToBeLogged == null || strUrlRequestToBeLogged.isEmpty() || strUrlRequestToBeLogged.equalsIgnoreCase("null")) {
             strUrlRequestToBeLogged = "NULL";
         } else {
             strUrlRequestToBeLogged = "'" + strUrlRequestToBeLogged + "'";
@@ -658,14 +716,14 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
             strPath = "'" + strPath + "'";
         }
 
-        logger.info("photo visitor:" + publicIp + " . " + hostname + " . " + hostAddress + " . " + canonicalHostname + " .  " + browser + " " + sessionid);
+
+        logger.info("photo visitor:" + publicIp + " . " + hostname + " . " + hostAddress + " . " + canonicalHostname + "  .  " + browser + " " + sessionid);
 
         String insertSQL = "INSERT INTO dbvisitor_log SET visitorlogId = 0,  timeOfVisit = now(), ipAddress = '" + publicIp + "', browserName = '" + browser + "', "
                 + " browserVersionMajor = '" + versionOfBrowserMajor + "', browserVersionMinor = '" + versionOfBrowserMinor + "', urlParameter = NULL , timeZoneId = '" + timeZoneId + "', "
-                + "appVersion = '" + APP_NAME + "-" + APP_VERSION + "', sessionId = '" + sessionid + "', sessionCreationTime = '" + sessionDateTime + "', hostname = '" + hostname + "', "
-                + "hostAddress = '" + hostAddress + "', os = '" + strOS + "', section = '" + section + "',"
+                + " appVersion = '" + APP_NAME + "-" + APP_VERSION + "', sessionId = '" + sessionid + "', sessionCreationTime = '" + sessionDateTime + "', hostname = '" + hostname + "', "
+                + " hostAddress = '" + hostAddress + "', os = '" + strOS + "', browser = '" + strBrowser + "', section = '" + section + "',"
                 + " item = " + strPath + ", ref = " + strUrlRequestToBeLogged + ", "
-                + " username = '" + strUsername + "', "
                 + " locale = '" + locale + "', localeName ='" + localeName + "' ";
 
         ArrayList<String> lstQueryInsert = new ArrayList<String>();
@@ -685,6 +743,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
             availWidth[2] = details.getScreenWidth();
 
             logger.info("availWidth:  window inner " + details.getWindowInnerWidth() + " body client  " + details.getBodyClientWidth() + "  screen  " + details.getScreenWidth());
+
         });
         return availWidth;
     }

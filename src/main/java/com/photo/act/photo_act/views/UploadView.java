@@ -4,6 +4,7 @@ import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
+import com.photo.act.photo_act.views.components.GenericView;
 import com.photo.act.photo_act.views.components.HeaderFilterTabs;
 import com.photo.act.photo_act.views.components.UploadImageCard;
 import com.vaadin.flow.component.HasComponents;
@@ -108,12 +109,15 @@ public class UploadView extends Main implements HasUrlParameter<String>, BeforeE
     UtilsDate utilsDate;
     String sessionDateTime;
 
+    private String strOS;
+    private String strBrowser;
+    private GenericView genericView;
 
     public UploadView(RecordService recordService) {
         this.recordService = recordService;
 
         utilsDate = new UtilsDate();
-
+        genericView = new GenericView();
 
         constructUI();
 
@@ -130,45 +134,7 @@ public class UploadView extends Main implements HasUrlParameter<String>, BeforeE
 //        section = event.getRouteParameters().get("section").orElse(SECTION_HOME);
         forMemberName = event.getRouteParameters().get("forMemberName").orElse("all-members");
 
-
-        sessionid = VaadinSession.getCurrent().getSession().getId();
-        sessionCreation = VaadinSession.getCurrent().getSession().getCreationTime();
-        isMobile = VaadinSession.getCurrent().getBrowser().isAndroid() || VaadinSession.getCurrent().getBrowser().isIPhone();
-
-        UI.getCurrent().getPage().retrieveExtendedClientDetails(extendedClientDetails -> {
-            if (extendedClientDetails == null) {
-                logger.info("Image gallery - error timeZoneId: Cannot retrieve client details:" + extendedClientDetails);
-                return;
-            }
-            timeZoneId = extendedClientDetails.getTimeZoneId();
-
-        });
-
-        sessionDateTime = utilsDate.calcDateTimeFromLong(sessionCreation, "UTC");
-        Locale loc = VaadinService.getCurrentRequest().getLocales().nextElement();
-        locale = loc.getLanguage() + "." + loc.getCountry();
-        localeName = loc.getDisplayName();
-
-        NetUtils netUtils = new NetUtils();
-        publicIp = netUtils.getClientPublicIp(hostname);
-
-        final String[] urlHost = {"", "", "", "", "", "", "", ""};
-
-        UI.getCurrent().getPage().fetchCurrentURL(currentUrl -> {
-            // This is your own method that you may do something with the url.
-            // Note that this method runs asynchronously
-            urlHost[0] = currentUrl.getHost();
-            urlHost[1] = currentUrl.getProtocol();
-            urlHost[2] = currentUrl.getRef();
-            urlHost[3] = currentUrl.getUserInfo();
-            urlHost[4] = currentUrl.toExternalForm();
-            urlHost[5] = currentUrl.getPort() + "";
-            urlHost[6] = currentUrl.getAuthority();
-            urlHost[7] = currentUrl.getQuery();
-
-            logger.info("  url:" + urlHost[0] + "  url:" + urlHost[1] + "  url:" + urlHost[2] + "  url:" + urlHost[3] + "  url:" + urlHost[4]
-                    + "  url:" + urlHost[5] + "  url:" + urlHost[6] + "  url:" + urlHost[7]);
-        });
+        getUserClientInfo();
 
         UI.getCurrent().getPage().fetchCurrentURL(currentUrl -> {
             // This is your own method that you may do something with the url.
@@ -183,7 +149,7 @@ public class UploadView extends Main implements HasUrlParameter<String>, BeforeE
 
         verticalLayout.add(loadHeader("Upload Photos", "", ""));
         loadUploadView();
-//            verticalLayout.add(loadFooter());
+        this.add(genericView.loadFooter(isMobile));
 
 
         logVisitorToDb();
@@ -317,7 +283,7 @@ public class UploadView extends Main implements HasUrlParameter<String>, BeforeE
         sortBy.setItems("Most Viewed", "Least Viewed", "Most Favourite", "Least Favourite", "Newest First", "Oldest First", "Most Liked", "Least Liked");
         sortBy.setValue("Most Viewed");
 
-        HorizontalLayout headerContainerSecondary = new HorizontalLayout();
+        Div headerContainerSecondary = new Div();
         if (isMobile) {
             headerContainerSecondary.addClassNames(
                     AlignItems.CENTER, JustifyContent.CENTER,
@@ -458,6 +424,82 @@ public class UploadView extends Main implements HasUrlParameter<String>, BeforeE
         verticalLayout.add(uploadImageCard.getUploadImageCard(recordService));
     }
 
+    private void getUserClientInfo() {
+
+        sessionid = VaadinSession.getCurrent().getSession().getId();
+        sessionCreation = VaadinSession.getCurrent().getSession().getCreationTime();
+        isMobile = VaadinSession.getCurrent().getBrowser().isAndroid() || VaadinSession.getCurrent().getBrowser().isIPhone() || VaadinSession.getCurrent().getBrowser().isWindowsPhone();
+
+        if (VaadinSession.getCurrent().getBrowser().isAndroid()) {
+            strOS = "Android";
+        } else if (VaadinSession.getCurrent().getBrowser().isIPhone()) {
+            strOS = "iPhone";
+        } else if (VaadinSession.getCurrent().getBrowser().isWindows()) {
+            strOS = "Windows";
+        } else if (VaadinSession.getCurrent().getBrowser().isLinux()) {
+            strOS = "Linux";
+        } else if (VaadinSession.getCurrent().getBrowser().isMacOSX()) {
+            strOS = "Mac OS X";
+        } else if (VaadinSession.getCurrent().getBrowser().isChromeOS()) {
+            strOS = "ChromeOS";
+        } else {
+            strOS = "Unknown";
+        }
+
+        if (VaadinSession.getCurrent().getBrowser().isChrome()) {
+            strBrowser = "Chrome";
+        } else if (VaadinSession.getCurrent().getBrowser().isFirefox()) {
+            strBrowser = "Firefox";
+        } else if (VaadinSession.getCurrent().getBrowser().isEdge()) {
+            strBrowser = "Edge";
+        } else if (VaadinSession.getCurrent().getBrowser().isSafari()) {
+            strBrowser = "Safari";
+        } else if (VaadinSession.getCurrent().getBrowser().isOpera()) {
+            strBrowser = "Opera";
+        } else if (VaadinSession.getCurrent().getBrowser().isIE()) {
+            strBrowser = "IE";
+        } else {
+            strBrowser = "not known";
+        }
+
+
+        UI.getCurrent().getPage().retrieveExtendedClientDetails(extendedClientDetails -> {
+            if (extendedClientDetails == null) {
+                logger.info("Image gallery - error timeZoneId: Cannot retrieve client details:" + extendedClientDetails);
+                return;
+            }
+            timeZoneId = extendedClientDetails.getTimeZoneId();
+        });
+
+        sessionDateTime = utilsDate.calcDateTimeFromLong(sessionCreation, "UTC");
+        Locale loc = VaadinService.getCurrentRequest().getLocales().nextElement();
+        locale = loc.getLanguage() + "." + loc.getCountry();
+        localeName = loc.getDisplayName();
+
+        NetUtils netUtils = new NetUtils();
+        publicIp = netUtils.getClientPublicIp(hostname);
+
+        final String[] urlHost = {"", "", "", "", "", "", "", ""};
+
+        UI.getCurrent().getPage().fetchCurrentURL(currentUrl -> {
+            // This is your own method that you may do something with the url.
+            // Note that this method runs asynchronously
+            urlHost[0] = currentUrl.getHost();
+            urlHost[1] = currentUrl.getProtocol();
+            urlHost[2] = currentUrl.getRef();
+            urlHost[3] = currentUrl.getUserInfo();
+            urlHost[4] = currentUrl.toExternalForm();
+            urlHost[5] = currentUrl.getPort() + "";
+            urlHost[6] = currentUrl.getAuthority();
+            urlHost[7] = currentUrl.getQuery();
+
+            logger.info("  url:" + urlHost[0] + "  url:" + urlHost[1] + "  url:" + urlHost[2] + "  url:" + urlHost[3] + "  url:" + urlHost[4]
+                    + "  url:" + urlHost[5] + "  url:" + urlHost[6] + "  url:" + urlHost[7]);
+        });
+
+    }
+
+
     private List<Record> getRecordsFromDb(String sql, String[] arrColumnNames) {
 
         logger.info(" photo  getRecordsFromDb:   " + sql);
@@ -471,13 +513,22 @@ public class UploadView extends Main implements HasUrlParameter<String>, BeforeE
 
     private void logVisitorToDb() {
 
-//        section = section.replaceAll("'", " ");
-//        section = section.replaceAll("\"", " ");
+//        category = category.replaceAll("'", " ");
+//        category = category.replaceAll("\"", " ");
 
         //search = search.replaceAll("'"," ");
         //search = search.replaceAll("\""," ");
 
+        UI.getCurrent().getPage().fetchCurrentURL(currentUrl -> {
+            // This is your own method that you may do something with the url.
+            // Note that this method runs asynchronously
+
+            strUrlRequestToBeLogged = currentUrl.toExternalForm();
+
+        });
+
         sysUserName = System.getProperty("user.name");
+
 
         // String ipAddress = VaadinSession.getCurrent().getBrowser().getAddress();
         String browser = VaadinSession.getCurrent().getBrowser().getBrowserApplication();
@@ -485,26 +536,11 @@ public class UploadView extends Main implements HasUrlParameter<String>, BeforeE
         int versionOfBrowserMinor = VaadinSession.getCurrent().getBrowser().getBrowserMinorVersion();
         int intUiId = VaadinSession.getCurrent().getNextUIid();
 
+
         int[] availWidth = calcTotalAvailableWidth();
 
-        String strOS = "";
 
-        if (VaadinSession.getCurrent().getBrowser().isAndroid()) {
-            strOS = "Android";
-        } else if (VaadinSession.getCurrent().getBrowser().isIPhone()) {
-            strOS = "iPhone";
-        } else if (VaadinSession.getCurrent().getBrowser().isWindows()) {
-            strOS = "Windows";
-        } else if (VaadinSession.getCurrent().getBrowser().isLinux()) {
-            strOS = "Linux";
-
-        } else if (VaadinSession.getCurrent().getBrowser().isMacOSX()) {
-            strOS = "Mac OS X";
-        } else {
-            strOS = "Unknown";
-        }
-
-        if (strUrlRequestToBeLogged == null || strUrlRequestToBeLogged.isEmpty()) {
+        if (strUrlRequestToBeLogged == null || strUrlRequestToBeLogged.isEmpty() || strUrlRequestToBeLogged.equalsIgnoreCase("null")) {
             strUrlRequestToBeLogged = "NULL";
         } else {
             strUrlRequestToBeLogged = "'" + strUrlRequestToBeLogged + "'";
@@ -516,12 +552,13 @@ public class UploadView extends Main implements HasUrlParameter<String>, BeforeE
             strPath = "'" + strPath + "'";
         }
 
-        logger.info("photo visitor:" + publicIp + " . " + hostname + " . " + hostAddress + " . " + canonicalHostname + " .  " + browser + " " + sessionid);
+
+        logger.info("photo visitor:" + publicIp + " . " + hostname + " . " + hostAddress + " . " + canonicalHostname + "  .  " + browser + " " + sessionid);
 
         String insertSQL = "INSERT INTO dbvisitor_log SET visitorlogId = 0,  timeOfVisit = now(), ipAddress = '" + publicIp + "', browserName = '" + browser + "', "
                 + " browserVersionMajor = '" + versionOfBrowserMajor + "', browserVersionMinor = '" + versionOfBrowserMinor + "', urlParameter = NULL , timeZoneId = '" + timeZoneId + "', "
-                + "appVersion = '" + APP_NAME + "-" + APP_VERSION + "', sessionId = '" + sessionid + "', sessionCreationTime = '" + sessionDateTime + "', hostname = '" + hostname + "', "
-                + "hostAddress = '" + hostAddress + "', os = '" + strOS + "', section = '" + section + "',"
+                + " appVersion = '" + APP_NAME + "-" + APP_VERSION + "', sessionId = '" + sessionid + "', sessionCreationTime = '" + sessionDateTime + "', hostname = '" + hostname + "', "
+                + " hostAddress = '" + hostAddress + "', os = '" + strOS + "', browser = '" + strBrowser + "', section = '" + section + "',"
                 + " item = " + strPath + ", ref = " + strUrlRequestToBeLogged + ", "
                 + " locale = '" + locale + "', localeName ='" + localeName + "' ";
 

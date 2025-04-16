@@ -1,6 +1,7 @@
 package com.photo.act.photo_act.views;
 
 
+import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.vaadin.flow.component.*;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
@@ -31,7 +32,6 @@ import com.vaadin.flow.theme.lumo.LumoIcon;
 import com.vaadin.flow.theme.lumo.LumoUtility.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.vaadin.lineawesome.LineAwesomeIcon;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -43,7 +43,7 @@ import java.net.UnknownHostException;
 @AnonymousAllowed
 public class MainLayout extends AppLayout {
 
-    public static final String APP_VERSION = "2025.03.0.2";
+    public static final String APP_VERSION = "2025.04.0.14";
     public static final String APP_NAME = "PhotoAct";
 
     public static final String HOSTNAME_LAPTOP = "mike-SATELLITE-PRO-C50-H-11G";
@@ -169,13 +169,11 @@ public class MainLayout extends AppLayout {
         Nav nav = new Nav();
         if (isMobile) {
             nav.addClassNames(Display.FLEX, Overflow.AUTO,
-                    Padding.NONE,
-                    Gap.SMALL
+                    Margin.NONE, Padding.NONE //Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL,
             );
         } else {
             nav.addClassNames(Display.FLEX, Overflow.AUTO,
-                    Margin.NONE, Padding.NONE, //Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL,
-                    Gap.MEDIUM
+                    Margin.NONE, Padding.NONE //Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL,
             );
         }
 
@@ -183,12 +181,12 @@ public class MainLayout extends AppLayout {
         UnorderedList list = new UnorderedList();
         if (isMobile) {
             list.addClassNames(Display.FLEX, Width.FULL,
-                    Gap.XSMALL, ListStyleType.NONE, Margin.NONE, Padding.NONE,
+                    ListStyleType.NONE, Margin.NONE, Padding.NONE,
                     FontSize.XXSMALL
             );
         } else {
             list.addClassNames(Display.FLEX, Width.FULL,
-                    Gap.MEDIUM, ListStyleType.NONE, Margin.NONE, Padding.NONE,
+                    ListStyleType.NONE, Margin.NONE, Padding.NONE,
                     FontSize.MEDIUM
             );
         }
@@ -219,7 +217,11 @@ public class MainLayout extends AppLayout {
                 Gap.MEDIUM
         );
 
-        headerLayout.add(logoLayout, nav);
+        if (isMobile) {
+            headerLayout.add(nav);
+        } else {
+            headerLayout.add(logoLayout, nav);
+        }
 
 
         return headerLayout;
@@ -227,14 +229,20 @@ public class MainLayout extends AppLayout {
 
     private MenuItemInfo[] createMenuItems() {
 
+        MenuItemInfo menuItemHome;
+        if (isMobile) {  // VaadinIcon.CAMERA.create()
+            menuItemHome = new MenuItemInfo(APP_NAME, FontAwesome.Solid.CAMERA.create(), HomeView.class);//  LineAwesomeIcon.PENCIL_RULER_SOLID.create(),
+        } else {
+            menuItemHome = new MenuItemInfo(APP_NAME, FontAwesome.Solid.HOME.create(), HomeView.class);//  LineAwesomeIcon.PENCIL_RULER_SOLID.create(),
+        }
 
         return new MenuItemInfo[]{ //
-                new MenuItemInfo(APP_NAME, VaadinIcon.HOME.create(), HomeView.class), //  LineAwesomeIcon.PENCIL_RULER_SOLID.create(),
-                new MenuItemInfo("Learnings", LineAwesomeIcon.BOOK_SOLID.create(), LearningsView.class), //  LineAwesomeIcon.PENCIL_RULER_SOLID.create(),
+                menuItemHome,
+                new MenuItemInfo("Learnings", VaadinIcon.BOOK.create(), LearningsView.class), //  LineAwesomeIcon.PENCIL_RULER_SOLID.create(),
                 // new MenuItemInfo("Festivals", LineAwesomeIcon.OBJECT_GROUP.create(), FestivalsView.class), //  LineAwesomeIcon.PENCIL_RULER_SOLID.create(),
-                new MenuItemInfo("Albums", LineAwesomeIcon.PHOTO_VIDEO_SOLID.create(), AlbumsView.class), //
+                new MenuItemInfo("Albums", FontAwesome.Solid.PHOTO_FILM.create(), AlbumsView.class), //
                 new MenuItemInfo("Photos", VaadinIcon.PICTURE.create(), GalleryView.class), //
-                new MenuItemInfo("Upload", VaadinIcon.UPLOAD.create(), UploadView.class), //
+                new MenuItemInfo("Upload", FontAwesome.Solid.UPLOAD.create(), UploadView.class), //
 
                 // new MenuItemInfo("Checkout Form", LineAwesomeIcon.CREDIT_CARD.create(), CheckoutFormView.class), //
         };

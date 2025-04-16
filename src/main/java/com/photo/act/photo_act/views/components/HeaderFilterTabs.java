@@ -7,7 +7,6 @@ import com.vaadin.flow.component.Html;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.H3;
-import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import org.slf4j.Logger;
@@ -25,12 +24,13 @@ public class HeaderFilterTabs extends Div {
 
     }
 
-    public VerticalLayout getHeader(String strHeader, String strSubHeader, String strSection, HorizontalLayout layoutFilters) {
+    public VerticalLayout getHeader(String strHeader, String strSubHeader, String strSection, Div layoutFilters) {
 
 
         Div tabHeader = new Div();
         tabHeader.addClassNames(
-                LumoUtility.Width.FULL, LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER,
+                LumoUtility.Width.FULL,
+                LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER,
                 LumoUtility.Padding.NONE, LumoUtility.Margin.NONE
         );
 
@@ -107,7 +107,6 @@ public class HeaderFilterTabs extends Div {
                 LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.START,
                 LumoUtility.Margin.Bottom.NONE, LumoUtility.Margin.Top.NONE, LumoUtility.FontSize.SMALL, LumoUtility.TextColor.SECONDARY);
 
-
         VerticalLayout layoutHeaderParameters = new VerticalLayout();
         if (isMobile) {
             layoutHeaderParameters.addClassNames(
@@ -132,6 +131,7 @@ public class HeaderFilterTabs extends Div {
                     LumoUtility.BorderRadius.LARGE
             );
         }
+        layoutHeaderParameters.addClassName("header-layout");
 
         H3 headerSection = new H3(strSection);
         headerSection.addClassNames(
@@ -141,6 +141,7 @@ public class HeaderFilterTabs extends Div {
         );
 
         layoutHeaderParameters.addClassName("header");
+
 
         String strFirstTab = "Subject Type";
         String strSecondTab = "Learning Format";

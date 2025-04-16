@@ -1,5 +1,6 @@
 package com.photo.act.photo_act.views.components;
 
+import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.utils.ImageUtilsMeta;
@@ -7,6 +8,7 @@ import com.vaadin.flow.component.avatar.Avatar;
 import com.vaadin.flow.component.avatar.AvatarVariant;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.contextmenu.MenuItem;
+import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
@@ -61,12 +63,23 @@ public class GalleryImageViewCard extends Div {
         String strPhotoType = record.getColumnData("photo_type");
         String strUploader = record.getColumnData("uploader");
         String strDateTime = record.getColumnData("meta_date");
+        String strPhotoDate = record.getColumnData("photo_date");
+        String strPhotoTime = record.getColumnData("photo_time");
         String strCreator = record.getColumnData("creator");
         String strVisibleTo = record.getColumnData("visible_to");
 
-        String strCity = "";
-        if (!record.getColumnData("city_name").isEmpty()) {
-            strCity = record.getColumnData("city_name");
+        String strSpotName = record.getColumnData("spot_name");
+        String strSpotType = record.getColumnData("spot_type");
+
+        String strPhotoUserName = record.getColumnData("username");
+        String strPhotoNameOfUser = record.getColumnData("nameOfUser");
+        String strPhotoUserResident = record.getColumnData("resident");
+        String strAvatar = record.getColumnData("avatar");
+        String strPhotoUserJoined = record.getColumnData("date_joined");
+
+        String strCity = record.getColumnData("city_name");
+        if (strCity == null || strCity.equalsIgnoreCase("null") || strCity.isEmpty()) {
+            strCity = "not defined";
         }
         Path path = Paths.get(strImagePath);
         File file = path.toFile();
@@ -124,33 +137,98 @@ public class GalleryImageViewCard extends Div {
 //            this.addClassName("bottom-radius-shadow");
         }
 
-        Avatar userAvatar = new Avatar(strUserName);
-        userAvatar.setImage("https://randomuser.me/api/portraits/men/17.jpg");
+
+        Avatar userAvatar = new Avatar(strPhotoUserName);
+        userAvatar.setImage(strAvatar);
         userAvatar.getElement().setAttribute("tabindex", "-1");
         userAvatar.addThemeVariants(AvatarVariant.LUMO_SMALL);
 
-        AvatarItem avatarItemMe = new AvatarItem(strUserName, "", userAvatar);
+        Avatar userAvatarLarge = new Avatar(strPhotoUserName);
+        userAvatarLarge.setImage(strAvatar);
+        userAvatarLarge.getElement().setAttribute("tabindex", "-1");
+        userAvatarLarge.addThemeVariants(AvatarVariant.LUMO_XLARGE);
 
-//        Div divUser = new Div();
-//        divUser.addClassNames(FontSize.SMALL, FontWeight.BOLD);
-//        divUser.setText(strUploader);
+        AvatarItem avatarItemMe = new AvatarItem(strPhotoNameOfUser, "", userAvatar);
+        Details detailsMember = new Details();
+        detailsMember.addClassNames(Width.FULL);
+//        detailsMember.addThemeVariants(DetailsVariant.FILLED);
+        detailsMember.addClassName("member-small");
 
+        detailsMember.setSummary(avatarItemMe);
 
-//        if(!strUploader.trim().isEmpty() && !strUploader.equalsIgnoreCase("null")) {
-//            divPerson.add(VaadinIcon.USER_CARD.create(),divUser);
-//        }
-//
-//        Icon iconUser = VaadinIcon.USER_CARD.create();
-//        iconUser.getStyle().set("padding", "var(--lumo-space-xs)");
-//        Span userName = new Span(strUploader);
-//        userName.addClassNames(FontSize.SMALL, FontWeight.BOLD);
+        AvatarItem avatarLargeItemMe = new AvatarItem(strPhotoNameOfUser, "@" + strPhotoUserName, userAvatarLarge);
 
+        HorizontalLayout layoutMemberInfo = new HorizontalLayout();
+        layoutMemberInfo.addClassNames(
+                Overflow.HIDDEN, Width.FULL,
+                AlignItems.CENTER, JustifyContent.AROUND,
+                Margin.NONE,
+                Padding.XSMALL,
+                Gap.SMALL,
+                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+                //   Background.CONTRAST_5,
+                BorderRadius.NONE
+        );
 
-//        Button objUser = new Button(strUploader,userAvatar);
-//        objUser.addClassNames(FontSize.SMALL, FontWeight.BOLD,
-//                Margin.NONE, Padding.MEDIUM,
-//                AlignItems.CENTER, JustifyContent.CENTER
-//        );
+        HorizontalLayout layoutMemberPhotoCount = new HorizontalLayout();
+        layoutMemberPhotoCount.addClassNames(
+//                Overflow.HIDDEN, Width.FULL,
+                AlignItems.CENTER, JustifyContent.CENTER,
+                Margin.NONE,
+                Padding.XSMALL,
+                Gap.XSMALL,
+                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+                //   Background.CONTRAST_5,
+                BorderRadius.NONE
+        );
+        Div divMemberPhotoCount = new Div("111");
+        layoutMemberPhotoCount.add(FontAwesome.Regular.IMAGES.create(), divMemberPhotoCount);
+
+        HorizontalLayout layoutMemberViewCount = new HorizontalLayout();
+        layoutMemberViewCount.addClassNames(
+//                Overflow.HIDDEN, Width.FULL,
+                AlignItems.CENTER, JustifyContent.CENTER,
+                Margin.NONE,
+                Padding.XSMALL,
+                Gap.XSMALL,
+                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+                //   Background.CONTRAST_5,
+                BorderRadius.NONE
+        );
+        Div divMemberViews = new Div("1");
+        layoutMemberViewCount.add(FontAwesome.Regular.EYE.create(), divMemberViews);
+
+        HorizontalLayout layoutLocationsCount = new HorizontalLayout();
+        layoutLocationsCount.addClassNames(
+//                Overflow.HIDDEN, Width.FULL,
+                AlignItems.CENTER, JustifyContent.CENTER,
+                Margin.NONE,
+                Padding.XSMALL,
+                Gap.XSMALL,
+                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+                //   Background.CONTRAST_5,
+                BorderRadius.NONE
+        );
+        Div divLocations = new Div(strPhotoUserResident);
+        layoutLocationsCount.add(FontAwesome.Regular.COMPASS.create(), divLocations);
+
+        HorizontalLayout layoutDateJoined = new HorizontalLayout();
+        layoutDateJoined.addClassNames(
+//                Overflow.HIDDEN, Width.FULL,
+                AlignItems.CENTER, JustifyContent.CENTER,
+                Margin.NONE,
+                Padding.XSMALL,
+                Gap.XSMALL,
+                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+                //   Background.CONTRAST_5,
+                BorderRadius.NONE
+        );
+        Div divDateJoined = new Div(strPhotoUserJoined);
+        layoutDateJoined.add(VaadinIcon.CALENDAR_CLOCK.create(), divDateJoined); // FontAwesome.Regular.CALENDAR.create()
+
+        layoutMemberInfo.add(layoutMemberPhotoCount, layoutMemberViewCount, layoutLocationsCount, layoutDateJoined);
+
+        detailsMember.add(avatarLargeItemMe, layoutMemberInfo);
 
 
         Div divTextDescription = new Div();
@@ -185,21 +263,21 @@ public class GalleryImageViewCard extends Div {
         badgePhotoType.getElement().getThemeList().add("badge contrast");
         badgePhotoType.setText(strPhotoType);
 
-        Icon iconLocation = VaadinIcon.LOCATION_ARROW_CIRCLE_O.create();
-        iconLocation.getStyle().set("padding", "var(--lumo-space-xs)");
-        Span badgeLocation = new Span(iconLocation, new Span(strCity));
-        // badgeLocation.getElement().setAttribute("theme", "badge");
-        badgeLocation.getElement().getThemeList().add("badge contrast");
+//        Icon iconLocation = VaadinIcon.LOCATION_ARROW_CIRCLE_O.create();
+//        iconLocation.getStyle().set("padding", "var(--lumo-space-xs)");
+//        Span badgeLocation = new Span(iconLocation, new Span(strCity));
+//        // badgeLocation.getElement().setAttribute("theme", "badge");
+//        badgeLocation.getElement().getThemeList().add("badge contrast");
         //badgeLocation.setText(strCity);
 
-        Icon iconDateTime = VaadinIcon.CALENDAR_CLOCK.create();
-        iconDateTime.getStyle().set("padding", "var(--lumo-space-xs)");
-        Span badgeDateTime = new Span(iconDateTime, new Span(strDateTime));
-        if (strDateTime.trim().isEmpty() || strDateTime.equalsIgnoreCase("null")) {
-            badgeDateTime.setText("");
-            badgeDateTime.setVisible(false);
-        }
-        badgeDateTime.getElement().getThemeList().add("badge contrast");
+//        Icon iconDateTime = VaadinIcon.CALENDAR_CLOCK.create();
+//        iconDateTime.getStyle().set("padding", "var(--lumo-space-xs)");
+//        Span badgeDateTime = new Span(iconDateTime, new Span(strDateTime));
+//        if (strDateTime.trim().isEmpty() || strDateTime.equalsIgnoreCase("null")) {
+//            badgeDateTime.setText("");
+//            badgeDateTime.setVisible(false);
+//        }
+//        badgeDateTime.getElement().getThemeList().add("badge contrast");
 
         HorizontalLayout layoutUserActions = new HorizontalLayout();
         layoutUserActions.addClassNames(
@@ -220,12 +298,80 @@ public class GalleryImageViewCard extends Div {
             linkUploader.setVisible(false);
         }
 
-        if (!strCity.isEmpty()) {
-            linkDestination.setVisible(true);
+        HorizontalLayout layoutPhotosInfo = new HorizontalLayout();
+        layoutPhotosInfo.addClassNames(
+                Overflow.HIDDEN, Width.FULL,
+                AlignItems.CENTER, JustifyContent.BETWEEN,
+                Margin.NONE,
+                Padding.MEDIUM,
+                Gap.SMALL,
+                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+                //   Background.CONTRAST_5,
+                BorderRadius.NONE
+        );
 
-        } else {
-            linkDestination.setVisible(false);
+        HorizontalLayout layoutViewCount = new HorizontalLayout();
+        layoutViewCount.addClassNames(
+//                Overflow.HIDDEN, Width.FULL,
+                AlignItems.CENTER, JustifyContent.CENTER,
+                Margin.NONE,
+                Padding.XSMALL,
+                Gap.XSMALL,
+                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+                //   Background.CONTRAST_5,
+                BorderRadius.NONE
+        );
+        Div divViews = new Div("1");
+        layoutViewCount.add(FontAwesome.Regular.EYE.create(), divViews);
+
+        HorizontalLayout layoutLocationCount = new HorizontalLayout();
+        layoutLocationCount.addClassNames(
+//                Overflow.HIDDEN, Width.FULL,
+                AlignItems.CENTER, JustifyContent.CENTER,
+                Margin.NONE,
+                Padding.XSMALL,
+                Gap.XSMALL,
+                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+                //   Background.CONTRAST_5,
+                BorderRadius.NONE
+        );
+        Div divLocation = new Div(strCity);
+        layoutLocationCount.add(FontAwesome.Regular.COMPASS.create(), divLocation);
+
+        HorizontalLayout layoutSpot = new HorizontalLayout();
+        layoutSpot.addClassNames(
+//                Overflow.HIDDEN, Width.FULL,
+                AlignItems.CENTER, JustifyContent.CENTER,
+                Margin.NONE,
+                Padding.XSMALL,
+                Gap.XSMALL,
+                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+                //   Background.CONTRAST_5,
+                BorderRadius.NONE
+        );
+        Div divSpot = new Div(strSpotName);
+        layoutSpot.add(VaadinIcon.LOCATION_ARROW_CIRCLE_O.create(), divSpot);
+
+        if (strSpotName == null || strSpotName.equalsIgnoreCase("null") || strSpotName.equalsIgnoreCase("") || strSpotName.isEmpty()) {
+            layoutSpot.setVisible(false);
         }
+
+        HorizontalLayout layoutDate = new HorizontalLayout();
+        layoutDate.addClassNames(
+//                Overflow.HIDDEN, Width.FULL,
+                AlignItems.CENTER, JustifyContent.CENTER,
+                Margin.NONE,
+                Padding.XSMALL,
+                Gap.XSMALL,
+                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+                //   Background.CONTRAST_5,
+                BorderRadius.NONE
+        );
+        Div divDate = new Div(strPhotoDate);
+        layoutDate.add(VaadinIcon.CALENDAR.create(), divDate);
+
+        layoutPhotosInfo.add(layoutViewCount, layoutLocationCount, layoutSpot, layoutDate);
+
 
         if (isEditable) {
             Button btnMoreAction = new Button(VaadinIcon.EDIT.create());//svgAction);
@@ -244,12 +390,12 @@ public class GalleryImageViewCard extends Div {
         // badgeDateTime,linkDestination,
         if (!isEditable) {
             //anyone logged in
-            divPhotoInfo.add(header, divTextDescription, linkUploader, getActions());
+            divPhotoInfo.add(header, divTextDescription, detailsMember, layoutPhotosInfo, getActions());
             this.addClassNames(JustifyContent.EVENLY);
             this.add(layoutImage, divPhotoInfo);
         } else {
             // user himself
-            divPhotoInfo.add(header, divTextDescription, layoutUserActions);
+            divPhotoInfo.add(header, divTextDescription, layoutPhotosInfo, layoutUserActions);
             this.addClassNames(JustifyContent.EVENLY);
             this.add(layoutImage, divPhotoInfo);
         }

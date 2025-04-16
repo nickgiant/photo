@@ -10,8 +10,7 @@ public class UtilsDate {
     public String calcDateTimeFromLong(Long datetime, String timeZoneId) {
 
         Instant instant = Instant.ofEpochMilli(datetime);
-        LocalDateTime localDateTime =
-                LocalDateTime.ofInstant(instant, ZoneId.of(timeZoneId));
+        LocalDateTime localDateTime = LocalDateTime.ofInstant(instant, ZoneId.of(timeZoneId));
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
