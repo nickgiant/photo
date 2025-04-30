@@ -3,6 +3,7 @@ package com.photo.act.photo_act.views.components;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.HasSize;
 import com.vaadin.flow.component.avatar.Avatar;
+import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -36,7 +37,12 @@ public class AvatarItem extends Composite<HorizontalLayout> implements HasSize {
         setAvatar(avatar);
     }
 
-
+    public AvatarItem(String heading, String description, Image imageAvatar) {
+        this();
+        setHeading(heading);
+        setDescription(description);
+        setImageAvatar(imageAvatar);
+    }
 
     public void setHeading(String text) {
         heading.setText(text);
@@ -48,6 +54,14 @@ public class AvatarItem extends Composite<HorizontalLayout> implements HasSize {
 
     public void setAvatar(Avatar avatar) {
         if (getContent().getComponentAt(0) instanceof Avatar existing) {
+            existing.removeFromParent();
+        }
+        getContent().addComponentAsFirst(avatar);
+    }
+
+
+    public void setImageAvatar(Image avatar) {
+        if (getContent().getComponentAt(0) instanceof Image existing) {
             existing.removeFromParent();
         }
         getContent().addComponentAsFirst(avatar);

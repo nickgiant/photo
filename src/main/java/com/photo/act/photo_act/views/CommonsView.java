@@ -622,8 +622,8 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         String strImagePath = strPath + dirChar + strFileName;
         logger.info(" strImagePath " + strImagePath);
 
-        GalleryImageViewCard imageGalleryViewCard = new GalleryImageViewCard(record, strImagePath, isMobile, userId, strUsername, sessionCreation, hostname, publicIp, isEditable, linkUploader,
-                linkDestination, recordService);
+        GalleryImageViewCard imageGalleryViewCard = new GalleryImageViewCard(record, strImagePath, isMobile, userId, strUsername, sessionCreation, hostname, publicIp, isEditable,
+                recordService);
         imageGalleryViewCard.addClassNames(Background.CONTRAST_5, BorderColor.CONTRAST_10, TextColor.TERTIARY);
         imageGalleryViewCard.addClassName("image-card");
         imageGalleryViewCard.addClassName("bottom-radius-shadow");

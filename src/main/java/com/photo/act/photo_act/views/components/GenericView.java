@@ -19,6 +19,12 @@ import com.vaadin.flow.theme.lumo.LumoUtility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 import static com.photo.act.photo_act.views.MainLayout.APP_NAME;
 
 public class GenericView {
@@ -191,6 +197,32 @@ public class GenericView {
 
     }
 
+    public Image getAvatarImage(String strImagePath, String altDescr, String width, String height) {
+
+
+        Path path = Paths.get(strImagePath);
+        File file = path.toFile();
+
+        final StreamResource imageResource = new StreamResource("streamResource", () -> {
+            try {
+                return new FileInputStream(file);
+            } catch (final FileNotFoundException e) {
+                //logErrorInDb(e, "AlbumsView StreamResource FileNotFoundException", hostname, userId, "", publicIp, sessionCreation, file.getAbsolutePath());
+                // logErrorInDb(e,hostname,"CreationsViewCard StreamResource",userId,strUserName,file.getAbsolutePath());
+                logger.error("FileNotFoundException  " + e.getMessage() + "  " + file.getAbsolutePath());
+            }
+            return null;
+        });
+
+        Image image = new Image();
+        image.setWidth(width);
+        image.setHeight(height);
+        image.addClassNames(LumoUtility.BorderRadius.MEDIUM);
+        image.setAlt(altDescr);
+        image.setSrc(imageResource);
+
+        return image;
+    }
 
     public VerticalLayout loadFooter(boolean isMobile) {
 

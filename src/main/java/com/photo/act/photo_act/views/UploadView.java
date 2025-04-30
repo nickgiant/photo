@@ -11,10 +11,7 @@ import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.HasStyle;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.checkbox.CheckboxGroup;
-import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.H2;
-import com.vaadin.flow.component.html.H3;
-import com.vaadin.flow.component.html.Main;
+import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
@@ -76,11 +73,29 @@ public class UploadView extends Main implements HasUrlParameter<String>, BeforeE
     private String canonicalHostname;
 
     private int userId;
-    private String strUsername;
+    String[] arrColumnsMemberExists = {"userId", "username", "nameOfUser", "resident", "date_joined", "member_since", "avatar_path"
+    };
 
     private String strUrlRequestToBeLogged;
+    String sqlDoesMemberExist = "SELECT usr.userId, usr.username, usr.nameOfUser, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined " +
+            " , DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since, usr.avatar_path " +
+            " FROM dbuser usr " +
+            " WHERE 1 = 1 ";
+    String[] arrColumnsMemberPhotos = {"photo_count", "photo_size",
+            "userId", "username", "nameOfUser", "resident", "date_joined", "member_since", "avatar_path"
+    };
+    String sqlMemberPhotos = "SELECT count(pm.id) AS photo_count, SUM(pm.space_size) AS photo_size " +
+            " ,  usr.userId, usr.username, usr.nameOfUser, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined,  DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since " +
+            " , usr.avatar_path " +
+            //     "--  , pa.inc, pm.title, pm.id, pm.name_new, pm.title, pm.subtitle, pm.space_size, pm.location_by_user\\n\" +\n" +
+            " FROM dbuser usr LEFT JOIN photo_meta pm ON pm.uploaderId = usr.userId " +
+            " WHERE 1 = 1  " +
+            " AND pm.visible_to  = 'ALL' ";
+    String sqlMemberPhotosGroupBy =
+            " GROUP BY usr.userid " +
+                    " ORDER BY usr.nameOfUser ASC ";
+    private String strMember;
 
-    private String strColorExternalweb = "#9fafd5";
 
     private String[] arrClubsColumnNames = {"org_name", "org_type", "org_type_parent", "city", "used_for", "country", "url", "url_local_events", "url_fb", "url_yt", "url_insta",
             "url_flickr", "url_wikipedia"};
@@ -132,7 +147,7 @@ public class UploadView extends Main implements HasUrlParameter<String>, BeforeE
     @Override
     public void beforeEnter(@OptionalParameter BeforeEnterEvent event) {
 //        section = event.getRouteParameters().get("section").orElse(SECTION_HOME);
-        forMemberName = event.getRouteParameters().get("forMemberName").orElse("all-members");
+        strMember = event.getRouteParameters().get("member").orElse("all-members");
 
         getUserClientInfo();
 
@@ -142,15 +157,33 @@ public class UploadView extends Main implements HasUrlParameter<String>, BeforeE
             strUrlRequestToBeLogged = currentUrl.toExternalForm();
         });
 
-        userId = 1;
-        strUsername = "visitor-user";
 
         verticalLayout.removeAll();
 
         verticalLayout.add(loadHeader("Upload Photos", "", ""));
-        loadUploadView();
-        this.add(genericView.loadFooter(isMobile));
 
+        if (strMember == null || strMember.isEmpty() || strMember.equalsIgnoreCase(STR_ALL_MEMBERS)) {
+
+
+        } else {
+
+            String sqlMember = sqlMemberPhotos + " AND usr.username = '" + strMember + "' " + sqlMemberPhotosGroupBy;
+            int intUserId = loadMember(sqlMember, arrColumnsMemberPhotos, false);
+            if (intUserId > 0) {
+                loadUploadView(intUserId, strMember);
+            } else if (intUserId == 0) {
+                String sqlMemberExists = sqlDoesMemberExist + " AND usr.username = '" + strMember + "' ";
+                intUserId = checkMemberExists(sqlMemberExists, arrColumnsMemberExists, false);
+                if (intUserId > 0) {
+                    loadUploadView(intUserId, strMember);
+                }
+            }
+        }
+
+
+        this.removeAll();
+        this.add(verticalLayout);
+        this.add(genericView.loadFooter(isMobile));
 
         logVisitorToDb();
 
@@ -221,9 +254,8 @@ public class UploadView extends Main implements HasUrlParameter<String>, BeforeE
             );
             verticalLayout.getStyle().set("gap", "3rem");
         }
-
         this.setWidthFull();
-        this.add(verticalLayout);
+
     }
 
     private VerticalLayout loadHeader(String strHeader, String strSubHeader, String strSection) {
@@ -407,9 +439,8 @@ public class UploadView extends Main implements HasUrlParameter<String>, BeforeE
         return layoutHeaderParameters;
     }
 
-    private void loadUploadView() {
-        UploadImageCard uploadImageCard = new UploadImageCard(userId, strUsername, sessionCreation, publicIp, hostname);
-
+    private void loadUploadView(int intUserId, String strMember) {
+        UploadImageCard uploadImageCard = new UploadImageCard(intUserId, strMember, sessionCreation, publicIp, hostname);
         uploadImageCard.addClassNames(
                 Overflow.HIDDEN, Width.FULL,
                 Margin.SMALL,
@@ -419,6 +450,7 @@ public class UploadView extends Main implements HasUrlParameter<String>, BeforeE
                 AlignItems.STRETCH, //JustifyContent.BETWEEN,
                 JustifyContent.EVENLY
         );
+        uploadImageCard.setHeight("100px");
 
 //            verticalLayout.add(uploadImageCard.getLocationSelectionLayout());
         verticalLayout.add(uploadImageCard.getUploadImageCard(recordService));
@@ -509,6 +541,97 @@ public class UploadView extends Main implements HasUrlParameter<String>, BeforeE
     private List<Record> getRecordsFromDb(String sql, String[] arrColumnNames, Object[] sqlParValue, String[] sqlParType) {
         logger.info(" photo  getRecordsFromDb with params:   " + sql);
         return recordService.findAll(sql, arrColumnNames, sqlParValue, sqlParType);
+    }
+
+    private int loadMember(String sqlRead, String[] arrColumnNames, boolean isEditable) {
+
+        int intUserId = 0;
+        VerticalLayout layoutMember = new VerticalLayout();
+        layoutMember.addClassNames(Width.FULL,
+                AlignItems.CENTER, JustifyContent.CENTER,
+                TextColor.TERTIARY,
+                Padding.LARGE,
+                Gap.SMALL
+        );
+
+        List<Record> lstRecords = getRecordsFromDb(sqlRead, arrColumnNames);
+
+        if (lstRecords == null) {
+            logger.warn(" lstRecords is null");
+        } else if (lstRecords.isEmpty()) {
+            logger.warn(" lstRecords is empty");
+        } else if (lstRecords.size() == 1) {
+
+            Record rec = lstRecords.get(0);
+            String strUserId = rec.getColumnData("userId");
+            intUserId = Integer.parseInt(strUserId);
+
+            String strNameOfUser = rec.getColumnData("nameOfUser");
+            String strCountOfPhotosOfAlbums = rec.getColumnData("photo_count");
+            String strMemberSince = rec.getColumnData("member_since");
+            String strAvatarPath = rec.getColumnData("avatar_path");
+
+            String strAvatarFullPath = DIR_PHOTOS_SERVER + dirChar + SUB_PATH_AVATARS + dirChar + strAvatarPath;
+            Image imgAvatar = genericView.getAvatarImage(strAvatarFullPath, strNameOfUser, "130px", "130px");
+//            Image imgAvatar = getAvatarImage(strAvatarPath, strNameOfUser, "120px", "120px");
+
+            H3 objMember = new H3(strNameOfUser);
+            Div divMemberSince = new Div("Member since " + strMemberSince);
+            Div divAlbumsAndPhotos = new Div("Already uploaded " + strCountOfPhotosOfAlbums + " photos");
+            layoutMember.add(imgAvatar, objMember, divMemberSince, divAlbumsAndPhotos);
+        } else {
+            logger.warn(" lstRecords is more than one record");
+        }
+
+        verticalLayout.add(layoutMember);
+        return intUserId;
+    }
+
+
+    private int checkMemberExists(String sqlRead, String[] arrColumnNames, boolean isEditable) {
+
+        int intUserId = 0;
+        VerticalLayout layoutMember = new VerticalLayout();
+        layoutMember.addClassNames(Width.FULL,
+                AlignItems.CENTER, JustifyContent.CENTER,
+                TextColor.TERTIARY,
+                Padding.LARGE,
+                Gap.SMALL
+        );
+
+        List<Record> lstRecords = getRecordsFromDb(sqlRead, arrColumnNames);
+
+        if (lstRecords == null) {
+            logger.warn("check lstRecords is null");
+        } else if (lstRecords.isEmpty()) {
+            logger.warn("check lstRecords is empty");
+        } else if (lstRecords.size() == 1) {
+            Record rec = lstRecords.get(0);
+            String strUserId = rec.getColumnData("userId");
+            try {
+                intUserId = Integer.parseInt(strUserId);
+            } catch (NumberFormatException e) {
+                logger.error("strUserId: " + strUserId + "    " + e.getMessage());
+            }
+
+            String strNameOfUser = rec.getColumnData("nameOfUser");
+            String strCountOfPhotosOfAlbums = rec.getColumnData("photo_count");
+            String strMemberSince = rec.getColumnData("member_since");
+            String strAvatarPath = rec.getColumnData("avatar_path");
+
+            String strAvatarFullPath = DIR_PHOTOS_SERVER + dirChar + SUB_PATH_AVATARS + dirChar + strAvatarPath;
+            Image imgAvatar = genericView.getAvatarImage(strAvatarFullPath, strNameOfUser, "130px", "130px");
+
+            H3 objMember = new H3(strNameOfUser);
+            Div divMemberSince = new Div("Member since " + strMemberSince);
+            Div divAlbumsAndPhotos = new Div("No photos uploaded yet! Try uploading now !");
+            layoutMember.add(imgAvatar, objMember, divMemberSince, divAlbumsAndPhotos);
+        } else {
+            logger.warn("check lstRecords is more than one record");
+        }
+
+        verticalLayout.add(layoutMember);
+        return intUserId;
     }
 
     private void logVisitorToDb() {

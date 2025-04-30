@@ -1,6 +1,5 @@
 package com.photo.act.photo_act.views;
 
-
 import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.vaadin.flow.component.*;
 import com.vaadin.flow.component.applayout.AppLayout;
@@ -71,6 +70,9 @@ public class MainLayout extends AppLayout {
     public static final String STR_ALL_DESTINATIONS = "all-locations";
 
     public static final String SECTION_LOG = "log";
+
+    public static final String SUB_PATH_AVATARS = "avatars";
+    public static final String SUB_PATH_AVATARS_THUMBS = "avatars_thumbs";
 
     public static final String strNameOfUser = "My Self";
 

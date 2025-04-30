@@ -11,11 +11,13 @@ import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
+import com.photo.act.photo_act.views.components.AvatarItem;
 import com.photo.act.photo_act.views.components.GenericView;
 import com.photo.act.photo_act.views.components.HeaderFilterTabs;
 import com.vaadin.flow.component.*;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.CheckboxGroup;
+import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -140,44 +142,48 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
             //, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description, DATE_FORMAT(f.dateInsert , '%D %M %Y') AS formatedDateUpdated  " +
             " FROM  photo_meta pm LEFT JOIN destination d ON pm.destination_Id = d.id ";
 
-    String[] arrColumnsLearningTypes = {"cat_title", "cat_title2", "cat_title_type", "cat_title_type2", "cat_type", "cat_type2", "cat_type_count", "cat_type_count2"};
+    String[] arrColumnsLearningTypes = {"cat_title", "cat_title2", "cat_title_type", "cat_title_type2", "cat_type", "cat_type2", "cat_type_count", "cat_type_count2", "cat_description_min"};
 
     String sqlLearningTypes = "SELECT "
-            + " lc.cat_title, lc.cat_title_type, lc.cat_type "
-//            + " lc2.cat_title AS cat_title2, lc2.cat_title_type AS cat_title_type2, lc2.cat_type AS cat_type2, count (lc2.cat_type) AS cat_type_count2 "
+            + " lc.cat_title, lc.cat_title_type, lc.cat_type, lc.cat_description_min "
+//            + " , lc2.cat_title AS cat_title2, lc2.cat_title_type AS cat_title_type2, lc2.cat_type AS cat_type2, count (lc2.cat_type) AS cat_type_count2 "
 //            + " l.id, l.title, l.picture, l.section , l.category, l.format, l.url, l.parent_id, l.child_index, l.tutor_id, l.artists_ref, l.description, l.duration, l.pages, l.published, l.userIdInsert, l.username, l.dateInsert "
 //            + ", l.tutor_id, l.tutor_id_team, t.tutor_name, t.website, t.url_fb, t.url_yt, t.url_insta, t.url_flickr, t.url_wikipedia, t.url_ref1, t.url_ref2, t.url_ref3, t.city_base, t.country_base, t.userIdInsert, t.username, t.date_inserted "
-//            + " FROM learnings_categories lc2 RIGHT JOIN learnings l ON lc2.id = l.category_id2 LEFT JOIN learnings_categories lc ON lc.id = l.category_id "
-            + " FROM learnings l, learnings_categories lc "
-            + " WHERE 1 = 1 AND lc.id = l.category_id "
+//            + " FROM learnings_categories lc2 RIGHT JOIN learnings l ON lc2.id = l.category_id2, learnings_categories lc " // "LEFT JOIN learnings_categories lc ON lc.id = l.category_id "
+//            + " FROM learnings l, learnings_categories lc "
+            + " FROM learnings_categories lc "
+            + " WHERE 1 = 1 "
+//            + " WHERE 1 = 1 AND lc.id = l.category_id "
             + " AND lc.cat_type NOT LIKE '%genre%' "
             + " GROUP BY lc.cat_type "
-            + " ORDER BY lc.cat_type ASC ";
+            + " ORDER BY lc.cat_order ASC ";
 
 
-    String[] arrColLearningCategories = {"cat_title", "cat_title2", "cat_title_type", "cat_type", "cat_count"};
+    String[] arrColLearningCategories = {"cat_title", "cat_title2", "cat_title_type", "cat_type", "cat_description_min", "cat_description_big", "cat_count"};
 
     String sqlLearningCategoriesRead = "SELECT  " //f.nameShort, f.location, f.country, f.periodOfYear, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description  " +
-            + " lc.cat_title, lc.cat_title_type, lc.cat_type, count (lc.cat_title) AS cat_count, "
+            + " lc.cat_title, lc.cat_title_type, lc.cat_type, lc.cat_description_min, count (lc.cat_title) AS cat_count, "
             + " lc2.cat_title AS cat_title2, lc2.cat_title_type AS cat_title_type2, lc2.cat_type AS cat_type2, count (lc2.cat_title) AS cat_count2 "
 //            + " l.id, l.title, l.picture, l.section , l.category, l.format, l.url, l.parent_id, l.child_index, l.tutor_id, l.artists_ref, l.description, l.duration, l.pages, l.published, l.userIdInsert, l.username, l.dateInsert "
 //            + ", l.tutor_id, l.tutor_id_team, t.tutor_name, t.website, t.url_fb, t.url_yt, t.url_insta, t.url_flickr, t.url_wikipedia, t.url_ref1, t.url_ref2, t.url_ref3, t.city_base, t.country_base, t.userIdInsert, t.username, t.date_inserted "
             + " FROM learnings_categories lc2 RIGHT JOIN learnings l ON lc2.id = l.category_id2 LEFT JOIN learnings_categories lc ON lc.id = l.category_id "
             + " WHERE 1 = 1 "
             + " AND ( lc.cat_type LIKE '%genre%') "
-            + " GROUP BY lc.cat_title ORDER BY lc.cat_title ASC ";
+            + " GROUP BY lc.cat_title ORDER BY lc.cat_order ASC ";
 
 
     String[] arrColumnsLearning = {"title", "picture", "cat_title", "cat_title2", "cat_title_type", "cat_title_type2", "cat_type", "format", "url", "artists_ref", "description", "duration", "pages", "published", "year_published",
             "category_id", "category_id2", "tutor_name", "website", "url_fb", "url_yt", "url_insta", "url_flickr", "url_wikipedia", "url_ref1", "url_ref2", "url_ref3",
-            "dateInsert", "date_created"};
+            "dateInsert", "date_created",
+            "username", "nameOfUser", "avatar_path", "member_since"};
 
     // learnings: l.id, l.title, l.picture, l.section , l.category, l.format, l.url, l.parent_id, l.child_index, l.tutor_id, l.artists_ref, l.description, l.duration, l.pages, l.published, l.userIdInsert, l.username, l.dateInsert
 // learnings_tutor:  lt.id, lt.tutor_name, lt.learnings_team_id, lt.website, lt.url_fb, lt.url_yt, lt.url_insta, lt.url_flickr, lt.url_wikipedia, lt.url_ref1, lt.url_ref2, lt.url_ref3, lt.url_flckr, lt.city_base, lt.country_base, lt.userIdInsert, lt.username, lt.date_inserted
     String sqlLearningsRead = "SELECT  " //f.nameShort, f.location, f.country, f.periodOfYear, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description  " +
             + " lc.cat_title, lc.cat_title_type, lc.cat_type "
             + " , lc2.cat_title AS cat_title2, lc2.cat_title_type AS cat_title_type2 "
-            + " , l.id, l.title, l.picture, l.format, l.url, l.parent_id, l.child_index, l.tutor_id, l.artists_ref, l.description, l.duration, l.pages, l.published, DATE_FORMAT(l.published, '%Y') AS year_published,  l.userIdInsert, l.username "
+            + " , l.id, l.title, l.picture, l.format, l.url, l.parent_id, l.child_index, l.tutor_id, l.artists_ref, l.description, l.duration, l.pages, l.published "
+            + " , DATE_FORMAT(l.published, '%Y') AS year_published "
             + " , l.dateInsert, " +
             "                 ( case " +
             "                WHEN TIMEDIFF(NOW(), l.dateInsert) <= '00:06:00' THEN 'almost now'" +
@@ -192,14 +198,20 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
             "                WHEN TIMEDIFF(NOW(), l.dateInsert) <= '07:35:00' THEN 'seven hours ago'" +
             "                WHEN TIMEDIFF(NOW(), l.dateInsert) <= '08:35:00' THEN 'eight hours ago'" +
             "                when DATE(l.dateInsert) = DATE(NOW())  then CONCAT('today at ' , DATE_FORMAT(l.dateInsert, '%H:%i %p') )" +
-            "                when DATE(l.dateInsert) = DATE(NOW()+1) then CONCAT(' Yesterday ' , DATE_FORMAT(l.dateInsert, '%W %D of %M') )" +
-            "                when DATE(l.dateInsert) < DATE(NOW()+1)  then CONCAT('' , DATE_FORMAT(l.dateInsert, '%D of %M %Y') )" +
+            "                when DATE(DATE(l.dateInsert) + 1) = DATE(NOW()) then CONCAT('Yesterday on ' , DATE_FORMAT(l.dateInsert, '%H:%i %p') )" +
+            "                when DATE(DATE(l.dateInsert) + 2) = DATE(NOW())  then CONCAT('Last ' , DATE_FORMAT(l.dateInsert, '%W on %H:%i %p') )" +
+            "                when DATE(DATE(l.dateInsert) + 6) >= DATE(NOW())  then CONCAT('Last ' , DATE_FORMAT(l.dateInsert, '%W') )" +
+            "                when DATE(DATE(l.dateInsert) + 6) < DATE(NOW())  then CONCAT('' , DATE_FORMAT(l.dateInsert, '%D of %M %Y') )" +
             "                ELSE DATE_FORMAT(l.dateInsert, '%D %M %Y') " +
             "              END ) " +
             " AS date_created "
-            + " , l.tutor_id, l.tutor_id_team, l.category_id, l.category_id2, t.tutor_name, t.website, t.url_fb, t.url_yt, t.url_insta, t.url_flickr, t.url_wikipedia, t.url_ref1, t.url_ref2, t.url_ref3, t.city_base, t.country_base, t.userIdInsert, t.username, t.date_inserted "
-            + " FROM learnings_categories lc, learnings l LEFT JOIN learnings_categories lc2 ON lc2.id = l.category_id2, tutor t  "
+            + " , l.tutor_id, l.tutor_id_team, l.category_id, l.category_id2, t.tutor_name, t.website, t.url_fb, t.url_yt, t.url_insta, t.url_flickr, t.url_wikipedia, t.url_ref1 " +
+            " , t.url_ref2, t.url_ref3, t.city_base, t.country_base, t.userIdInsert, t.username, t.date_inserted" +
+            " , l.userId_post " +
+            " , usr.username, usr.nameOfUser, usr.avatar_path, DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since "
+            + " FROM learnings_categories lc, learnings l LEFT JOIN learnings_categories lc2 ON lc2.id = l.category_id2, tutor t, dbuser usr  "
             + " WHERE 1 = 1 "
+            + " AND l.userId_post = usr.userId"
             + " AND lc.id = l.category_id AND l.tutor_id = t.id ";
 
     String sqlLearningsReadOrderBy;
@@ -752,6 +764,14 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
 
         String strYearPublished = record.getColumnData("year_published");
 
+        String strUserIdPost = record.getColumnData("userId_post");
+        String strUserIdSuggest = record.getColumnData("userId_suggest");
+
+        String strUsername = record.getColumnData("username");
+        String strNameOfUser = record.getColumnData("nameOfUser");
+        String strMemberSince = record.getColumnData("member_since");
+        String strAvatarPath = record.getColumnData("avatar_path");
+
 
         if (isTeam) {
             strTutor = strTeamName;
@@ -1117,6 +1137,9 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         Div dayUpdated = new Div(dateCreated);
         dayUpdated.getElement().getThemeList().add("badge contrast");
 
+        Details detUserPosted = getMemberDetail(strUserIdPost,
+                strAvatarPath, strUsername, strNameOfUser, strMemberSince);
+        detUserPosted.getStyle().setBackgroundColor("#f3f3f3");
 
         VerticalLayout layoutItemInfo = new VerticalLayout();
         layoutItemInfo.addClassNames(AlignItems.CENTER, JustifyContent.CENTER, //Width.FULL,
@@ -1127,7 +1150,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
 //                BoxShadow.XSMALL
         );
         layoutItemInfo.addClassName("item-id-info");
-        layoutItemInfo.add(imgInfo, dayUpdatedLabel, dayUpdated, spCategory, spCategory2);
+        layoutItemInfo.add(imgInfo, dayUpdatedLabel, dayUpdated, spCategory, spCategory2, detUserPosted);
 
 
         layoutSourceCard.add(layoutIDData, layoutItemInfo);
@@ -1408,6 +1431,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         List<Record> lstLearningCategoriesRecs = getRecordsFromDb(sqlRead, arrColumnNames);
 
         ArrayList<String> lstCategories = new ArrayList<>();
+        ArrayList<String> lstCategoriesDescriptions = new ArrayList<>();
         for (int r = 0; r < lstLearningCategoriesRecs.size(); r++) {
             lstCategories.add(lstLearningCategoriesRecs.get(r).getColumnData("cat_title"));
         }
@@ -1418,8 +1442,10 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
 
         for (int c = 0; c < lstCategories.size(); c++) {
             String captionCategory = lstCategories.get(c);
+
             RouteParam routeCategory = new RouteParam("genre", captionCategory);
             RouterLink linkPhotoCategory = new RouterLink(captionCategory, LearningsView.class, new RouteParameters(routeCategory));
+
             layoutFiltersType.add(linkPhotoCategory);
         }
 
@@ -1835,6 +1861,98 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         return layoutTabsInfo;
     }
 
+    public Details getMemberDetail(String strUserIdPost, String strAvatarPath, String strUserName, String strNameOfUser, String strUserJoined) {
+        String strAvatarFullPath = DIR_PHOTOS_SERVER + dirChar + SUB_PATH_AVATARS + dirChar + strAvatarPath;
+        Image imgAvatarSmall = genericView.getAvatarImage(strAvatarFullPath, strNameOfUser, "40px", "40px");
+        //Image imgAvatarSmall = getAvatarImage(strAvatar, strAlbumUserName, "40px", "40px");
+
+        Image imgAvatarMedium = genericView.getAvatarImage(strAvatarFullPath, strNameOfUser, "70px", "70px");
+        AvatarItem avatarLargeItemMe = new AvatarItem(strNameOfUser, "@" + strUserName, imgAvatarMedium);
+
+        AvatarItem avatarItemMe = new AvatarItem(strNameOfUser, "", imgAvatarSmall);
+        avatarItemMe.addClassNames(Width.FULL, AlignItems.STRETCH, JustifyContent.BETWEEN);
+        Details detailsMember = new Details();
+        detailsMember.addClassNames(Width.FULL, BorderRadius.SMALL);
+//        detailsMember.addThemeVariants(DetailsVariant.FILLED);
+        detailsMember.addClassName("member-small");
+        detailsMember.setSummary(avatarItemMe);
+
+
+        HorizontalLayout layoutMemberInfo = new HorizontalLayout();
+        layoutMemberInfo.addClassNames(
+                Overflow.HIDDEN, Width.FULL,
+                AlignItems.CENTER, JustifyContent.AROUND,
+                Margin.NONE,
+                Padding.XSMALL,
+                Gap.SMALL,
+                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+                //   Background.CONTRAST_5,
+                BorderRadius.NONE
+        );
+
+        HorizontalLayout layoutMemberPhotoCount = new HorizontalLayout();
+        layoutMemberPhotoCount.addClassNames(
+//                Overflow.HIDDEN, Width.FULL,
+                AlignItems.CENTER, JustifyContent.CENTER,
+                Margin.NONE,
+                Padding.XSMALL,
+                Gap.XSMALL,
+                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+                //   Background.CONTRAST_5,
+                BorderRadius.NONE
+        );
+        Div divMemberPhotoCount = new Div("111");
+        layoutMemberPhotoCount.add(FontAwesome.Regular.IMAGES.create(), divMemberPhotoCount);
+
+        HorizontalLayout layoutMemberViewCount = new HorizontalLayout();
+        layoutMemberViewCount.addClassNames(
+//                Overflow.HIDDEN, Width.FULL,
+                AlignItems.CENTER, JustifyContent.CENTER,
+                Margin.NONE,
+                Padding.XSMALL,
+                Gap.XSMALL,
+                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+                //   Background.CONTRAST_5,
+                BorderRadius.NONE
+        );
+        Div divMemberViews = new Div("1");
+        layoutMemberViewCount.add(FontAwesome.Regular.EYE.create(), divMemberViews);
+
+        HorizontalLayout layoutMemberLocationsCount = new HorizontalLayout();
+        layoutMemberLocationsCount.addClassNames(
+//                Overflow.HIDDEN, Width.FULL,
+                AlignItems.CENTER, JustifyContent.CENTER,
+                Margin.NONE,
+                Padding.XSMALL,
+                Gap.XSMALL,
+                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+                //   Background.CONTRAST_5,
+                BorderRadius.NONE
+        );
+        Div divMemberLocations = new Div("1");
+        layoutMemberLocationsCount.add(FontAwesome.Regular.COMPASS.create(), divMemberLocations);
+//
+//        HorizontalLayout layoutDateJoined = new HorizontalLayout();
+//        layoutDateJoined.addClassNames(
+////                Overflow.HIDDEN, Width.FULL,
+//                AlignItems.CENTER, JustifyContent.CENTER,
+//                Margin.NONE,
+//                Padding.XSMALL,
+//                Gap.XSMALL,
+//                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+//                //   Background.CONTRAST_5,
+//                BorderRadius.NONE
+//        );
+//        Div divDateJoined = new Div(strUserJoined);
+//        layoutDateJoined.add(VaadinIcon.CALENDAR_CLOCK.create(), divDateJoined); // FontAwesome.Regular.CALENDAR.create()
+
+        layoutMemberInfo.add(layoutMemberPhotoCount, layoutMemberViewCount, layoutMemberLocationsCount);
+
+
+        detailsMember.add(avatarLargeItemMe, layoutMemberInfo);
+
+        return detailsMember;
+    }
 
     private void getUserClientInfo() {
 

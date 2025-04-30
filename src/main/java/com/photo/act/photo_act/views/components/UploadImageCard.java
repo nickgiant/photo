@@ -55,7 +55,7 @@ public class UploadImageCard extends VerticalLayout {
 
     private String dirChar = FileSystems.getDefault().getSeparator();
 
-    private int userId;
+    private int intUserId;
     private String strUserName;
     private String publicIp;
     private String hostname;
@@ -65,11 +65,13 @@ public class UploadImageCard extends VerticalLayout {
 
     private MailSend mailSend;
 
-    public UploadImageCard(int userId, String strUserName, long sessionCreation, String publicIp, String hostname) {
+    public UploadImageCard(int intUserId, String strUserName, long sessionCreation, String publicIp, String hostname) {
+        this.intUserId = intUserId;
+        this.strUserName = strUserName;
+
         this.publicIp = publicIp;
         this.hostname = hostname;
-        this.userId = userId;
-        this.strUserName = strUserName;
+
         this.sessionId = Long.toString(sessionCreation);
 
         weatherService = new WeatherService("metric");
@@ -145,7 +147,7 @@ public class UploadImageCard extends VerticalLayout {
 
             UUID uuid = UUID.randomUUID();
             String strUUID = uuid.toString();
-            String strNewFileName = userId + "_" + strUserName + "_" + strUUID + ".jpg";
+            String strNewFileName = intUserId + "_" + strUserName + "_" + strUUID + ".jpg";
 
             Button btnSave = new Button("Upload Photo");
 
@@ -170,7 +172,7 @@ public class UploadImageCard extends VerticalLayout {
 
 
                 mailSend.sendSimpleMail("nickgiant@yahoo.com", "getUploadImageCard to upload  " + errorMessage + "  -  " + publicIp, " " + publicIp + " " + hostname + "  -  " + errorMessage);
-                logErrorInDb(e, "getUploadImageCard to upload", this.file.getAbsolutePath(), userId, strUserName);
+                logErrorInDb(e, "getUploadImageCard to upload", this.file.getAbsolutePath(), intUserId, strUserName);
 
                 logger.error(" upload " + e.getMessage());
 //                throw new RuntimeException(e);
@@ -214,7 +216,7 @@ public class UploadImageCard extends VerticalLayout {
 
                 mailSend.sendSimpleMail("nickgiant@yahoo.com", "getUploadImageCard  strImage Meta Info  " + errorMessage + "  -  " + publicIp, " " + publicIp + " " + hostname + "  -  " + errorMessage);
 
-                logErrorInDb(e, "getUploadImageCard  strImage Meta Info " + e.getMessage(), this.file.getAbsolutePath(), userId, strUserName);
+                logErrorInDb(e, "getUploadImageCard  strImage Meta Info " + e.getMessage(), this.file.getAbsolutePath(), intUserId, strUserName);
 
 
                 logger.error(" strImage Meta Info " + e.getMessage());
@@ -313,7 +315,7 @@ public class UploadImageCard extends VerticalLayout {
             output.add(new Text(strMessage));
 
             mailSend.sendSimpleMail("nickgiant@yahoo.com", strMessage + "  -  " + publicIp, " " + publicIp + " " + hostname + "  -  " + strMessage);
-            logErrorInDb(null, "addFailedListener " + event.getReason(), this.file.getAbsolutePath(), userId, strUserName);
+            logErrorInDb(null, "addFailedListener " + event.getReason(), this.file.getAbsolutePath(), intUserId, strUserName);
 
 
         });
@@ -329,7 +331,7 @@ public class UploadImageCard extends VerticalLayout {
             notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
 
             mailSend.sendSimpleMail("nickgiant@yahoo.com", errorMessage + "  -  " + publicIp, " " + publicIp + " " + hostname + "  -  " + errorMessage);
-            logErrorInDb(null, "addFileRejectedListener " + event.getErrorMessage(), this.file.getAbsolutePath(), userId, strUserName);
+            logErrorInDb(null, "addFileRejectedListener " + event.getErrorMessage(), this.file.getAbsolutePath(), intUserId, strUserName);
         });
 
         return layout;
@@ -413,7 +415,7 @@ public class UploadImageCard extends VerticalLayout {
         try {
             return new FileInputStream(fileName);
         } catch (FileNotFoundException e) {
-            logErrorInDb(e, "loadFile  fileName: " + fileName, this.file.getAbsolutePath(), userId, strUserName);
+            logErrorInDb(e, "loadFile  fileName: " + fileName, this.file.getAbsolutePath(), intUserId, strUserName);
             logger.error("Failed to create InputStream for: '" + this.file.getAbsolutePath(), e);
         }
         return null;
@@ -426,7 +428,7 @@ public class UploadImageCard extends VerticalLayout {
         try {
             return new FileInputStream(file);
         } catch (FileNotFoundException e) {
-            logErrorInDb(e, "loadFile", this.file.getAbsolutePath(), userId, strUserName);
+            logErrorInDb(e, "loadFile", this.file.getAbsolutePath(), intUserId, strUserName);
             logger.error("Failed to create InputStream for: '" + this.file.getAbsolutePath(), e);
         }
         return null;
@@ -445,20 +447,20 @@ public class UploadImageCard extends VerticalLayout {
             file.deleteOnExit();
             return new FileOutputStream(file);
         } catch (FileNotFoundException e) {
-            logErrorInDb(e, "receiveUpload", this.file.getAbsolutePath(), userId, strUserName);
+            logErrorInDb(e, "receiveUpload", this.file.getAbsolutePath(), intUserId, strUserName);
             logger.error("Failed to create InputStream for: '" + this.file.getAbsolutePath(), e);
         } catch (IOException e) {
-            logErrorInDb(e, "receiveUpload", this.file.getAbsolutePath(), userId, strUserName);
+            logErrorInDb(e, "receiveUpload", this.file.getAbsolutePath(), intUserId, strUserName);
             logger.error("Failed to create InputStream for: '" + this.file.getAbsolutePath() + "'", e);
         }
 
         return null;
     }
 
-    private void logErrorInDb(Exception e, String function, String info, int userId, String strUsername) {
+    private void logErrorInDb(Exception e, String function, String info, int intUserId, String strUsername) {
 
 //        Notification.show(" logErrorInDb  .  " + function + "  .  " + info);
-        recordService.logErrorInDb(e, "", function, userId, strUsername, "", "", info);
+        recordService.logErrorInDb(e, "", function, intUserId, strUsername, "", "", info);
     }
 
     //                lstInfo.add(getTagValue(jpegMetadata, TiffTagConstants.TIFF_TAG_DATE_TIME)); // date time
@@ -555,7 +557,7 @@ public class UploadImageCard extends VerticalLayout {
                     Notification.Position.MIDDLE
             );
             notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
-            logErrorInDb(e, "getUploadImageCard upload failed. dir: ", this.file.getAbsolutePath(), userId, strUserName);
+            logErrorInDb(e, "getUploadImageCard upload failed. dir: ", this.file.getAbsolutePath(), intUserId, strUserName);
             logger.error(" upload failed. dir: " + e.getMessage());
             return false;
         }
@@ -615,7 +617,7 @@ public class UploadImageCard extends VerticalLayout {
             strPhotoLensMake = " null ";
         }
 
-        String insertSQL = "INSERT INTO photo_meta SET id = 0,  date_fromapp = now(), uploaderId = " + userId + ", uploader = '" + strUserName + "', name_new = '" + strNewFileName + "', hostname = '" + hostname + "', " +
+        String insertSQL = "INSERT INTO photo_meta SET id = 0,  date_fromapp = now(), uploaderId = " + intUserId + ", uploader = '" + strUserName + "', name_new = '" + strNewFileName + "', hostname = '" + hostname + "', " +
                 " space_size = '" + photoSpaceSize + "', " +
                 " space_size_medium = '" + photoSpaceSizeMedium + "', " +
                 " space_size_thumb = '" + photoSpaceSizeThumb + "', " +
@@ -641,11 +643,11 @@ public class UploadImageCard extends VerticalLayout {
         ArrayList<String> lstQueryInsert = new ArrayList<String>();
         lstQueryInsert.add(insertSQL);
 
-        recordService.setGlobalInfo(hostname, userId, strUserName, publicIp, sessionId);
+        recordService.setGlobalInfo(hostname, intUserId, strUserName, publicIp, sessionId);
         if (recordService.massRecordInsert(lstQueryInsert, listInsertValues, listInsertTypes) == 1) {
             return true;
         } else {
-            logErrorInDb(null, "UploadImageCard insertPhotoToDb.", insertSQL, userId, strUserName);
+            logErrorInDb(null, "UploadImageCard insertPhotoToDb.", insertSQL, intUserId, strUserName);
             return false;
         }
 

@@ -9,13 +9,12 @@ import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.services.PhotoFlickrService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
+import com.photo.act.photo_act.views.components.AvatarItem;
 import com.photo.act.photo_act.views.components.GenericView;
 import com.photo.act.photo_act.views.components.HeaderFilterTabs;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.HasStyle;
 import com.vaadin.flow.component.UI;
-import com.vaadin.flow.component.avatar.Avatar;
-import com.vaadin.flow.component.avatar.AvatarVariant;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.CheckboxGroup;
 import com.vaadin.flow.component.html.*;
@@ -104,17 +103,36 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
     private String strColorExternalweb = "#9fafd5";
 
-    String[] arrColumnsLearning = {"title", "picture", "section", "category", "format", "url", "artists_ref", "description", "duration", "pages", "published",
-            "tutor_name", "website", "url_fb", "url_yt", "url_insta", "url_flickr", "url_wikipedia", "url_ref1", "url_ref2", "url_ref3",
-            "dateInsert"};
 
-    // learnings: l.id, l.title, l.picture, l.section , l.category, l.format, l.url, l.parent_id, l.child_index, l.tutor_id, l.artists_ref, l.description, l.duration, l.pages, l.published, l.userIdInsert, l.username, l.dateInsert
-// learnings_tutor:  lt.id, lt.tutor_name, lt.learnings_team_id, lt.website, lt.url_fb, lt.url_yt, lt.url_insta, lt.url_flickr, lt.url_wikipedia, lt.url_ref1, lt.url_ref2, lt.url_ref3, lt.url_flckr, lt.city_base, lt.country_base, lt.userIdInsert, lt.username, lt.date_inserted
-    String sqlLearningsRead = "SELECT  " //f.nameShort, f.location, f.country, f.periodOfYear, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description  " +
-            + " l.id, l.title, l.picture, l.section , l.category, l.format, l.url, l.parent_id, l.child_index, l.tutor_id, l.artists_ref, l.description, l.duration, l.pages, l.published, l.userIdInsert, l.username, l.dateInsert, "
-            + "  t.tutor_name, t.learnings_team_id, t.website, t.url_fb, t.url_yt, t.url_insta, t.url_flickr, t.url_wikipedia, t.url_ref1, t.url_ref2, t.url_ref3, t.city_base, t.country_base, t.userIdInsert, t.username, t.date_inserted "
-            + " FROM  learnings l LEFT JOIN tutor t ON t.id = l.tutor_id "
-            + " WHERE 1=1 ";
+    String[] arrColLearningTopics = {"cat_title", "cat_title2", "cat_title_type", "cat_title_type2", "cat_type", "cat_type2",
+            "cat_description_min", "cat_description_min2", "cat_type_count", "cat_type_count2"};
+
+    String sqlLearningTopics = "SELECT "
+            + " lc.cat_title, lc.cat_title_type, lc.cat_type, lc.cat_description_min "
+//            + " , lc2.cat_title AS cat_title2, lc2.cat_title_type AS cat_title_type2, lc2.cat_type AS cat_type2, count (lc2.cat_type) AS cat_type_count2 "
+//            + " l.id, l.title, l.picture, l.section , l.category, l.format, l.url, l.parent_id, l.child_index, l.tutor_id, l.artists_ref, l.description, l.duration, l.pages, l.published, l.userIdInsert, l.username, l.dateInsert "
+//            + ", l.tutor_id, l.tutor_id_team, t.tutor_name, t.website, t.url_fb, t.url_yt, t.url_insta, t.url_flickr, t.url_wikipedia, t.url_ref1, t.url_ref2, t.url_ref3, t.city_base, t.country_base, t.userIdInsert, t.username, t.date_inserted "
+//            + " FROM learnings_categories lc2 RIGHT JOIN learnings l ON lc2.id = l.category_id2, learnings_categories lc " // "LEFT JOIN learnings_categories lc ON lc.id = l.category_id "
+//            + " FROM learnings l, learnings_categories lc "
+            + " FROM learnings_categories lc "
+            + " WHERE 1 = 1 "
+//            + " WHERE 1 = 1 AND lc.id = l.category_id "
+            + " AND lc.cat_type NOT LIKE '%genre%' "
+            + " GROUP BY lc.cat_type "
+            + " ORDER BY lc.cat_order ASC ";
+
+
+    String[] arrColLearningGenres = {"cat_title", "cat_title2", "cat_title_type", "cat_type", "cat_description_min", "cat_description_big", "cat_count"};
+
+    String sqlLearningGenres = "SELECT  " //f.nameShort, f.location, f.country, f.periodOfYear, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description  " +
+            + " lc.cat_title, lc.cat_title_type, lc.cat_type, lc.cat_description_min, count (lc.cat_title) AS cat_count, "
+            + " lc2.cat_title AS cat_title2, lc2.cat_title_type AS cat_title_type2, lc2.cat_type AS cat_type2, count (lc2.cat_title) AS cat_count2 "
+//            + " l.id, l.title, l.picture, l.section , l.category, l.format, l.url, l.parent_id, l.child_index, l.tutor_id, l.artists_ref, l.description, l.duration, l.pages, l.published, l.userIdInsert, l.username, l.dateInsert "
+//            + ", l.tutor_id, l.tutor_id_team, t.tutor_name, t.website, t.url_fb, t.url_yt, t.url_insta, t.url_flickr, t.url_wikipedia, t.url_ref1, t.url_ref2, t.url_ref3, t.city_base, t.country_base, t.userIdInsert, t.username, t.date_inserted "
+            + " FROM learnings_categories lc2 RIGHT JOIN learnings l ON lc2.id = l.category_id2 LEFT JOIN learnings_categories lc ON lc.id = l.category_id "
+            + " WHERE 1 = 1 "
+            + " AND ( lc.cat_type LIKE '%genre%') "
+            + " GROUP BY lc.cat_title ORDER BY lc.cat_order ASC ";
 
     String sqlLearningsReadOrderBy;
 
@@ -178,7 +196,9 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
 
         String[] arrColumnNamesGallery = {"name_org", "name_new", "title", "subtitle", "photo_type", "uploader", "uploaderId", "photo_type", "contains",
-                "space_size", "space_size_medium", "space_size_thumb", "city_name", "meta_date", "date_inserted"};
+                "space_size", "space_size_medium", "space_size_thumb", "city_name", "meta_date", "date_inserted",
+                "username", "nameOfUser", "avatar_path", "member_since"
+        };
 
         String sqlReadGallery = "SELECT pm.name_org, pm.name_new, pm.title, pm.subtitle, pm.photo_type, pm.uploader, pm.uploaderId, pm.photo_type, pm.contains, " +
                 " pm.space_size, pm.space_size_medium, pm.space_size_thumb,  d.city_name, DATE_FORMAT(pm.meta_date, '%W %D %M %Y %H:%i %p') AS meta_date, " + //, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description, DATE_FORMAT(f.dateInsert , '%D %M %Y') AS formatedDateUpdated  " +
@@ -194,16 +214,19 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
                 "                WHEN TIMEDIFF(NOW(), pm.date_inserted) <= '06:35:00' THEN 'six hours ago'" +
                 "                WHEN TIMEDIFF(NOW(), pm.date_inserted) <= '07:35:00' THEN 'seven hours ago'" +
                 "                WHEN TIMEDIFF(NOW(), pm.date_inserted) <= '08:35:00' THEN 'eight hours ago'" +
-                "                when DATE(pm.date_inserted) = DATE(NOW())  then CONCAT('today at ' , DATE_FORMAT(pm.date_inserted, '%H:%i %p') )" +
-                "                when DATE(pm.date_inserted) = DATE(NOW()+1) then CONCAT(' Yesterday ' , DATE_FORMAT(pm.date_inserted, '%W %D of %M') )" +
-                "                when DATE(pm.date_inserted) < DATE(NOW()+1)  then CONCAT('' , DATE_FORMAT(pm.date_inserted, '%D of %M %Y') )" +
+                "                when DATE(DATE(pm.date_inserted) + 1) = DATE(NOW()) then CONCAT('Yesterday on ' , DATE_FORMAT(pm.date_inserted, '%H:%i %p') )" +
+                "                when DATE(DATE(pm.date_inserted) + 2) = DATE(NOW())  then CONCAT('Last ' , DATE_FORMAT(pm.date_inserted, '%W on %H:%i %p') )" +
+                "                when DATE(DATE(pm.date_inserted) + 6) >= DATE(NOW())  then CONCAT('Last ' , DATE_FORMAT(pm.date_inserted, '%W') )" +
+                "                when DATE(DATE(pm.date_inserted) + 6) < DATE(NOW())  then CONCAT('' , DATE_FORMAT(pm.date_inserted, '%D of %M %Y') )" +
                 "                ELSE DATE_FORMAT(pm.date_inserted, '%D %M %Y') " +
                 "              END ) " +
                 " AS date_inserted " +
-                " FROM  photo_meta pm LEFT JOIN destination d ON pm.destination_Id = d.id ";
+                " , usr.username, usr.nameOfUser, usr.avatar_path, DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since " +
+                " FROM dbuser usr, photo_meta pm LEFT JOIN destination d ON pm.destination_Id = d.id ";
 //                    " WHERE pm.hostname like '"+hostname+"' "+
 //                    " ORDER BY pm.title ASC ";
-        String sqlGalleryAll = sqlReadGallery + " WHERE pm.hostname like '" + hostname + "' AND pm.visible_to = 'ALL' ";
+        String sqlGalleryAll = sqlReadGallery + " WHERE pm.hostname like '" + hostname + "' AND pm.visible_to = 'ALL' " +
+                " AND usr.userId = pm.uploaderId";
 //        if(!strDestination.equalsIgnoreCase(STR_ALL_DESTINATIONS)) {
 //            sqlGalleryAll = sqlGalleryAll + " AND d.city_name LIKE '" + strDestination + "' ";
 //        }
@@ -222,9 +245,22 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         VerticalLayout layoutLastLearnings = loadLastLearnings(sqlLearningsRead, arrColumnsLearning);
         verticalLayout.add(titleLastLearnings, layoutLastLearnings);
 
-        H3 titleLastPhotos = new H3("Last 6 Photos that Members Uploaded:");
-        VerticalLayout layoutLastPhotos = loadUploadedPhotos(sqlGalleryAll + " LIMIT 6 ", arrColumnNamesGallery, false, true);
+        H3 titleLastPhotos = new H3("Last 5 Photos that Members Uploaded:");
+        VerticalLayout layoutLastPhotos = loadUploadedPhotos(sqlGalleryAll + " LIMIT 5 ", arrColumnNamesGallery, false, true);
         verticalLayout.add(titleLastPhotos, layoutLastPhotos);
+
+
+        Div layoutLearningTopics = loadLearningTopics(sqlLearningTopics, arrColLearningTopics);
+
+        H3 titleLearnTopics = new H3("Learn about the following topics");
+        verticalLayout.add(titleLearnTopics, layoutLearningTopics);
+
+
+        Div layoutLearningGenres = loadLearningsAboutGenres(sqlLearningGenres, arrColLearningGenres);
+
+        H3 titleLearnGenres = new H3("Learn about the following photo genres");
+        verticalLayout.add(titleLearnGenres, layoutLearningGenres);
+
 
         H3 titleWeather = new H3("Current Weather in:");
 
@@ -426,7 +462,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         for (int r = 0; r < lstRecords.size(); r++) {
 
             HorizontalLayout layoutLearningCat = new HorizontalLayout();
-            layoutLearningCat.addClassNames(AlignItems.CENTER, JustifyContent.BETWEEN,
+            layoutLearningCat.addClassNames(AlignItems.CENTER, JustifyContent.CENTER,
                     Padding.MEDIUM, Margin.XSMALL,
                     TextColor.TERTIARY,
                     Background.CONTRAST_5,
@@ -437,7 +473,6 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
             String strCount = record.getColumnData("cat_count");
 
             Div divCategory = new Div(strCount + " about " + strCategory);
-//            Div divCount = new Div("(count:" + strCount + ")");
 
             layoutLearningCat.add(divCategory);
 
@@ -484,9 +519,14 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
             String strUploader = record.getColumnData("uploader");
             String strDateUploaded = record.getColumnData("date_inserted");
 
+            String strUsername = record.getColumnData("username");
+            String strNameOfUser = record.getColumnData("nameOfUser");
+            String strAvatarPath = record.getColumnData("avatar_path");
+            String strMemberSince = record.getColumnData("member_since");
+
             Image image = getImageThumbFromDb(record, strPath);
-            image.getStyle().setMaxWidth("auto");
-            image.getStyle().setMaxHeight("80px");
+            image.getStyle().setWidth("auto");
+            image.getStyle().setMaxHeight("100px");
             image.addClassNames(BorderRadius.SMALL);
 
             Icon iconLocation = VaadinIcon.LOCATION_ARROW_CIRCLE_O.create();
@@ -500,19 +540,23 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
             // badgeLocation.getElement().setAttribute("theme", "badge");
             badgeLocation.getElement().getThemeList().add("badge contrast");
 
-            Div divUserAvatar = new Div("uploaded by");
+
             Div divLocation = new Div("photo shoot in");
 
-            Avatar userAvatar = new Avatar(strUploader);
-            userAvatar.setImage("https://randomuser.me/api/portraits/men/17.jpg");
-            userAvatar.getElement().setAttribute("tabindex", "-1");
-            userAvatar.addThemeVariants(AvatarVariant.LUMO_SMALL);
+            String strAvatarFullPath = DIR_PHOTOS_SERVER + dirChar + SUB_PATH_AVATARS + dirChar + strAvatarPath;
+            Image imgAvatarMedium = genericView.getAvatarImage(strAvatarFullPath, strNameOfUser, "70px", "70px");
+            AvatarItem avatarLargeItemMe = new AvatarItem(strNameOfUser, "@" + strUsername, imgAvatarMedium);
 
-            Span divUser = new Span(strUploader);
-            Span divUserObject = new Span(userAvatar, divUser);
-            divUserObject.addClassNames(AlignContent.CENTER, JustifyContent.CENTER,
-                    Padding.SMALL,
-                    BorderRadius.SMALL, Background.CONTRAST_5);
+//            Avatar userAvatar = new Avatar(strUploader);
+//            userAvatar.setImage("https://randomuser.me/api/portraits/men/17.jpg");
+//            userAvatar.getElement().setAttribute("tabindex", "-1");
+//            userAvatar.addThemeVariants(AvatarVariant.LUMO_SMALL);
+
+//            Span divUser = new Span(strUploader);
+//            Span divUserObject = new Span(userAvatar, divUser);
+//            divUserObject.addClassNames(AlignContent.CENTER, JustifyContent.CENTER,
+//                    Padding.SMALL,
+//                    BorderRadius.SMALL, Background.CONTRAST_5);
 
             Icon iconDateTime = VaadinIcon.CALENDAR_CLOCK.create();
             iconDateTime.getStyle().set("padding", "var(--lumo-space-xs)");
@@ -523,7 +567,15 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
             }
             badgeDateTime.getElement().getThemeList().add("badge contrast");
 
-            layoutPhotoUploaded.add(image, divUserAvatar, divUserObject, badgeDateTime, divLocation, badgeLocation);
+            VerticalLayout layoutMemberUp = new VerticalLayout();
+            layoutMemberUp.addClassNames(AlignItems.CENTER, JustifyContent.CENTER, Margin.NONE, Padding.SMALL);
+            layoutMemberUp.add(avatarLargeItemMe);
+
+            VerticalLayout layoutDateLocationUp = new VerticalLayout();
+            layoutDateLocationUp.addClassNames(AlignItems.CENTER, JustifyContent.CENTER, Margin.NONE, Padding.SMALL);
+            layoutDateLocationUp.add(badgeDateTime, divLocation, badgeLocation);
+
+            layoutPhotoUploaded.add(image, layoutMemberUp, layoutDateLocationUp);
 
             layoutLastPhotos.add(layoutPhotoUploaded);
         }
@@ -914,7 +966,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
     }
 
 
-//
+    //
 //        List<Record> lstRecords = getRecordsFromDb(sqlRead, arrColumnNames);
 //        for (int r = 0;r< lstRecords.size();r++) {
 //
@@ -923,6 +975,122 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 //        }
 //        return layoutLearnings;
 //    }
+    private Div loadLearningTopics(String sqlRead, String[] arrColumnNames) {
+
+
+        Div panelOfTopics = new Div();
+        if (isMobile) {
+            panelOfTopics.addClassNames(
+                    Overflow.HIDDEN, Width.FULL,
+                    AlignItems.CENTER, JustifyContent.CENTER,
+                    Margin.NONE,
+                    Padding.XSMALL,
+                    Gap.SMALL,
+                    Width.FULL,
+                    //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+                    //  Background.CONTRAST_5,
+                    BorderRadius.NONE);
+        } else {
+            panelOfTopics.addClassNames(
+                    Overflow.HIDDEN, Width.FULL,
+                    AlignItems.CENTER, JustifyContent.CENTER,
+                    Margin.NONE,
+                    Padding.SMALL,
+                    Gap.SMALL,
+                    Width.FULL,
+                    //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+                    //  Background.CONTRAST_5,
+                    BorderRadius.LARGE);
+        }
+        panelOfTopics.addClassName("learning-photo-genres");
+
+        List<Record> lstLearningCategoriesRecs = getRecordsFromDb(sqlRead, arrColumnNames);
+
+        ArrayList<String> lstCategories = new ArrayList<>();
+        ArrayList<String> lstCategoriesDescriptions = new ArrayList<>();
+        for (int r = 0; r < lstLearningCategoriesRecs.size(); r++) {
+            lstCategories.add(lstLearningCategoriesRecs.get(r).getColumnData("cat_type"));
+            String strDescr = lstLearningCategoriesRecs.get(r).getColumnData("cat_description_min");
+            lstCategoriesDescriptions.add(strDescr);
+        }
+
+        for (int c = 0; c < lstCategories.size(); c++) {
+            String captionCategory = lstCategories.get(c);
+            String captionCategoryDescription = lstCategoriesDescriptions.get(c);
+            H3 categoryTitle = new H3(captionCategory);
+            Div categoryDescription = new Div(captionCategoryDescription);
+
+            if (captionCategoryDescription.isEmpty() || captionCategoryDescription.equalsIgnoreCase("null")) {
+                categoryDescription.setVisible(false);
+            }
+
+            RouteParam routeCategory = new RouteParam("category", captionCategory);
+            RouterLink linkPhotoCategory = new RouterLink(LearningsView.class, new RouteParameters(routeCategory));
+            linkPhotoCategory.add(categoryTitle, categoryDescription);
+
+            panelOfTopics.add(linkPhotoCategory);
+        }
+        return panelOfTopics;
+    }
+
+
+    private Div loadLearningsAboutGenres(String sqlRead, String[] arrColumnNames) {
+
+        Div panelOfGenres = new Div();
+        if (isMobile) {
+            panelOfGenres.addClassNames(
+                    Overflow.HIDDEN, Width.FULL,
+                    AlignItems.CENTER, JustifyContent.CENTER,
+                    Margin.NONE,
+                    Padding.XSMALL,
+                    Gap.SMALL,
+                    Width.FULL,
+                    //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+                    //  Background.CONTRAST_5,
+                    BorderRadius.NONE);
+        } else {
+            panelOfGenres.addClassNames(
+                    Overflow.HIDDEN, Width.FULL,
+                    AlignItems.CENTER, JustifyContent.CENTER,
+                    Margin.NONE,
+                    Padding.SMALL,
+                    Gap.SMALL,
+                    Width.FULL,
+                    //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+                    //  Background.CONTRAST_5,
+                    BorderRadius.LARGE);
+        }
+        panelOfGenres.addClassName("learning-photo-genres");
+
+        List<Record> lstLearningCategoriesRecs = getRecordsFromDb(sqlRead, arrColumnNames);
+
+        ArrayList<String> lstCategories = new ArrayList<>();
+        ArrayList<String> lstCategoriesDescriptions = new ArrayList<>();
+        for (int r = 0; r < lstLearningCategoriesRecs.size(); r++) {
+            lstCategories.add(lstLearningCategoriesRecs.get(r).getColumnData("cat_title"));
+            String strDescr = lstLearningCategoriesRecs.get(r).getColumnData("cat_description_min");
+            if (strDescr != null && !strDescr.isEmpty() && !strDescr.equalsIgnoreCase("null")) {
+                lstCategoriesDescriptions.add(strDescr);
+            } else {
+                lstCategoriesDescriptions.add("");
+            }
+
+        }
+
+        for (int c = 0; c < lstCategories.size(); c++) {
+            String captionCategory = lstCategories.get(c);
+            String captionCategoryDescription = lstCategoriesDescriptions.get(c);
+            H3 genreTitle = new H3(captionCategory);
+            Div genreDescription = new Div(captionCategoryDescription);
+
+            RouteParam routeCategory = new RouteParam("genre", captionCategory);
+            RouterLink linkPhotoCategory = new RouterLink(LearningsView.class, new RouteParameters(routeCategory));
+            linkPhotoCategory.add(genreTitle, genreDescription);
+
+            panelOfGenres.add(linkPhotoCategory);
+        }
+        return panelOfGenres;
+    }
 
 
     private HorizontalLayout getActions() {

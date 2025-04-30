@@ -42,7 +42,7 @@ import static com.photo.act.photo_act.views.MainLayout.*;
 @Route(value = "gallery") //":category?")
 //@RouteAlias(value = "gallery/location/:destination?", layout = MainLayout.class)
 //@RouteAlias(value = "gallery/member/:member?", layout = MainLayout.class)
-@RouteAlias(value = "gallery/location/:destination?/member/:member?", layout = MainLayout.class)
+@RouteAlias(value = "gallery/member/:member?/location/:destination?", layout = MainLayout.class)
 
 
 //@RouteAlias(value = "gallery/location/:destination?", layout = MainLayout.class)
@@ -112,7 +112,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
             , "location_by_user", "location_area", "location_country_code", "location_lat", "location_lon"
             , "spot_name", "spot_type"
             , "date_inserted"
-            , "username", "nameOfUser", "resident", "date_joined", "avatar"
+            , "username", "nameOfUser", "resident", "date_joined", "avatar_path"
     };
 
     private String sqlReadGallery = "SELECT pm.name_new, pm.title, pm.subtitle, pm.photo_type, pm.uploader, pm.creator, pm.visible_to, d.city_name, d.country, " +
@@ -120,7 +120,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
             " pm.space_size, pm.space_size_medium, pm.space_size_thumb, pm.meta_camera_make, pm.meta_camera_model, pm.meta_lens_make, pm.meta_lens_model, " +
             " pm.meta_focal_length, pm.meta_focal_length_ff, pm.meta_iso " +
             " , pm.location_by_user, pm.location_area, pm.location_country_code, pm.location_lat, pm.location_lon " +
-            " , usr.username, usr.nameOfUser, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined, usr.avatar " +
+            " , usr.username, usr.nameOfUser, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined, usr.avatar_path " +
 //            "  ds.spot_name, ds.spot_type " +
             //, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description, DATE_FORMAT(f.dateInsert , '%D %M %Y') AS formatedDateUpdated  " +
             " FROM dbuser usr, photo_meta pm LEFT JOIN destination d ON pm.destination_id = d.id " +
@@ -273,8 +273,6 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
             );
 //            verticalLayout.getStyle().set("gap", "3rem");
         }
-
-
     }
 
     private VerticalLayout loadHeader(String strHeader, String strSubHeader, String strSection) {
@@ -568,16 +566,16 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
 
         String strCityName = record.getColumnData("city_name");
         String strUploader = record.getColumnData("uploader");
-
-        RouteParam routeUploaderAll = new RouteParam("member", STR_ALL_MEMBERS);
-
-        RouteParam routeUploader = new RouteParam("member", strUploader);
-        RouteParam routeDestination = new RouteParam("destination", strCityName);
-
-        RouterLink linkDestination = new RouterLink(strCityName, GalleryView.class, new RouteParameters(routeDestination, routeUploader));
-        RouterLink linkUploader = new RouterLink(strUploader, GalleryView.class, new RouteParameters(routeDestination, routeUploader));
-
-        RouterLink linkUploaderAll = new RouterLink(STR_ALL_MEMBERS, GalleryView.class, new RouteParameters(routeDestination, routeUploaderAll));
+//
+//        RouteParam routeUploaderAll = new RouteParam("member", STR_ALL_MEMBERS);
+//
+//        RouteParam routeUploader = new RouteParam("member", strUploader);
+//        RouteParam routeDestination = new RouteParam("destination", strCityName);
+//
+//        RouterLink linkDestination = new RouterLink(strCityName, GalleryView.class, new RouteParameters(routeDestination, routeUploader));
+//        RouterLink linkUploader = new RouterLink(strUploader, GalleryView.class, new RouteParameters(routeDestination, routeUploader));
+//
+//        RouterLink linkUploaderAll = new RouterLink(STR_ALL_MEMBERS, GalleryView.class, new RouteParameters(routeDestination, routeUploaderAll));
 //        ArrayList<RouterLink> lstRouterLinks =new ArrayList<>();
 //        lstRouterLinks.add(linkDestination);
 
@@ -585,7 +583,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         logger.info(" strImagePath " + strImagePath);
 
         GalleryImageViewCard imageGalleryViewCard = new GalleryImageViewCard(record, strImagePath, isMobile, userId, strUsername, sessionCreation, hostname, publicIp, isEditable,
-                linkDestination, linkUploader, recordService);
+                recordService);
         return imageGalleryViewCard;
     }
 
