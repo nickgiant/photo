@@ -4,8 +4,6 @@ import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.views.AlbumsView;
-import com.vaadin.flow.component.avatar.Avatar;
-import com.vaadin.flow.component.avatar.AvatarVariant;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.details.Details;
@@ -34,6 +32,9 @@ import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import static com.photo.act.photo_act.views.AlbumsView.DIR_PHOTOS_SERVER;
+import static com.photo.act.photo_act.views.MainLayout.SUB_PATH_AVATARS;
+
 public class AlbumViewCard extends VerticalLayout {
 
     private static final Logger logger = LoggerFactory.getLogger(AlbumViewCard.class);
@@ -52,6 +53,7 @@ public class AlbumViewCard extends VerticalLayout {
         genericView = new GenericView();
 
         this.addClassName("album-info-card");
+
 
         if (record == null) {
             logger.error("record is null");
@@ -75,7 +77,7 @@ public class AlbumViewCard extends VerticalLayout {
         String strAlbumUserName = record.getColumnData("username");
         String strAlbumNameOfUser = record.getColumnData("nameOfUser");
         String strUserResident = record.getColumnData("resident");
-        String strAvatar = record.getColumnData("avatar");
+        String strAvatarPath = record.getColumnData("avatar_path");
         String strUserJoined = record.getColumnData("date_joined");
 
 
@@ -299,23 +301,30 @@ public class AlbumViewCard extends VerticalLayout {
         routerLinkAlbum.add(layoutImage, divPhotoInfo);
 
 
-        Avatar userAvatar = new Avatar(strAlbumUserName);
-        userAvatar.setImage(strAvatar);
-        userAvatar.getElement().setAttribute("tabindex", "-1");
-        userAvatar.addThemeVariants(AvatarVariant.LUMO_SMALL);
+//        Avatar userAvatar = new Avatar(strAlbumUserName);
+//        userAvatar.setImage(strAvatar);
+//        userAvatar.getElement().setAttribute("tabindex", "-1");
+//        userAvatar.addThemeVariants(AvatarVariant.LUMO_SMALL);
+//
+//        Avatar userAvatarLarge = new Avatar(strAlbumUserName);
+//        userAvatarLarge.setImage(strAvatar);
+//        userAvatarLarge.getElement().setAttribute("tabindex", "-1");
+//        userAvatarLarge.addThemeVariants(AvatarVariant.LUMO_XLARGE);
 
-        Avatar userAvatarLarge = new Avatar(strAlbumUserName);
-        userAvatarLarge.setImage(strAvatar);
-        userAvatarLarge.getElement().setAttribute("tabindex", "-1");
-        userAvatarLarge.addThemeVariants(AvatarVariant.LUMO_XLARGE);
+        String strAvatarFullPath = DIR_PHOTOS_SERVER + dirChar + SUB_PATH_AVATARS + dirChar + strAvatarPath;
+        Image imgAvatarSmall = genericView.getAvatarImage(strAvatarFullPath, strAlbumNameOfUser, "40px", "40px");
+        //Image imgAvatarSmall = getAvatarImage(strAvatar, strAlbumUserName, "40px", "40px");
 
-        AvatarItem avatarItemMe = new AvatarItem(strAlbumNameOfUser, "", userAvatar);
+        Image imgAvatarMedium = genericView.getAvatarImage(strAvatarFullPath, strAlbumNameOfUser, "70px", "70px");
+//        Image imgAvatarMedium = getAvatarImage(strAvatar, strAlbumUserName, "70px", "70px");
+
+        AvatarItem avatarItemMe = new AvatarItem(strAlbumNameOfUser, "", imgAvatarSmall);
         Details detailsMember = new Details();
         detailsMember.addClassNames(Width.FULL, BorderRadius.SMALL);
 //        detailsMember.addThemeVariants(DetailsVariant.FILLED);
         detailsMember.addClassName("member-small");
         detailsMember.setSummary(avatarItemMe);
-        AvatarItem avatarLargeItemMe = new AvatarItem(strAlbumNameOfUser, "@" + strAlbumUserName, userAvatarLarge);
+        AvatarItem avatarLargeItemMe = new AvatarItem(strAlbumNameOfUser, "@" + strAlbumUserName, imgAvatarMedium);
 
         HorizontalLayout layoutMemberInfo = new HorizontalLayout();
         layoutMemberInfo.addClassNames(
@@ -384,10 +393,7 @@ public class AlbumViewCard extends VerticalLayout {
         );
         Div divDateJoined = new Div(strUserJoined);
         layoutDateJoined.add(VaadinIcon.CALENDAR_CLOCK.create(), divDateJoined); // FontAwesome.Regular.CALENDAR.create()
-
         layoutMemberInfo.add(layoutMemberPhotoCount, layoutMemberViewCount, layoutMemberLocationsCount, layoutDateJoined);
-
-
         detailsMember.add(avatarLargeItemMe, layoutMemberInfo);
 
         this.addClassNames(Border.NONE, Padding.NONE, Margin.NONE);
@@ -560,5 +566,6 @@ public class AlbumViewCard extends VerticalLayout {
     private void logErrorInDb(Exception e, String function, String hostname, int userId, String strUsername, String publicIp, long sessionCreation, String info) {
         recordService.logErrorInDb(e, hostname, function, userId, strUsername, publicIp, Long.toString(sessionCreation), info);
     }
+
 
 }

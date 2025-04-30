@@ -4,8 +4,6 @@ import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.utils.ImageUtilsMeta;
-import com.vaadin.flow.component.avatar.Avatar;
-import com.vaadin.flow.component.avatar.AvatarVariant;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.details.Details;
@@ -28,8 +26,12 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
+import static com.photo.act.photo_act.views.AlbumsView.DIR_PHOTOS_SERVER;
+import static com.photo.act.photo_act.views.MainLayout.SUB_PATH_AVATARS;
 
 public class GalleryImageViewCard extends Div {
 
@@ -40,13 +42,13 @@ public class GalleryImageViewCard extends Div {
     private RouterLink linkUploader;
     private RouterLink linkDestination;
 
+    private String dirChar = FileSystems.getDefault().getSeparator();
+
     public GalleryImageViewCard(Record record, String strImagePath, boolean isMobile, int userId, String strUserName, long sessionCreation,
-                                String hostname, String publicIp, boolean isEditable, RouterLink linkDestination, RouterLink linkUploader, RecordService recordService) {
+                                String hostname, String publicIp, boolean isEditable, RecordService recordService) {
         this.recordService = recordService;
         this.isMobile = isMobile;
 
-        this.linkDestination = linkDestination;
-        this.linkUploader = linkUploader;
 
         this.addClassName("gallery-view-card");
 
@@ -74,7 +76,7 @@ public class GalleryImageViewCard extends Div {
         String strPhotoUserName = record.getColumnData("username");
         String strPhotoNameOfUser = record.getColumnData("nameOfUser");
         String strPhotoUserResident = record.getColumnData("resident");
-        String strAvatar = record.getColumnData("avatar");
+        String strAvatarPath = record.getColumnData("avatar_path");
         String strPhotoUserJoined = record.getColumnData("date_joined");
 
         String strCity = record.getColumnData("city_name");
@@ -138,25 +140,19 @@ public class GalleryImageViewCard extends Div {
         }
 
 
-        Avatar userAvatar = new Avatar(strPhotoUserName);
-        userAvatar.setImage(strAvatar);
-        userAvatar.getElement().setAttribute("tabindex", "-1");
-        userAvatar.addThemeVariants(AvatarVariant.LUMO_SMALL);
+//        Image imgAvatarSmall = getAvatarImage(strAvatar, strPhotoUserName, "40px", "40px");
+        String strAvatarFullPath = DIR_PHOTOS_SERVER + dirChar + SUB_PATH_AVATARS + dirChar + strAvatarPath;
+        Image imgAvatarSmall = genericView.getAvatarImage(strAvatarFullPath, strPhotoUserName, "40px", "40px");
+        Image imgAvatarMedium = genericView.getAvatarImage(strAvatarFullPath, strPhotoUserName, "70px", "70px");
+//        Image imgAvatarMedium = getAvatarImage(strAvatar, strPhotoUserName, "70px", "70px");
 
-        Avatar userAvatarLarge = new Avatar(strPhotoUserName);
-        userAvatarLarge.setImage(strAvatar);
-        userAvatarLarge.getElement().setAttribute("tabindex", "-1");
-        userAvatarLarge.addThemeVariants(AvatarVariant.LUMO_XLARGE);
-
-        AvatarItem avatarItemMe = new AvatarItem(strPhotoNameOfUser, "", userAvatar);
+        AvatarItem avatarItemMe = new AvatarItem(strPhotoNameOfUser, "", imgAvatarSmall);
         Details detailsMember = new Details();
-        detailsMember.addClassNames(Width.FULL);
+        detailsMember.addClassNames(Width.FULL, BorderRadius.SMALL);
 //        detailsMember.addThemeVariants(DetailsVariant.FILLED);
         detailsMember.addClassName("member-small");
-
         detailsMember.setSummary(avatarItemMe);
-
-        AvatarItem avatarLargeItemMe = new AvatarItem(strPhotoNameOfUser, "@" + strPhotoUserName, userAvatarLarge);
+        AvatarItem avatarLargeItemMe = new AvatarItem(strPhotoNameOfUser, "@" + strPhotoUserName, imgAvatarMedium);
 
         HorizontalLayout layoutMemberInfo = new HorizontalLayout();
         layoutMemberInfo.addClassNames(
@@ -290,13 +286,13 @@ public class GalleryImageViewCard extends Div {
                 //   Background.CONTRAST_5,
                 BorderRadius.LARGE);
 
-        linkUploader.add(userAvatar);
-        linkUploader.addClassName("member-small");
-
-        if (strUploader.trim().isEmpty() || strUploader.equalsIgnoreCase("null")) {
-            linkUploader.setText("");
-            linkUploader.setVisible(false);
-        }
+//        linkUploader.add(userAvatar);
+//        linkUploader.addClassName("member-small");
+//
+//        if (strUploader.trim().isEmpty() || strUploader.equalsIgnoreCase("null")) {
+//            linkUploader.setText("");
+//            linkUploader.setVisible(false);
+//        }
 
         HorizontalLayout layoutPhotosInfo = new HorizontalLayout();
         layoutPhotosInfo.addClassNames(

@@ -38,12 +38,10 @@ import java.util.Locale;
 import static com.photo.act.photo_act.views.MainLayout.*;
 
 //@PageTitle("Image Gallery")
-//@RouteAlias("") // empty on homepage
 @Route(value = "albums") //":category?")
 //@RouteAlias(value = "albums/title/:title?", layout = MainLayout.class)
 //@RouteAlias(value = "albums/member/:member?", layout = MainLayout.class)
-@RouteAlias(value = "albums/title/:title?/member/:member?", layout = MainLayout.class)
-
+@RouteAlias(value = "albums/member/:member?/title/:title?", layout = MainLayout.class)
 
 //@RouteAlias(value = "gallery/location/:destination?", layout = MainLayout.class)
 
@@ -96,23 +94,41 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
     private String strColorExternalweb = "#9fafd5";
 
 
-    String[] arrColumnsAlbums = {"title", "description", "album_visible_to", "user_id", "date_inserted", "album_photo_count", "album_photo_size",
-            "name_new", "photo_1", "photo_2", "datetime_album_created"
-            , "username", "nameOfUser", "resident", "date_joined", "avatar"
+    String[] arrColumnsMemberAlbums = {"album_count"
+            , "username", "nameOfUser", "resident", "date_joined", "member_since", "avatar_path"
     };
 
-    String sqlAlbumsAll = "SELECT a.title, a.`description`, a.album_visible_to, a.user_id, a.date_inserted, count(a.id) AS album_photo_count, SUM(pm.space_size) AS album_photo_size\n" +
-            "   , pm.name_new , a.photo_id1, p1.name_new AS photo_1 ,  a.photo_id2, p2.name_new  AS photo_2 " +
-            "  , DATE_FORMAT(a.date_inserted, '%d-%m-%Y %H:%i %p') AS datetime_album_created " +
-            " , usr.username, usr.nameOfUser, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined, usr.avatar " +
+    String sqlMemberOfAlbums = "SELECT usr.username, usr.nameOfUser, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined " +
+            " , DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since " +
+            " , usr.avatar_path " +
+            " , count(usr.userId) AS album_count " +
+            " FROM dbuser usr LEFT JOIN photo_album a ON a.user_id = usr.userId " +
+            " WHERE  1 = 1 " +
+            " AND a.album_visible_to = 'ALL' ";
+
+    String sqlMemberOfAlbumsGroupBy =
+            " GROUP BY usr.userId " +
+                    " ORDER BY usr.nameOfUser ASC ";
+
+    String[] arrColumnsAlbums = {"title", "description", "album_visible_to", "user_id", "date_inserted", "album_photo_count", "album_photo_size",
+            "name_new", "photo_1", "photo_2", "datetime_album_created"
+            , "username", "nameOfUser", "resident", "date_joined", "avatar_path"
+    };
+
+    String sqlAlbumsAll = "SELECT a.title, a.`description`, a.album_visible_to, a.user_id, a.date_inserted " +
+            " , count(pa.photo_album_id) AS album_photo_count, SUM(pm.space_size) AS album_photo_size " +
+            " , pm.name_new , a.photo_id1, p1.name_new AS photo_1 ,  a.photo_id2, p2.name_new  AS photo_2 " +
+            " , DATE_FORMAT(a.date_inserted, '%d-%m-%Y') AS datetime_album_created " +
+            " , usr.username, usr.nameOfUser, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined, usr.avatar_path " +
             //     "--  , pa.inc, pm.title, pm.id, pm.name_new, pm.title, pm.subtitle, pm.space_size, pm.location_by_user\\n\" +\n" +
             " FROM photo_album_photo pa , photo_meta pm, dbuser usr, photo_album a LEFT JOIN photo_meta p1 ON a.photo_id1 = p1.id \n" +
-            "   LEFT JOIN photo_meta p2 ON a.photo_id2 = p2.id " +
+            " LEFT JOIN photo_meta p2 ON a.photo_id2 = p2.id " +
             " WHERE a.id = pa.photo_album_id AND pa.photo_id = pm.id AND a.user_id = usr.userId " +
-            "   AND a.album_visible_to = 'ALL' AND pm.visible_to  = 'ALL' " +
-            " GROUP BY a.id " +
-            " ORDER BY usr.username ASC, a.title ASC, pa.inc ASC ";
+            " AND a.album_visible_to = 'ALL' AND pm.visible_to  = 'ALL' ";
 
+    String sqlAlbumsGroupBy =
+            " GROUP BY pa.photo_album_id " +
+                    " ORDER BY a.title ASC, pa.inc ASC ";
 
     private String[] arrColumnNamesAlbumPhotos = {"album_title", "album_visible_to", "description"
             , "name_new", "title", "subtitle", "photo_type", "uploader", "creator", "visible_to", "city_name", "meta_date", "photo_date", "photo_time"
@@ -120,16 +136,16 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
             , "meta_focal_length", "meta_focal_length_ff", "meta_iso"
             , "location_by_user", "location_area", "location_country_code", "location_lat", "location_lon"
             , "date_inserted"
-            , "username", "nameOfUser", "resident", "date_joined", "avatar"
+            , "username", "nameOfUser", "resident", "date_joined", "avatar_path"
     };
 
     private String sqlReadAlbumPhotos = "SELECT a.title AS album_title, a.user_id, a. album_visible_to, a.description, " +
             " pm.name_new, pm.title, pm.subtitle, pm.photo_type, pm.uploader, pm.creator, pm.visible_to, d.city_name, d.country, " +
             " DATE_FORMAT(pm.meta_date, '%W %D %M %Y %H:%i %p') AS meta_date, DATE_FORMAT(pm.meta_date, '%d-%m-%Y') AS photo_date, DATE_FORMAT(pm.meta_date, '%H:%i %p') AS photo_time, " +
             " pm.space_size, pm.space_size_medium, pm.space_size_thumb, pm.meta_camera_make, pm.meta_camera_model, pm.meta_lens_make, pm.meta_lens_model, " +
-            " pm.meta_focal_length, pm.meta_focal_length_ff, pm.meta_iso, " +
-            "  pm.location_by_user, pm.location_area, pm.location_country_code, pm.location_lat, pm.location_lon " +
-            " , usr.username, usr.nameOfUser, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined, usr.avatar " +
+            " pm.meta_focal_length, pm.meta_focal_length_ff, pm.meta_iso " +
+            " , pm.location_by_user, pm.location_area, pm.location_country_code, pm.location_lat, pm.location_lon " +
+            " , usr.username, usr.nameOfUser, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined, usr.avatar_path " +
             //, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description, DATE_FORMAT(f.dateInsert , '%D %M %Y') AS formatedDateUpdated  " +
             " FROM dbuser usr, photo_album a , photo_album_photo pa , photo_meta pm LEFT JOIN destination d ON pm.destination_Id = d.id " +
             " WHERE  pm.uploaderId = usr.userId AND a.id = pa.photo_album_id AND pa.photo_id = pm.id ";
@@ -166,30 +182,49 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
 
         verticalLayout.removeAll();
         if (strAlbumTitle == null || strAlbumTitle.isEmpty()) {
-            verticalLayout.add(loadHeader("Albums", "strAlbumTitle=", strAlbumTitle));
+            verticalLayout.add(loadHeader("Albums", "", strAlbumTitle));
             logger.error(" empty strAlbumTitle:" + strAlbumTitle);
         } else if (strAlbumTitle.equalsIgnoreCase(STR_ALL_ALBUMS)) {
             verticalLayout.add(loadHeader("Albums", "", ""));
+            if (strMember == null || strMember.isEmpty() || strMember.equalsIgnoreCase(STR_ALL_MEMBERS)) {
+                String sqlAlbums = sqlAlbumsAll + sqlAlbumsGroupBy;
+                loadAlbumsFromDb(sqlAlbums, arrColumnsAlbums, false);
+            } else {
+                String sqlMember = sqlMemberOfAlbums + " AND usr.username = '" + strMember + "' " + sqlMemberOfAlbumsGroupBy;
+                loadMemberOfAlbumsFromDb(sqlMember, arrColumnsMemberAlbums, false);
 
-
-            loadAlbumInfoFromDb(sqlAlbumsAll, arrColumnsAlbums, false);
-
-//            String sqlAlbumsPhotoAll = sqlReadAlbumPhotos + " AND pm.hostname like '" + hostname + "' AND pm.visible_to = 'ALL' ";
-//            sqlAlbumsPhotoAll = sqlAlbumsPhotoAll + " ORDER BY pm.date_inserted DESC, pm.title ASC, meta_date DESC ";
-//
-//            loadAlbumImagesFromDb(sqlAlbumsPhotoAll, arrColumnNamesAlbumPhotos, false);
+                String sqlAlbums = sqlAlbumsAll + " AND usr.username = '" + strMember + "' " + sqlAlbumsGroupBy;
+                loadAlbumsFromDb(sqlAlbums, arrColumnsAlbums, false);
+            }
 
         } else if (!strAlbumTitle.equalsIgnoreCase(STR_ALL_ALBUMS)) {
-            verticalLayout.add(loadHeader("Albums", "", strAlbumTitle));
 
-            String sqlAlbumsPhotoAll = sqlReadAlbumPhotos + " AND pm.hostname like '" + hostname + "' AND pm.visible_to = 'ALL' ";
-            sqlAlbumsPhotoAll = sqlAlbumsPhotoAll + " AND a.title LIKE '" + strAlbumTitle + "' ";
+            verticalLayout.add(loadHeader("Albums", "", ""));
+            if (strMember == null || strMember.isEmpty() || strMember.equalsIgnoreCase(STR_ALL_MEMBERS)) {
+                H3 titleAlbum = new H3(strAlbumTitle);
+                titleAlbum.addClassNames(Width.FULL, TextAlignment.CENTER);
+                verticalLayout.add(titleAlbum);
 
-            sqlAlbumsPhotoAll = sqlAlbumsPhotoAll + " ORDER BY pm.date_inserted DESC, pm.title ASC, meta_date DESC ";
-            loadAlbumImagesFromDb(sqlAlbumsPhotoAll, arrColumnNamesAlbumPhotos, false);
+                String sqlAlbumsPhotoAll = sqlReadAlbumPhotos + " AND pm.hostname like '" + hostname + "' AND pm.visible_to = 'ALL' ";
+                sqlAlbumsPhotoAll = sqlAlbumsPhotoAll + " AND a.title LIKE '" + strAlbumTitle + "' ";
+                sqlAlbumsPhotoAll = sqlAlbumsPhotoAll + " ORDER BY pm.date_inserted DESC, pm.title ASC, meta_date DESC ";
+                loadAlbumImagesFromDb(sqlAlbumsPhotoAll, arrColumnNamesAlbumPhotos, false);
+            } else {
+                String sqlMember = sqlMemberOfAlbums + " AND usr.username = '" + strMember + "' " + sqlMemberOfAlbumsGroupBy;
+                loadMemberOfAlbumsFromDb(sqlMember, arrColumnsMemberAlbums, false);
+
+                H3 titleAlbum = new H3(strAlbumTitle);
+                titleAlbum.addClassNames(Width.FULL, TextAlignment.CENTER);
+                verticalLayout.add(titleAlbum);
+
+                String sqlAlbumsPhotoAll = sqlReadAlbumPhotos + " AND pm.hostname like '" + hostname + "' AND pm.visible_to = 'ALL' ";
+                sqlAlbumsPhotoAll = sqlAlbumsPhotoAll + " AND a.title LIKE '" + strAlbumTitle + "' ";
+                sqlAlbumsPhotoAll = sqlAlbumsPhotoAll + " ORDER BY pm.date_inserted DESC, pm.title ASC, meta_date DESC ";
+                loadAlbumImagesFromDb(sqlAlbumsPhotoAll, arrColumnNamesAlbumPhotos, false);
+            }
+
         } else {
             verticalLayout.add(loadHeader("Albums", "else", ""));
-
 
             String sqlAlbumsPhotoAll = sqlReadAlbumPhotos + " AND pm.hostname like '" + hostname + "' AND pm.visible_to = 'ALL' ";
             //sqlAlbumsAll = sqlAlbumsAll + " AND a.title LIKE '" + strAlbumTitle + "' ";
@@ -532,7 +567,44 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
         return layoutHeaderParameters;
     }
 
-    private void loadAlbumInfoFromDb(String sqlRead, String[] arrColumnNames, boolean isEditable) {
+    private void loadMemberOfAlbumsFromDb(String sqlRead, String[] arrColumnNames, boolean isEditable) {
+
+
+        VerticalLayout layoutMember = new VerticalLayout();
+        layoutMember.addClassNames(Width.FULL,
+                AlignItems.CENTER, JustifyContent.CENTER,
+                TextColor.TERTIARY,
+                Padding.LARGE,
+                Gap.SMALL
+        );
+
+        List<Record> lstRecords = getRecordsFromDb(sqlRead, arrColumnNames);
+
+        if (lstRecords == null || lstRecords.size() == 0) {
+
+        } else if (lstRecords.size() == 1) {
+            Record rec = lstRecords.get(0);
+            String strNameOfUser = rec.getColumnData("nameOfUser");
+            String strCountOfAlbums = rec.getColumnData("album_count");
+//            String strCountOfPhotosOfAlbums = rec.getColumnData("album_photo_count");
+            String strMemberSince = rec.getColumnData("member_since");
+            String strAvatarPath = rec.getColumnData("avatar_path");
+
+            String strAvatarFullPath = DIR_PHOTOS_SERVER + dirChar + SUB_PATH_AVATARS + dirChar + strAvatarPath;
+            Image imgAvatar = genericView.getAvatarImage(strAvatarFullPath, strNameOfUser, "120px", "120px");
+
+            H3 objMember = new H3(strNameOfUser);
+            Div divMemberSince = new Div("Member since " + strMemberSince);
+            Div divAlbumsAndPhotos = new Div("Has " + strCountOfAlbums + " albums");
+            layoutMember.add(imgAvatar, objMember, divMemberSince, divAlbumsAndPhotos);
+        } else {
+
+        }
+
+        verticalLayout.add(layoutMember);
+    }
+
+    private void loadAlbumsFromDb(String sqlRead, String[] arrColumnNames, boolean isEditable) {
         strPath = DIR_PHOTOS_SERVER + dirChar;
 
         Div divGallery = new Div();
@@ -542,12 +614,12 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
         for (int r = 0; r < lstRecords.size(); r++) {
 
             Record rec = lstRecords.get(r);
-            divGallery.add(getAlbumInfoFromDb(rec, isEditable));
+            divGallery.add(getAlbumsFromDb(rec, isEditable));
         }
         verticalLayout.add(divGallery);
     }
 
-    private AlbumViewCard getAlbumInfoFromDb(Record record, boolean isEditable) {
+    private AlbumViewCard getAlbumsFromDb(Record record, boolean isEditable) {
         strPath = DIR_PHOTOS_SERVER + dirChar + subPathThumbs;
 
         String strFileName = record.getColumnData("name_new");
@@ -608,14 +680,14 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
 
         RouteParam routeAlbum = new RouteParam("title", strAlbumTitle);
         RouteParam routeUploader = new RouteParam("member", strUploader);
-        RouterLink linkUploader = new RouterLink(strUploader, AlbumsView.class, new RouteParameters(routeAlbum, routeUploader));
-        RouterLink linkAlbum = new RouterLink(strAlbumTitle, AlbumsView.class, new RouteParameters(routeAlbum, routeUploader));
+        RouterLink linkUploader = new RouterLink(strUploader, AlbumsView.class, new RouteParameters(routeUploader, routeAlbum));
+        RouterLink linkAlbum = new RouterLink(strAlbumTitle, AlbumsView.class, new RouteParameters(routeUploader, routeAlbum));
 
         String strImagePath = strPath + dirChar + strFileName;
         logger.info(" strImagePath " + strImagePath);
 
         GalleryImageViewCard imageGalleryViewCard = new GalleryImageViewCard(record, strImagePath, isMobile, userId, strUsername, sessionCreation, hostname, publicIp, isEditable,
-                linkAlbum, linkUploader, recordService);
+                recordService);
         return imageGalleryViewCard;
 
     }
@@ -761,6 +833,11 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
         lstQueryInsert.add(insertSQL);
 
         recordService.massRecordInsert(lstQueryInsert, null, null);
+    }
+
+
+    private void logErrorInDb(Exception e, String function, String hostname, int userId, String strUsername, String publicIp, long sessionCreation, String info) {
+        recordService.logErrorInDb(e, hostname, function, userId, strUsername, publicIp, Long.toString(sessionCreation), info);
     }
 
     public int[] calcTotalAvailableWidth() {

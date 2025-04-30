@@ -45,7 +45,7 @@
         font-family: Times-New-Roman, serif;
         font-weight: bold;
         color: #466ca8; /* #6c9494;*/
-        background-color: #c7d8f1;
+        background-color: #e6ecf0;
         border: #c7d8f1 1px solid;
         box-shadow: 1px 1px 6px lightgrey;
         border-radius: var(--lumo-border-radius-l);
@@ -130,7 +130,7 @@
         font-family: Times-New-Roman, serif;
         font-weight: bold;
         color: #466ca8; /* #6c9494;*/
-        background-color: #c7d8f1;
+        background-color: #e6ecf0; /*#c7d8f1;*/
         border: #c7d8f1 1px solid;
         box-shadow: 1px 1px 6px lightgrey;
         border-radius: var(--lumo-border-radius-l);
