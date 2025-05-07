@@ -42,7 +42,7 @@ public class GalleryImageViewCard extends Div {
     private RouterLink linkUploader;
     private RouterLink linkDestination;
 
-    private String dirChar = FileSystems.getDefault().getSeparator();
+    private String dirChar = "/"; //FileSystems.getDefault().getSeparator();
 
     public GalleryImageViewCard(Record record, String strImagePath, boolean isMobile, int userId, String strUserName, long sessionCreation,
                                 String hostname, String publicIp, boolean isEditable, RecordService recordService) {

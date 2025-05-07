@@ -42,7 +42,7 @@ public class AlbumViewCard extends VerticalLayout {
     private boolean isMobile;
     private GenericView genericView;
 
-    private String dirChar = FileSystems.getDefault().getSeparator();
+    private String dirChar = "/"; //FileSystems.getDefault().getSeparator();
 
     public AlbumViewCard(Record record, String strImagePath, boolean isMobile, int userId, String strUserName, long sessionCreation,
                          String hostname, String publicIp, boolean isEditable, RecordService recordService) {

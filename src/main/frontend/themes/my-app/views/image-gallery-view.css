@@ -51,7 +51,7 @@
 .image-gallery-view .gallery{
     max-width: fit-content;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(530px, 2fr)); /*  repeat(auto-fit, minmax(410px, 1fr)); */
+    grid-template-columns: repeat(auto-fit, minmax(530px, 1fr)); /*  repeat(auto-fit, minmax(410px, 1fr)); */
     grid-gap: 3rem;
     padding: 0;
     margin: 8px;
@@ -119,7 +119,7 @@
 .image-gallery-view .album-list{
     max-width: fit-content;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(490px, 2fr)); /* (380px, 720px)  minmax(180px, 1fr));*/
+    grid-template-columns: repeat(auto-fit, minmax(490px, 1fr)); /* (380px, 720px)  minmax(180px, 1fr));*/
     grid-gap: 3rem;
     margin: 8px;
 }

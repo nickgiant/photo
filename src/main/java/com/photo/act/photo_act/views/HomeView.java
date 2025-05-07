@@ -79,7 +79,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
     private String category;
 
-    private String dirChar = FileSystems.getDefault().getSeparator();
+    private String dirChar = "/"; //FileSystems.getDefault().getSeparator();
 
 
     public static String STR_ALL_CATEGORIES = "all-categories";
@@ -240,7 +240,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         H3 titleCarousel = new H3("Watch most recent 10 Uploaded Photos:");
         verticalLayout.add(titleCarousel, getCarousel(lstImage));
 
-        H3 titleLastLearnings = new H3("In previous 7 days were Posted Learnings:");
+        H3 titleLastLearnings = new H3("In previous 5 days were Posted Learnings:");
 
         VerticalLayout layoutLastLearnings = loadLastLearnings(sqlLearningsRead, arrColumnsLearning);
         verticalLayout.add(titleLastLearnings, layoutLastLearnings);

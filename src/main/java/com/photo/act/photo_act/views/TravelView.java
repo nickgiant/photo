@@ -70,7 +70,7 @@ public class TravelView extends Composite<VerticalLayout> implements HasUrlParam
     private String subsection = "";
     private String pageTitle = "Travelling";
 
-    private String dirChar = FileSystems.getDefault().getSeparator();
+    private String dirChar = "/"; //FileSystems.getDefault().getSeparator();
 
     public static String subPathThumbs = "photo-thumbs";
     public static String subPathMedium = "photo-medium";

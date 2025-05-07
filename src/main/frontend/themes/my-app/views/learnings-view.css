@@ -3,6 +3,7 @@
     background-color: #f9f9f9; /*#d8cebe; /*#e6ecf0; /*#edf7f5;*/
 
     h3 {
+        text-transform: capitalize;
         text-decoration: none;
         text-align: center;
         font-family: "Helvetica Neue", Arial, Helvetica, sans-serif; /* "Courier New", Courier, serif;*/
@@ -15,20 +16,50 @@
 
 }
 
-.learnings-view .video-container {
+.learnings-view .video-container-small {
     position: relative;
     overflow: hidden;
-    /*width: 100%;*/
     /*width: fit-content;*/
-    width: 600px; /*100%;*/
-    height: 320px;
-    padding: 0;
+    width: 426px;  /*426 x 240 pixels (240p)      640 x 360 pixels (360p)               854 x 480 pixels (480p)   */
+    height: 240px;
     margin: 0;
+    padding: 10px;
     border: none;
     /*padding-top: 56.25%;  !*16:9 (9/16 = 0.5625)*!*/
     border-radius: var(--lumo-border-radius-l);
 
-    box-shadow: var(--lumo-box-shadow-m)
+    box-shadow: var(--lumo-box-shadow-m);
+}
+
+.learnings-view .video-container-normal {
+    position: relative;
+    overflow: hidden;
+    /*width: fit-content;*/
+    width: 854px;  /*426 x 240 pixels (240p)      640 x 360 pixels (360p)               854 x 480 pixels (480p)   */
+    height: 480px;
+    margin: 0;
+    padding: 16;
+    border: none;
+    /*padding-top: 56.25%;  !*16:9 (9/16 = 0.5625)*!*/
+    border-radius: var(--lumo-border-radius-l);
+
+    box-shadow: var(--lumo-box-shadow-l);
+}
+
+.learnings-view .btn-more{
+    text-decoration: none;
+    color: var(--lumo-primary-text-color);
+    background: #e9e9e8;
+    margin: 1;
+    padding: 11;
+    border: transparent 2px solid;
+    border-radius: 25px;
+    transition: 0.4s;
+    &:hover{
+        cursor: pointer;
+        border: var(--lumo-primary-text-color) 2px solid;
+        transition: 0.4s;
+    }
 }
 
 .learnings-view .video-iframe {
@@ -118,6 +149,22 @@
                 color: var(--lumo-header-text-color); /*#9fafd5; */
             }
         }
+}
+
+
+.learnings-view .aggregate-detail{
+    gap: 1rem;
+    background: #f9f9f9;
+    padding: 10px;
+    margin: 0;
+    border: none;
+    border-radius: var(--lumo-border-radius-m);
+}
+
+
+.learnings-view .item-description {
+    background: #f9f9f9;
+    border-radius: var(--lumo-border-radius-m);
 }
 
 .learnings-view .actions-toolbar{
