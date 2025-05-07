@@ -41,7 +41,7 @@ import static com.photo.act.photo_act.views.MainLayout.*;
 @Route(value = "albums") //":category?")
 //@RouteAlias(value = "albums/title/:title?", layout = MainLayout.class)
 //@RouteAlias(value = "albums/member/:member?", layout = MainLayout.class)
-@RouteAlias(value = "albums/member/:member?/title/:title?", layout = MainLayout.class)
+@RouteAlias(value = "albums/member/:member?/:title?", layout = MainLayout.class)
 
 //@RouteAlias(value = "gallery/location/:destination?", layout = MainLayout.class)
 
@@ -69,7 +69,7 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
 
     private String strUrlRequestToBeLogged;
 
-    private String dirChar = FileSystems.getDefault().getSeparator();
+    private String dirChar = "/"; //FileSystems.getDefault().getSeparator();
     public static String subPathThumbs = "photo-thumbs";
     public static String subPathMedium = "photo-medium";
     public static String subPathUpload = "photo-upload";

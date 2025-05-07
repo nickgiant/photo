@@ -53,7 +53,7 @@ public class UploadImageCard extends VerticalLayout {
     private static final Logger logger = LoggerFactory.getLogger(UploadImageCard.class);
     private UtilsDate utilsDate;
 
-    private String dirChar = FileSystems.getDefault().getSeparator();
+    private String dirChar = "/"; //FileSystems.getDefault().getSeparator();
 
     private int intUserId;
     private String strUserName;

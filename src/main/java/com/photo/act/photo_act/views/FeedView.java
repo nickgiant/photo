@@ -64,7 +64,7 @@ public class FeedView extends Div implements AfterNavigationObserver {
     private String canonicalHostname;
 
 
-    private String dirChar = FileSystems.getDefault().getSeparator();
+    private String dirChar = "/"; //FileSystems.getDefault().getSeparator();
 
     public static String STR_ALL_TUTORS = "all-tutors";
     public static String STR_ALL_CATEGORIES = "all-categories";

@@ -19,7 +19,7 @@ public class NetUtils {
 
     }
     public String getClientPublicIp(String hostname) {
-        if(!hostname.equalsIgnoreCase("mike-SATELLITE-PRO-C50-H-11G")) {
+        if((!hostname.equalsIgnoreCase("mike-SATELLITE-PRO-C50-H-11G")) && (!hostname.equalsIgnoreCase("my-pc"))) {
             String publicIp;
             publicIp = VaadinRequest.getCurrent().getHeader("X-Real-IP");
 //            VaadinRequest.getCurrent().getRemoteAddr()
@@ -38,7 +38,7 @@ public class NetUtils {
             return publicIp;
         }
         else {
-            return "mike-SATELLITE-PRO-C50-H-11G";
+            return "mike-SATELLITE-PRO-C50-H-11G  -  my-pc";
         }
     }
 }

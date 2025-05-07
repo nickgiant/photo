@@ -72,7 +72,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
     private RecordService recordService;
     private String strHeader;
 
-    private String dirChar = FileSystems.getDefault().getSeparator();
+    private String dirChar = "/"; //FileSystems.getDefault().getSeparator();
     public static String subPathThumbs = "photo-thumbs";
     public static String subPathMedium = "photo-medium";
     public static String subPathUpload = "photo-upload";
