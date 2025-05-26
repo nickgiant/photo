@@ -119,51 +119,52 @@
 .image-gallery-view .album-list{
     max-width: fit-content;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(490px, 1fr)); /* (380px, 720px)  minmax(180px, 1fr));*/
-    grid-gap: 3rem;
+    grid-template-columns: repeat(auto-fit, minmax(390px, 1fr)); /* (380px, 720px)  minmax(180px, 1fr));*/
+    grid-gap: 1.8rem;
     margin: 8px;
 }
 
-.image-gallery-view .album-info-card{
-    border-top-left-radius: var(--lumo-border-radius-l);
-    border-top-right-radius: var(--lumo-border-radius-l);
-    border-bottom-left-radius: var(--lumo-border-radius-l);
-    border-bottom-right-radius: var(--lumo-border-radius-l);
 
+.image-gallery-view .album-info-card{
+    border-radius: var(--lumo-border-radius-m);
     padding: 0;
     margin: 0;
+    gap: 3px;
     text-decoration: none;
-    background-color: #f5ebe0; /* #f4eee1;*/
-    /*box-shadow: 1px 1px 6px lightgrey;*/
-    box-shadow: 1px 1px 4px lightgrey;
+    box-shadow: 2px 2px 8px lightgrey;
+    background-color: #c7d8f1; /* #f4eee1;*/
+
     border: transparent 2px solid;
     transition: 0.2s;
 
     &:hover {
         text-decoration: none;
-        box-shadow: 2px 2px 11px lightgrey;
+        background-color: #d9e5f7; /* #f4eee1;*/
+        /*box-shadow: 1px 1px 6px lightgrey;*/
         border: #78868f 2px solid;
-        transition: 0.4s;
+        box-shadow: 2px 2px 11px lightgrey;
+        transition: 0.2s;
         cursor: pointer;
-        h4{
-            text-decoration: none;
-            color: var(--lumo-contrast-70pct);    /*cd5c5c;*/
-            transition: 0.4s;
+
+        & h4 {
+            color: var(--lumo-primary-text-color);
         }
     }
 
     h4 {
         font-family: Times-New-Roman, serif;
-        color: #ca6702; /*var(--lumo-primary-alt-text-color);*/
+        color: var(--lumo-secondary-text-color);
 
         &:hover {
-            color: var(--lumo-secondary-text-color);
             text-decoration: none;
+            transition: 0.4s;
         }
     }
 
     a {
+        color: var(--lumo-secondary-text-color);
         &:hover {
+            transition: 0.4s;
             text-decoration: none;
             cursor: pointer;
         }

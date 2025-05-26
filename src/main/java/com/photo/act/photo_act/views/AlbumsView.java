@@ -69,7 +69,7 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
 
     private String strUrlRequestToBeLogged;
 
-    private String dirChar = "/"; //FileSystems.getDefault().getSeparator();
+    private String dirChar = FileSystems.getDefault().getSeparator();
     public static String subPathThumbs = "photo-thumbs";
     public static String subPathMedium = "photo-medium";
     public static String subPathUpload = "photo-upload";

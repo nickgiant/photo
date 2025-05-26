@@ -28,7 +28,6 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -52,6 +51,7 @@ public class AlbumViewCard extends VerticalLayout {
 
         genericView = new GenericView();
 
+        this.addClassNames(AlignItems.CENTER, JustifyContent.START, TextAlignment.CENTER);
         this.addClassName("album-info-card");
 
 
@@ -94,7 +94,7 @@ public class AlbumViewCard extends VerticalLayout {
 
         RouterLink routerLinkAlbum = new RouterLink();
         routerLinkAlbum.setRoute(AlbumsView.class, new RouteParameters(routeAlbum, routeUploader));
-        routerLinkAlbum.addClassNames(AlignItems.CENTER, JustifyContent.CENTER);
+        routerLinkAlbum.addClassNames(AlignItems.CENTER, JustifyContent.START, TextAlignment.CENTER);
 
 
         if (strPhoto1 != null && !strPhoto1.isEmpty() && !strPhoto1.equalsIgnoreCase("null")) {
@@ -130,18 +130,16 @@ public class AlbumViewCard extends VerticalLayout {
 
         Image image = new Image();
         image.addClassNames(Width.FULL, Height.FULL);
-        image.addClassNames(BorderRadius.LARGE);
 
         image.setSrc(imageResource);
         divImage.add(image);
 
         layoutImage.add(divImage);
 
-
         VerticalLayout divPhotoInfo = new VerticalLayout();
         divPhotoInfo.addClassNames(Overflow.HIDDEN, TextColor.TERTIARY,
-                AlignItems.CENTER, JustifyContent.BETWEEN,
-                Padding.SMALL, Margin.NONE, //Margin.Top.LARGE,
+                AlignItems.CENTER, JustifyContent.CENTER,
+                Padding.NONE, Margin.NONE, //Margin.Top.LARGE,
                 Gap.XSMALL,
                 BorderRadius.LARGE
         );
@@ -151,12 +149,12 @@ public class AlbumViewCard extends VerticalLayout {
 
 
         Div divTextDescription = new Div();
-        divTextDescription.addClassNames(Width.FULL, JustifyContent.CENTER, AlignItems.CENTER, Padding.NONE, Margin.SMALL);
+        divTextDescription.addClassNames(Width.FULL, JustifyContent.CENTER, AlignItems.CENTER, Padding.NONE, Margin.NONE);
 
         H4 header = new H4();
-        header.addClassNames(FontSize.LARGE, FontWeight.SEMIBOLD, Width.FULL, AlignItems.CENTER, JustifyContent.CENTER, Padding.MEDIUM,
-                TextAlignment.CENTER,
-                Margin.Horizontal.MEDIUM, Margin.Vertical.NONE
+        header.addClassNames(FontSize.LARGE, FontWeight.SEMIBOLD,
+                Width.FULL, TextAlignment.CENTER, AlignItems.CENTER, JustifyContent.CENTER,
+                Padding.MEDIUM, Margin.NONE
         );
 //        header.getStyle().set("font-family", "Times-New-Roman, serif");
         header.setText(strTitle);
@@ -167,10 +165,10 @@ public class AlbumViewCard extends VerticalLayout {
         }
 
         Div subtitle = new Div();
-        subtitle.addClassNames(FontSize.SMALL, Width.FULL, AlignItems.CENTER, JustifyContent.CENTER,
-                TextAlignment.CENTER,
+        subtitle.addClassNames(FontSize.SMALL,
+                Width.FULL, TextAlignment.CENTER, AlignItems.CENTER, JustifyContent.CENTER,
                 Padding.NONE,
-                Margin.Horizontal.NONE
+                Margin.NONE
         );
 
         if (!strDescription.trim().isEmpty() && !strDescription.equalsIgnoreCase("null")) {
@@ -191,21 +189,32 @@ public class AlbumViewCard extends VerticalLayout {
         HorizontalLayout layoutPhotosInfo = new HorizontalLayout();
         layoutPhotosInfo.addClassNames(
                 Overflow.HIDDEN, Width.FULL,
-                AlignItems.CENTER, JustifyContent.AROUND,
+                AlignItems.CENTER, JustifyContent.EVENLY,
                 Margin.NONE,
-                Padding.XSMALL,
-                Gap.SMALL,
+                Padding.NONE,
+                Gap.XSMALL,
                 //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
                 //   Background.CONTRAST_5,
                 BorderRadius.NONE
         );
 
+        VerticalLayout layoutPhotoCountAll = new VerticalLayout();
+        layoutPhotoCountAll.addClassNames(
+                //  Overflow.HIDDEN, Width.FULL,
+                AlignItems.CENTER, JustifyContent.CENTER,
+                Margin.NONE,
+                Padding.NONE,
+                Gap.XSMALL,
+                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+                //   Background.CONTRAST_5,
+                BorderRadius.NONE
+        );
         HorizontalLayout layoutPhotoCount = new HorizontalLayout();
         layoutPhotoCount.addClassNames(
 //                Overflow.HIDDEN, Width.FULL,
                 AlignItems.CENTER, JustifyContent.CENTER,
                 Margin.NONE,
-                Padding.XSMALL,
+                Padding.NONE,
                 Gap.XSMALL,
                 //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
                 //   Background.CONTRAST_5,
@@ -213,13 +222,27 @@ public class AlbumViewCard extends VerticalLayout {
         );
         Div divPhotoCount = new Div(intAlbumPhotoCount + "");
         layoutPhotoCount.add(FontAwesome.Regular.IMAGES.create(), divPhotoCount);
+        Div divCountLabel = new Div("Photos");
+        divCountLabel.addClassNames(FontSize.XXSMALL);
+        layoutPhotoCountAll.add(layoutPhotoCount, divCountLabel);
 
+        VerticalLayout layoutViewCountAll = new VerticalLayout();
+        layoutViewCountAll.addClassNames(
+                //   Overflow.HIDDEN, Width.FULL,
+                AlignItems.CENTER, JustifyContent.CENTER,
+                Margin.NONE,
+                Padding.NONE,
+                Gap.XSMALL,
+                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+                //   Background.CONTRAST_5,
+                BorderRadius.NONE
+        );
         HorizontalLayout layoutViewCount = new HorizontalLayout();
         layoutViewCount.addClassNames(
 //                Overflow.HIDDEN, Width.FULL,
                 AlignItems.CENTER, JustifyContent.CENTER,
                 Margin.NONE,
-                Padding.XSMALL,
+                Padding.NONE,
                 Gap.XSMALL,
                 //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
                 //   Background.CONTRAST_5,
@@ -227,13 +250,27 @@ public class AlbumViewCard extends VerticalLayout {
         );
         Div divViews = new Div("1");
         layoutViewCount.add(FontAwesome.Regular.EYE.create(), divViews);
+        Div divViewsLabel = new Div("Views");
+        divViewsLabel.addClassNames(FontSize.XXSMALL);
+        layoutViewCountAll.add(layoutViewCount, divViewsLabel);
 
+        VerticalLayout layoutLocationsCountAll = new VerticalLayout();
+        layoutLocationsCountAll.addClassNames(
+                // Overflow.HIDDEN, Width.FULL,
+                AlignItems.CENTER, JustifyContent.CENTER,
+                Margin.NONE,
+                Padding.NONE,
+                Gap.XSMALL,
+                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+                //   Background.CONTRAST_5,
+                BorderRadius.NONE
+        );
         HorizontalLayout layoutLocationsCount = new HorizontalLayout();
         layoutLocationsCount.addClassNames(
 //                Overflow.HIDDEN, Width.FULL,
                 AlignItems.CENTER, JustifyContent.CENTER,
                 Margin.NONE,
-                Padding.XSMALL,
+                Padding.NONE,
                 Gap.XSMALL,
                 //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
                 //   Background.CONTRAST_5,
@@ -241,13 +278,27 @@ public class AlbumViewCard extends VerticalLayout {
         );
         Div divLocations = new Div("1");
         layoutLocationsCount.add(FontAwesome.Regular.COMPASS.create(), divLocations);
+        Div divLocationsLabel = new Div("Locations");
+        divLocationsLabel.addClassNames(FontSize.XXSMALL);
+        layoutLocationsCountAll.add(layoutLocationsCount, divLocationsLabel);
 
+        VerticalLayout layoutDateAlbumCreatedAll = new VerticalLayout();
+        layoutDateAlbumCreatedAll.addClassNames(
+                //    Overflow.HIDDEN, Width.FULL,
+                AlignItems.CENTER, JustifyContent.CENTER,
+                Margin.NONE,
+                Padding.NONE,
+                Gap.XSMALL,
+                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+                //   Background.CONTRAST_5,
+                BorderRadius.NONE
+        );
         HorizontalLayout layoutDateAlbumCreated = new HorizontalLayout();
         layoutDateAlbumCreated.addClassNames(
 //                Overflow.HIDDEN, Width.FULL,
                 AlignItems.CENTER, JustifyContent.CENTER,
                 Margin.NONE,
-                Padding.XSMALL,
+                Padding.NONE,
                 Gap.XSMALL,
                 //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
                 //   Background.CONTRAST_5,
@@ -255,14 +306,17 @@ public class AlbumViewCard extends VerticalLayout {
         );
         Div divDate = new Div(strDateAlbumCreated);
         layoutDateAlbumCreated.add(VaadinIcon.CALENDAR_CLOCK.create(), divDate); // FontAwesome.Regular.CALENDAR.create()
+        Div divAlbumCreatedLabel = new Div("Created");
+        divAlbumCreatedLabel.addClassNames(FontSize.XXSMALL);
+        layoutDateAlbumCreatedAll.add(layoutDateAlbumCreated, divAlbumCreatedLabel);
 
-        layoutPhotosInfo.add(layoutPhotoCount, layoutViewCount, layoutLocationsCount, layoutDateAlbumCreated);
+        layoutPhotosInfo.add(layoutPhotoCountAll, layoutViewCountAll, layoutLocationsCountAll, layoutDateAlbumCreatedAll);
 
         HorizontalLayout layoutUserActions = new HorizontalLayout();
         layoutUserActions.addClassNames(
                 Overflow.HIDDEN, Width.FULL,
                 AlignItems.CENTER, JustifyContent.CENTER,
-                Margin.SMALL,
+                Margin.NONE,
                 Padding.NONE,
                 Gap.SMALL,
                 //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
@@ -297,8 +351,8 @@ public class AlbumViewCard extends VerticalLayout {
         layoutUserActions.add(btnMoreAction, btnComment, btnMoreInfo);
 
 
-        divPhotoInfo.add(header, subtitle, layoutPhotosInfo); //, layoutUserActions);
-        routerLinkAlbum.add(layoutImage, divPhotoInfo);
+        divPhotoInfo.add(layoutPhotosInfo); //, layoutUserActions);
+        routerLinkAlbum.add(header, subtitle, layoutImage, divPhotoInfo);
 
 
 //        Avatar userAvatar = new Avatar(strAlbumUserName);
@@ -332,7 +386,7 @@ public class AlbumViewCard extends VerticalLayout {
                 AlignItems.CENTER, JustifyContent.AROUND,
                 Margin.NONE,
                 Padding.XSMALL,
-                Gap.SMALL,
+                Gap.XSMALL,
                 //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
                 //   Background.CONTRAST_5,
                 BorderRadius.NONE
@@ -396,7 +450,7 @@ public class AlbumViewCard extends VerticalLayout {
         layoutMemberInfo.add(layoutMemberPhotoCount, layoutMemberViewCount, layoutMemberLocationsCount, layoutDateJoined);
         detailsMember.add(avatarLargeItemMe, layoutMemberInfo);
 
-        this.addClassNames(Border.NONE, Padding.NONE, Margin.NONE);
+//        this.addClassNames(Border.NONE, Padding.NONE, Margin.NONE);
         this.add(routerLinkAlbum, detailsMember);
 
     }
