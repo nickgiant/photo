@@ -177,7 +177,7 @@ nav a:any-link { /* :any-link */
 
 nav a:hover{
     color: var(--lumo-contrast-80pct); /*var(--lumo-secondary-text-color); /*#cd5c5c; /* #a62f03; !*#cd5c5c;*/
-    /*background-color: var(--lumo-contrast-5pct);; !* #e6ecf0;*!*/
+    background-color: var(--lumo-contrast-5pct); /* #e6ecf0;*/
     border-radius: 0;
     transition: 0.4s;
     cursor: pointer;
@@ -203,7 +203,7 @@ nav a[highlight] vaadin-icon {
 nav a[highlight] {
     font-weight: bolder;
     color: var(--lumo-contrast-70pct); /*darkslategray;*/
-    background-color: var(--lumo-contrast-10pct);;
+    background-color: transparent;
 }
 
 nav ul {

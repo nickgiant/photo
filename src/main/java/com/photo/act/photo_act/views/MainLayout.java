@@ -79,33 +79,6 @@ public class MainLayout extends AppLayout {
     private int userId;
     private String strUsername;
 
-//    public MainLayout() {
-//        InetAddress inetAddress = null;
-//        try {
-//            inetAddress = InetAddress.getLocalHost();
-//        } catch (UnknownHostException e) {
-//            throw new RuntimeException(e);
-//        }
-//        String hostname = inetAddress.getHostName();
-//
-//        isMobile = VaadinSession.getCurrent().getBrowser().isAndroid() || VaadinSession.getCurrent().getBrowser().isIPhone();
-//
-//
-//        userId = 1;
-//        strUsername = "visitor-user";
-//
-//
-//        logger.info("hostname:" + hostname + " isMobile:" + isMobile);
-//
-//        createDrawer();
-//        this.addToNavbar(createHeaderContent());
-//        this.setDrawerOpened(true);
-//
-//        this.setPrimarySection(Section.DRAWER);
-
-    /// /        this.addDrawerContent();
-    /// /        addHeaderContent();
-//    }
     public MainLayout() {
 
         InetAddress inetAddress = null;
@@ -118,10 +91,8 @@ public class MainLayout extends AppLayout {
 
         isMobile = VaadinSession.getCurrent().getBrowser().isAndroid() || VaadinSession.getCurrent().getBrowser().isIPhone();
 
-
         userId = 1;
         strUsername = "visitor-user";
-
 
         logger.info("hostname:" + hostname + " isMobile:" + isMobile);
 
