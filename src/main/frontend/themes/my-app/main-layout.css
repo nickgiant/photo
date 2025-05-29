@@ -177,7 +177,8 @@ nav a:any-link { /* :any-link */
 
 nav a:hover{
     color: var(--lumo-contrast-80pct); /*var(--lumo-secondary-text-color); /*#cd5c5c; /* #a62f03; !*#cd5c5c;*/
-    background-color: var(--lumo-contrast-5pct); /* #e6ecf0;*/
+    /*background-color: var(--lumo-contrast-5pct);; !* #e6ecf0;*!*/
+    background-color: var(--lumo-contrast-10pct);
     border-radius: 0;
     transition: 0.4s;
     cursor: pointer;
@@ -197,13 +198,13 @@ nav a:focus-visible {
 }
 
 nav a[highlight] vaadin-icon {
-    color: var(--lumo-contrast-80pct); /* #cd5c5c; /*var(--lumo-contrast-50pct);*/
+   /* color: var(--lumo-contrast-80pct); /* #cd5c5c; /*var(--lumo-contrast-50pct);*/
 }
 
 nav a[highlight] {
-    font-weight: bolder;
-    color: var(--lumo-contrast-70pct); /*darkslategray;*/
-    background-color: transparent;
+   /* font-weight: bolder;*/
+   /* color: var(--lumo-contrast-70pct);
+    background-color: transparent;*/
 }
 
 nav ul {
@@ -406,4 +407,27 @@ nav ul:hover li:hover ~ li:before {
 /*    align-items: center;*/
 /*    gap: var(--lumo-space-s);*/
 /*    line-height: var(--lumo-line-height-s);*/
-
+footer {
+  background-color: #514c3f;
+  color: #fff;
+  text-align: center;
+  padding: 30px 0 20px;
+}
+footer h1 {
+  color: #bd0852;
+  text-align: center;
+  text-transform: lowercase;
+  font-size: 38px;
+  font-weight: 400;
+  letter-spacing: 2px;
+  line-height: 0.8;
+  padding: 32px 0 20px;
+  font-family:  "Lucida Console", "Lucida Sans Typewriter", Courier;
+}
+footer span {
+  text-transform: uppercase;
+  letter-spacing: 5px;
+  /*font-size: 19px;*/
+  padding: 5px 0 27px;
+  line-height: 1;
+}

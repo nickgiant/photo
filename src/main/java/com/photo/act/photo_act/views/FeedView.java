@@ -64,7 +64,7 @@ public class FeedView extends Div implements AfterNavigationObserver {
     private String canonicalHostname;
 
 
-    private String dirChar = "/"; //FileSystems.getDefault().getSeparator();
+    private String dirChar = FileSystems.getDefault().getSeparator();
 
     public static String STR_ALL_TUTORS = "all-tutors";
     public static String STR_ALL_CATEGORIES = "all-categories";
@@ -112,6 +112,8 @@ public class FeedView extends Div implements AfterNavigationObserver {
 
         if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP)) {
             DIR_PHOTOS_SERVER = "/home/mike/Pictures/lazy-photos";
+        } else if(hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_WIN)){
+            DIR_PHOTOS_SERVER =  "C:\\Users\\nickg\\Pictures\\lazy-photos";
         } else if (hostname.equalsIgnoreCase("piot")) {
             DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
         } else {
@@ -521,6 +523,7 @@ public class FeedView extends Div implements AfterNavigationObserver {
         if (strPath == null || strPath.isEmpty()) {
             strPath = "NULL";
         } else {
+            strPath = strPath.replace("\\","-");
             strPath = "'" + strPath + "'";
         }
 

@@ -10,6 +10,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 
+import static com.photo.act.photo_act.views.MainLayout.HOSTNAME_LAPTOP;
+import static com.photo.act.photo_act.views.MainLayout.HOSTNAME_LAPTOP_WIN;
+
 public class NetUtils {
 
     private static final Logger logger = LoggerFactory.getLogger(NetUtils.class);
@@ -19,8 +22,8 @@ public class NetUtils {
 
     }
     public String getClientPublicIp(String hostname) {
-        if((!hostname.equalsIgnoreCase("mike-SATELLITE-PRO-C50-H-11G")) && (!hostname.equalsIgnoreCase("my-pc"))) {
-            String publicIp;
+        if((!hostname.equalsIgnoreCase(HOSTNAME_LAPTOP))) // && (!hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_WIN))) {
+        {   String publicIp;
             publicIp = VaadinRequest.getCurrent().getHeader("X-Real-IP");
 //            VaadinRequest.getCurrent().getRemoteAddr()
 //            if(publicIp.equalsIgnoreCase("185.162.238.159" )) {
