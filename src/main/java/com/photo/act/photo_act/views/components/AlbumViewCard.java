@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -41,7 +42,7 @@ public class AlbumViewCard extends VerticalLayout {
     private boolean isMobile;
     private GenericView genericView;
 
-    private String dirChar = "/"; //FileSystems.getDefault().getSeparator();
+    private String dirChar = FileSystems.getDefault().getSeparator();
 
     public AlbumViewCard(Record record, String strImagePath, boolean isMobile, int userId, String strUserName, long sessionCreation,
                          String hostname, String publicIp, boolean isEditable, RecordService recordService) {
@@ -143,9 +144,6 @@ public class AlbumViewCard extends VerticalLayout {
                 Gap.XSMALL,
                 BorderRadius.LARGE
         );
-
-//            layoutImage.addClassName("info-panel");
-//            divPhotoInfo.addClassName("info-panel");
 
 
         Div divTextDescription = new Div();

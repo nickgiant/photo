@@ -42,7 +42,7 @@ public class GalleryImageViewCard extends Div {
     private RouterLink linkUploader;
     private RouterLink linkDestination;
 
-    private String dirChar = "/"; //FileSystems.getDefault().getSeparator();
+    private String dirChar = FileSystems.getDefault().getSeparator();
 
     public GalleryImageViewCard(Record record, String strImagePath, boolean isMobile, int userId, String strUserName, long sessionCreation,
                                 String hostname, String publicIp, boolean isEditable, RecordService recordService) {
@@ -103,8 +103,9 @@ public class GalleryImageViewCard extends Div {
         HorizontalLayout layoutImage = new HorizontalLayout();
 //        layoutImage.addClassName("id-card");
         layoutImage.addClassNames(
-                Padding.NONE, Border.NONE,// Background.CONTRAST_50,
-                BorderRadius.LARGE
+                Border.NONE,// Background.CONTRAST_50,
+                Padding.NONE, Margin.NONE //Margin.Top.LARGE,
+ //               BorderRadius.LARGE
 //                BoxShadow.SMALL
         );
 
@@ -124,18 +125,21 @@ public class GalleryImageViewCard extends Div {
         divPhotoInfo.addClassNames(Overflow.HIDDEN, TextColor.TERTIARY,
                 AlignItems.CENTER, JustifyContent.BETWEEN,
                 Padding.NONE, Margin.NONE, //Margin.Top.LARGE,
-                Gap.XSMALL,
-                BorderRadius.LARGE
+                Gap.XSMALL
+//                BorderRadius.LARGE
 //                BoxShadow.SMALL
         );
 
         if (isMobile) {
 //            this.addClassName("gallery-view-card-mobile");
-            layoutImage.addClassName("info-panel");
-            divPhotoInfo.addClassName("info-panel");
+            layoutImage.addClassName("image-and-info-panel");
+            divPhotoInfo.addClassName("image-and-info-panel");
+            layoutImage.addClassName("image-and-info-panel-mobile");
+            divPhotoInfo.addClassName("image-and-info-panel-mobile");
+
         } else {
-            layoutImage.addClassName("info-panel");
-            divPhotoInfo.addClassName("info-panel");
+            layoutImage.addClassName("image-and-info-panel");
+            divPhotoInfo.addClassName("image-and-info-panel");
 //            this.addClassName("bottom-radius-shadow");
         }
 

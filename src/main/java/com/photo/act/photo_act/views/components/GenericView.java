@@ -5,10 +5,7 @@ import com.photo.act.photo_act.services.WeatherService;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.contextmenu.HasMenuItems;
 import com.vaadin.flow.component.contextmenu.MenuItem;
-import com.vaadin.flow.component.html.Anchor;
-import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.H1;
-import com.vaadin.flow.component.html.Image;
+import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -224,40 +221,42 @@ public class GenericView {
         return image;
     }
 
-    public VerticalLayout loadFooter(boolean isMobile) {
+    public Footer loadFooter(boolean isMobile) {
 
-        Div logoLayout = new Div();
-        logoLayout.addClassNames(LumoUtility.Display.FLEX, LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER,
-                LumoUtility.Width.FULL,
-                LumoUtility.Gap.XSMALL,
-                LumoUtility.Margin.NONE,
-                LumoUtility.Padding.MEDIUM
-        );
+        Footer footer = new Footer();
+
+//        Div logoLayout = new Div();
+//        logoLayout.addClassNames(LumoUtility.Display.FLEX, LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER,
+//                LumoUtility.Width.FULL,
+//                LumoUtility.Gap.XSMALL,
+//                LumoUtility.Margin.NONE,
+//                LumoUtility.Padding.MEDIUM
+//        );
 
         H1 appName = new H1(APP_NAME);
         //appName.addClassNames(Margin.Vertical.MEDIUM, AlignItems.CENTER, Margin.End.AUTO, FontSize.LARGE, FontWeight.BOLD, TextColor.TERTIARY);
-        appName.addClassNames(LumoUtility.FontSize.LARGE, LumoUtility.FontWeight.SEMIBOLD, LumoUtility.TextColor.TERTIARY,
-                LumoUtility.Padding.NONE, LumoUtility.Margin.NONE);
-        appName.getStyle().set("font-family", "Times-New-Roman, serif");
-        appName.getStyle().set("font-stretch", "semi-expanded");
-        appName.getStyle().setColor("#514c3f");
+//        appName.addClassNames(LumoUtility.FontSize.LARGE, LumoUtility.FontWeight.SEMIBOLD, LumoUtility.TextColor.TERTIARY,
+//                LumoUtility.Padding.NONE, LumoUtility.Margin.NONE);
+//        appName.getStyle().set("font-family", "Times-New-Roman, serif");
+//        appName.getStyle().set("font-stretch", "semi-expanded");
+//        appName.getStyle().setColor("#514c3f");
 //        appName.getStyle().setColor("#eaeae8");//"#f9943b");//""#bd3450");
 
-        Div divLogo = new Div();
-        divLogo.add(VaadinIcon.CAMERA.create());
+        Span cameraLogo = new Span();
+        cameraLogo.add(VaadinIcon.CAMERA.create());
         // divLogo.addClassNames(Margin.Vertical.MEDIUM, AlignItems.CENTER, Margin.End.LARGE, FontSize.LARGE, FontWeight.BOLD,TextColor.TERTIARY);
-        divLogo.addClassNames(LumoUtility.FontSize.MEDIUM, LumoUtility.FontWeight.BOLD, LumoUtility.TextColor.TERTIARY,
-                LumoUtility.Padding.NONE, LumoUtility.Margin.NONE);
-        divLogo.getStyle().setColor("#514c3f");
+//        divLogo.addClassNames(LumoUtility.FontSize.MEDIUM, LumoUtility.FontWeight.BOLD, LumoUtility.TextColor.TERTIARY,
+//                LumoUtility.Padding.NONE, LumoUtility.Margin.NONE);
+//        divLogo.getStyle().setColor("#514c3f");
 
         //divLogo.getStyle().setColor("rgba(231, 24, 24, 0.5)");
         //divLogo.getStyle().setColor("#d64f00");
 
-        logoLayout.add(divLogo, appName);
 
-        Div divPhotoActMoto = new Div("Act around Photography");
-        divPhotoActMoto.addClassNames(LumoUtility.FontSize.MEDIUM, LumoUtility.FontWeight.SEMIBOLD,
-                LumoUtility.Padding.NONE, LumoUtility.Margin.MEDIUM);
+
+        Span divPhotoActMoto = new Span("[ Network and Act around Photography ]");
+//        divPhotoActMoto.addClassNames(LumoUtility.FontSize.MEDIUM, LumoUtility.FontWeight.SEMIBOLD,
+//                LumoUtility.Padding.NONE, LumoUtility.Margin.MEDIUM);
 
 //        HorizontalLayout layoutLine = new HorizontalLayout();
 //        if(isMobile) {
@@ -289,47 +288,47 @@ public class GenericView {
 //        layoutLine.add(divTitle);
 
 
-        VerticalLayout layoutFooter = new VerticalLayout();
-        layoutFooter.setMinHeight("250px");
-        layoutFooter.getStyle().setBackgroundColor("#8d8d8d"); //"#78868f");
-        layoutFooter.getStyle().setColor("#eaeae8");
-//        layoutFooter.addClassName("bottom-radius-shadow");
-
-        if (isMobile) {
-            layoutFooter.addClassNames(
-                    LumoUtility.Overflow.HIDDEN, LumoUtility.Width.FULL,
-                    LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.EVENLY,
-                    LumoUtility.Margin.NONE,
-                    LumoUtility.Padding.NONE,
-                    LumoUtility.Gap.MEDIUM,
-                    //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-//                    Background.CONTRAST_5,
-                    LumoUtility.BorderRadius.NONE);
-        } else {
-            layoutFooter.addClassNames(
-                    LumoUtility.Overflow.HIDDEN, LumoUtility.Width.FULL,
-                    LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER,
-                    LumoUtility.Margin.NONE,
-                    LumoUtility.Padding.MEDIUM,
-                    LumoUtility.Gap.MEDIUM,
-                    //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-//                    Background.CONTRAST_5,
-                    LumoUtility.BorderRadius.NONE);
-        }
+//        VerticalLayout layoutFooter = new VerticalLayout();
+//        layoutFooter.setMinHeight("250px");
+//        layoutFooter.getStyle().setBackgroundColor("#8d8d8d"); //"#78868f");
+//        layoutFooter.getStyle().setColor("#eaeae8");
+////        layoutFooter.addClassName("bottom-radius-shadow");
+//
+//        if (isMobile) {
+//            layoutFooter.addClassNames(
+//                    LumoUtility.Overflow.HIDDEN, LumoUtility.Width.FULL,
+//                    LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.EVENLY,
+//                    LumoUtility.Margin.NONE,
+//                    LumoUtility.Padding.NONE,
+//                    LumoUtility.Gap.MEDIUM,
+//                    //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+////                    Background.CONTRAST_5,
+//                    LumoUtility.BorderRadius.NONE);
+//        } else {
+//            layoutFooter.addClassNames(
+//                    LumoUtility.Overflow.HIDDEN, LumoUtility.Width.FULL,
+//                    LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER,
+//                    LumoUtility.Margin.NONE,
+//                    LumoUtility.Padding.MEDIUM,
+//                    LumoUtility.Gap.MEDIUM,
+//                    //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+////                    Background.CONTRAST_5,
+//                    LumoUtility.BorderRadius.NONE);
+//        }
 //        layoutFooter.addClassName("footer");
         Div divLineBottom = new Div();
         divLineBottom.addClassNames(
                 LumoUtility.Overflow.HIDDEN, LumoUtility.Width.FULL,
                 LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER,
                 LumoUtility.Margin.NONE,
-                LumoUtility.Padding.LARGE,
+                LumoUtility.Padding.MEDIUM,
                 LumoUtility.Gap.MEDIUM,
                 //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
                 LumoUtility.Background.PRIMARY,
                 LumoUtility.BorderRadius.NONE);
 
-        layoutFooter.add(logoLayout, divPhotoActMoto, divLineBottom);
-        return layoutFooter;
+        footer.add(cameraLogo,appName, divPhotoActMoto, divLineBottom);
+        return footer;
     }
 
 

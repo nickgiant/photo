@@ -37,6 +37,7 @@ import java.util.UUID;
 
 import static com.photo.act.photo_act.views.GalleryView.*;
 import static com.photo.act.photo_act.views.MainLayout.HOSTNAME_LAPTOP;
+import static com.photo.act.photo_act.views.MainLayout.HOSTNAME_LAPTOP_WIN;
 
 public class UploadImageCard extends VerticalLayout {
 
@@ -53,7 +54,7 @@ public class UploadImageCard extends VerticalLayout {
     private static final Logger logger = LoggerFactory.getLogger(UploadImageCard.class);
     private UtilsDate utilsDate;
 
-    private String dirChar = "/"; //FileSystems.getDefault().getSeparator();
+    private String dirChar = FileSystems.getDefault().getSeparator();
 
     private int intUserId;
     private String strUserName;
@@ -87,7 +88,9 @@ public class UploadImageCard extends VerticalLayout {
         this.recordService = recordService;
 
         if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP)) {
-            DIR_PHOTOS_SERVER = "/home/mike/Pictures/lazy-photos";
+                     DIR_PHOTOS_SERVER = "/home/mike/Pictures/lazy-photos";
+        } else if(hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_WIN)){
+            DIR_PHOTOS_SERVER =  "C:\\Users\\nickg\\Pictures\\lazy-photos";
         } else if (hostname.equalsIgnoreCase("piot")) {
             DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
         } else {
@@ -170,7 +173,6 @@ public class UploadImageCard extends VerticalLayout {
                 );
                 notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
 
-
                 mailSend.sendSimpleMail("nickgiant@yahoo.com", "getUploadImageCard to upload  " + errorMessage + "  -  " + publicIp, " " + publicIp + " " + hostname + "  -  " + errorMessage);
                 logErrorInDb(e, "getUploadImageCard to upload", this.file.getAbsolutePath(), intUserId, strUserName);
 
@@ -180,9 +182,12 @@ public class UploadImageCard extends VerticalLayout {
 
             ImageUtilsMeta imageUtilsMeta = new ImageUtilsMeta();
             File imgFile = new File(outputUploadFileName);
+            logger.info("for photo "+outputUploadFileName+" get meta info");
             StringBuilder strImageMetaInfo = new StringBuilder();
             try {
+              //  logger.info(" A for photo "+outputUploadFileName+" get meta info to html "+imgFile.getAbsolutePath());
                 strImageMetaInfo.append(imageUtilsMeta.getMetadataInfo(imgFile));
+             //   logger.info(" B for photo "+outputUploadFileName+" get meta info to list "+imgFile.getAbsolutePath());
                 lstPhotoMetaData = imageUtilsMeta.getListImageInfo();
                 if (lstPhotoMetaData != null && lstPhotoMetaData.size() > 0) {
                     Html imageInfo = new Html(strImageMetaInfo.toString());
@@ -241,7 +246,7 @@ public class UploadImageCard extends VerticalLayout {
 
 
                     double dblSize = Double.parseDouble(event.getContentLength() + "");
-                    String strFilesize = String.format("%.2f", dblSize);
+                    String strFilesize = getFileSizeMB(dblSize)+" MB";  //String.format("%.2f", dblSize);
                     String message = "Photo Uploaded ! (" + strFilesize + ")";
 
                     Notification notification = Notification.show(message, 4000, Notification.Position.MIDDLE);
@@ -677,6 +682,12 @@ public class UploadImageCard extends VerticalLayout {
     }
 
     private double getFileSizeAsDouble(File file) {
+
+        double filesizeMB = (double) file.length() / (1024 * 1024);// + " mb";
+        return filesizeMB;
+    }
+
+    private double getFileSizeMB(double fileSize) {
 
         double filesizeMB = (double) file.length() / (1024 * 1024);// + " mb";
         return filesizeMB;
