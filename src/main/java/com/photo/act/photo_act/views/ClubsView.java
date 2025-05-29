@@ -62,7 +62,7 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
     private RecordService recordService;
     private String strHeader;
 
-    private String dirChar = "/"; //FileSystems.getDefault().getSeparator();
+    private String dirChar = FileSystems.getDefault().getSeparator();
     public static String subPathThumbs = "photo-thumbs";
     public static String subPathMedium = "photo-medium";
     public static String subPathUpload = "photo-upload";
@@ -190,7 +190,10 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
         canonicalHostname = inetAddress.getCanonicalHostName();
 
         if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP)) {
-            DIR_PHOTOS_SERVER = "/home/mike/Pictures/lazy-photos";
+                     DIR_PHOTOS_SERVER = "/home/mike/Pictures/lazy-photos";
+        } else if(hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_WIN)){
+            DIR_PHOTOS_SERVER =  "C:\\Users\\nickg\\Pictures\\lazy-photos";
+
         } else if (hostname.equalsIgnoreCase("piot")) {
             DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
         } else {
@@ -928,8 +931,10 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
         if (strPath == null || strPath.isEmpty()) {
             strPath = "NULL";
         } else {
+            strPath = strPath.replace("\\","-");
             strPath = "'" + strPath + "'";
         }
+
 
 
         logger.info("photo visitor:" + publicIp + " . " + hostname + " . " + hostAddress + " . " + canonicalHostname + "  .  " + browser + " " + sessionid);

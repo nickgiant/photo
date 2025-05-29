@@ -68,6 +68,13 @@ public class ImageUtilsMeta {
             printTagValue(jpegMetadata, GpsTagConstants.GPS_TAG_GPS_LATITUDE);
             printTagValue(jpegMetadata, GpsTagConstants.GPS_TAG_GPS_LONGITUDE_REF);
             printTagValue(jpegMetadata, GpsTagConstants.GPS_TAG_GPS_LONGITUDE);
+            printTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_FOCAL_LENGTH);
+            printTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_FOCAL_LENGTH_IN_35MM_FORMAT);
+            printTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_METERING_MODE);
+            printTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_FNUMBER);
+            printTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_EXPOSURE_PROGRAM);
+            printTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_EXPOSURE_MODE);
+
 
             System.out.println();
 
@@ -314,6 +321,14 @@ public class ImageUtilsMeta {
             metadataInfo.append(getTagValueAsHtml(jpegMetadata, GpsTagConstants.GPS_TAG_GPS_LONGITUDE));
 
             metadataInfo.append(getTagValueAsHtml(jpegMetadata, ExifTagConstants.EXIF_TAG_METERING_MODE));
+
+            metadataInfo.append(getTagValueAsHtml(jpegMetadata, ExifTagConstants.EXIF_TAG_FNUMBER));
+            metadataInfo.append(getTagValueAsHtml(jpegMetadata, ExifTagConstants.EXIF_TAG_CAMERA_OWNER_NAME));
+            metadataInfo.append(getTagValueAsHtml(jpegMetadata, ExifTagConstants.EXIF_TAG_IMAGE_NUMBER));
+            metadataInfo.append(getTagValueAsHtml(jpegMetadata, ExifTagConstants.EXIF_TAG_IMAGE_UNIQUE_ID));
+            metadataInfo.append(getTagValueAsHtml(jpegMetadata, ExifTagConstants.EXIF_TAG_SERIAL_NUMBER));
+
+
 
             final List<ImageMetadataItem> items = jpegMetadata.getItems();
             for (final ImageMetadataItem item : items) {

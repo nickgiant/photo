@@ -65,7 +65,7 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
     private RecordService recordService;
     private String strHeader;
 
-    private String dirChar = "/"; //FileSystems.getDefault().getSeparator();
+    private String dirChar = FileSystems.getDefault().getSeparator();
     public static String subPathThumbs = "photo-thumbs";
     public static String subPathMedium = "photo-medium";
     public static String subPathUpload = "photo-upload";
@@ -193,7 +193,10 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
         canonicalHostname = inetAddress.getCanonicalHostName();
 
         if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP)) {
-            DIR_PHOTOS_SERVER = "/home/mike/Pictures/lazy-photos";
+                     DIR_PHOTOS_SERVER = "/home/mike/Pictures/lazy-photos";
+        } else if(hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_WIN)){
+            DIR_PHOTOS_SERVER =  "C:\\Users\\nickg\\Pictures\\lazy-photos";
+
         } else if (hostname.equalsIgnoreCase("piot")) {
             DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
         } else {
@@ -1103,6 +1106,7 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
         if (strPath == null || strPath.isEmpty()) {
             strPath = "NULL";
         } else {
+            strPath = strPath.replace("\\","-");
             strPath = "'" + strPath + "'";
         }
 

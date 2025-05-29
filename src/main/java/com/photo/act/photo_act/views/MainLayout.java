@@ -43,9 +43,10 @@ import java.net.UnknownHostException;
 public class MainLayout extends AppLayout {
 
     public static final String APP_VERSION = "2025.04.0.14";
-    public static final String APP_NAME = "PhotoAct";
+    public static final String APP_NAME = "PhotoAct.net";
 
     public static final String HOSTNAME_LAPTOP = "mike-SATELLITE-PRO-C50-H-11G";
+    public static final String HOSTNAME_LAPTOP_WIN = "my-pc";
 
     private static final Logger logger = LoggerFactory.getLogger(MainLayout.class);
     private boolean isMobile;
