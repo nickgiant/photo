@@ -11,7 +11,7 @@
 
         letter-spacing: 1px;
         font-size: 12pt;
-        color: var(--lumo-secondary-text-color);
+        color: #8f2d56; /* var(--lumo-secondary-text-color);*/
     }
 
 }
@@ -50,8 +50,8 @@
     text-decoration: none;
     color: var(--lumo-primary-text-color);
     background: #e9e9e8;
-    margin: 1;
-    padding: 11;
+    margin: 1px;
+    padding: 11px;
     border: transparent 2px solid;
     border-radius: 25px;
     transition: 0.4s;

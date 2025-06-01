@@ -425,7 +425,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         }
 
 //        if (strOrderBy.isEmpty() || strOrderBy.equalsIgnoreCase(STR_ORDER_BY_NEWEST)) {
-        sqlLearningsReadOrderBy = " ORDER BY l.dateInsert DESC";
+        sqlLearningsReadOrderBy = " ORDER BY l.dateInsert DESC LIMIT 20";
 //        } else {
 //            sqlLearningsReadOrderBy = " ORDER BY l.dateInsert ASC";
 //        }
