@@ -389,18 +389,19 @@ public class RecordService {
 
     public void logErrorInDb(Exception e, String hostname, String function, int userId, String username, String ip, String sessionid, String info) {
         String strCause = "";
-
-        if (e.getCause() != null) {
+        String strMessage = "";
+        if (e!= null && e.getCause() != null) {
             strCause = e.getCause().toString().replaceAll("'", "").replaceAll("\"", "").substring(0, Math.min(e.getCause().toString().trim().length(), 480)).trim();
+            strMessage = e.getMessage().replaceAll("'", "").replaceAll("\"", "").substring(0, Math.min(e.getMessage().trim().length(), 480)).trim();
         }
         String sqlError = "INSERT INTO dberror (errorId, hostname, userId, username, ip, sessionid, javaFunctionOrigin, errorMessage, errorCause, appVersion, info) " +
-                "VALUES (0,  '" + hostname + "' , " + userId + " ,'" + username + "', '" + ip + "', '" + sessionid + "', '" + function + "', '"
-                + e.getMessage().replaceAll("'", "").replaceAll("\"", "").substring(0, Math.min(e.getMessage().trim().length(), 480)).trim() + "', '"
-                + strCause
-                + "', '" + APP_VERSION + "', ? )";
+                "VALUES (0,  '" + hostname + "' , " + userId + " ,'" + username + "', '" + ip + "', '" + sessionid + "', '" + function + "' "
+                + " , ? "
+                + " , ? "
+                + " , '" + APP_VERSION + "', ? )";
 
-        Object[] arrValue = {info};
-        String[] arrType = {"java.lang.String"};
+        Object[] arrValue = {strMessage,strCause, info};
+        String[] arrType = {"java.lang.String", "java.lang.String", "java.lang.String"};
         this.insertOneRecordWithQuery(sqlError, arrValue, arrType);
 
     }

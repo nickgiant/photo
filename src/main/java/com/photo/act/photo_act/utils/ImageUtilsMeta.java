@@ -43,7 +43,7 @@ public class ImageUtilsMeta {
             //
             // see the TiffConstants file for a list of TIFF tags.
 
-            System.out.println("file: " + file.getPath());
+            System.out.println("photo file: " + file.getPath());
 
             // print out various interesting EXIF tags.
             printTagValue(jpegMetadata, TiffTagConstants.TIFF_TAG_MAKE);
@@ -68,6 +68,13 @@ public class ImageUtilsMeta {
             printTagValue(jpegMetadata, GpsTagConstants.GPS_TAG_GPS_LATITUDE);
             printTagValue(jpegMetadata, GpsTagConstants.GPS_TAG_GPS_LONGITUDE_REF);
             printTagValue(jpegMetadata, GpsTagConstants.GPS_TAG_GPS_LONGITUDE);
+            printTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_FOCAL_LENGTH);
+            printTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_FOCAL_LENGTH_IN_35MM_FORMAT);
+            printTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_METERING_MODE);
+            printTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_FNUMBER);
+            printTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_EXPOSURE_PROGRAM);
+            printTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_EXPOSURE_MODE);
+
 
             System.out.println();
 
@@ -117,13 +124,6 @@ public class ImageUtilsMeta {
                         + " minutes, " + gpsLongitudeSeconds.toDisplayString() + " seconds " + gpsLongitudeRef);
             }
 
-            System.out.println();
-
-            final List<ImageMetadataItem> items = jpegMetadata.getItems();
-            for (final ImageMetadataItem item : items) {
-                System.out.println("    " + "item: " + item);
-            }
-            System.out.println();
         }
     }
 
@@ -276,11 +276,11 @@ public class ImageUtilsMeta {
 //            public static final int EXPOSURE_PROGRAM_VALUE_LANDSCAPE = 8;
 
 
-            logger.warn(" check field format :  " + lstInfo.get(2) + "  ---  " + lstInfo.get(3) + "  ---  " + lstInfo.get(4) + "  ---  " + lstInfo.get(5) + "  ---  " +
+            logger.info(" check field format :  " + lstInfo.get(2) + "  ---  " + lstInfo.get(3) + "  ---  " + lstInfo.get(4) + "  ---  " + lstInfo.get(5) + "  ---  " +
                     lstInfo.get(lstInfo.size() - 4) + "  ---  " + lstInfo.get(lstInfo.size() - 3) + "  ---  " + lstInfo.get(lstInfo.size() - 2)
                     + "  ---  " + lstInfo.get(lstInfo.size() - 1) + "  ---  size: " + lstInfo.size());
 
-            System.out.println("file: " + file.getPath());
+            System.out.println("html photo file: " + file.getPath());
 
             metadataInfo.append("<table>");
             // print out various interesting EXIF tags.
@@ -315,10 +315,11 @@ public class ImageUtilsMeta {
 
             metadataInfo.append(getTagValueAsHtml(jpegMetadata, ExifTagConstants.EXIF_TAG_METERING_MODE));
 
-            final List<ImageMetadataItem> items = jpegMetadata.getItems();
-            for (final ImageMetadataItem item : items) {
-                // System.out.println("    " + "item: " + item);
-            }
+            metadataInfo.append(getTagValueAsHtml(jpegMetadata, ExifTagConstants.EXIF_TAG_FNUMBER));
+            metadataInfo.append(getTagValueAsHtml(jpegMetadata, ExifTagConstants.EXIF_TAG_CAMERA_OWNER_NAME));
+            //metadataInfo.append(getTagValueAsHtml(jpegMetadata, ExifTagConstants.EXIF_TAG_IMAGE_NUMBER));  // produces error
+            metadataInfo.append(getTagValueAsHtml(jpegMetadata, ExifTagConstants.EXIF_TAG_IMAGE_UNIQUE_ID));
+
             metadataInfo.append("</table>");
         } else {
 

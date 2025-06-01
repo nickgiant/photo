@@ -1,13 +1,36 @@
 
+header {
+  background-color: #fff;
+  color: var(--lumo-secondary-text-color);
+ /* background-color: #84b4b1;*/
+  /*color: #fff;*/
+  text-align: center;
+  padding: 30px 0 120px;
+}
+header h1 {
+  text-align: center;
+  text-transform: lowercase;
+  font-size: 55px;
+  font-weight: 400;
+  letter-spacing: 3px;
+  line-height: 0.8;
+  padding: 40px 0 25px;
+  font-family:  "Lucida Console", "Lucida Sans Typewriter", sans-serif;
+}
+header span {
+  text-transform: uppercase;
+  letter-spacing: 7px;
+  font-size: 20px;
+  line-height: 1;
+}
+header p {
+  padding-top: 30px;
+}
+
 .home-view h1 {
-    font-family: "Times-New-Roman", serif; /* "'Brush Script MT', cursive";*/
-    text-align: center;
-    color: var(--lumo-primary-text-color);
-    font-weight: bold;
-    /*text-shadow: var(--lumo-contrast-20pct);*/
-    letter-spacing: 3px;
-    padding: 40px 0 20px 0;
     margin: 0;
+    padding: 40px 0 25px;
+    font-family:  "Lucida Console", "Lucida Sans Typewriter", sans-serif;
 }
 
 .home-view h3{
@@ -113,29 +136,19 @@
     }
 
     a {
-        display: block;
-        position: relative;
+        color: #666666; /* #466ca8; /* #6c9494;*/
+
         min-height: 125px;
         background-color: #e6ecf0;
         border-radius: 4px;
+        border: 1px solid #c7d8f1;
         padding: 28px 24px;
         margin: 12px;
         text-decoration: none;
         overflow: hidden;
-        border: 1px solid #c7d8f1;
-
-        /*padding: 5px;*/
-        /*text-decoration: none;*/
-        /*font-size: var(--lumo-font-size-m);*/
-        /*letter-spacing: 1px;*/
-        /*text-align: center;*/
-        /*font-family: Times-New-Roman, serif;*/
-        /*font-weight: bold;*/
-        color: #666666; /* #466ca8; /* #6c9494;*/
-        /*background-color: #c7d8f1;*/
-        /*border: #c7d8f1 1px solid;*/
+        display: block;
+        position: relative;
         box-shadow: 1px 1px 6px lightgrey;
-        /*border-radius: var(--lumo-border-radius-l);*/
         transition: 0.5s;
 
         &:hover {
@@ -150,7 +163,20 @@
 }
 
 
-.home-view .uploaded-lines{
-    box-shadow: 1px 1px 6px lightgrey;
-    min-width: 620px;
+.home-view .container-uploaded-lines{
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(510px, 1fr)); /*minmax(min(70px, 8vw), 1fr)); /*repeat(auto-fit, minmax(80px, 1fr));*/
+    grid-gap: 8px;
+    padding: 0;
+    margin: 0;
+}
+
+.home-view .uploaded-line{
+        text-decoration: none;
+        overflow: hidden;
+        /*display: block;*/
+        position: relative;
+        border-radius: 12px;
+    box-shadow: 1px 1px 5px lightgrey;
+    min-width: 455px;
 }

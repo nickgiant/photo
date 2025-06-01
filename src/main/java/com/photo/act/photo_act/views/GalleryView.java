@@ -71,7 +71,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
 
     private String strUrlRequestToBeLogged;
 
-    private String dirChar = "/"; //FileSystems.getDefault().getSeparator();
+    private String dirChar = FileSystems.getDefault().getSeparator();
     public static String subPathThumbs = "photo-thumbs";
     public static String subPathMedium = "photo-medium";
     public static String subPathUpload = "photo-upload";
@@ -179,12 +179,12 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         if (strMember.equalsIgnoreCase(STR_ALL_MEMBERS) && (strDestination.equalsIgnoreCase(STR_ALL_DESTINATIONS))) {
             verticalLayout.add(loadHeader("Gallery of Photos", "", ""));
 
-            String sqlGalleryAll = sqlReadGallery + " AND pm.hostname like '" + hostname + "' AND pm.visible_to = 'ALL' ";
+            String sqlGalleryAll = sqlReadGallery + " AND pm.visible_to = 'ALL' ";
             sqlGalleryAll = sqlGalleryAll + " ORDER BY pm.date_inserted DESC, pm.title ASC, meta_date DESC ";
             loadImagesFromDb(sqlGalleryAll, arrColumnNamesGallery, false);
         } else if (strMember.equalsIgnoreCase(STR_ALL_MEMBERS) && !strDestination.equalsIgnoreCase(STR_ALL_DESTINATIONS)) {
             verticalLayout.add(loadHeader("Gallery of Photos", "", strDestination));
-            String sqlGalleryAll = sqlReadGallery + " AND pm.hostname like '" + hostname + "' AND pm.visible_to = 'ALL' ";
+            String sqlGalleryAll = sqlReadGallery + " AND pm.visible_to = 'ALL' ";
 
             sqlGalleryAll = sqlGalleryAll + " AND d.city_name LIKE '" + strDestination + "' ";
 
@@ -194,7 +194,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
             verticalLayout.add(loadHeader("My Photos", "and how to manage them.", ""));
 
             String sqlGalleryUser = sqlReadGallery +
-                    " AND pm.hostname like '" + hostname + "' AND pm.visible_to = 'ALL' AND pm.uploader LIKE '" + strMember + "' " +
+                    " AND pm.visible_to = 'ALL' AND pm.uploader LIKE '" + strMember + "' " +
                     " ORDER BY pm.date_inserted DESC, meta_date DESC";
 
             loadImagesFromDb(sqlGalleryUser, arrColumnNamesGallery, true);
@@ -235,7 +235,10 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         canonicalHostname = inetAddress.getCanonicalHostName();
 
         if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP)) {
-            DIR_PHOTOS_SERVER = "/home/mike/Pictures/lazy-photos";
+                     DIR_PHOTOS_SERVER = "/home/mike/Pictures/lazy-photos";
+        } else if(hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_WIN)){
+            DIR_PHOTOS_SERVER =  "C:\\Users\\nickg\\Pictures\\lazy-photos";
+
         } else if (hostname.equalsIgnoreCase("piot")) {
             DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
         } else {
@@ -711,9 +714,9 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         if (strPath == null || strPath.isEmpty()) {
             strPath = "NULL";
         } else {
+            strPath = strPath.replace("\\","-");
             strPath = "'" + strPath + "'";
         }
-
 
         logger.info("photo visitor:" + publicIp + " . " + hostname + " . " + hostAddress + " . " + canonicalHostname + "  .  " + browser + " " + sessionid);
 
