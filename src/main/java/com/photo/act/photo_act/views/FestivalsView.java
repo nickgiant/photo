@@ -5,12 +5,12 @@ import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
+import com.photo.act.photo_act.views.components.GenericView;
 import com.photo.act.photo_act.views.components.HeaderFilterTabs;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.HasStyle;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.checkbox.CheckboxGroup;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -23,6 +23,7 @@ import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
+import com.vaadin.flow.theme.lumo.LumoUtility;
 import com.vaadin.flow.theme.lumo.LumoUtility.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,11 +42,13 @@ import java.util.Locale;
 
 import static com.photo.act.photo_act.views.MainLayout.*;
 
-//@PageTitle("Image Gallery")
-//@RouteAlias("") // empty on homepage
-@Route(value = "festivals") //":section?")
-//@RouteAlias(value = ":section/:member?", layout = MainLayout.class)
-//@Menu(order = 0, icon = "line-awesome/svg/th-list-solid.svg")
+
+@Route(value = "events")
+@RouteAlias(value = "events/country/:country?", layout = MainLayout.class)
+@RouteAlias(value = "events/genre/:genre?", layout = MainLayout.class)
+@RouteAlias(value = "events/organizer/:organizer?", layout = MainLayout.class)
+@RouteAlias(value = "events/title/:title?", layout = MainLayout.class)
+
 public class FestivalsView extends Main implements HasUrlParameter<String>, BeforeEnterObserver, HasComponents, HasDynamicTitle, HasStyle {
 
     private String strColorOfIcons = "#a62f03"; //"#f9943b";//"#a62c5c";//"#7d1e32";
@@ -53,6 +56,7 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
     private static final Logger logger = LoggerFactory.getLogger(FestivalsView.class);
 
     private VerticalLayout verticalLayout;
+    String sqlLearningsReadOrderBy;
     private String sessionid;
     private long sessionCreation;
     private String sysUserName;
@@ -72,7 +76,8 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
     public static String subPathShow = "photo-show";
 
     public static String DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
-
+    String[] arrFestivalsColumnNames = {"nameShort", "city_name", "country", "periodOfYear", "type", "website", "url_facebook", "url_instagram", "url_youtube", "activities", "image_top", "image_logo", "dateInsert", "title", "subtitle", "formatedDateFrom", "formatedDateTo",
+            "edition_description", "formatedDateUpdated", "title_of_place", "address_of_place"};
 
     private String publicIp;
     private String strPath;
@@ -81,7 +86,14 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
     private String canonicalHostname;
     private String strOS;
     private String strBrowser;
-
+    String sqlFestivalsRead = "SELECT  f.nameShort, f.periodOfYear, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert " +
+            ", e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description, DATE_FORMAT(f.dateInsert , '%D %M %Y') AS formatedDateUpdated " +
+            ", e.title_of_place, e.address_of_place " +
+            ", d.city_name, d.country " +
+            " FROM  festivals f LEFT JOIN festivals_edition e ON f.id = e.festival_id " +
+//            " LEFT JOIN destination d ON  d.id = e.destination_id " +
+            " , destination d " +
+            " WHERE d.id = e.destination_id ";
 
     private String strColorExternalweb = "#9fafd5";
 
@@ -107,20 +119,34 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
             "  pm.location_by_user, pm.location_area, pm.location_country_code, pm.location_lat, pm.location_lon " +
             //, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description, DATE_FORMAT(f.dateInsert , '%D %M %Y') AS formatedDateUpdated  " +
             " FROM  photo_meta pm LEFT JOIN destination d ON pm.destination_Id = d.id ";
-
+    String[] arrColumnsDestinations = {"id", "city_name", "country"};
+    String sqlDestinationTypes = "SELECT "
+            + " d.id, d.city_name, d.country "
+//            + " , lc2.cat_title AS cat_title2, lc2.cat_title_type AS cat_title_type2, lc2.cat_type AS cat_type2, count (lc2.cat_type) AS cat_type_count2 "
+//            + " l.id, l.title, l.picture, l.section , l.category, l.format, l.url, l.parent_id, l.child_index, l.tutor_id, l.artists_ref, l.description, l.duration, l.pages, l.published, l.userIdInsert, l.username, l.dateInsert "
+//            + ", l.tutor_id, l.tutor_id_team, t.tutor_name, t.website, t.url_fb, t.url_yt, t.url_insta, t.url_flickr, t.url_wikipedia, t.url_ref1, t.url_ref2, t.url_ref3, t.city_base, t.country_base, t.userIdInsert, t.username, t.date_inserted "
+//            + " FROM learnings_categories lc2 RIGHT JOIN learnings l ON lc2.id = l.category_id2, learnings_categories lc " // "LEFT JOIN learnings_categories lc ON lc.id = l.category_id "
+//            + " FROM learnings l, learnings_categories lc "
+            + " FROM festivals_edition fe LEFT JOIN destination d ON fe.destination_Id = d.id "
+            + " WHERE 1 = 1 "
+            + " GROUP BY d.country "
+//            + " WHERE 1 = 1 AND lc.id = l.category_id "
+            + " ORDER BY d.country ASC ";
+    private VerticalLayout filtersColumn;
+    private GenericView genericView;
 
     UtilsDate utilsDate;
     String sessionDateTime;
     private String strUrlRequestToBeLogged;
-
+    private String country;
 
     public FestivalsView(RecordService recordService) {
         this.recordService = recordService;
         utilsDate = new UtilsDate();
 
+        genericView = new GenericView();
 
         constructUI();
-
     }
 
 
@@ -131,33 +157,84 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
 
     @Override
     public void beforeEnter(@OptionalParameter BeforeEnterEvent event) {
-//        section = event.getRouteParameters().get("section").orElse(SECTION_HOME);
-        forMemberName = event.getRouteParameters().get("forMemberName").orElse("all-members");
-
+        country = event.getRouteParameters().get("country").orElse(STR_ALL_COUNTRIES);
 
         getUserClientInfo();
 
-        UI.getCurrent().getPage().fetchCurrentURL(currentUrl -> {
-            // This is your own method that you may do something with the url.
-            // Note that this method runs asynchronously
-
-            strUrlRequestToBeLogged = currentUrl.toExternalForm();
-
-        });
-
-        NetUtils netUtils = new NetUtils();
-        publicIp = netUtils.getClientPublicIp(hostname);
-
+        VerticalLayout layoutHeaderParameters;
         verticalLayout.removeAll();
 
-        verticalLayout.add(loadHeader("Festivals and Exhibitions", "around the World, being prepared for visitors!", ""));
+        if (!country.equalsIgnoreCase(STR_ALL_COUNTRIES)) {
+            layoutHeaderParameters = loadHeader("Events", "", country);
+            VerticalLayout layoutResults = loadResults(0);
+            verticalLayout.add(layoutResults);
+        } else if (country.equalsIgnoreCase(STR_ALL_COUNTRIES)) {
+            layoutHeaderParameters = loadHeader("Events", "", "");
+            VerticalLayout layoutResults = loadResults(15);
+            verticalLayout.add(layoutResults);
+        } else {
+            layoutHeaderParameters = loadHeader("Events", "", "");
+            logger.warn(country + "  ");
+        }
 
-        String[] arrColumnNames = {"nameShort", "location", "country", "periodOfYear", "type", "website", "url_facebook", "url_instagram", "url_youtube", "activities", "image_top", "image_logo", "dateInsert", "title", "subtitle", "formatedDateFrom", "formatedDateTo", "edition_description", "formatedDateUpdated"};
+        this.removeAll();
+        this.add(layoutHeaderParameters);
 
-        String sqlRead = "SELECT  f.nameShort, f.location, f.country, f.periodOfYear, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, " +
-                "e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description, DATE_FORMAT(f.dateInsert , '%D %M %Y') AS formatedDateUpdated  " +
-                "FROM  festivals f LEFT JOIN festivals_edition e ON f.id = e.festival_id ORDER BY f.dateInsert DESC";
-        loadFestivals(sqlRead, arrColumnNames);
+        if (isMobile) {
+            VerticalLayout layoutMobileContent = new VerticalLayout();
+            layoutMobileContent.addClassNames(Width.FULL,
+                    AlignItems.START, JustifyContent.CENTER,
+                    Padding.MEDIUM, Margin.NONE,
+                    Gap.XSMALL
+            );
+            filtersColumn.removeAll();
+            filtersColumn.setMaxWidth("290px");
+            verticalLayout.setMaxWidth("1040px");
+            filtersColumn.add(loadFiltersColumn(sqlDestinationTypes, arrColumnsDestinations));
+
+            layoutMobileContent.add(filtersColumn, verticalLayout);
+            this.add(layoutMobileContent);
+        } else {
+            HorizontalLayout layoutContent = new HorizontalLayout();
+            layoutContent.addClassNames(Width.FULL,
+                    AlignItems.START, JustifyContent.CENTER,
+                    Padding.LARGE, Margin.NONE,
+                    Gap.XSMALL
+            );
+            filtersColumn.removeAll();
+            filtersColumn.setMaxWidth("290px");
+            verticalLayout.setMaxWidth("1040px");
+            filtersColumn.add(loadFiltersColumn(sqlDestinationTypes, arrColumnsDestinations));
+
+            layoutContent.add(filtersColumn, verticalLayout);
+            this.add(layoutContent);
+        }
+
+        this.add(genericView.loadFooter(isMobile));
+
+//
+//        UI.getCurrent().getPage().fetchCurrentURL(currentUrl -> {
+//            // This is your own method that you may do something with the url.
+//            // Note that this method runs asynchronously
+//
+//            strUrlRequestToBeLogged = currentUrl.toExternalForm();
+//
+//        });
+//
+//        NetUtils netUtils = new NetUtils();
+//        publicIp = netUtils.getClientPublicIp(hostname);
+//
+//        verticalLayout.removeAll();
+//        verticalLayout.setMaxWidth("1040px");
+//
+//        verticalLayout.add(loadHeader("Events", "around the World, being prepared for visitors!", ""));
+//
+//        String[] arrColumnNames = {"nameShort", "location", "country", "periodOfYear", "type", "website", "url_facebook", "url_instagram", "url_youtube", "activities", "image_top", "image_logo", "dateInsert", "title", "subtitle", "formatedDateFrom", "formatedDateTo", "edition_description", "formatedDateUpdated"};
+//
+//        String sqlRead = "SELECT  f.nameShort, f.location, f.country, f.periodOfYear, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, " +
+//                "e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description, DATE_FORMAT(f.dateInsert , '%D %M %Y') AS formatedDateUpdated  " +
+//                "FROM  festivals f LEFT JOIN festivals_edition e ON f.id = e.festival_id ORDER BY f.dateInsert DESC";
+//        verticalLayout.add(loadResults(sqlRead, arrColumnNames));
 
 //            verticalLayout.add(loadFooter());
 
@@ -170,12 +247,11 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
     }
 
     private void constructUI() {
-        addClassName("festivals-view");
         addClassNames(Overflow.HIDDEN, Width.FULL,
                 // Margin.LARGE, //.Left.MEDIUM, Margin.Right.MEDIUM,
                 //  Padding.Left.MEDIUM, Padding.Left.MEDIUM,
                 Margin.NONE, Padding.NONE,
-                Gap.SMALL,
+                Gap.MEDIUM,
                 //  Padding.NONE, //.Left.MEDIUM, Padding.Right.MEDIUM,
                 //Margin.Vertical.MEDIUM, Padding.Vertical.NONE,
                 AlignItems.CENTER, JustifyContent.CENTER
@@ -193,15 +269,47 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
         canonicalHostname = inetAddress.getCanonicalHostName();
 
         if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP)) {
-                     DIR_PHOTOS_SERVER = "/home/mike/Pictures/lazy-photos";
-        } else if(hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_WIN)){
-            DIR_PHOTOS_SERVER =  "C:\\Users\\nickg\\Pictures\\lazy-photos";
+            DIR_PHOTOS_SERVER = "/home/mike/Pictures/lazy-photos";
+        } else if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_WIN)) {
+            DIR_PHOTOS_SERVER = "C:\\Users\\nickg\\Pictures\\lazy-photos";
 
         } else if (hostname.equalsIgnoreCase("piot")) {
             DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
         } else {
             DIR_PHOTOS_SERVER = "/home/sammy/lazy-photos";
+        }
 
+        filtersColumn = new VerticalLayout();
+        if (isMobile) {
+            filtersColumn.addClassNames(
+                    Overflow.HIDDEN,
+                    // Margin.LARGE, //.Left.MEDIUM, Margin.Right.MEDIUM,
+                    //  Padding.Left.MEDIUM, Padding.Left.MEDIUM,
+                    // Margin.Horizontal.SMALL,
+                    Margin.NONE,
+                    Padding.NONE,
+                    Padding.Top.XSMALL,
+                    Gap.XSMALL,
+                    AlignItems.START, JustifyContent.CENTER,
+                    LumoUtility.FontSize.SMALL, LumoUtility.TextColor.SECONDARY,
+//                Background.CONTRAST_5,
+                    TextAlignment.CENTER
+            );
+        } else {
+            filtersColumn.addClassNames(
+                    Overflow.HIDDEN,
+                    // Margin.LARGE, //.Left.MEDIUM, Margin.Right.MEDIUM,
+                    //  Padding.Left.MEDIUM, Padding.Left.MEDIUM,
+                    // Margin.Horizontal.SMALL,
+                    Margin.NONE,
+                    Padding.NONE,  //<---
+                    Padding.Top.MEDIUM,
+                    Gap.SMALL,
+                    AlignItems.START, JustifyContent.CENTER,
+                    LumoUtility.FontSize.SMALL, LumoUtility.TextColor.SECONDARY,
+//                Background.CONTRAST_5,
+                    TextAlignment.CENTER
+            );
         }
 
 
@@ -213,7 +321,8 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
                     // Margin.LARGE, //.Left.MEDIUM, Margin.Right.MEDIUM,
                     //  Padding.Left.MEDIUM, Padding.Left.MEDIUM,
                     // Margin.Horizontal.SMALL,
-                    Margin.NONE, Padding.NONE,
+                    Margin.NONE,
+                    Padding.NONE,
                     Padding.Top.XSMALL,
 //                    Gap.MEDIUM,
                     AlignItems.CENTER, JustifyContent.CENTER
@@ -225,15 +334,14 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
                     //  Padding.Left.MEDIUM, Padding.Left.MEDIUM,
                     // Margin.Horizontal.SMALL,
                     Margin.NONE,
-                    Padding.XLARGE,
+                    Padding.SMALL,  //<---
                     Padding.Top.XSMALL,
 //                    Gap.LARGE,
                     AlignItems.CENTER, JustifyContent.CENTER
             );
-            verticalLayout.getStyle().set("gap", "3rem");
         }
 
-        this.setWidthFull();
+
         this.add(verticalLayout);
     }
 
@@ -318,7 +426,6 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
             );
         }
 
-
         VerticalLayout layoutFilters = new VerticalLayout();
         if (isMobile) {
             layoutFilters.addClassNames(
@@ -344,15 +451,11 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
                     BorderRadius.LARGE);
         }
 
-        CheckboxGroup<String> checkboxGroupSubject = new CheckboxGroup<>();
-        checkboxGroupSubject.setTooltipText("Subject");
-//        checkboxGroupSubject.setLabel("Subject");
-        checkboxGroupSubject.setItems("Photography", "Street Photography", "Landscape", "Cityscape");
-        //   "Friday", "Saturday", "Sunday");
-        // checkboxGroup.addThemeVariants(CheckboxGroupVariant.LUMO_VERTICAL);
-//        Div lblFilterSubject = new Div("Subject");
-
-        layoutFilters.add(checkboxGroupSubject);
+//        CheckboxGroup<String> checkboxGroupSubject = new CheckboxGroup<>();
+//        checkboxGroupSubject.setTooltipText("Subject");
+//        checkboxGroupSubject.setItems("Photography", "Street Photography", "Landscape", "Cityscape");
+//
+//        layoutFilters.add(checkboxGroupSubject);
 
 
 //        CheckboxGroup<String> checkboxGroupFormat = new CheckboxGroup<>();
@@ -363,12 +466,12 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
 //            layoutFilters.add(checkboxGroupFormat);
 
 
-        CheckboxGroup<String> checkboxGroupLocation = new CheckboxGroup<>();
-        checkboxGroupLocation.setTooltipText("Location");
-//         checkboxGroupLocation.setLabel("Location");
-        checkboxGroupLocation.setItems("Hungary", "UK", "Greece");//, "Thursday",
-
-        layoutFilters.add(checkboxGroupLocation);
+//        CheckboxGroup<String> checkboxGroupLocation = new CheckboxGroup<>();
+//        checkboxGroupLocation.setTooltipText("Location");
+////         checkboxGroupLocation.setLabel("Location");
+//        checkboxGroupLocation.setItems("Hungary", "UK", "Greece");//, "Thursday",
+//
+//        layoutFilters.add(checkboxGroupLocation);
 
 //
 //        VerticalLayout layoutHeaderParameters = new VerticalLayout();
@@ -397,12 +500,12 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
 //        }
 
 
-        Select<String> cmbView = new Select<>();
-        cmbView.setLabel("View");
-
-        cmbView.setItems("Micro View", "Ordinary - No MetaData", "Ordinary - MetaData Bottom", "Ordinary - MetaData Right",
-                "Wide - No MetaData", "Wide - MetaData Bottom", "Wide - MetaData Right");
-        cmbView.setValue("Ordinary - No MetaData");
+//        Select<String> cmbView = new Select<>();
+//        cmbView.setLabel("View");
+//
+//        cmbView.setItems("Micro View", "Ordinary - No MetaData", "Ordinary - MetaData Bottom", "Ordinary - MetaData Right",
+//                "Wide - No MetaData", "Wide - MetaData Bottom", "Wide - MetaData Right");
+//        cmbView.setValue("Ordinary - No MetaData");
 
 //        headerContainerMaster.add(headerTextContainer);
         headerContainerSecondary.add(layoutFilters);
@@ -419,18 +522,67 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
     }
 
 
-    private void loadFestivals(String sqlRead, String[] arrColumnNames) {
+    private VerticalLayout loadResults(int intLimit) {
+
+        String strWhereSubClause = "";
+
+        if (!country.isEmpty() && !country.equalsIgnoreCase(STR_ALL_COUNTRIES)) {
+            strWhereSubClause = strWhereSubClause + " AND ( d.country LIKE '" + country + "' ) ";
+        }
+
+        sqlLearningsReadOrderBy = " ORDER BY f.dateInsert DESC";
+
+        String sqlLimit = "";
+        if (intLimit == 0) {
+
+        } else {
+            sqlLimit = " LIMIT " + intLimit;
+        }
+
+        String sqlRead = sqlFestivalsRead + strWhereSubClause + sqlLearningsReadOrderBy + sqlLimit;
+
         strPath = DIR_PHOTOS_SERVER + dirChar;
 
-        List<Record> lstRecords = getRecordsFromDb(sqlRead, arrColumnNames);
+        VerticalLayout layoutFestivals = new VerticalLayout();
+        if (isMobile) {
+            layoutFestivals.addClassNames(
+                    Overflow.HIDDEN, Width.FULL,
+                    // Margin.LARGE, //.Left.MEDIUM, Margin.Right.MEDIUM,
+                    //  Padding.Left.MEDIUM, Padding.Left.MEDIUM,
+                    // Margin.Horizontal.SMALL,
+                    Margin.NONE, Padding.NONE,
+                    Gap.MEDIUM,
+                    //  Padding.NONE, //.Left.MEDIUM, Padding.Right.MEDIUM,
+                    //Margin.Vertical.MEDIUM, Padding.Vertical.NONE,
+                    AlignItems.CENTER, JustifyContent.CENTER
+            );
+        } else {
+            layoutFestivals.addClassNames(
+                    Overflow.HIDDEN, Width.FULL,
+                    // Margin.LARGE, //.Left.MEDIUM, Margin.Right.MEDIUM,
+                    //  Padding.Left.MEDIUM, Padding.Left.MEDIUM,
+                    // Margin.Horizontal.SMALL,
+                    Margin.NONE,
+                    Padding.SMALL, // <----
+//                    Padding.Top.NONE,
+//                    Padding.XLARGE,
+                    Gap.XLARGE,
+                    //  Padding.NONE, //.Left.MEDIUM, Padding.Right.MEDIUM,
+                    //Margin.Vertical.MEDIUM, Padding.Vertical.NONE,
+                    AlignItems.CENTER, JustifyContent.CENTER
+            );
+//            layoutFestivals.getStyle().set("gap","3rem");
+        }
+
+        layoutFestivals.addClassName("festivals-view");
+        List<Record> lstRecords = getRecordsFromDb(sqlRead, arrFestivalsColumnNames);
 
         for (int r = 0; r < lstRecords.size(); r++) {
             Record rec = lstRecords.get(r);
-
-            verticalLayout.add(getFestival(rec));
+            layoutFestivals.add(getFestival(rec));
         }
 
-
+        return layoutFestivals;
     }
 
 
@@ -438,7 +590,7 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
 
 
         HorizontalLayout layoutSection = new HorizontalLayout();
-        layoutSection.addClassName("category");
+        layoutSection.addClassName("country");
 //        layoutSection.addClassNames(AlignItems.CENTER, JustifyContent.CENTER);
         String strType = record.getColumnData("type");
 
@@ -456,36 +608,71 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
         titleName.addClassName(TextColor.SECONDARY);
 //        titleName.setClassName("lazy-result-line-title");
 
+        String strCountry = record.getColumnData("country"); // from locations
+        String strCityName = record.getColumnData("city_name"); // from locations
+
+        String strTitleOfPlace = record.getColumnData("title_of_place");
+        String strAddressOfPlace = record.getColumnData("address_of_place");
+
         String strDate = "";
         String dt = record.getColumnData("formatedDateUpdated");
 
         Div dayUpdated = new Div("updated: " + dt);
         dayUpdated.addClassName(TextColor.TERTIARY);
 
+//        HorizontalLayout layoutPostTitle = new HorizontalLayout();
+//        if (isMobile) {
+//            layoutPostTitle.addClassNames(
+//                    Overflow.HIDDEN, Width.FULL,
+//                    AlignItems.CENTER, JustifyContent.AROUND,
+//                    Margin.NONE, Padding.NONE,
+//                    Gap.XSMALL,
+//                    //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+//                    Background.CONTRAST_10,
+//                    Border.BOTTOM, Border.RIGHT, BorderColor.CONTRAST_20,
+//                    BorderRadius.NONE);
+//        } else {
+//            layoutPostTitle.addClassNames(
+//                    Overflow.HIDDEN, Width.FULL,
+//                    AlignItems.CENTER, JustifyContent.AROUND,
+//                    Margin.SMALL,
+//                    Padding.SMALL,
+//                    Gap.MEDIUM,
+//                    //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+//                    Background.CONTRAST_10,
+//                    Border.BOTTOM, Border.RIGHT, BorderColor.CONTRAST_20, BorderRadius.FULL);
+//        }
+//
+//        layoutPostTitle.add(layoutSection, titleName, dayUpdated);
+
         HorizontalLayout layoutPostTitle = new HorizontalLayout();
         if (isMobile) {
             layoutPostTitle.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.AROUND,
-                    Margin.NONE, Padding.NONE,
+                    Margin.NONE,
+                    Padding.XSMALL,
                     Gap.XSMALL,
                     //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                    Background.CONTRAST_10,
-                    Border.BOTTOM, Border.RIGHT, BorderColor.CONTRAST_20,
+                    //Background.CONTRAST_10,
+                    Border.BOTTOM, //Border.RIGHT, //BorderColor.CONTRAST_20,
+//                    BorderColor.CONTRAST_20,
                     BorderRadius.NONE);
         } else {
             layoutPostTitle.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.AROUND,
-                    Margin.SMALL,
-                    Padding.SMALL,
+                    Margin.NONE,
+                    Padding.Horizontal.SMALL, Padding.Vertical.MEDIUM,
                     Gap.MEDIUM,
                     //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                    Background.CONTRAST_10,
-                    Border.BOTTOM, Border.RIGHT, BorderColor.CONTRAST_20, BorderRadius.FULL);
+                    // Background.CONTRAST_10,
+                    Border.BOTTOM, //Border.RIGHT,// BorderColor.CONTRAST_20,
+//                    BorderColor.CONTRAST_20,
+                    BorderRadius.LARGE);
         }
-
-        layoutPostTitle.add(layoutSection, titleName, dayUpdated);
+        layoutPostTitle.add(titleName);
+        layoutPostTitle.addClassName("post-title-bar");
 
         VerticalLayout layoutFestivalInfo = new VerticalLayout();
         if (isMobile) {
@@ -498,7 +685,6 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
                     //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
                     Background.CONTRAST_5, BorderRadius.NONE);
         } else {
-            layoutFestivalInfo.addClassName("bottom-radius-shadow");
             layoutFestivalInfo.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.CENTER,
@@ -508,9 +694,16 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
                     Width.FULL,
                     //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
                     Background.CONTRAST_5, BorderRadius.LARGE);
+            layoutFestivalInfo.addClassName("item-total");
         }
 
-        layoutFestivalInfo.add(layoutPostTitle, getFestivalItem(record), getSubTabs("Festival", strName, record), getActions());
+        HorizontalLayout layoutWithMap = new HorizontalLayout();
+        layoutWithMap.addClassNames(Width.FULL);
+
+
+        layoutWithMap.add(getDestinationMap(strAddressOfPlace, strTitleOfPlace, strCityName, strCountry));
+
+        layoutFestivalInfo.add(layoutPostTitle, getFestivalItem(record), getActions());
 
         return layoutFestivalInfo;
     }
@@ -518,12 +711,13 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
     private VerticalLayout getFestivalItem(Record record) {
 
         String strPeriodOfYear = record.getColumnData("periodOfYear");
-
-        String location = record.getColumnData("location");
+        String strCityName = record.getColumnData("city_name");
+        String strTitleOfPlace = record.getColumnData("title_of_place");
+        String strAddressOfPlace = record.getColumnData("address_of_place");
         String strCuntry = record.getColumnData("country");
+        String strType = record.getColumnData("type");
         String strImageLogo;
         String strImageTop;
-
 
         String strImgLogoPath = record.getColumnData("image_logo");
         String strImgTopPath = record.getColumnData("image_top");
@@ -551,6 +745,10 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
                 Background.CONTRAST_5, BorderRadius.LARGE
         );
 
+        if (strImageLogo.equalsIgnoreCase("") || strImageTop.equalsIgnoreCase("")) {
+            layoutImage.setVisible(false);
+        }
+
         Scroller scrFestImages = new Scroller(layoutImage);
         scrFestImages.addClassNames(
                 Overflow.HIDDEN, Width.FULL,
@@ -558,7 +756,6 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
                 Margin.NONE,
                 Padding.NONE
         );
-
         scrFestImages.setScrollDirection(Scroller.ScrollDirection.HORIZONTAL);
 
         if (!strImageLogo.equalsIgnoreCase("null") && !strImageLogo.equalsIgnoreCase("")) {
@@ -606,7 +803,7 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
             strActivities = "";
         }
 
-        Paragraph parDescription = new Paragraph("It takes place each year  in " + location + " (" + strCuntry + ") usually during " + strPeriodOfYear + ". " + strActivities);
+        Paragraph parDescription = new Paragraph(strType + " takes place each year  in " + strCityName + " (" + strCuntry + ") usually during " + strPeriodOfYear + ". " + strActivities);
         parDescription.addClassNames(TextColor.SECONDARY);
 
         VerticalLayout layoutSourceCard = new VerticalLayout();
@@ -732,13 +929,28 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
         String strDateTo = record.getColumnData("formatedDateTo");
         String strEdition_description = record.getColumnData("edition_description");
 
-        HorizontalLayout layoutPlannedTitle = new HorizontalLayout();
-        layoutPlannedTitle.setWidthFull();
-        layoutPlannedTitle.getStyle().setJustifyContent(Style.JustifyContent.CENTER);
-        layoutPlannedTitle.getStyle().setAlignItems(Style.AlignItems.CENTER);
+        VerticalLayout layoutPlannedTitle = new VerticalLayout();
+        layoutPlannedTitle.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER);
+
+
+        Div divTitleOfPlace = new Div(strTitleOfPlace);
+        divTitleOfPlace.addClassNames(FontWeight.SEMIBOLD,
+                TextColor.SECONDARY
+        );
+        if (strTitleOfPlace.isEmpty() || strTitleOfPlace.equalsIgnoreCase("null")) {
+            divTitleOfPlace.setVisible(false);
+        }
+
+        Div divAddressOfPlace = new Div(strAddressOfPlace);
+        divAddressOfPlace.addClassNames(
+                TextColor.SECONDARY
+        );
+        if (strAddressOfPlace.isEmpty() || strAddressOfPlace.equalsIgnoreCase("null")) {
+            divAddressOfPlace.setVisible(false);
+        }
 
         Div h5Title = new Div(strTitle);
-        h5Title.addClassNames(//FontWeight.SEMIBOLD,
+        h5Title.addClassNames(FontWeight.SEMIBOLD,
                 TextColor.SECONDARY
         );
 
@@ -751,7 +963,7 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
                 TextColor.SECONDARY
         );
 
-        String strTakesPlace = "takes place between";
+        String strTakesPlace = strType + " takes place between";
 
         Div divTakesPlace = new Div(strTakesPlace);
         divTakesPlace.addClassNames(
@@ -763,7 +975,10 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
                 TextColor.TERTIARY
         );
 
-        layoutPlannedTitle.add(h5Title, divTakesPlace, h6DateFrom, divAnd, h6DateTo);
+        HorizontalLayout datesLayout = new HorizontalLayout();
+        datesLayout.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER);
+        datesLayout.add(h6DateFrom, divAnd, h6DateTo);
+        layoutPlannedTitle.add(divTitleOfPlace, divAddressOfPlace, h5Title, divTakesPlace, datesLayout);
 
         Div divSubTitle = new Div(strSubTitle);
         divSubTitle.setWidthFull();
@@ -788,7 +1003,7 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
         if (!strDateFrom.trim().isEmpty() && !strDateFrom.trim().equalsIgnoreCase("null")) {
             layoutPlanned.add(layoutPlannedTitle);//, divSubTitle, parEdDescription);
         } else {
-            Div divNoEvents = new Div("Currently we have no info on future events. If you have any specific indication inform us here.");
+            Div divNoEvents = new Div("Currently we have no info on future events.");
             divNoEvents.addClassNames(TextColor.TERTIARY);
             layoutPlanned.add(divNoEvents);
         }
@@ -811,7 +1026,12 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
                 Gap.SMALL
         );
 
-        layoutDetails.add(parDescription, layoutPlanned);
+        if (strType.equalsIgnoreCase("Exhibition")) {
+            layoutDetails.add(layoutPlanned);
+        } else {
+            layoutDetails.add(parDescription, layoutPlanned);
+        }
+
         layoutInfoAbout.add(layoutDetails, layoutSourceCard);
 
         VerticalLayout layoutFestivalInfo = new VerticalLayout();
@@ -842,6 +1062,79 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
         return layoutFestivalInfo;
     }
 
+    private VerticalLayout loadFiltersColumn(String sqlRead, String[] arrColumnNames) {
+        VerticalLayout filtersColumn = new VerticalLayout();
+        if (isMobile) {
+            filtersColumn.addClassNames(
+                    Overflow.HIDDEN,
+                    // Margin.LARGE, //.Left.MEDIUM, Margin.Right.MEDIUM,
+                    //  Padding.Left.MEDIUM, Padding.Left.MEDIUM,
+                    // Margin.Horizontal.SMALL,
+                    Margin.NONE, Padding.NONE,
+                    Gap.SMALL,
+                    AlignItems.CENTER, JustifyContent.CENTER,
+                    LumoUtility.FontSize.SMALL, LumoUtility.TextColor.SECONDARY,
+//                Background.CONTRAST_5,
+                    TextAlignment.CENTER
+            );
+        } else {
+            filtersColumn.addClassNames(
+                    Overflow.HIDDEN,
+                    // Margin.LARGE, //.Left.MEDIUM, Margin.Right.MEDIUM,
+                    //  Padding.Left.MEDIUM, Padding.Left.MEDIUM,
+                    // Margin.Horizontal.SMALL,
+                    Margin.NONE, Padding.XSMALL,
+                    Gap.MEDIUM,
+                    AlignItems.CENTER, JustifyContent.CENTER,
+                    LumoUtility.FontSize.SMALL, LumoUtility.TextColor.SECONDARY,
+//                Background.CONTRAST_5,
+                    TextAlignment.CENTER
+            );
+        }
+
+        VerticalLayout layoutFiltersType = new VerticalLayout();
+        if (isMobile) {
+            layoutFiltersType.addClassNames(
+                    Overflow.HIDDEN,
+                    AlignItems.CENTER, JustifyContent.CENTER,
+                    Margin.NONE, Padding.NONE,
+                    Gap.SMALL,
+                    //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+                    //  Background.CONTRAST_5,
+                    BorderRadius.NONE);
+        } else {
+            layoutFiltersType.addClassNames(
+                    Overflow.HIDDEN,
+                    AlignItems.CENTER, JustifyContent.CENTER,
+                    Margin.NONE, Padding.NONE,
+                    Gap.MEDIUM,
+                    //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+                    //  Background.CONTRAST_5,
+                    BorderRadius.LARGE);
+        }
+        layoutFiltersType.addClassName("side-layout-filters");
+
+        List<Record> lstLearningCategoriesRecs = getRecordsFromDb(sqlRead, arrColumnNames);
+
+        ArrayList<String> lstCategories = new ArrayList<>();
+        for (int r = 0; r < lstLearningCategoriesRecs.size(); r++) {
+            lstCategories.add(lstLearningCategoriesRecs.get(r).getColumnData("country"));
+        }
+
+        for (int c = 0; c < lstCategories.size(); c++) {
+            String captionCategory = lstCategories.get(c);
+            RouteParam routeCategory = new RouteParam("country", captionCategory);
+            RouterLink linkPhotoCategory = new RouterLink(captionCategory, FestivalsView.class, new RouteParameters(routeCategory));
+            layoutFiltersType.add(linkPhotoCategory);
+        }
+
+        Div divFiltersTitle = new Div("Filter by Country");
+        filtersColumn.add(divFiltersTitle, layoutFiltersType);
+
+        return filtersColumn;
+    }
+
+
     private HorizontalLayout getActions() {
 
         StreamResource iconLike = new StreamResource("star-empty-icon.svg",
@@ -866,8 +1159,8 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
         Button btnComment = new Button(VaadinIcon.COMMENT.create());
         btnComment.setTooltipText("Comment on it");
 
-        Button btnMoreInfo = new Button(VaadinIcon.INFO_CIRCLE_O.create());
-        btnMoreInfo.setTooltipText("More info");
+        Button btnUpload = new Button(VaadinIcon.UPLOAD.create());
+        btnUpload.setTooltipText("Upload your related photos");
 
         StreamResource iconShare = new StreamResource("share-line-icon.svg",
                 () -> getClass().getResourceAsStream("/icons/share-line-icon.svg"));
@@ -905,7 +1198,7 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
         //layoutActions.setWidthFull();
 
 
-        layoutActions.add(btnLike, btnMoreAction, btnComment, btnMoreInfo, btnShare);
+        layoutActions.add(btnLike, btnComment, btnMoreAction, btnUpload, btnShare);
 
         return layoutActions;
     }
@@ -1106,7 +1399,7 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
         if (strPath == null || strPath.isEmpty()) {
             strPath = "NULL";
         } else {
-            strPath = strPath.replace("\\","-");
+            strPath = strPath.replace("\\", "-");
             strPath = "'" + strPath + "'";
         }
 
@@ -1125,6 +1418,96 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
 
         recordService.massRecordInsert(lstQueryInsert, null, null);
     }
+
+    private IFrame getDestinationMap(String strAddressOfPlace, String strTitleOfPlace, String city, String country) {
+
+
+        String strHtml = "<!DOCTYPE html>\n" +
+                "<html>\n" +
+                "<head>\n" +
+                "<meta charset=\"utf-8\">\n" +
+                "<title>Add a marker using a place name</title>\n" +
+                "<meta name=\"viewport\" content=\"initial-scale=1,maximum-scale=1,user-scalable=no\">\n" +
+                "<link href=\"https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.css\" rel=\"stylesheet\">\n" +
+                "<script src=\"https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.js\"></script>\n" +
+                "<style>\n" +
+                "body { margin: 0; padding: 0; }\n" +
+                "#map { position: absolute; top: 0; bottom: 0; width: 100%; }\n" +
+                "</style>\n" +
+                "</head>\n" +
+                "<body>\n" +
+                "<div id=\"map\"></div>\n" +
+                "\n" +
+                "<script src=\"https://unpkg.com/@mapbox/mapbox-sdk/umd/mapbox-sdk.min.js\"></script>\n" +
+                "\n" +
+                "<script>\n" +
+                "\tmapboxgl.accessToken = 'pk.eyJ1Ijoibmlja2dpY2siLCJhIjoiY20xcm9nMTZ5MGJsNDJzczM1aWk0Mm1zdCJ9.qSV85DCU8ewpGjTA3uajpg';\n" +
+                "    const mapboxClient = mapboxSdk({ accessToken: mapboxgl.accessToken });\n" +
+                "    mapboxClient.geocoding\n" +
+                "        .forwardGeocode({\n" +
+                "            query: '" + city + ", " + country + "',\n" +
+                "            autocomplete: false,\n" +
+                "            limit: 1\n" +
+                "        })\n" +
+                "        .send()\n" +
+                "        .then((response) => {\n" +
+                "            if (\n" +
+                "                !response ||\n" +
+                "                !response.body ||\n" +
+                "                !response.body.features ||\n" +
+                "                !response.body.features.length\n" +
+                "            ) {\n" +
+                "                console.error('Invalid response:');\n" +
+                "                console.error(response);\n" +
+                "                return;\n" +
+                "            }\n" +
+                "            const feature = response.body.features[0];\n" +
+                "\n" +
+                "            const map = new mapboxgl.Map({\n" +
+                "                container: 'map',\n" +
+                "                // Choose from Mapbox's core styles, or make your own style with Mapbox Studio\n" +
+                "                style: 'mapbox://styles/mapbox/streets-v12',\n" +
+                "                center: feature.center,\n" +
+                "                zoom: 12\n" +
+                "            });\n" +
+                "\n" +
+                "    // Add the control to the map.\n" +
+                "    map.addControl(\n" +
+                "        new MapboxGeocoder({\n" +
+                "            accessToken: mapboxgl.accessToken,\n" +
+                "            language: 'en-GB',\n" +
+                "            mapboxgl: mapboxgl\n" +
+                "        })\n" +
+                "    );\n" +
+                "\n" +
+                "            // Create a marker and add it to the map.\n" +
+                "            new mapboxgl.Marker().setLngLat(feature.center).addTo(map);\n" +
+                "        });\n" +
+                "\n" +
+                "\n" +
+                "    map.addControl(new mapboxgl.FullscreenControl());\n" +
+                "\n" +
+                "</script>\n" +
+                "\n" +
+                "</body>\n" +
+                "</html>";
+
+        //String mapSrc = "https://api.mapbox.com/search/geocode/v6/forward?q=budapest&proximity=ip&access_token=pk.eyJ1Ijoibmlja2dpY2siLCJhIjoiY20xcm9nMTZ5MGJsNDJzczM1aWk0Mm1zdCJ9.qSV85DCU8ewpGjTA3uajpg";
+
+        //String strMaps =
+//"<iframe width='100%' height='400px' src=\""+mapSrc+"\" title=\"Navigation\" style=\"border:none;\"></iframe>";
+
+        IFrame mapsFrame = new IFrame();
+        mapsFrame.setSrcdoc(strHtml);
+        mapsFrame.setWidthFull();
+        mapsFrame.setHeight("550px");
+        mapsFrame.getStyle().setBorder("0px");
+        mapsFrame.getStyle().setBorderRadius("10px");
+
+
+        return mapsFrame;
+    }
+
 
     public int[] calcTotalAvailableWidth() {
         final int[] availWidth = {-1, -1, -1};

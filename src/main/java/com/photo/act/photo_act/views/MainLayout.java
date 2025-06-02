@@ -69,6 +69,7 @@ public class MainLayout extends AppLayout {
     public static final String STR_ALL_MEMBERS = "all-members";
     public static final String STR_ALL_ALBUMS = "all-albums";
     public static final String STR_ALL_DESTINATIONS = "all-locations";
+    public static final String STR_ALL_COUNTRIES = "all-countries";
 
     public static final String SECTION_LOG = "log";
 
@@ -212,6 +213,7 @@ public class MainLayout extends AppLayout {
 
         return new MenuItemInfo[]{ //
                 menuItemHome,
+                new MenuItemInfo("Events", VaadinIcon.CALENDAR_USER.create(), FestivalsView.class), //  LineAwesomeIcon.PENCIL_RULER_SOLID.create(),
                 new MenuItemInfo("Learnings", VaadinIcon.BOOK.create(), LearningsView.class), //  LineAwesomeIcon.PENCIL_RULER_SOLID.create(),
                 // new MenuItemInfo("Festivals", LineAwesomeIcon.OBJECT_GROUP.create(), FestivalsView.class), //  LineAwesomeIcon.PENCIL_RULER_SOLID.create(),
                 new MenuItemInfo("Albums", FontAwesome.Solid.PHOTO_FILM.create(), AlbumsView.class), //
