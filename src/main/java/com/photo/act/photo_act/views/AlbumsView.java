@@ -612,7 +612,6 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
 
         List<Record> lstRecords = getRecordsFromDb(sqlRead, arrColumnNames);
         for (int r = 0; r < lstRecords.size(); r++) {
-
             Record rec = lstRecords.get(r);
             divGallery.add(getAlbumsFromDb(rec, isEditable));
         }

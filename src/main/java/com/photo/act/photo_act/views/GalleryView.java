@@ -37,15 +37,11 @@ import java.util.Locale;
 
 import static com.photo.act.photo_act.views.MainLayout.*;
 
-//@PageTitle("Image Gallery")
+
 //@RouteAlias("") // empty on homepage
-@Route(value = "gallery") //":category?")
-//@RouteAlias(value = "gallery/location/:destination?", layout = MainLayout.class)
-//@RouteAlias(value = "gallery/member/:member?", layout = MainLayout.class)
-@RouteAlias(value = "gallery/member/:member?/location/:destination?", layout = MainLayout.class)
+@Route(value = "photos") //":category?")
+@RouteAlias(value = "photos/member/:member?/location/:destination?", layout = MainLayout.class)
 
-
-//@RouteAlias(value = "gallery/location/:destination?", layout = MainLayout.class)
 
 //@Menu(order = 0, icon = "line-awesome/svg/th-list-solid.svg")
 public class GalleryView extends Main implements HasUrlParameter<String>, BeforeEnterObserver, HasComponents, HasDynamicTitle, HasStyle {
@@ -184,6 +180,9 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
             loadImagesFromDb(sqlGalleryAll, arrColumnNamesGallery, false);
         } else if (strMember.equalsIgnoreCase(STR_ALL_MEMBERS) && !strDestination.equalsIgnoreCase(STR_ALL_DESTINATIONS)) {
             verticalLayout.add(loadHeader("Gallery of Photos", "", strDestination));
+            verticalLayout.add(loadWeather(strDestination, ""));
+
+
             String sqlGalleryAll = sqlReadGallery + " AND pm.visible_to = 'ALL' ";
 
             sqlGalleryAll = sqlGalleryAll + " AND d.city_name LIKE '" + strDestination + "' ";
@@ -192,7 +191,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
             loadImagesFromDb(sqlGalleryAll, arrColumnNamesGallery, false);
         } else if (!strMember.equalsIgnoreCase(STR_ALL_MEMBERS)) {
             verticalLayout.add(loadHeader("My Photos", "and how to manage them.", ""));
-
+            verticalLayout.add(loadWeather(strDestination, ""));
             String sqlGalleryUser = sqlReadGallery +
                     " AND pm.visible_to = 'ALL' AND pm.uploader LIKE '" + strMember + "' " +
                     " ORDER BY pm.date_inserted DESC, meta_date DESC";
@@ -235,9 +234,9 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         canonicalHostname = inetAddress.getCanonicalHostName();
 
         if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP)) {
-                     DIR_PHOTOS_SERVER = "/home/mike/Pictures/lazy-photos";
-        } else if(hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_WIN)){
-            DIR_PHOTOS_SERVER =  "C:\\Users\\nickg\\Pictures\\lazy-photos";
+            DIR_PHOTOS_SERVER = "/home/mike/Pictures/lazy-photos";
+        } else if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_WIN)) {
+            DIR_PHOTOS_SERVER = "C:\\Users\\nickg\\Pictures\\lazy-photos";
 
         } else if (hostname.equalsIgnoreCase("piot")) {
             DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
@@ -676,6 +675,33 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         return recordService.findAll(sql, arrColumnNames, sqlParValue, sqlParType);
     }
 
+    private VerticalLayout loadWeather(String city, String country) {
+
+//        String strWhereSubClause ="";
+//
+//        if(category.isEmpty() ||  category.equalsIgnoreCase(STR_ALL_CATEGORIES)) {
+//        }
+//        else if (inCategory!=null && !inCategory.isEmpty()){
+//            strWhereSubClause = strWhereSubClause  + " AND l.category LIKE '"+inCategory+"' ";
+//        }else{
+//            strWhereSubClause = strWhereSubClause  + " AND l.category LIKE '"+category+"' ";
+//        }
+//        sqlLearningsReadOrderBy =" ORDER BY l.dateInsert DESC";
+//        String sqlRead = sqlLearningsRead + strWhereSubClause + sqlLearningsReadOrderBy;
+
+        GenericView genericView = new GenericView();
+
+        VerticalLayout layoutWeather = genericView.getWeatherCurrent(city, country);
+
+//        HorizontalLayout  layoutPhotos = getDestinationPhotos(city,4);
+
+        VerticalLayout layoutResults = new VerticalLayout();
+        layoutResults.add(layoutWeather);
+
+        return layoutResults;
+    }
+
+
     private void logVisitorToDb() {
 
 //        category = category.replaceAll("'", " ");
@@ -714,7 +740,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         if (strPath == null || strPath.isEmpty()) {
             strPath = "NULL";
         } else {
-            strPath = strPath.replace("\\","-");
+            strPath = strPath.replace("\\", "-");
             strPath = "'" + strPath + "'";
         }
 

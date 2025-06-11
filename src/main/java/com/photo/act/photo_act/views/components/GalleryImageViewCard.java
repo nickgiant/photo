@@ -105,7 +105,7 @@ public class GalleryImageViewCard extends Div {
         layoutImage.addClassNames(
                 Border.NONE,// Background.CONTRAST_50,
                 Padding.NONE, Margin.NONE //Margin.Top.LARGE,
- //               BorderRadius.LARGE
+                //               BorderRadius.LARGE
 //                BoxShadow.SMALL
         );
 
@@ -119,7 +119,6 @@ public class GalleryImageViewCard extends Div {
         divImage.add(image);
 
         layoutImage.add(divImage);
-
 
         VerticalLayout divPhotoInfo = new VerticalLayout();
         divPhotoInfo.addClassNames(Overflow.HIDDEN, TextColor.TERTIARY,

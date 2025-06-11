@@ -10,12 +10,15 @@ import com.photo.act.photo_act.views.components.UploadImageCard;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.HasStyle;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.CheckboxGroup;
 import com.vaadin.flow.component.html.*;
+import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.router.*;
+import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.theme.lumo.LumoUtility.*;
@@ -165,6 +168,23 @@ public class UploadView extends Main implements HasUrlParameter<String>, BeforeE
         if (strMember == null || strMember.isEmpty() || strMember.equalsIgnoreCase(STR_ALL_MEMBERS)) {
 
 
+            StreamResource imageResourceMember = new StreamResource("user-profile-icon.svg",
+                    () -> getClass()
+                            .getResourceAsStream("/icons/user-profile-icon.svg"));
+            SvgIcon svgMember = new SvgIcon(imageResourceMember);
+
+            Div divHaveToBeAMember = new Div("You have to be a member in order to upload photos!");
+
+            Button btnRegister = new Button("Become a Member");
+            btnRegister.setIcon(svgMember);
+            btnRegister.addClassName("btn-register");
+//        btnSuggestEvent.setIcon(svgComments);
+            btnRegister.addClickListener(click -> {
+
+            });
+
+            verticalLayout.add(divHaveToBeAMember, btnRegister);
+
         } else {
 
             String sqlMember = sqlMemberPhotos + " AND usr.username = '" + strMember + "' " + sqlMemberPhotosGroupBy;
@@ -219,8 +239,8 @@ public class UploadView extends Main implements HasUrlParameter<String>, BeforeE
 
         if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP)) {
             DIR_PHOTOS_SERVER = "/home/mike/Pictures/lazy-photos";
-        } else if(hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_WIN)){
-            DIR_PHOTOS_SERVER =  "C:\\Users\\nickg\\Pictures\\lazy-photos";
+        } else if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_WIN)) {
+            DIR_PHOTOS_SERVER = "C:\\Users\\nickg\\Pictures\\lazy-photos";
 
         } else if (hostname.equalsIgnoreCase("piot")) {
             DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
@@ -675,7 +695,7 @@ public class UploadView extends Main implements HasUrlParameter<String>, BeforeE
         if (strPath == null || strPath.isEmpty()) {
             strPath = "NULL";
         } else {
-            strPath = strPath.replace("\\","-");
+            strPath = strPath.replace("\\", "-");
             strPath = "'" + strPath + "'";
         }
 

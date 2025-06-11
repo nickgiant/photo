@@ -14,7 +14,6 @@ import com.photo.act.photo_act.views.components.GenericView;
 import com.photo.act.photo_act.views.components.HeaderFilterTabs;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.HasStyle;
-import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.CheckboxGroup;
@@ -190,8 +189,10 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
                 + " FROM learnings_categories lc, learnings l LEFT JOIN learnings_categories lc2 ON lc2.id = l.category_id2 " //, tutor t  "
                 + " WHERE 1 = 1 "
                 + " AND lc.id = l.category_id "  //AND l.tutor_id = t.id "
-                + " AND l.dateInsert BETWEEN NOW() - INTERVAL 5 DAY AND NOW() "
-                + " GROUP BY lc.cat_title";
+                + " AND l.dateInsert BETWEEN NOW() - INTERVAL 12 DAY AND NOW() "
+                + " GROUP BY lc.cat_title "
+                + " ORDER BY l.dateInsert DESC "
+                + " LIMIT 6";
 
 
         String[] arrColumnNamesGallery = {"name_org", "name_new", "title", "subtitle", "photo_type", "uploader", "uploaderId", "photo_type", "contains",
@@ -216,7 +217,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
                 "                when DATE(DATE(pm.date_inserted) + 1) = DATE(NOW()) then CONCAT('Yesterday at ' , DATE_FORMAT(pm.date_inserted, '%H:%i %p') )" +
                 "                when DATE(DATE(pm.date_inserted) + 2) = DATE(NOW())  then CONCAT('Last ' , DATE_FORMAT(pm.date_inserted, '%W at %H:%i %p') )" +
                 "                when DATE(DATE(pm.date_inserted) + 6) >= DATE(NOW())  then CONCAT('Last ' , DATE_FORMAT(pm.date_inserted, '%W') )" +
-                "                when DATE(DATE(pm.date_inserted) + 6) < DATE(NOW())  then CONCAT('' , DATE_FORMAT(pm.date_inserted, '%D of %M %Y') )" +
+                "                when DATE(DATE(pm.date_inserted) + 6) < DATE(NOW())  then CONCAT('' , DATE_FORMAT(pm.date_inserted, '%D %M %Y') )" +
                 "                ELSE DATE_FORMAT(pm.date_inserted, '%D %M %Y') " +
                 "              END ) " +
                 " AS date_inserted " +
@@ -236,23 +237,27 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         Span subTitle = new Span("[ Network and Act around Photography ]");
         H1 titlePage = new H1("photoact.net");
 
-        Header siteHeader = new Header(titlePage,subTitle);
+        Header siteHeader = new Header(titlePage, subTitle);
         siteHeader.addClassNames(Width.FULL);
 
         verticalLayout.add(siteHeader);
 
-        H3 titleCarousel = new H3("10 Recently Uploaded Photos:");
-        verticalLayout.add(titleCarousel, getCarousel(lstImage));
+        Div div1 = new Div("We are a community site, exchanging info and links in order to improve our skills in photography!");
+        Div div2 = new Div("Currently, we share info about events and learnings. We also have space for our photos and albums.");
 
-        H3 titleLastLearnings = new H3("In previous 5 days were Posted Learnings:");
+        StreamResource imageResourceMember = new StreamResource("user-profile-icon.svg",
+                () -> getClass()
+                        .getResourceAsStream("/icons/user-profile-icon.svg"));
+        SvgIcon svgMember = new SvgIcon(imageResourceMember);
+        Button btnRegister = new Button("Become a Member");
+        btnRegister.setIcon(svgMember);
+        btnRegister.addClassName("btn-register");
+//        btnSuggestEvent.setIcon(svgComments);
+        btnRegister.addClickListener(click -> {
 
-        VerticalLayout layoutLastLearnings = loadLastLearnings(sqlLearningsRead, arrColumnsLearning);
-        verticalLayout.add(titleLastLearnings, layoutLastLearnings);
+        });
 
-        H3 titleLastPhotos = new H3("Last 20 Photos that Members Uploaded:");
-        Div layoutLastPhotos = loadUploadedPhotos(sqlGalleryAll + " LIMIT 20 ", arrColumnNamesGallery, false, true);
-        verticalLayout.add(titleLastPhotos, layoutLastPhotos);
-
+        verticalLayout.add(div1, div2, btnRegister);
 
         Div layoutLearningTopics = loadLearningTopics(sqlLearningTopics, arrColLearningTopics);
 
@@ -266,14 +271,40 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         verticalLayout.add(titleLearnGenres, layoutLearningGenres);
 
 
-        H3 titleWeather = new H3("Current Weather in:");
+//        H3 titleCarousel = new H3("10 Recently Uploaded Photos:");
+//        verticalLayout.add(titleCarousel, getCarousel(lstImage));
+
+        H3 titleLastLearnings = new H3("In previous days were Posted Learnings:");
+
+        Div layoutLastLearnings = loadLastLearnings(sqlLearningsRead, arrColumnsLearning);
+        verticalLayout.add(titleLastLearnings, layoutLastLearnings);
+
+
+        H3 titleLastPhotos = new H3("Last 20 Photos that Members Uploaded:");
+        Div layoutLastPhotos = loadUploadedPhotos(sqlGalleryAll + " LIMIT 20 ", arrColumnNamesGallery, false, true);
+        verticalLayout.add(titleLastPhotos, layoutLastPhotos);
+
+
+        H3 titleWeather = new H3("Current Weather at:");
+
+        Div layoutWeather = new Div();
+        layoutWeather.addClassNames(Width.FULL);
+        layoutWeather.addClassName("container-weather");
 
         H4 titleA = new H4("Athens");
-        VerticalLayout layoutResultsA = loadResults("Athens", "Greece");
-        H4 titleB = new H4("Thessaloniki");
-        VerticalLayout layoutResultsB = loadResults("Thessaloniki", "Greece");
-        verticalLayout.add(titleWeather, titleA, layoutResultsA, titleB, layoutResultsB);
+        VerticalLayout layoutResultsA = loadWeather("Athens", "Greece");
+        VerticalLayout layoutAllA = new VerticalLayout();
+        layoutAllA.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER);
+        layoutAllA.add(titleA, layoutResultsA);
 
+        H4 titleB = new H4("Thessaloniki");
+        VerticalLayout layoutResultsB = loadWeather("Thessaloniki", "Greece");
+        VerticalLayout layoutAllB = new VerticalLayout();
+        layoutAllB.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER);
+        layoutAllB.add(titleB, layoutResultsB);
+
+        layoutWeather.add(layoutAllA, layoutAllB);
+        verticalLayout.add(titleWeather, layoutWeather);
 
         this.removeAll();
         this.add(verticalLayout);
@@ -387,9 +418,9 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         canonicalHostname = inetAddress.getCanonicalHostName();
 
         if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP)) {
-                     DIR_PHOTOS_SERVER = "/home/mike/Pictures/lazy-photos";
-        } else if(hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_WIN)){
-            DIR_PHOTOS_SERVER =  "C:\\Users\\nickg\\Pictures\\lazy-photos";
+            DIR_PHOTOS_SERVER = "/home/mike/Pictures/lazy-photos";
+        } else if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_WIN)) {
+            DIR_PHOTOS_SERVER = "C:\\Users\\nickg\\Pictures\\lazy-photos";
 
         } else if (hostname.equalsIgnoreCase("piot")) {
             DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
@@ -429,7 +460,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
     }
 
-    private VerticalLayout loadResults(String city, String country) {
+    private VerticalLayout loadWeather(String city, String country) {
 
 //        String strWhereSubClause ="";
 //
@@ -455,14 +486,15 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         return layoutResults;
     }
 
-    private VerticalLayout loadLastLearnings(String sqlRead, String[] arrColumnNames) {
+    private Div loadLastLearnings(String sqlRead, String[] arrColumnNames) {
 
 
-        VerticalLayout layoutLastLearnings = new VerticalLayout();
+        Div layoutLastLearnings = new Div();
         layoutLastLearnings.addClassNames(AlignItems.CENTER, JustifyContent.CENTER,
-                Margin.Horizontal.XLARGE, Margin.Vertical.SMALL,
-                Padding.Horizontal.XLARGE, Padding.Vertical.SMALL,
+                Margin.XSMALL, //Margin.Vertical.SMALL,
+                Padding.XLARGE, //Padding.Vertical.SMALL,
                 Gap.LARGE);
+        layoutLastLearnings.addClassName("uploaded-line");
 
 
         List<Record> lstRecords = getRecordsFromDb(sqlRead, arrColumnNames);
@@ -471,17 +503,18 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
             HorizontalLayout layoutLearningCat = new HorizontalLayout();
             layoutLearningCat.addClassNames(AlignItems.CENTER, JustifyContent.CENTER,
                     Padding.MEDIUM, Margin.XSMALL,
-                    TextColor.TERTIARY,
-                    Background.CONTRAST_5
-                    );
-            layoutLearningCat.addClassName("uploaded-line");
+                    TextColor.TERTIARY
+            );
             Record record = lstRecords.get(r);
             String strCategory = record.getColumnData("cat_title");
             String strCount = record.getColumnData("cat_count");
 
-            Div divCategory = new Div(strCount + " about " + strCategory);
+            H4 h4Title = new H4(strCategory);
+            h4Title.addClassNames(FontWeight.BOLD, FontSize.LARGE);
 
-            layoutLearningCat.add(divCategory);
+            Div divCategory = new Div(strCount + " about ");
+
+            layoutLearningCat.add(divCategory, h4Title);
 
             layoutLastLearnings.add(layoutLearningCat);
         }
@@ -501,18 +534,21 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
 
         Div layoutLastPhotos = new Div();
-        layoutLastPhotos.addClassName("container-uploaded-lines");
+        layoutLastPhotos.addClassNames(Overflow.HIDDEN, Width.FULL,
+                AlignItems.CENTER, JustifyContent.CENTER,
+                Margin.NONE, Width.FULL);
 /*                Width.FULL, AlignItems.CENTER, JustifyContent.CENTER,
                 Margin.Horizontal.XLARGE, Margin.Vertical.SMALL,
                 Padding.Horizontal.XLARGE, Padding.Vertical.SMALL,
                 Gap.LARGE);*/
+        layoutLastPhotos.addClassName("container-uploaded-lines");
 
         List<Record> lstRecords = getRecordsFromDb(sqlRead, arrColumnNames);
         for (int r = 0; r < lstRecords.size(); r++) {
 
             HorizontalLayout layoutPhotoUploaded = new HorizontalLayout();
             layoutPhotoUploaded.addClassNames(AlignItems.CENTER, JustifyContent.BETWEEN,
-                    Padding.XSMALL, Margin.SMALL,
+//                    Padding.XSMALL, Margin.SMALL,
                     TextColor.TERTIARY,
                     Background.CONTRAST_5
             );
@@ -548,8 +584,10 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
             // badgeLocation.getElement().setAttribute("theme", "badge");
             badgeLocation.getElement().getThemeList().add("badge contrast");
 
-            Div divUploadedAt = new Div("uploaded at");
-            Div divLocation = new Div("photo shoot in");
+            Div divUploadedAt = new Div("uploaded on");
+            divUploadedAt.addClassNames(FontSize.XSMALL);
+            Div divLocation = new Div("photo shoot at");
+            divLocation.addClassNames(FontSize.XSMALL);
 
             String strAvatarFullPath = DIR_PHOTOS_SERVER + dirChar + SUB_PATH_AVATARS + dirChar + strAvatarPath;
             Image imgAvatarMedium = genericView.getAvatarImage(strAvatarFullPath, strNameOfUser, "50px", "50px");
@@ -580,8 +618,8 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
             layoutMemberUp.add(avatarLargeItemMe);
 
             VerticalLayout layoutDateLocationUp = new VerticalLayout();
-            layoutDateLocationUp.addClassNames(AlignItems.CENTER, JustifyContent.CENTER, Margin.NONE, Padding.XSMALL,Gap.XSMALL);
-            layoutDateLocationUp.add(divUploadedAt,badgeDateTime, divLocation, badgeLocation);
+            layoutDateLocationUp.addClassNames(AlignItems.CENTER, JustifyContent.CENTER, Margin.NONE, Padding.XSMALL, Gap.XSMALL);
+            layoutDateLocationUp.add(divUploadedAt, badgeDateTime, divLocation, badgeLocation);
 
             layoutPhotoUploaded.add(image, layoutMemberUp, layoutDateLocationUp);
 
@@ -994,7 +1032,6 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
                     Margin.NONE,
                     Padding.XSMALL,
                     Gap.SMALL,
-                    Width.FULL,
                     //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
                     //  Background.CONTRAST_5,
                     BorderRadius.NONE);
@@ -1005,7 +1042,6 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
                     Margin.NONE,
                     Padding.SMALL,
                     Gap.SMALL,
-                    Width.FULL,
                     //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
                     //  Background.CONTRAST_5,
                     BorderRadius.LARGE);
@@ -1290,11 +1326,9 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         if (strPath == null || strPath.isEmpty()) {
             strPath = "NULL";
         } else {
-            strPath = strPath.replace("\\","-");
+            strPath = strPath.replace("\\", "-");
             strPath = "'" + strPath + "'";
         }
-
-
 
 
         logger.info("photo visitor:" + publicIp + " . " + hostname + " . " + hostAddress + " . " + canonicalHostname + "  .  " + browser + " " + sessionid);

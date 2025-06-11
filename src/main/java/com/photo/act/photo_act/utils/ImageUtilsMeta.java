@@ -2,18 +2,22 @@ package com.photo.act.photo_act.utils;
 
 import org.apache.commons.imaging.Imaging;
 import org.apache.commons.imaging.ImagingException;
+import org.apache.commons.imaging.common.GenericImageMetadata;
 import org.apache.commons.imaging.common.ImageMetadata;
-import org.apache.commons.imaging.common.ImageMetadata.ImageMetadataItem;
 import org.apache.commons.imaging.common.RationalNumber;
 import org.apache.commons.imaging.formats.jpeg.JpegImageMetadata;
+import org.apache.commons.imaging.formats.jpeg.JpegPhotoshopMetadata;
 import org.apache.commons.imaging.formats.tiff.TiffField;
 import org.apache.commons.imaging.formats.tiff.TiffImageMetadata;
 import org.apache.commons.imaging.formats.tiff.constants.ExifTagConstants;
 import org.apache.commons.imaging.formats.tiff.constants.GpsTagConstants;
+import org.apache.commons.imaging.formats.tiff.constants.MicrosoftTagConstants;
 import org.apache.commons.imaging.formats.tiff.constants.TiffTagConstants;
 import org.apache.commons.imaging.formats.tiff.taginfos.TagInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.Resource;
+import org.springframework.util.StringUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -172,6 +176,7 @@ public class ImageUtilsMeta {
             // we could just as easily search for any other tag.
             //
             // see the TiffConstants file for a list of TIFF tags.
+
 
             lstInfo = new ArrayList<>();
             lstInfo.add(getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_DATE_TIME_ORIGINAL)); // date time
@@ -349,6 +354,71 @@ public class ImageUtilsMeta {
 
     public ArrayList<String> getListImageInfo() {
         return lstInfo;
+    }
+
+
+    public static ImageMetadata getImageMetadata(Resource resource) {
+        final ImageMetadata metadata;
+        try {
+            metadata = Imaging.getMetadata(resource.getInputStream(), resource.getFilename());
+        } catch (IOException ex) {
+            throw new IllegalStateException("Unable to parse the metadata of image file " + resource.getFilename(), ex);
+        }
+        return metadata;
+    }
+
+    public static void getJpegImageMetadata(JpegImageMetadata jpegImageMetadata) {
+
+
+        final TiffImageMetadata exifMetadata = jpegImageMetadata.getExif();
+
+        if (exifMetadata != null) {
+            @SuppressWarnings("unchecked") final List<TiffImageMetadata.TiffMetadataItem> exifMetadataItems = (List<TiffImageMetadata.TiffMetadataItem>) exifMetadata
+                    .getItems();
+
+            for (TiffImageMetadata.TiffMetadataItem tiffMetadataItem : exifMetadataItems) {
+                final String propertyName = tiffMetadataItem.getKeyword();
+                final String propertyValue = StringUtils.hasText(tiffMetadataItem.getText())
+                        ? tiffMetadataItem.getText() : "N/A";
+                logger.debug("Exif Property '{}': {}.", propertyName, propertyValue);
+                //directories.add(new Directory(DirectoryType.EXIF, propertyName, propertyValue));
+
+                for (TagInfo tagInfo : MicrosoftTagConstants.ALL_MICROSOFT_TAGS) {
+                    if (tagInfo.equals(tiffMetadataItem.getTiffField().getTagInfo())) {
+                        logger.debug(" Windows  - '{}': {}.", propertyName, propertyValue);
+                        // directories.add(new Directory(DirectoryType.WINDOWS, propertyName, propertyValue));
+                    }
+                }
+            }
+        }
+
+        final JpegPhotoshopMetadata jpegPhotoshopMetadata = jpegImageMetadata.getPhotoshop();
+
+        if (jpegPhotoshopMetadata != null) {
+            for (ImageMetadata.ImageMetadataItem imageMetadataItem : jpegPhotoshopMetadata.getItems()) {
+                if (imageMetadataItem instanceof GenericImageMetadata.GenericImageMetadataItem genericItem) {
+                    final String propertyName = genericItem.getKeyword();
+                    final String propertyValue = StringUtils.hasText(genericItem.getText()) ? genericItem.getText()
+                            : "N/A";
+                    logger.debug("IPTC Property '{}': {}.", propertyName, propertyValue);
+                    //directories.add(new TiffImageMetadata.Directory(DirectoryType.IPTC, propertyName, propertyValue));
+                } else {
+                    throw new IllegalStateException(
+                            "Unhandled ImageMetadataItem: " + imageMetadataItem.getClass().getSimpleName());
+                }
+            }
+        }
+
+        final TiffImageMetadata exif = jpegImageMetadata.getExif();
+        if (exif == null) {
+
+        }
+
+        for (TiffField tiffField : exif.getAllFields()) {
+            logger.info("TIFF field tag name: {}", tiffField.getTagName());
+        }
+
+
     }
 
 }

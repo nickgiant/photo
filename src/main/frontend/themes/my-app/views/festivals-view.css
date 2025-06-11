@@ -16,12 +16,48 @@
 /*    !*border: #9fafd5 dotted;*!*/
 /*}*/
 
-.festivals-view .category{
+.festivals-view .post-title-bar {
+    background-color: #f9f9f9; /*#d8cebe; /*#e6ecf0; /*#edf7f5;*/
+
+    h3 {
+        text-transform: capitalize;
+        text-decoration: none;
+        text-align: center;
+        font-family: "Helvetica Neue", Arial, Helvetica, sans-serif; /* "Courier New", Courier, serif;*/
+        font-weight: bold;
+
+        letter-spacing: 1px;
+        font-size: 12pt;
+        color: var(--lumo-secondary-text-color);
+    }
+
+}
+
+
+.festivals-view .country {
     font-family: 'Times-New-Roman', serif;
     color: var(--lumo-tertiary-text-color);
     font-weight: normal;
     border-radius: var(--lumo-border-radius-m);
     padding: var(--lumo-space-xs);
+}
+
+.festivals-view .item-total {
+    /*border-top-left-radius: 12px;*/
+    /*border-top-right-radius: 2px;*/
+
+    /*border-bottom-left-radius: 10px;*/
+    /*border-bottom-right-radius: 45px;*/
+
+    background-color: #f3f3f3;
+    box-shadow: 1px 1px 4px lightgrey;
+    border-radius: 24px;
+    /*border-bottom: var(--lumo-contrast-20pct) dotted 4px;*/
+    /*transition: 0.7s;*/
+    /*&:hover{*/
+    /*    !*box-shadow: 1px 1px 6px lightgrey;*!*/
+    /*    transition: 0.8s;*/
+    /*}*/
 }
 
 .festivals-view .external-links {
@@ -31,7 +67,6 @@
     /*padding-bottom: var(--lumo-space-xs);*/
     align-items: center;
     justify-items: center;
-
     & a {
         /*padding: var(--lumo-space-xs); !* var(--lumo-space-m);*!*/
         padding: 4px;
@@ -96,8 +131,10 @@
     /*transition: 0.8s;*/
 }
 
-.festivals-view .footer div{
-    font-family: "Times New Roman", Times, serif;
-    background-color: #dcd9d5;
-    color: #4d4d4d;
-}
+
+
+/*.festivals-view .footer div{*/
+/*    font-family: "Times New Roman", Times, serif;*/
+/*    background-color: #dcd9d5;*/
+/*    color: #4d4d4d;*/
+/*}*/

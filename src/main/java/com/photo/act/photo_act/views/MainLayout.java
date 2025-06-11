@@ -69,6 +69,7 @@ public class MainLayout extends AppLayout {
     public static final String STR_ALL_MEMBERS = "all-members";
     public static final String STR_ALL_ALBUMS = "all-albums";
     public static final String STR_ALL_DESTINATIONS = "all-locations";
+    public static final String STR_ALL_COUNTRIES = "all-countries";
 
     public static final String SECTION_LOG = "log";
 
@@ -203,6 +204,13 @@ public class MainLayout extends AppLayout {
 
     private MenuItemInfo[] createMenuItems() {
 
+
+        StreamResource imageResourceMember = new StreamResource("user-profile-icon.svg",
+                () -> getClass()
+                        .getResourceAsStream("/icons/user-profile-icon.svg"));
+        SvgIcon svgMember = new SvgIcon(imageResourceMember);
+
+
         MenuItemInfo menuItemHome;
         if (isMobile) {  // VaadinIcon.CAMERA.create()
             menuItemHome = new MenuItemInfo(APP_NAME, FontAwesome.Solid.CAMERA.create(), HomeView.class);//  LineAwesomeIcon.PENCIL_RULER_SOLID.create(),
@@ -212,11 +220,12 @@ public class MainLayout extends AppLayout {
 
         return new MenuItemInfo[]{ //
                 menuItemHome,
+                new MenuItemInfo("Events", VaadinIcon.CALENDAR_USER.create(), FestivalsView.class), //  LineAwesomeIcon.PENCIL_RULER_SOLID.create(),
                 new MenuItemInfo("Learnings", VaadinIcon.BOOK.create(), LearningsView.class), //  LineAwesomeIcon.PENCIL_RULER_SOLID.create(),
                 // new MenuItemInfo("Festivals", LineAwesomeIcon.OBJECT_GROUP.create(), FestivalsView.class), //  LineAwesomeIcon.PENCIL_RULER_SOLID.create(),
                 new MenuItemInfo("Albums", FontAwesome.Solid.PHOTO_FILM.create(), AlbumsView.class), //
                 new MenuItemInfo("Photos", VaadinIcon.PICTURE.create(), GalleryView.class), //
-                new MenuItemInfo("Upload", FontAwesome.Solid.UPLOAD.create(), UploadView.class), //
+                new MenuItemInfo("Member", svgMember, UploadView.class), //
 
                 // new MenuItemInfo("Checkout Form", LineAwesomeIcon.CREDIT_CARD.create(), CheckoutFormView.class), //
         };
