@@ -7,6 +7,7 @@ import com.photo.act.photo_act.utils.UtilsDate;
 import com.photo.act.photo_act.views.components.HeaderFilterTabs;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.HasStyle;
+import com.vaadin.flow.component.Html;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.CheckboxGroup;
@@ -36,6 +37,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import static com.photo.act.photo_act.views.GalleryView.DIR_PHOTOS_SERVER;
 import static com.photo.act.photo_act.views.MainLayout.*;
 
 //@PageTitle("Image Gallery")
@@ -68,8 +70,7 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
     public static String subPathUpload = "photo-upload";
     public static String subPathShow = "photo-show";
 
-    public static String DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
-
+    public static String             DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
 
     private String publicIp;
     private String strPath;
@@ -191,11 +192,14 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
 
         if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP)) {
                      DIR_PHOTOS_SERVER = "/home/mike/Pictures/lazy-photos";
-        } else if(hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_WIN)){
+        }else if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_LENOVO)){
+            DIR_PHOTOS_SERVER = "/home/linux-pc/Pictures/lazy-photos";
+        } else if(hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_LENOVO_WIN)){
             DIR_PHOTOS_SERVER =  "C:\\Users\\nickg\\Pictures\\lazy-photos";
-
         } else if (hostname.equalsIgnoreCase("piot")) {
-            DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
+                        DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
+        }else if (hostname.equalsIgnoreCase(HOSTNAME_SERVER_HOSTINGER)){
+            DIR_PHOTOS_SERVER = "/home/mikel/lazy-photos";
         } else {
             DIR_PHOTOS_SERVER = "/home/sammy/lazy-photos";
 
@@ -230,7 +234,10 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
             verticalLayout.getStyle().set("gap", "3rem");
         }
 
-        this.setWidthFull();
+        Html htmlTitle = new Html("<title>'photoact.net Network and Act around Photography'</title>");
+        Html htmlMeta = new Html("<meta name='description' content='Get the latest uploaded photos from our community of photographers.'>");
+        verticalLayout.add(htmlTitle,htmlMeta);
+
         this.add(verticalLayout);
     }
 

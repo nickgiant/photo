@@ -50,7 +50,7 @@ public class AlbumViewCard extends VerticalLayout {
         this.isMobile = isMobile;
 
 
-        genericView = new GenericView();
+        genericView = new GenericView(recordService);
 
         this.addClassNames(AlignItems.CENTER, JustifyContent.START, TextAlignment.CENTER);
         this.addClassName("album-info-card");

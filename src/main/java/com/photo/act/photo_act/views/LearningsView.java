@@ -103,7 +103,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
     public static String subPathUpload = "photo-upload";
     public static String subPathShow = "photo-show";
 
-    public static String DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
+    public static String             DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
 
 
     private String publicIp;
@@ -114,7 +114,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
 
     private int userId;
     private String strUsername;
-    
+
     private String strColorExternalweb = "#9fafd5";
 
     private String[] arrClubsColumnNames = {"org_name", "org_type", "org_type_parent", "city", "used_for", "country", "url", "url_local_events", "url_fb", "url_yt", "url_insta",
@@ -196,7 +196,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
             "                WHEN TIMEDIFF(NOW(), l.dateInsert) <= '07:35:00' THEN 'seven hours ago'" +
             "                WHEN TIMEDIFF(NOW(), l.dateInsert) <= '08:35:00' THEN 'eight hours ago'" +
             "                when DATE(l.dateInsert) = DATE(NOW())  then CONCAT('today at ' , DATE_FORMAT(l.dateInsert, '%H:%i %p') )" +
-            "                when DATE(DATE(l.dateInsert) + 1) = DATE(NOW()) then CONCAT('Yesterday on ' , DATE_FORMAT(l.dateInsert, '%H:%i %p') )" +
+            "                when DATE(DATE(l.dateInsert) + 1) = DATE(NOW()) then CONCAT('Yesterday at ' , DATE_FORMAT(l.dateInsert, '%H:%i %p') )" +
             "                when DATE(DATE(l.dateInsert) + 2) = DATE(NOW())  then CONCAT('Last ' , DATE_FORMAT(l.dateInsert, '%W on %H:%i %p') )" +
             "                when DATE(DATE(l.dateInsert) + 6) >= DATE(NOW())  then CONCAT('Last ' , DATE_FORMAT(l.dateInsert, '%W') )" +
             "                when DATE(DATE(l.dateInsert) + 6) < DATE(NOW())  then CONCAT('' , DATE_FORMAT(l.dateInsert, '%D of %M %Y') )" +
@@ -227,7 +227,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         this.recordService = recordService;
 
         utilsDate = new UtilsDate();
-        genericView = new GenericView();
+        genericView = new GenericView(recordService);
 
 
         constructUI();
@@ -349,7 +349,9 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP)) {
             DIR_PHOTOS_SERVER = "/home/mike/Pictures/lazy-photos";
         } else if (hostname.equalsIgnoreCase("piot")) {
-            DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
+                        DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
+        }else if (hostname.equalsIgnoreCase(HOSTNAME_SERVER_HOSTINGER)){
+            DIR_PHOTOS_SERVER = "/home/mikel/lazy-photos";
         } else {
             DIR_PHOTOS_SERVER = "/home/sammy/lazy-photos";
 
@@ -416,6 +418,10 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
                     AlignItems.CENTER, JustifyContent.CENTER
             );
         }
+
+        Html htmlTitle = new Html("<title>'photoact.net Network and Act around Photography'</title>");
+        Html htmlMeta = new Html("<meta name='description' content='Get reviews of the latest uploaded video learnings and books.'>");
+        verticalLayout.add(htmlTitle,htmlMeta);
 
 
     }
@@ -1535,8 +1541,20 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
             layoutFiltersType.add(linkPhotoCategory);
         }
 
+
+//        StreamResource iconComments = new StreamResource("comments.svg",
+//                () -> getClass().getResourceAsStream("/icons/comments.svg"));
+//        SvgIcon svgComments = new SvgIcon(iconComments);
+        Button btnSuggestLearning = new Button("Suggest a Learning");
+        btnSuggestLearning.addClassName("btn-suggest");
+//        btnSuggestLearning.setIcon(svgComments);
+        btnSuggestLearning.addClickListener(click -> {
+
+        });
+
+
         Div divFiltersTitle = new Div("Filter by Category");
-        filtersColumn.add(divFiltersTitle, layoutFiltersType);
+        filtersColumn.add(btnSuggestLearning, divFiltersTitle, layoutFiltersType);
 
         return filtersColumn;
     }

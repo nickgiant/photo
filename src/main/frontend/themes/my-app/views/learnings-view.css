@@ -48,16 +48,21 @@
 
 .learnings-view .btn-more{
     text-decoration: none;
-    color: var(--lumo-primary-text-color);
-    background: #e9e9e8;
+    font-weight: bold;
+    color: #466ca8; /* #6c9494;*/
+    background-color: #d9e5f7; /*#edf7f5;*/
+    border: #c7d8f1 2px solid;
     margin: 1px;
     padding: 11px;
-    border: transparent 2px solid;
-    border-radius: 25px;
-    transition: 0.4s;
+    padding-left: 23px;
+    padding-right: 23px;
+    border-radius: 5px;
+    transition: 0.3s;
     &:hover{
         cursor: pointer;
-        border: var(--lumo-primary-text-color) 2px solid;
+        color: #f7f9fb;
+        background-color: #466ca8;
+        border: #466ca8 2px solid;
         transition: 0.4s;
     }
 }
@@ -165,42 +170,54 @@
 }
 
 
-.learnings-view .actions {
-    gap: 22px;
+.learnings-view .actions{
+    gap: 16px;
 }
 
-.learnings-view .actions-mobile {
-    gap: 9px;
+.learnings-view .actions-mobile{
+    gap: 8px;
 }
 
-.learnings-view .actions vaadin-button {
-    /*padding-top: 1rem;*/
-    /*padding-bottom: 1rem;*/
-    padding-left: 17px;
+.learnings-view .actions vaadin-button{
+/*    padding-left: 17px;
     padding-right: 17px;
-    /*color: #80a7bf;*/
-    /*background-color: var(--lumo-contrast-5pct);*/
-    /*transition: 0.8s;*/
-
     color: var(--lumo-primary-color);
     background-color: var(--lumo-contrast-5pct);;
     border: var(--lumo-contrast-5pct) 1px solid;
     border-radius: 5px;
-    transition: 0.5s;
-}
+    transition: 0.4s;*/
 
-.learnings-view .actions vaadin-button:hover {
-    /*background-color: var(--lumo-contrast-5pct);*/
-    /*color: #cd5c5c;*/
-    /*transition: 0.5s*/
-    color: #c1121f; /* #a62f03; /*#cd5c5c;*/
+
+        text-decoration: none;
+        font-weight: bold;
+    color: #466ca8; /* var(--lumo-contrast-80pct);*/
+    background-color: var(--lumo-contrast-5pct);
+    border: transparent 2px solid;
+        margin: 1px;
+        padding: 11px;
+        padding-left: 16px;
+        padding-right: 16px;
+            border-radius: 5px;
+        transition: 0.3s;
+        &:hover{
+            cursor: pointer;
+            color: #466ca8; /* #6c9494;*/
+            background-color: #d9e5f7; /*#edf7f5;*/
+            border: #c7d8f1 2px solid;
+            transition: 0.4s;
+        }
+
+}
+/*
+.actions vaadin-button:hover{
+    color: #c1121f; *//* #a62f03; *//*#cd5c5c;*//*
     background-color: var(--lumo-contrast-5pct);
     border: var(--lumo-contrast-20pct) 1px solid;
     transition: 0.4s;
     cursor: pointer;
-}
+}*/
 
-.learnings-view .actions-mobile vaadin-button {
+.learnings-view .actions-mobile vaadin-button{
     /*padding-top: 1rem;*/
     /*padding-bottom: 1rem;*/
     padding-left: 7px;

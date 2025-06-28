@@ -11,7 +11,7 @@ import java.io.InputStreamReader;
 import java.net.URL;
 
 import static com.photo.act.photo_act.views.MainLayout.HOSTNAME_LAPTOP;
-import static com.photo.act.photo_act.views.MainLayout.HOSTNAME_LAPTOP_WIN;
+import static com.photo.act.photo_act.views.MainLayout.HOSTNAME_LAPTOP_LENOVO_WIN;
 
 public class NetUtils {
 

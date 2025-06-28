@@ -36,8 +36,7 @@ import java.util.ArrayList;
 import java.util.UUID;
 
 import static com.photo.act.photo_act.views.GalleryView.*;
-import static com.photo.act.photo_act.views.MainLayout.HOSTNAME_LAPTOP;
-import static com.photo.act.photo_act.views.MainLayout.HOSTNAME_LAPTOP_WIN;
+import static com.photo.act.photo_act.views.MainLayout.*;
 
 public class UploadImageCard extends VerticalLayout {
 
@@ -88,11 +87,15 @@ public class UploadImageCard extends VerticalLayout {
         this.recordService = recordService;
 
         if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP)) {
-                     DIR_PHOTOS_SERVER = "/home/mike/Pictures/lazy-photos";
-        } else if(hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_WIN)){
+            DIR_PHOTOS_SERVER = "/home/mike/Pictures/lazy-photos";
+        }else if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_LENOVO)){
+            DIR_PHOTOS_SERVER = "/home/linux-pc/Pictures/lazy-photos";
+        } else if(hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_LENOVO_WIN)){
             DIR_PHOTOS_SERVER =  "C:\\Users\\nickg\\Pictures\\lazy-photos";
         } else if (hostname.equalsIgnoreCase("piot")) {
-            DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
+                        DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
+        }else if (hostname.equalsIgnoreCase(HOSTNAME_SERVER_HOSTINGER)){
+            DIR_PHOTOS_SERVER = "/home/mikel/lazy-photos";
         } else {
             DIR_PHOTOS_SERVER = "/home/sammy/lazy-photos";
 
@@ -246,10 +249,14 @@ public class UploadImageCard extends VerticalLayout {
 
 
                     double dblSize = Double.parseDouble(event.getContentLength() + "");
-                    String strFilesize = getFileSizeMB(dblSize)+" MB";  //String.format("%.2f", dblSize);
-                    String message = "Photo Uploaded ! (" + strFilesize + ")";
+                    String strFilesize = getFileSizeMB(dblSize)+"";
 
-                    Notification notification = Notification.show(message, 4000, Notification.Position.MIDDLE);
+                    if(strFilesize.length()>7){
+                        strFilesize = strFilesize.substring(0,5)+" MB";  //String.format("%.2f", dblSize);
+                    }
+
+                    String message = "Photo Uploaded ! (" + strFilesize + ")";
+                    Notification notification = Notification.show(message, 7000, Notification.Position.MIDDLE);
                     notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
 
                     mailSend.sendSimpleMail("nickgiant@yahoo.com", message, " " + publicIp + " " + hostname + " " + strImageMetaInfo);
@@ -532,10 +539,50 @@ public class UploadImageCard extends VerticalLayout {
                 lstPhotoMetaData.set(6, "0");
             }
 
+            String strPhotoShutterSpeed = lstPhotoMetaData.get(8);
+            double dblPhotoShutterSpeed = 0;
+            if (!strPhotoShutterSpeed.trim().equalsIgnoreCase("null") && strPhotoShutterSpeed.trim().length()>0) {
+                String strSS = "";
+                try {
+
+                    if((strPhotoShutterSpeed.indexOf("(") == -1) && (strPhotoShutterSpeed.indexOf(")") == -1)){
+                        strSS = strPhotoShutterSpeed; // integer
+                    }else {
+                        strSS = strPhotoShutterSpeed.substring(strPhotoShutterSpeed.indexOf("(") + 1, strPhotoShutterSpeed.indexOf(")"));
+                    }
+
+                    dblPhotoShutterSpeed = Double.parseDouble(strSS);
+                } catch (Exception e) {
+                    logger.error(e.getMessage());
+                    //      logErrorInDb(e, "insertPhotoToDb", e.getMessage(),intUserId,strUserName);
+                }
+
+            }
+
+            double dblPhotoAperture = 0;
+            String strPhotoAperture = lstPhotoMetaData.get(9);
+            if (!strPhotoAperture.trim().equalsIgnoreCase("null") && strPhotoAperture.trim().length()>0) {
+                String strAperture = "";
+                try {
+                    if((strPhotoAperture.indexOf("(") == -1) && (strPhotoAperture.indexOf(")") == -1)){
+                        strAperture = strPhotoAperture; // integer
+                    }else {
+                        strAperture = strPhotoAperture.substring(strPhotoAperture.indexOf("(") + 1, strPhotoAperture.indexOf(")"));
+                    }
+                    //double dblF = Double.parseDouble(strAperture);
+
+                    dblPhotoAperture = Double.parseDouble(strAperture);
+                } catch (Exception e) {
+                    logger.error(e.getMessage());
+                    //   logErrorInDb(e, "insertPhotoToDb", e.getMessage(),intUserId,strUserName);
+                }
+
+            }
+
             if (insertPhotoToDb(publicIp, sessionDateTime, strNewFileName, hostname, fileShow.length(), fileMedium.length(), fileThumbs.length(), strImageMetaInfo.toString(), lstPhotoMetaData.get(0), lstPhotoMetaData.get(1),
                     lstPhotoMetaData.get(2), lstPhotoMetaData.get(3), lstPhotoMetaData.get(4), Double.parseDouble(lstPhotoMetaData.get(5)),
                     Double.parseDouble(lstPhotoMetaData.get(6)), Integer.parseInt(lstPhotoMetaData.get(7)),
-                    lstPhotoMetaData.get(8), lstPhotoMetaData.get(9))) {
+                    dblPhotoShutterSpeed, dblPhotoAperture)) {
 
 
                 return true;
@@ -548,7 +595,6 @@ public class UploadImageCard extends VerticalLayout {
                         Notification.Position.MIDDLE
                 );
                 notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
-
             }
 
 
@@ -563,7 +609,7 @@ public class UploadImageCard extends VerticalLayout {
             );
             notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
             logErrorInDb(e, "getUploadImageCard upload failed. dir: ", this.file.getAbsolutePath(), intUserId, strUserName);
-            logger.error(" upload failed. dir: " + e.getMessage());
+            logger.error(" upload failed. dir: " + this.file.getAbsolutePath()+"  "+e.getMessage());
             return false;
         }
 
@@ -575,7 +621,7 @@ public class UploadImageCard extends VerticalLayout {
                                     long photoSpaceSizeThumb,
                                     String strImageMetaInfo, String strPhotoDateTime, String strPhotoCameraMake,
                                     String strPhotoCameraModel, String strPhotoLensMake, String strPhotoLensModel, double dblPhotoFocalLength, double dblPhotoFocalLengthFF, int intPhotoISO,
-                                    String dblPhotoShutterSpeed, String dblPhotoAperture) {
+                                    double dblPhotoShutterSpeed, double dblPhotoAperture) {
 
         // String publicIpAddress = VaadinSession.getCurrent().getBrowser().getAddress();
         String browser = VaadinSession.getCurrent().getBrowser().getBrowserApplication();
@@ -622,6 +668,10 @@ public class UploadImageCard extends VerticalLayout {
             strPhotoLensMake = " null ";
         }
 
+
+
+
+
         String insertSQL = "INSERT INTO photo_meta SET id = 0,  date_fromapp = now(), uploaderId = " + intUserId + ", uploader = '" + strUserName + "', name_new = '" + strNewFileName + "', hostname = '" + hostname + "', " +
                 " space_size = '" + photoSpaceSize + "', " +
                 " space_size_medium = '" + photoSpaceSizeMedium + "', " +
@@ -635,13 +685,10 @@ public class UploadImageCard extends VerticalLayout {
                 " meta_lens_model = " + strPhotoLensModel + ", " +
                 " meta_focal_length = '" + dblPhotoFocalLength + "', " +
                 " meta_focal_length_ff = '" + dblPhotoFocalLengthFF + "', " +
-                " meta_iso = '" + intPhotoISO + "' ";
-        if (!dblPhotoShutterSpeed.trim().equalsIgnoreCase("null")) {
-            insertSQL = insertSQL + " , meta_shutter_speed = '" + dblPhotoShutterSpeed + "' ";
-        }
-        if (!dblPhotoAperture.trim().equalsIgnoreCase("null")) {
-            insertSQL = insertSQL + " , meta_aperture = '" + dblPhotoAperture + "' ";
-        }
+                " meta_iso = '" + intPhotoISO + "' " +
+                " , meta_shutter_speed = '" + dblPhotoShutterSpeed + "' "+
+                " , meta_aperture = '" + dblPhotoAperture + "' ";
+
 
         logger.info("  insert SQL:   " + insertSQL);
 

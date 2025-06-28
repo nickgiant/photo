@@ -45,6 +45,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import static com.photo.act.photo_act.views.GalleryView.DIR_PHOTOS_SERVER;
 import static com.photo.act.photo_act.views.MainLayout.*;
 
 //@PageTitle("Image Gallery")
@@ -78,8 +79,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
     public static String subPathUpload = "photo-upload";
     public static String subPathShow = "photo-show";
 
-    public static String DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
-
+    public static String             DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
 
     private String publicIp;
     private String strPath;
@@ -317,11 +317,14 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
 
         if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP)) {
                      DIR_PHOTOS_SERVER = "/home/mike/Pictures/lazy-photos";
-        } else if(hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_WIN)){
+        }else if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_LENOVO)){
+            DIR_PHOTOS_SERVER = "/home/linux-pc/Pictures/lazy-photos";
+        } else if(hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_LENOVO_WIN)){
             DIR_PHOTOS_SERVER =  "C:\\Users\\nickg\\Pictures\\lazy-photos";
-
         } else if (hostname.equalsIgnoreCase("piot")) {
-            DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
+                        DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
+        }else if (hostname.equalsIgnoreCase(HOSTNAME_SERVER_HOSTINGER)){
+            DIR_PHOTOS_SERVER = "/home/mikel/lazy-photos";
         } else {
             DIR_PHOTOS_SERVER = "/home/sammy/lazy-photos";
 
@@ -626,7 +629,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         logger.info(" strImagePath " + strImagePath);
 
         GalleryImageViewCard imageGalleryViewCard = new GalleryImageViewCard(record, strImagePath, isMobile, userId, strUsername, sessionCreation, hostname, publicIp, isEditable,
-                recordService);
+                recordService,sqlReadGallery,arrColumnNamesGallery);
         imageGalleryViewCard.addClassNames(Background.CONTRAST_5, BorderColor.CONTRAST_10, TextColor.TERTIARY);
         imageGalleryViewCard.addClassName("image-card");
         imageGalleryViewCard.addClassName("bottom-radius-shadow");

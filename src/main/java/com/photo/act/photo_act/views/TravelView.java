@@ -45,6 +45,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
 
+import static com.photo.act.photo_act.views.GalleryView.DIR_PHOTOS_SERVER;
 import static com.photo.act.photo_act.views.MainLayout.*;
 
 
@@ -77,7 +78,8 @@ public class TravelView extends Composite<VerticalLayout> implements HasUrlParam
     public static String subPathUpload = "photo-upload";
     public static String subPathShow = "photo-show";
 
-    public static String DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
+    public static String             DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
+
 
     private int userId = 1;
     private String username = "user_travel_v";
@@ -117,7 +119,7 @@ public class TravelView extends Composite<VerticalLayout> implements HasUrlParam
         layoutPageTop.setWidthFull();
 
         utilsDate = new UtilsDate();
-        genericView = new GenericView();
+        genericView = new GenericView(recordService);
 
 //        creationsViewCard = new CreationsViewCard();
 
@@ -212,11 +214,14 @@ public class TravelView extends Composite<VerticalLayout> implements HasUrlParam
 
         if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP)) {
                      DIR_PHOTOS_SERVER = "/home/mike/Pictures/lazy-photos";
-        } else if(hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_WIN)){
+        }else if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_LENOVO)){
+            DIR_PHOTOS_SERVER = "/home/linux-pc/Pictures/lazy-photos";
+        } else if(hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_LENOVO_WIN)){
             DIR_PHOTOS_SERVER =  "C:\\Users\\nickg\\Pictures\\lazy-photos";
-
         } else if (hostname.equalsIgnoreCase("piot")) {
-            DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
+                        DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
+        }else if (hostname.equalsIgnoreCase(HOSTNAME_SERVER_HOSTINGER)){
+            DIR_PHOTOS_SERVER = "/home/mikel/lazy-photos";
         } else {
             DIR_PHOTOS_SERVER = "/home/sammy/lazy-photos";
 
@@ -528,7 +533,7 @@ public class TravelView extends Composite<VerticalLayout> implements HasUrlParam
 
                     logger.info("destinations:  " + r + " " + destination + " != " + destinationBefore + " " + listDivSpot.size());
 
-                    GenericView genericView = new GenericView();
+                    GenericView genericView = new GenericView(recordService);
 
                     VerticalLayout layoutWeather = genericView.getWeatherCurrent(city, country);
 
