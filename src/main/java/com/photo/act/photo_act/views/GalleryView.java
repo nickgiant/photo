@@ -1,5 +1,7 @@
 package com.photo.act.photo_act.views;
 
+import com.flowingcode.vaadin.addons.carousel.Carousel;
+import com.flowingcode.vaadin.addons.carousel.Slide;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.utils.NetUtils;
@@ -9,10 +11,13 @@ import com.photo.act.photo_act.views.components.GenericView;
 import com.photo.act.photo_act.views.components.HeaderFilterTabs;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.HasStyle;
+import com.vaadin.flow.component.Html;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.CheckboxGroup;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
@@ -20,6 +25,7 @@ import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.TabVariant;
 import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.router.*;
+import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.theme.lumo.LumoUtility;
@@ -28,9 +34,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.FileSystems;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -73,9 +83,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
     public static String subPathUpload = "photo-upload";
     public static String subPathShow = "photo-show";
 
-    public static String DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
-
-
+    public static String             DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
     private String publicIp;
     private String strPath;
     private String hostname;
@@ -104,7 +112,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
 
     private String[] arrColumnNamesGallery = {"name_new", "title", "subtitle", "photo_type", "uploader", "creator", "visible_to", "city_name", "meta_date", "photo_date", "photo_time"
             , "space_size", "space_size_medium", "space_size_thumb", "meta_camera_make", "meta_camera_model", "meta_lens_make", "meta_lens_model"
-            , "meta_focal_length", "meta_focal_length_ff", "meta_iso"
+            , "meta_focal_length", "meta_focal_length_ff", "meta_iso",  "meta_aperture",  "meta_shutter_speed"
             , "location_by_user", "location_area", "location_country_code", "location_lat", "location_lon"
             , "spot_name", "spot_type"
             , "date_inserted"
@@ -114,7 +122,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
     private String sqlReadGallery = "SELECT pm.name_new, pm.title, pm.subtitle, pm.photo_type, pm.uploader, pm.creator, pm.visible_to, d.city_name, d.country, " +
             " DATE_FORMAT(pm.meta_date, '%W %D %M %Y %H:%i %p') AS meta_date, DATE_FORMAT(pm.meta_date, '%d-%m-%Y') AS photo_date, DATE_FORMAT(pm.meta_date, '%H:%i %p') AS photo_time, " +
             " pm.space_size, pm.space_size_medium, pm.space_size_thumb, pm.meta_camera_make, pm.meta_camera_model, pm.meta_lens_make, pm.meta_lens_model, " +
-            " pm.meta_focal_length, pm.meta_focal_length_ff, pm.meta_iso " +
+            " pm.meta_focal_length, pm.meta_focal_length_ff, pm.meta_iso, meta_aperture,  meta_shutter_speed " +
             " , pm.location_by_user, pm.location_area, pm.location_country_code, pm.location_lat, pm.location_lon " +
             " , usr.username, usr.nameOfUser, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined, usr.avatar_path " +
 //            "  ds.spot_name, ds.spot_type " +
@@ -133,7 +141,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
     public GalleryView(RecordService recordService) {
         this.recordService = recordService;
         utilsDate = new UtilsDate();
-        genericView = new GenericView();
+        genericView = new GenericView(recordService);
 
         constructUI();
     }
@@ -177,7 +185,10 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
 
             String sqlGalleryAll = sqlReadGallery + " AND pm.visible_to = 'ALL' ";
             sqlGalleryAll = sqlGalleryAll + " ORDER BY pm.date_inserted DESC, pm.title ASC, meta_date DESC ";
-            loadImagesFromDb(sqlGalleryAll, arrColumnNamesGallery, false);
+
+//            verticalLayout.add(loadCarouselWithThumbnails(sqlGalleryAll, arrColumnNamesGallery));
+
+            verticalLayout.add(loadImagesFromDb(sqlGalleryAll, arrColumnNamesGallery, false));
         } else if (strMember.equalsIgnoreCase(STR_ALL_MEMBERS) && !strDestination.equalsIgnoreCase(STR_ALL_DESTINATIONS)) {
             verticalLayout.add(loadHeader("Gallery of Photos", "", strDestination));
             verticalLayout.add(loadWeather(strDestination, ""));
@@ -188,7 +199,10 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
             sqlGalleryAll = sqlGalleryAll + " AND d.city_name LIKE '" + strDestination + "' ";
 
             sqlGalleryAll = sqlGalleryAll + " ORDER BY pm.date_inserted DESC, pm.title ASC, meta_date DESC ";
-            loadImagesFromDb(sqlGalleryAll, arrColumnNamesGallery, false);
+
+//            verticalLayout.add(loadCarouselWithThumbnails(sqlGalleryAll, arrColumnNamesGallery));
+
+            verticalLayout.add(loadImagesFromDb(sqlGalleryAll, arrColumnNamesGallery, false));
         } else if (!strMember.equalsIgnoreCase(STR_ALL_MEMBERS)) {
             verticalLayout.add(loadHeader("My Photos", "and how to manage them.", ""));
             verticalLayout.add(loadWeather(strDestination, ""));
@@ -196,7 +210,8 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
                     " AND pm.visible_to = 'ALL' AND pm.uploader LIKE '" + strMember + "' " +
                     " ORDER BY pm.date_inserted DESC, meta_date DESC";
 
-            loadImagesFromDb(sqlGalleryUser, arrColumnNamesGallery, true);
+//            verticalLayout.add(loadCarouselWithThumbnails(sqlGalleryUser, arrColumnNamesGallery));
+            verticalLayout.add(loadImagesFromDb(sqlGalleryUser, arrColumnNamesGallery, true));
         }
 
         this.removeAll();
@@ -235,11 +250,14 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
 
         if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP)) {
             DIR_PHOTOS_SERVER = "/home/mike/Pictures/lazy-photos";
-        } else if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_WIN)) {
+        }else if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_LENOVO)){
+            DIR_PHOTOS_SERVER = "/home/linux-pc/Pictures/lazy-photos";
+        } else if(hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_LENOVO_WIN)){
             DIR_PHOTOS_SERVER = "C:\\Users\\nickg\\Pictures\\lazy-photos";
-
         } else if (hostname.equalsIgnoreCase("piot")) {
-            DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
+                        DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
+        }else if (hostname.equalsIgnoreCase(HOSTNAME_SERVER_HOSTINGER)){
+            DIR_PHOTOS_SERVER = "/home/mikel/lazy-photos";
         } else {
             DIR_PHOTOS_SERVER = "/home/sammy/lazy-photos";
         }
@@ -269,11 +287,12 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
                     Padding.XLARGE,
                     Padding.Top.XSMALL,
                     Gap.LARGE,
-                    //  Padding.NONE, //.Left.MEDIUM, Padding.Right.MEDIUM,
-                    //Margin.Vertical.MEDIUM, Padding.Vertical.NONE,
                     AlignItems.CENTER, JustifyContent.CENTER
             );
-//            verticalLayout.getStyle().set("gap", "3rem");
+
+            Html htmlTitle = new Html("<title>'photoact.net Network and Act around Photography'</title>");
+            Html htmlMeta = new Html("<meta name='description' content='Get the latest uploaded photos from our community of photographers.'>");
+            verticalLayout.add(htmlTitle,htmlMeta);
         }
     }
 
@@ -543,7 +562,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         return layoutHeaderParameters;
     }
 
-    private void loadImagesFromDb(String sqlRead, String[] arrColumnNames, boolean isEditable) {
+    private Div loadImagesFromDb(String sqlRead, String[] arrColumnNames, boolean isEditable) {
         strPath = DIR_PHOTOS_SERVER + dirChar;
 
         Div divGallery = new Div();
@@ -555,11 +574,11 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
             Record rec = lstRecords.get(r);
             divGallery.add(getImageGalleryThumbsFromDb(rec, isEditable));
         }
-        verticalLayout.add(divGallery);
+        return divGallery;
     }
 
     private GalleryImageViewCard getImageGalleryThumbsFromDb(Record record, boolean isEditable) {
-        strPath = DIR_PHOTOS_SERVER + dirChar + subPathMedium;
+        strPath = DIR_PHOTOS_SERVER + dirChar + subPathThumbs;
 
         String strFileName = record.getColumnData("name_new");
         String strTitle = record.getColumnData("title");
@@ -585,9 +604,62 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         logger.info(" strImagePath " + strImagePath);
 
         GalleryImageViewCard imageGalleryViewCard = new GalleryImageViewCard(record, strImagePath, isMobile, userId, strUsername, sessionCreation, hostname, publicIp, isEditable,
-                recordService);
+                recordService,sqlReadGallery,arrColumnNamesGallery);
         return imageGalleryViewCard;
     }
+
+
+
+
+    private Image getImageThumbFromDb(Record record, String strPathIn) {
+        strPath = strPathIn;
+
+        String strFileName = record.getColumnData("name_new");
+        String strTitle = record.getColumnData("title");
+        String strSubTitle = record.getColumnData("subtitle");
+        String strPhotoType = record.getColumnData("photo_type");
+
+        String strCityName = record.getColumnData("city_name");
+        String strUploader = record.getColumnData("uploader");
+
+//        RouteParam routeUploader = new RouteParam("member", strUploader);
+//        RouterLink linkUploader = new RouterLink(strUploader, GalleryView.class,new RouteParameters(routeUploader));
+//
+//        RouteParam routeDestination = new RouteParam("destination", strCityName);
+//        RouterLink linkDestination = new RouterLink(strCityName, GalleryView.class,new RouteParameters(routeDestination));
+//
+//        ArrayList<RouterLink> lstRouterLinks =new ArrayList<>();
+//        lstRouterLinks.add(linkDestination);
+
+        if (strTitle == null || strTitle.isEmpty()) {
+            strTitle = "image";
+        }
+
+        String strImagePath = strPath + dirChar + strFileName;
+        logger.info(" strImagePath " + strImagePath);
+//        Image image1 = new Image("https://images.unsplash.com/photo-1536048810607-3dc7f86981cb?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80", "img2");
+        //GalleryImageViewCard imageGalleryViewCard = new GalleryImageViewCard(record,strImagePath,isMobile,userId, strUsername, sessionCreation,hostname,publicIp, isEditable, linkUploader, lstRouterLinks, recordService);
+        Image image = new Image();
+
+        final StreamResource imageResource = new StreamResource("streamResource", () -> {
+            try {
+
+                Path path = Paths.get(strImagePath);
+                File file = path.toFile();
+                return new FileInputStream(file);
+            } catch (final FileNotFoundException e) {
+//                logErrorInDb(e, "GalleryImageViewCard StreamResource FileNotFoundException", hostname, userId, strUserName, publicIp, sessionCreation, file.getAbsolutePath());
+                // logErrorInDb(e,hostname,"CreationsViewCard StreamResource",userId,strUserName,file.getAbsolutePath());
+                logger.error(e.getMessage());
+            }
+            return null;
+        });
+
+        image.setSrc(imageResource);
+        return image;
+    }
+
+
 
     private void getUserClientInfo() {
 
@@ -689,7 +761,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
 //        sqlLearningsReadOrderBy =" ORDER BY l.dateInsert DESC";
 //        String sqlRead = sqlLearningsRead + strWhereSubClause + sqlLearningsReadOrderBy;
 
-        GenericView genericView = new GenericView();
+        GenericView genericView = new GenericView(recordService);
 
         VerticalLayout layoutWeather = genericView.getWeatherCurrent(city, country);
 

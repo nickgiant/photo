@@ -103,7 +103,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
     public static String subPathUpload = "photo-upload";
     public static String subPathShow = "photo-show";
 
-    public static String DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
+    public static String             DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
 
 
     private String publicIp;
@@ -227,7 +227,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         this.recordService = recordService;
 
         utilsDate = new UtilsDate();
-        genericView = new GenericView();
+        genericView = new GenericView(recordService);
 
 
         constructUI();
@@ -349,7 +349,9 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP)) {
             DIR_PHOTOS_SERVER = "/home/mike/Pictures/lazy-photos";
         } else if (hostname.equalsIgnoreCase("piot")) {
-            DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
+                        DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
+        }else if (hostname.equalsIgnoreCase(HOSTNAME_SERVER_HOSTINGER)){
+            DIR_PHOTOS_SERVER = "/home/mikel/lazy-photos";
         } else {
             DIR_PHOTOS_SERVER = "/home/sammy/lazy-photos";
 
@@ -416,6 +418,10 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
                     AlignItems.CENTER, JustifyContent.CENTER
             );
         }
+
+        Html htmlTitle = new Html("<title>'photoact.net Network and Act around Photography'</title>");
+        Html htmlMeta = new Html("<meta name='description' content='Get reviews of the latest uploaded video learnings and books.'>");
+        verticalLayout.add(htmlTitle,htmlMeta);
 
 
     }

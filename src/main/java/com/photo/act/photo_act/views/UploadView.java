@@ -2,6 +2,7 @@ package com.photo.act.photo_act.views;
 
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
+import com.photo.act.photo_act.services.ImageService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.photo.act.photo_act.views.components.GenericView;
@@ -14,6 +15,8 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.CheckboxGroup;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.SvgIcon;
+import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
@@ -33,6 +36,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import static com.photo.act.photo_act.views.GalleryView.DIR_PHOTOS_SERVER;
 import static com.photo.act.photo_act.views.MainLayout.*;
 
 //@PageTitle("Image Gallery")
@@ -66,7 +70,8 @@ public class UploadView extends Main implements HasUrlParameter<String>, BeforeE
     public static String subPathUpload = "photo-upload";
     public static String subPathShow = "photo-show";
 
-    public static String DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
+    public static String             DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
+
 
 
     private String publicIp;
@@ -135,7 +140,7 @@ public class UploadView extends Main implements HasUrlParameter<String>, BeforeE
         this.recordService = recordService;
 
         utilsDate = new UtilsDate();
-        genericView = new GenericView();
+        genericView = new GenericView(recordService);
 
         constructUI();
 
@@ -239,11 +244,14 @@ public class UploadView extends Main implements HasUrlParameter<String>, BeforeE
 
         if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP)) {
             DIR_PHOTOS_SERVER = "/home/mike/Pictures/lazy-photos";
-        } else if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_WIN)) {
+        }else if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_LENOVO)){
+            DIR_PHOTOS_SERVER = "/home/linux-pc/Pictures/lazy-photos";
+        } else if(hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_LENOVO_WIN)){
             DIR_PHOTOS_SERVER = "C:\\Users\\nickg\\Pictures\\lazy-photos";
-
         } else if (hostname.equalsIgnoreCase("piot")) {
-            DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
+                        DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
+        }else if (hostname.equalsIgnoreCase(HOSTNAME_SERVER_HOSTINGER)){
+            DIR_PHOTOS_SERVER = "/home/mikel/lazy-photos";
         } else {
             DIR_PHOTOS_SERVER = "/home/sammy/lazy-photos";
 
@@ -476,7 +484,27 @@ public class UploadView extends Main implements HasUrlParameter<String>, BeforeE
         uploadImageCard.setHeight("100px");
 
 //            verticalLayout.add(uploadImageCard.getLocationSelectionLayout());
-        verticalLayout.add(uploadImageCard.getUploadImageCard(recordService));
+        Button btnRefreshPhotoMeta = new Button("Refresh Photo Meta");
+        btnRefreshPhotoMeta.addClickListener(e->{
+            ImageService imageService = new ImageService();
+            if(imageService.updatePhotoMeta(recordService, intUserId)){
+                Notification notification = Notification.show(
+                        "Updated !",
+                        5000,
+                        Notification.Position.MIDDLE
+                );
+                notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+            }else{
+                Notification notification = Notification.show(
+                        "Error !",
+                        5000,
+                        Notification.Position.MIDDLE
+                );
+                notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+
+            }
+        });
+        verticalLayout.add(btnRefreshPhotoMeta,uploadImageCard.getUploadImageCard(recordService));
     }
 
     private void getUserClientInfo() {
@@ -553,6 +581,8 @@ public class UploadView extends Main implements HasUrlParameter<String>, BeforeE
         });
 
     }
+
+
 
 
     private List<Record> getRecordsFromDb(String sql, String[] arrColumnNames) {

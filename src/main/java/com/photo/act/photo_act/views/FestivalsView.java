@@ -9,6 +9,7 @@ import com.photo.act.photo_act.views.components.GenericView;
 import com.photo.act.photo_act.views.components.HeaderFilterTabs;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.HasStyle;
+import com.vaadin.flow.component.Html;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.*;
@@ -40,6 +41,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import static com.photo.act.photo_act.views.GalleryView.DIR_PHOTOS_SERVER;
 import static com.photo.act.photo_act.views.MainLayout.*;
 
 
@@ -75,9 +77,10 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
     public static String subPathUpload = "photo-upload";
     public static String subPathShow = "photo-show";
 
-    public static String DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
+    public static String             DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
+
     String[] arrFestivalsColumnNames = {"nameShort", "city_name", "country", "periodOfYear", "type", "website", "url_facebook", "url_instagram", "url_youtube", "activities", "image_top", "image_logo", "dateInsert", "title", "subtitle", "formatedDateFrom", "formatedDateTo",
-            "edition_description", "formatedDateUpdated", "title_of_place", "address_of_place"};
+            "edition_description", "formatedDateUpdated", "title_of_place", "address_of_place", "url_planned", "url_fb", "url_insta"};
 
     private String publicIp;
     private String strPath;
@@ -88,7 +91,7 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
     private String strBrowser;
     String sqlFestivalsRead = "SELECT  f.nameShort, f.periodOfYear, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert " +
             ", e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description, DATE_FORMAT(f.dateInsert , '%D %M %Y') AS formatedDateUpdated " +
-            ", e.title_of_place, e.address_of_place " +
+            ", e.title_of_place, e.address_of_place, e.url_planned, e.url_fb, e.url_insta " +
             ", d.city_name, d.country " +
             " FROM  festivals f LEFT JOIN festivals_edition e ON f.id = e.festival_id " +
 //            " LEFT JOIN destination d ON  d.id = e.destination_id " +
@@ -144,7 +147,7 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
         this.recordService = recordService;
         utilsDate = new UtilsDate();
 
-        genericView = new GenericView();
+        genericView = new GenericView(recordService);
 
         constructUI();
     }
@@ -273,11 +276,15 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
 
         if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP)) {
             DIR_PHOTOS_SERVER = "/home/mike/Pictures/lazy-photos";
-        } else if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_WIN)) {
+        }else if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_LENOVO)){
+            DIR_PHOTOS_SERVER = "/home/linux-pc/Pictures/lazy-photos";
+        } else if(hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_LENOVO_WIN)){
             DIR_PHOTOS_SERVER = "C:\\Users\\nickg\\Pictures\\lazy-photos";
 
         } else if (hostname.equalsIgnoreCase("piot")) {
-            DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
+                        DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
+        }else if (hostname.equalsIgnoreCase(HOSTNAME_SERVER_HOSTINGER)){
+            DIR_PHOTOS_SERVER = "/home/mikel/lazy-photos";
         } else {
             DIR_PHOTOS_SERVER = "/home/sammy/lazy-photos";
         }
@@ -339,10 +346,13 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
                     Margin.NONE,
                     Padding.SMALL,  //<---
                     Padding.Top.XSMALL,
-//                    Gap.LARGE,
                     AlignItems.CENTER, JustifyContent.CENTER
             );
         }
+
+        Html htmlTitle = new Html("<title>'photoact.net Network and Act around Photography'</title>");
+        Html htmlMeta = new Html("<meta name='description' content='Get info about events that take place around globe for friends of photography.'>");
+        verticalLayout.add(htmlTitle,htmlMeta);
 
 
         this.add(verticalLayout);
@@ -722,6 +732,10 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
         String strImageLogo;
         String strImageTop;
 
+        String strUrlEdition= record.getColumnData("url_planned");
+        String strUrlEdFacebook = record.getColumnData("url_fb");
+        String strUrlEdInsta = record.getColumnData("url_insta");
+
         String strImgLogoPath = record.getColumnData("image_logo");
         String strImgTopPath = record.getColumnData("image_top");
 
@@ -842,13 +856,13 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
 //        linkWebsite.setClassName("external-links");
         String festUrl = record.getColumnData("website");
         //"fest url: "+ festUrl);
-        if (!festUrl.equalsIgnoreCase("null") && !festUrl.equalsIgnoreCase("")) {
-//            linkWebsite.setText("Website");
-            //link1InNewTab.setTarget(festUrl);
-
+        if(!strUrlEdition.isEmpty() && !strUrlEdition.equalsIgnoreCase("null")){
+            linkWebsite.setHref(strUrlEdition);
+            linkWebsite.setTarget("_blank");
+            linkWebsite.setVisible(true);
+        } else if (!festUrl.equalsIgnoreCase("null") && !festUrl.isEmpty()) {
             linkWebsite.setHref(festUrl);
             linkWebsite.setTarget("_blank");
-            //link1InNewTab.getElement().setAttribute("target", "_blank");
             linkWebsite.setVisible(true);
         } else {
             linkWebsite.setVisible(false);
@@ -874,9 +888,11 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
         // linkFacebookNewTab.addClassName("external-links");
         linkFacebookNewTab.add(FontAwesome.Brands.FACEBOOK.create());
         String festUrlFace = record.getColumnData("url_facebook");
-        //"fest url: "+ festUrl);
-        if (!festUrlFace.equalsIgnoreCase("null") && !festUrlFace.equalsIgnoreCase("")) {
-            //linkFacebookNewTab.setText("Facebook");
+        if(!strUrlEdFacebook.isEmpty() && !strUrlEdFacebook.equalsIgnoreCase("null")){
+            linkFacebookNewTab.setHref(strUrlEdFacebook);
+            linkFacebookNewTab.setTarget("_blank");
+            linkFacebookNewTab.setVisible(true);
+        }else if (!festUrlFace.equalsIgnoreCase("null") && !festUrlFace.equalsIgnoreCase("")) {
             linkFacebookNewTab.setHref(festUrlFace);
             linkFacebookNewTab.setTarget("_blank");
             linkFacebookNewTab.setVisible(true);
@@ -889,9 +905,11 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
         //linkInstaNewTab.getStyle().setColor(strColorExternalweb);
         // linkInstaNewTab.setClassName("external-links");
         String festUrlInsta = record.getColumnData("url_instagram");
-        //"fest url: "+ festUrl);
-        if (!festUrlInsta.equalsIgnoreCase("null") && !festUrlInsta.equalsIgnoreCase("")) {
-            // linkInstaNewTab.setText("Instagram");
+        if(!strUrlEdInsta.isEmpty() && !strUrlEdInsta.equalsIgnoreCase("null")) {
+            linkInstaNewTab.setHref(strUrlEdInsta);
+            linkInstaNewTab.setTarget("_blank");
+            linkInstaNewTab.setVisible(true);
+        } else if (!festUrlInsta.equalsIgnoreCase("null") && !festUrlInsta.equalsIgnoreCase("")) {
             linkInstaNewTab.setHref(festUrlInsta);
             linkInstaNewTab.setTarget("_blank");
             linkInstaNewTab.setVisible(true);
@@ -914,7 +932,9 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
             linkYTNewTab.setVisible(false);
         }
 
-        layoutExtLinks.add(linkWebsite, linkFacebookNewTab, linkInstaNewTab, linkYTNewTab);
+
+            layoutExtLinks.add(linkWebsite, linkFacebookNewTab, linkInstaNewTab, linkYTNewTab);
+
 
         StreamResource iconInfo = new StreamResource("info-circle-line-icon.svg",
                 () -> getClass().getResourceAsStream("/icons/info-circle-line-icon.svg"));

@@ -1,9 +1,13 @@
 package com.photo.act.photo_act.views.components;
 
+import com.flowingcode.vaadin.addons.carousel.Carousel;
+import com.flowingcode.vaadin.addons.carousel.Slide;
 import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.utils.ImageUtilsMeta;
+import com.photo.act.photo_act.views.LearningsView;
+import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.details.Details;
@@ -15,20 +19,26 @@ import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.menubar.MenuBarVariant;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.StreamResource;
+import com.vaadin.flow.theme.lumo.LumoUtility;
 import com.vaadin.flow.theme.lumo.LumoUtility.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.awt.*;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.photo.act.photo_act.views.AlbumsView.DIR_PHOTOS_SERVER;
 import static com.photo.act.photo_act.views.MainLayout.SUB_PATH_AVATARS;
@@ -44,15 +54,24 @@ public class GalleryImageViewCard extends Div {
 
     private String dirChar = FileSystems.getDefault().getSeparator();
 
+    private Record record;
+    private String strImagePath;
+
+    private String sqlCarousel;
+    private String[] arrColumnsCarousel;
     public GalleryImageViewCard(Record record, String strImagePath, boolean isMobile, int userId, String strUserName, long sessionCreation,
-                                String hostname, String publicIp, boolean isEditable, RecordService recordService) {
+                                String hostname, String publicIp, boolean isEditable, RecordService recordService, String sqlCarousel, String[] arrColumnsCarousel) {
         this.recordService = recordService;
         this.isMobile = isMobile;
+        this.record = record;
+        this.strImagePath = strImagePath;
+        this.sqlCarousel = sqlCarousel;
+        this.arrColumnsCarousel = arrColumnsCarousel;
 
 
         this.addClassName("gallery-view-card");
 
-        genericView = new GenericView();
+        genericView = new GenericView(recordService);
 
 
         if (record == null) {
@@ -72,6 +91,16 @@ public class GalleryImageViewCard extends Div {
 
         String strSpotName = record.getColumnData("spot_name");
         String strSpotType = record.getColumnData("spot_type");
+
+        String strOrgSpaceSize = record.getColumnData("space_size");
+        String strMetaCameraModel = record.getColumnData("meta_camera_model");
+        String strMetaLensModel = record.getColumnData("meta_lens_model");
+
+        String strMetaFocalLengthFF = record.getColumnData("meta_focal_length_ff");
+        String strMetaFocalLength = record.getColumnData("meta_focal_length");
+        String strMetaIso = record.getColumnData("meta_iso");
+        String strMetaSS = record.getColumnData("meta_shutter_speed");
+        String strMetaAperture = record.getColumnData("meta_aperture");
 
         String strPhotoUserName = record.getColumnData("username");
         String strPhotoNameOfUser = record.getColumnData("nameOfUser");
@@ -101,12 +130,9 @@ public class GalleryImageViewCard extends Div {
         });
 
         HorizontalLayout layoutImage = new HorizontalLayout();
-//        layoutImage.addClassName("id-card");
         layoutImage.addClassNames(
                 Border.NONE,// Background.CONTRAST_50,
                 Padding.NONE, Margin.NONE //Margin.Top.LARGE,
-                //               BorderRadius.LARGE
-//                BoxShadow.SMALL
         );
 
         Div divImage = new Div();
@@ -142,19 +168,169 @@ public class GalleryImageViewCard extends Div {
 //            this.addClassName("bottom-radius-shadow");
         }
 
-
 //        Image imgAvatarSmall = getAvatarImage(strAvatar, strPhotoUserName, "40px", "40px");
         String strAvatarFullPath = DIR_PHOTOS_SERVER + dirChar + SUB_PATH_AVATARS + dirChar + strAvatarPath;
         Image imgAvatarSmall = genericView.getAvatarImage(strAvatarFullPath, strPhotoUserName, "40px", "40px");
         Image imgAvatarMedium = genericView.getAvatarImage(strAvatarFullPath, strPhotoUserName, "70px", "70px");
 //        Image imgAvatarMedium = getAvatarImage(strAvatar, strPhotoUserName, "70px", "70px");
 
+
+        HorizontalLayout layoutPhotosInfo = new HorizontalLayout();
+        layoutPhotosInfo.addClassNames(
+                Overflow.HIDDEN, Width.FULL,
+                AlignItems.CENTER, JustifyContent.BETWEEN,
+                Margin.NONE,
+                Padding.NONE,
+                Gap.SMALL,
+                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+                //   Background.CONTRAST_5,
+                BorderRadius.NONE
+        );
+
+        HorizontalLayout layoutViewCount = new HorizontalLayout();
+        layoutViewCount.addClassNames(
+//                Overflow.HIDDEN, Width.FULL,
+                AlignItems.CENTER, JustifyContent.CENTER,
+                Margin.NONE,
+                Padding.NONE,
+                Gap.XSMALL,
+                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+                //   Background.CONTRAST_5,
+                BorderRadius.NONE
+        );
+        Div divViews = new Div("1");
+        layoutViewCount.add(FontAwesome.Regular.EYE.create(), divViews);
+
+        HorizontalLayout layoutLocationCount = new HorizontalLayout();
+        layoutLocationCount.addClassNames(
+//                Overflow.HIDDEN, Width.FULL,
+                AlignItems.CENTER, JustifyContent.CENTER,
+                Margin.NONE,
+                Padding.NONE,
+                Gap.XSMALL,
+                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+                //   Background.CONTRAST_5,
+                BorderRadius.NONE
+        );
+        Div divLocation = new Div(strCity);
+        layoutLocationCount.add(FontAwesome.Regular.COMPASS.create(), divLocation);
+
+        HorizontalLayout layoutSpot = new HorizontalLayout();
+        layoutSpot.addClassNames(
+//                Overflow.HIDDEN, Width.FULL,
+                AlignItems.CENTER, JustifyContent.CENTER,
+                Margin.NONE,
+                Padding.NONE,
+                Gap.XSMALL,
+                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+                //   Background.CONTRAST_5,
+                BorderRadius.NONE
+        );
+        Div divSpot = new Div(strSpotName);
+        layoutSpot.add(VaadinIcon.LOCATION_ARROW_CIRCLE_O.create(), divSpot);
+
+        if (strSpotName == null || strSpotName.equalsIgnoreCase("null") || strSpotName.equalsIgnoreCase("") || strSpotName.isEmpty()) {
+            layoutSpot.setVisible(false);
+        }
+
+        HorizontalLayout layoutDate = new HorizontalLayout();
+        layoutDate.addClassNames(
+//                Overflow.HIDDEN, Width.FULL,
+                AlignItems.CENTER, JustifyContent.CENTER,
+                Margin.NONE,
+                Padding.NONE,
+                Gap.XSMALL,
+                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+                //   Background.CONTRAST_5,
+                BorderRadius.NONE
+        );
+        Div divDate = new Div(strPhotoDate);
+        layoutDate.add(VaadinIcon.CALENDAR.create(), divDate);
+
+        layoutPhotosInfo.add(layoutViewCount, layoutLocationCount, layoutSpot, layoutDate);
+
+
+        Details detailsPhotoInfo = new Details();
+        detailsPhotoInfo.addClassNames(Width.FULL);
+//        detailsPhotoInfo.addThemeVariants(DetailsVariant.FILLED);
+        detailsPhotoInfo.addClassName("photo-meta-info");
+        detailsPhotoInfo.setSummary(layoutPhotosInfo);
+
+        HorizontalLayout layoutPhotoCameraMeta = new HorizontalLayout();
+        layoutPhotoCameraMeta.addClassNames(
+                Overflow.HIDDEN, Width.FULL,
+                AlignItems.CENTER, JustifyContent.EVENLY,
+                Margin.NONE,
+                Padding.MEDIUM,
+                Gap.XSMALL,
+                BorderRadius.NONE
+        );
+        Div divMetaCamera = new Div(strMetaCameraModel);
+        Div divMetaLens = new Div(strMetaLensModel);
+        layoutPhotoCameraMeta.add(divMetaCamera,divMetaLens);
+
+        HorizontalLayout layoutPhotoFocalLength = new HorizontalLayout();
+        layoutPhotoFocalLength.addClassNames(
+                Overflow.HIDDEN, Width.FULL,
+                AlignItems.CENTER, JustifyContent.EVENLY,
+                Margin.NONE,
+                Padding.MEDIUM,
+                Gap.XSMALL,
+                BorderRadius.NONE
+        );
+        Div divMetaFocalLength = new Div("Focal Length "+strMetaFocalLength+" mm");
+        Div divMetaFocalLengthFF = new Div("(FF) "+strMetaFocalLengthFF+" mm");
+        if(strMetaFocalLength.equalsIgnoreCase(strMetaFocalLengthFF)){
+            divMetaFocalLengthFF.setVisible(false);
+        }
+        layoutPhotoFocalLength.add(divMetaFocalLength,divMetaFocalLengthFF);
+
+        HorizontalLayout layoutPhotoMeta = new HorizontalLayout();
+        layoutPhotoMeta.addClassNames(
+                Overflow.HIDDEN, Width.FULL,
+                AlignItems.CENTER, JustifyContent.EVENLY,
+                Margin.NONE,
+                Padding.MEDIUM,
+                Gap.XSMALL,
+                BorderRadius.NONE
+        );
+
+
+        Div divApertureTitle = new Div("Aperture:");
+        divApertureTitle.addClassNames(LumoUtility.TextColor.TERTIARY, LumoUtility.Padding.Vertical.NONE, LumoUtility.FontSize.XSMALL);
+        Div divMetaAperture = new Div(strMetaAperture);
+        if(strMetaAperture.equalsIgnoreCase("null")){
+            divApertureTitle.setVisible(false);
+            divMetaAperture.setVisible(false);
+        }
+
+        Div divSSTitle = new Div("Shutter Speed:");
+        divSSTitle.addClassNames(LumoUtility.TextColor.TERTIARY, LumoUtility.Padding.Vertical.NONE, LumoUtility.FontSize.XSMALL);
+        Div divMetaSS = new Div(strMetaSS+" sec");
+        if(strMetaSS.equalsIgnoreCase("null")){
+            divSSTitle.setVisible(false);
+            divMetaSS.setVisible(false);
+        }
+
+        Div divIsoTitle = new Div("ISO:");
+        divIsoTitle.addClassNames(LumoUtility.TextColor.TERTIARY, LumoUtility.Padding.Vertical.NONE, LumoUtility.FontSize.XSMALL);
+        Div divMetaIso = new Div(strMetaIso);
+
+
+
+        layoutPhotoMeta.add(divApertureTitle, divMetaAperture,divSSTitle, divMetaSS, divIsoTitle, divMetaIso);
+
+        detailsPhotoInfo.add(layoutPhotoCameraMeta,layoutPhotoFocalLength,layoutPhotoMeta);
+
+        HorizontalLayout layoutDetailsAvatarNActions = new HorizontalLayout();
+
+
         AvatarItem avatarItemMe = new AvatarItem(strPhotoNameOfUser, "", imgAvatarSmall);
         Details detailsMember = new Details();
-        detailsMember.addClassNames(Width.FULL, BorderRadius.SMALL);
-//        detailsMember.addThemeVariants(DetailsVariant.FILLED);
+        detailsMember.addClassNames(Width.FULL);
         detailsMember.addClassName("member-small");
-        detailsMember.setSummary(avatarItemMe);
+        layoutDetailsAvatarNActions.add(avatarItemMe);
+        detailsMember.setSummary(layoutDetailsAvatarNActions);
         AvatarItem avatarLargeItemMe = new AvatarItem(strPhotoNameOfUser, "@" + strPhotoUserName, imgAvatarMedium);
 
         HorizontalLayout layoutMemberInfo = new HorizontalLayout();
@@ -224,9 +400,7 @@ public class GalleryImageViewCard extends Div {
         );
         Div divDateJoined = new Div(strPhotoUserJoined);
         layoutDateJoined.add(VaadinIcon.CALENDAR_CLOCK.create(), divDateJoined); // FontAwesome.Regular.CALENDAR.create()
-
         layoutMemberInfo.add(layoutMemberPhotoCount, layoutMemberViewCount, layoutLocationsCount, layoutDateJoined);
-
         detailsMember.add(avatarLargeItemMe, layoutMemberInfo);
 
 
@@ -262,22 +436,6 @@ public class GalleryImageViewCard extends Div {
         badgePhotoType.getElement().getThemeList().add("badge contrast");
         badgePhotoType.setText(strPhotoType);
 
-//        Icon iconLocation = VaadinIcon.LOCATION_ARROW_CIRCLE_O.create();
-//        iconLocation.getStyle().set("padding", "var(--lumo-space-xs)");
-//        Span badgeLocation = new Span(iconLocation, new Span(strCity));
-//        // badgeLocation.getElement().setAttribute("theme", "badge");
-//        badgeLocation.getElement().getThemeList().add("badge contrast");
-        //badgeLocation.setText(strCity);
-
-//        Icon iconDateTime = VaadinIcon.CALENDAR_CLOCK.create();
-//        iconDateTime.getStyle().set("padding", "var(--lumo-space-xs)");
-//        Span badgeDateTime = new Span(iconDateTime, new Span(strDateTime));
-//        if (strDateTime.trim().isEmpty() || strDateTime.equalsIgnoreCase("null")) {
-//            badgeDateTime.setText("");
-//            badgeDateTime.setVisible(false);
-//        }
-//        badgeDateTime.getElement().getThemeList().add("badge contrast");
-
         HorizontalLayout layoutUserActions = new HorizontalLayout();
         layoutUserActions.addClassNames(
                 Overflow.HIDDEN, Width.FULL,
@@ -288,88 +446,6 @@ public class GalleryImageViewCard extends Div {
                 //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
                 //   Background.CONTRAST_5,
                 BorderRadius.LARGE);
-
-//        linkUploader.add(userAvatar);
-//        linkUploader.addClassName("member-small");
-//
-//        if (strUploader.trim().isEmpty() || strUploader.equalsIgnoreCase("null")) {
-//            linkUploader.setText("");
-//            linkUploader.setVisible(false);
-//        }
-
-        HorizontalLayout layoutPhotosInfo = new HorizontalLayout();
-        layoutPhotosInfo.addClassNames(
-                Overflow.HIDDEN, Width.FULL,
-                AlignItems.CENTER, JustifyContent.BETWEEN,
-                Margin.NONE,
-                Padding.MEDIUM,
-                Gap.SMALL,
-                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                //   Background.CONTRAST_5,
-                BorderRadius.NONE
-        );
-
-        HorizontalLayout layoutViewCount = new HorizontalLayout();
-        layoutViewCount.addClassNames(
-//                Overflow.HIDDEN, Width.FULL,
-                AlignItems.CENTER, JustifyContent.CENTER,
-                Margin.NONE,
-                Padding.XSMALL,
-                Gap.XSMALL,
-                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                //   Background.CONTRAST_5,
-                BorderRadius.NONE
-        );
-        Div divViews = new Div("1");
-        layoutViewCount.add(FontAwesome.Regular.EYE.create(), divViews);
-
-        HorizontalLayout layoutLocationCount = new HorizontalLayout();
-        layoutLocationCount.addClassNames(
-//                Overflow.HIDDEN, Width.FULL,
-                AlignItems.CENTER, JustifyContent.CENTER,
-                Margin.NONE,
-                Padding.XSMALL,
-                Gap.XSMALL,
-                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                //   Background.CONTRAST_5,
-                BorderRadius.NONE
-        );
-        Div divLocation = new Div(strCity);
-        layoutLocationCount.add(FontAwesome.Regular.COMPASS.create(), divLocation);
-
-        HorizontalLayout layoutSpot = new HorizontalLayout();
-        layoutSpot.addClassNames(
-//                Overflow.HIDDEN, Width.FULL,
-                AlignItems.CENTER, JustifyContent.CENTER,
-                Margin.NONE,
-                Padding.XSMALL,
-                Gap.XSMALL,
-                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                //   Background.CONTRAST_5,
-                BorderRadius.NONE
-        );
-        Div divSpot = new Div(strSpotName);
-        layoutSpot.add(VaadinIcon.LOCATION_ARROW_CIRCLE_O.create(), divSpot);
-
-        if (strSpotName == null || strSpotName.equalsIgnoreCase("null") || strSpotName.equalsIgnoreCase("") || strSpotName.isEmpty()) {
-            layoutSpot.setVisible(false);
-        }
-
-        HorizontalLayout layoutDate = new HorizontalLayout();
-        layoutDate.addClassNames(
-//                Overflow.HIDDEN, Width.FULL,
-                AlignItems.CENTER, JustifyContent.CENTER,
-                Margin.NONE,
-                Padding.XSMALL,
-                Gap.XSMALL,
-                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                //   Background.CONTRAST_5,
-                BorderRadius.NONE
-        );
-        Div divDate = new Div(strPhotoDate);
-        layoutDate.add(VaadinIcon.CALENDAR.create(), divDate);
-
-        layoutPhotosInfo.add(layoutViewCount, layoutLocationCount, layoutSpot, layoutDate);
 
 
         if (isEditable) {
@@ -389,18 +465,34 @@ public class GalleryImageViewCard extends Div {
         // badgeDateTime,linkDestination,
         if (!isEditable) {
             //anyone logged in
-            divPhotoInfo.add(header, divTextDescription, detailsMember, layoutPhotosInfo, getActions());
+        if(isMobile) {
+            divPhotoInfo.add(header, divTextDescription, detailsPhotoInfo, detailsMember, getActions());
+        }else{
+            divPhotoInfo.add(header, divTextDescription,  detailsMember, getActions());
+        }
             this.addClassNames(JustifyContent.EVENLY);
             this.add(layoutImage, divPhotoInfo);
         } else {
             // user himself
-            divPhotoInfo.add(header, divTextDescription, layoutPhotosInfo, layoutUserActions);
+            if(isMobile) {
+                divPhotoInfo.add(header, divTextDescription, detailsPhotoInfo, layoutUserActions);
+            }else {
+                divPhotoInfo.add(header, divTextDescription, layoutUserActions);
+            }
             this.addClassNames(JustifyContent.EVENLY);
             this.add(layoutImage, divPhotoInfo);
         }
     }
 
-    private HorizontalLayout getActions() {
+    public Div getCardForGrid(){
+        Div divCard = new Div();
+
+
+        return divCard;
+    }
+
+
+    private HorizontalLayout getMemberActions() {
 
         MenuBar menuBar = new MenuBar();
         menuBar.addThemeVariants(MenuBarVariant.LUMO_ICON);
@@ -461,6 +553,107 @@ public class GalleryImageViewCard extends Div {
         layoutActions.add(menuBar);
 
         return layoutActions;
+    }
+
+    private HorizontalLayout getActions() {
+
+        StreamResource iconLike = new StreamResource("star-empty-icon.svg",
+                () -> getClass().getResourceAsStream("/icons/star-empty-icon.svg"));
+        SvgIcon svgLike = new SvgIcon(iconLike);
+        Button btnLike = new Button(svgLike);
+
+        Div divInfo = new Div("1");
+        divInfo.addClassName(TextColor.DISABLED);
+
+        btnLike.setSuffixComponent(divInfo);
+        btnLike.setTooltipText("Like It");
+
+
+        StreamResource iconAction = new StreamResource("testimonial-icon.svg",
+                () -> getClass().getResourceAsStream("/icons/testimonial-icon.svg"));
+        SvgIcon svgAction = new SvgIcon(iconAction);
+        Button btnMoreAction = new Button(VaadinIcon.BOOKMARK.create());//svgAction);
+        btnMoreAction.setTooltipText("Save to list");
+
+
+        Button btnComment = new Button(VaadinIcon.COMMENT.create());
+        btnComment.setTooltipText("Comment on it");
+
+//        Button btnUpload = new Button(VaadinIcon.UPLOAD.create());
+//        btnUpload.setTooltipText("Upload your related photos");
+
+        StreamResource iconShare = new StreamResource("share-line-icon.svg",
+                () -> getClass().getResourceAsStream("/icons/share-line-icon.svg"));
+        SvgIcon svgShare = new SvgIcon(iconShare);
+        Button btnShare = new Button(svgShare);
+        btnShare.setTooltipText("Share it");
+
+        Button btnMore = new Button("View");
+        btnMore.setIcon(VaadinIcon.ARROW_RIGHT.create());
+        btnMore.addClassName("btn-more");
+        btnMore.addClickListener(click -> {
+            showDialogWithCarousel();
+//            click.getSource().getParent()
+//            btnMore.getUI().ifPresent(//ui ->
+//                //    ui.navigate(LearningsView.class, new RouteParameters(routeTitle))
+//           // );
+          }
+        );
+
+
+        HorizontalLayout layoutActions = new HorizontalLayout();
+        if (isMobile) {
+            layoutActions.addClassNames(
+                    Overflow.HIDDEN, //Width.FULL,
+                    AlignItems.CENTER, JustifyContent.CENTER,
+                    Margin.SMALL,
+                    Padding.NONE
+//                    Gap.XSMALL,
+                    //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+                    //   Background.CONTRAST_5,
+//                    BorderRadius.LARGE
+            );
+            layoutActions.addClassName("actions");// AlignItems.STRETCH, JustifyContent.EVENLY ,LumoUtility.Gap.Column.XSMALL);
+            layoutActions.addClassName("actions-mobile");// AlignItems.STRETCH, JustifyContent.EVENLY ,LumoUtility.Gap.Column.XSMALL);
+        } else {
+            layoutActions.addClassNames(
+                    Overflow.HIDDEN, //Width.FULL,
+                    AlignItems.CENTER, JustifyContent.CENTER,
+                    Margin.SMALL,
+                    Padding.NONE
+//                    Gap.LARGE,
+                    //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+                    //   Background.CONTRAST_5,
+//                    BorderRadius.LARGE
+            );
+            layoutActions.addClassName("actions");// AlignItems.STRETCH, JustifyContent.EVENLY ,LumoUtility.Gap.Column.XSMALL);
+        }
+        //layoutActions.setWidthFull();
+
+        if(isMobile){
+            layoutActions.add(btnLike, btnComment, btnMoreAction, btnShare);
+        }else {
+            layoutActions.add(btnLike, btnComment, btnMoreAction, btnShare, btnMore);
+        }
+        return layoutActions;
+    }
+
+    private void showDialogWithCarousel(){
+
+        Dialog dlgCarousel = new Dialog();
+        dlgCarousel.setDraggable(true);
+        dlgCarousel.setResizable(true);
+        dlgCarousel.setWidth("91%");
+        dlgCarousel.setHeight("97%");
+        dlgCarousel.addClassNames(LumoUtility.Overflow.HIDDEN,
+        Margin.NONE, Padding.SMALL,
+                AlignItems.CENTER, JustifyContent.CENTER,
+                BorderRadius.LARGE);
+        dlgCarousel.setCloseOnOutsideClick(true);
+        dlgCarousel.setCloseOnEsc(true);
+        dlgCarousel.add(genericView.loadCarouselWithThumbnails(sqlCarousel,arrColumnsCarousel));
+
+        dlgCarousel.open();
     }
 
     private HorizontalLayout getActions_as_a_backup() {

@@ -179,7 +179,15 @@ public class ImageUtilsMeta {
 
 
             lstInfo = new ArrayList<>();
-            lstInfo.add(getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_DATE_TIME_ORIGINAL)); // date time
+
+            String strTimeOrg = getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_DATE_TIME_ORIGINAL);
+            String strTimeDigi = getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_DATE_TIME_DIGITIZED);
+
+            if(strTimeOrg==null || strTimeOrg.isEmpty() || strTimeOrg.trim().equalsIgnoreCase("null")) {
+                lstInfo.add(strTimeDigi); // date time
+            }else{
+                lstInfo.add(strTimeOrg); // date time
+            }
             lstInfo.add(getTagValue(jpegMetadata, TiffTagConstants.TIFF_TAG_MAKE)); // camera make
             lstInfo.add(getTagValue(jpegMetadata, TiffTagConstants.TIFF_TAG_MODEL)); // camera model
             lstInfo.add(getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_LENS_MAKE).replaceAll(", , , , ,", "").trim()); // lens make
@@ -196,10 +204,31 @@ public class ImageUtilsMeta {
             lstInfo.add(getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_FOCAL_LENGTH)); // focal length
             lstInfo.add(getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_FOCAL_LENGTH_IN_35MM_FORMAT)); // focal length in ff
             lstInfo.add(getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_ISO)); // iso
-            lstInfo.add(getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_SHUTTER_SPEED_VALUE)); // shutter speed
-            lstInfo.add(getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_APERTURE_VALUE)); // aperture
+
+            String strShutterSpeed = getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_SHUTTER_SPEED_VALUE);
+            String strExposure = getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_EXPOSURE_TIME);
+            if(strShutterSpeed==null || strShutterSpeed.isEmpty() || strShutterSpeed.trim().equalsIgnoreCase("null")) {
+                lstInfo.add(strExposure); // shutter speed
+            }else{
+                lstInfo.add(strShutterSpeed); // shutter speed
+            }
+
+           String strAperture = getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_APERTURE_VALUE);
+            String strFNumber = getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_FNUMBER);
+            if(strAperture==null || strAperture.isEmpty() || strAperture.trim().equalsIgnoreCase("null")) {
+                lstInfo.add(strFNumber); // aperture
+            }else{
+                lstInfo.add(strAperture); // aperture
+            }
 
             lstInfo.add(getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_METERING_MODE));
+
+
+
+
+
+
+
 //
 //            ExifTagConstants.EXIF_TAG_ISO;
 //            public static final TagInfoSRational EXIF_TAG_SHUTTER_SPEED_VALUE;
@@ -308,7 +337,7 @@ public class ImageUtilsMeta {
             metadataInfo.append(getTagValueAsHtml(jpegMetadata, ExifTagConstants.EXIF_TAG_FOCAL_LENGTH_IN_35MM_FORMAT));
             metadataInfo.append(getTagValueAsHtml(jpegMetadata, ExifTagConstants.EXIF_TAG_EXPOSURE_PROGRAM));
             metadataInfo.append(getTagValueAsHtml(jpegMetadata, ExifTagConstants.EXIF_TAG_EXPOSURE_MODE));
-            metadataInfo.append(getTagValueAsHtml(jpegMetadata, ExifTagConstants.EXIF_TAG_EXPOSURE_TIME));
+            metadataInfo.append(getTagValueAsHtml(jpegMetadata, ExifTagConstants.EXIF_TAG_EXPOSURE));
             metadataInfo.append(getTagValueAsHtml(jpegMetadata, ExifTagConstants.EXIF_TAG_ISO));
             metadataInfo.append(getTagValueAsHtml(jpegMetadata, ExifTagConstants.EXIF_TAG_SHUTTER_SPEED_VALUE));
             metadataInfo.append(getTagValueAsHtml(jpegMetadata, ExifTagConstants.EXIF_TAG_APERTURE_VALUE));
@@ -321,6 +350,7 @@ public class ImageUtilsMeta {
             metadataInfo.append(getTagValueAsHtml(jpegMetadata, ExifTagConstants.EXIF_TAG_METERING_MODE));
 
             metadataInfo.append(getTagValueAsHtml(jpegMetadata, ExifTagConstants.EXIF_TAG_FNUMBER));
+            metadataInfo.append(getTagValueAsHtml(jpegMetadata, ExifTagConstants.EXIF_TAG_EXPOSURE_TIME));
             metadataInfo.append(getTagValueAsHtml(jpegMetadata, ExifTagConstants.EXIF_TAG_CAMERA_OWNER_NAME));
             //metadataInfo.append(getTagValueAsHtml(jpegMetadata, ExifTagConstants.EXIF_TAG_IMAGE_NUMBER));  // produces error
             metadataInfo.append(getTagValueAsHtml(jpegMetadata, ExifTagConstants.EXIF_TAG_IMAGE_UNIQUE_ID));

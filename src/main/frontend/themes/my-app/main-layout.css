@@ -309,6 +309,67 @@ nav ul:hover li:hover ~ li:before {
 
 
 
+.actions{
+    gap: 16px;
+}
+
+.actions-mobile{
+    gap: 8px;
+}
+
+.actions vaadin-button{
+/*    padding-left: 17px;
+    padding-right: 17px;
+    color: var(--lumo-primary-color);
+    background-color: var(--lumo-contrast-5pct);;
+    border: var(--lumo-contrast-5pct) 1px solid;
+    border-radius: 5px;
+    transition: 0.4s;*/
+
+
+        text-decoration: none;
+        font-weight: bold;
+    color: #466ca8; /* var(--lumo-contrast-80pct);*/
+    background-color: var(--lumo-contrast-5pct);
+    border: transparent 2px solid;
+        margin: 1px;
+        padding: 11px;
+        padding-left: 16px;
+        padding-right: 16px;
+            border-radius: 5px;
+        transition: 0.3s;
+        &:hover{
+            cursor: pointer;
+            color: #466ca8; /* #6c9494;*/
+            background-color: #d9e5f7; /*#edf7f5;*/
+            border: #c7d8f1 2px solid;
+            transition: 0.4s;
+        }
+
+}
+/*
+.actions vaadin-button:hover{
+    color: #c1121f; *//* #a62f03; *//*#cd5c5c;*//*
+    background-color: var(--lumo-contrast-5pct);
+    border: var(--lumo-contrast-20pct) 1px solid;
+    transition: 0.4s;
+    cursor: pointer;
+}*/
+
+.actions-mobile vaadin-button{
+    /*padding-top: 1rem;*/
+    /*padding-bottom: 1rem;*/
+    padding-left: 7px;
+    padding-right: 7px;
+    /*color: #80a7bf;*/
+    /*background-color: var(--lumo-contrast-5pct);*/
+    /*transition: 0.8s;*/
+}
+
+
+
+
+
 .lazy-poll-container{
     color: var(--lumo-secondary-text-color); /*#626d7c;*/
     justify-content: center;
