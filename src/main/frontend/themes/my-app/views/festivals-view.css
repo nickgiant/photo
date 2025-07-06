@@ -18,8 +18,9 @@
 
 .festivals-view .post-title-bar {
     background-color: #f9f9f9; /*#d8cebe; /*#e6ecf0; /*#edf7f5;*/
+}
 
-    h3 {
+.festivals-view .post-title-bar h3{
         text-transform: capitalize;
         text-decoration: none;
         text-align: center;
@@ -29,8 +30,6 @@
         letter-spacing: 1px;
         font-size: 12pt;
         color: var(--lumo-secondary-text-color);
-    }
-
 }
 
 
@@ -67,7 +66,9 @@
     /*padding-bottom: var(--lumo-space-xs);*/
     align-items: center;
     justify-items: center;
-    & a {
+}
+
+.festivals-view .external-links a{
         /*padding: var(--lumo-space-xs); !* var(--lumo-space-m);*!*/
         padding: 4px;
         margin: 0px;
@@ -83,7 +84,6 @@
             border: var(--lumo-contrast-5pct) 1px solid;
             color: var(--lumo-primary-color);
         }
-    }
 }
 
 

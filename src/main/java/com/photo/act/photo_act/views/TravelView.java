@@ -45,7 +45,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
 
-import static com.photo.act.photo_act.views.GalleryView.DIR_PHOTOS_SERVER;
 import static com.photo.act.photo_act.views.MainLayout.*;
 
 
@@ -78,7 +77,7 @@ public class TravelView extends Composite<VerticalLayout> implements HasUrlParam
     public static String subPathUpload = "photo-upload";
     public static String subPathShow = "photo-show";
 
-    public static String             DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
+    public static String DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
 
 
     private int userId = 1;
@@ -119,7 +118,7 @@ public class TravelView extends Composite<VerticalLayout> implements HasUrlParam
         layoutPageTop.setWidthFull();
 
         utilsDate = new UtilsDate();
-        genericView = new GenericView(recordService);
+        genericView = new GenericView(recordService, 1);
 
 //        creationsViewCard = new CreationsViewCard();
 
@@ -212,20 +211,7 @@ public class TravelView extends Composite<VerticalLayout> implements HasUrlParam
         hostAddress = inetAddress.getHostAddress();
         canonicalHostname = inetAddress.getCanonicalHostName();
 
-        if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP)) {
-                     DIR_PHOTOS_SERVER = "/home/mike/Pictures/lazy-photos";
-        }else if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_LENOVO)){
-            DIR_PHOTOS_SERVER = "/home/linux-pc/Pictures/lazy-photos";
-        } else if(hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_LENOVO_WIN)){
-            DIR_PHOTOS_SERVER =  "C:\\Users\\nickg\\Pictures\\lazy-photos";
-        } else if (hostname.equalsIgnoreCase("piot")) {
-                        DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
-        }else if (hostname.equalsIgnoreCase(HOSTNAME_SERVER_HOSTINGER)){
-            DIR_PHOTOS_SERVER = "/home/mikel/lazy-photos";
-        } else {
-            DIR_PHOTOS_SERVER = "/home/sammy/lazy-photos";
-
-        }
+        DIR_PHOTOS_SERVER = genericView.getAppProps(PROP_PHOTOS);
 
 
         String[] itemsLocationCat = {"Any location", "At location I am currently", "Nearby locations", "On Line only", "Favourite locations", "Locations I have lived or visited", "Locations I am going to travel in 1 year ahead"};
@@ -533,7 +519,6 @@ public class TravelView extends Composite<VerticalLayout> implements HasUrlParam
 
                     logger.info("destinations:  " + r + " " + destination + " != " + destinationBefore + " " + listDivSpot.size());
 
-                    GenericView genericView = new GenericView(recordService);
 
                     VerticalLayout layoutWeather = genericView.getWeatherCurrent(city, country);
 
@@ -611,12 +596,12 @@ public class TravelView extends Composite<VerticalLayout> implements HasUrlParam
         btnSaveInCalendar.setTooltipText("Save in Calendar");
         btnSaveInCalendar.setClassName("lazy-topic-actions");
 
-        StreamResource iconAction = new StreamResource("testimonial-icon.svg",
-                () -> getClass().getResourceAsStream("/icons/testimonial-icon.svg"));
-        SvgIcon svgAction = new SvgIcon(iconAction);
-        Button btnMoreAction = new Button(svgAction);
-        btnMoreAction.setTooltipText("More Actions");
-        btnMoreAction.setClassName("lazy-topic-actions");
+//        StreamResource iconAction = new StreamResource("stories.svg",
+//                () -> getClass().getResourceAsStream("/icons/stories.svg"));
+//        SvgIcon svgAction = new SvgIcon(iconAction);
+//        Button btnMoreAction = new Button(svgAction);
+//        btnMoreAction.setTooltipText("More Actions");
+//        btnMoreAction.setClassName("lazy-topic-actions");
 
         Button btnComment = new Button(VaadinIcon.COMMENT.create());
         btnComment.setTooltipText("Comment on it");
@@ -931,11 +916,9 @@ public class TravelView extends Composite<VerticalLayout> implements HasUrlParam
         if (strPath == null || strPath.isEmpty()) {
             strPath = "NULL";
         } else {
-            strPath = strPath.replace("\\","-");
+            strPath = strPath.replace("\\", "-");
             strPath = "'" + strPath + "'";
         }
-
-
 
 
         logger.info("photo visitor:" + publicIp + " . " + hostname + " . " + hostAddress + " . " + canonicalHostname + "  .  " + browser + " " + sessionid);

@@ -7,7 +7,6 @@ import com.photo.act.photo_act.utils.ImageUtilsMeta;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.details.Details;
-import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
@@ -20,7 +19,6 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.StreamResource;
-import com.vaadin.flow.theme.lumo.LumoUtility;
 import com.vaadin.flow.theme.lumo.LumoUtility.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,9 +30,9 @@ import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-public class GalleryImageViewCard extends Div {
+public class StoryItemViewCard extends Div {
 
-    private static final Logger logger = LoggerFactory.getLogger(GalleryImageViewCard.class);
+    private static final Logger logger = LoggerFactory.getLogger(StoryItemViewCard.class);
     private RecordService recordService;
     private boolean isMobile;
     private GenericView genericView;
@@ -46,17 +44,13 @@ public class GalleryImageViewCard extends Div {
     private Record record;
     private String strImagePath;
 
-    private String sqlCarousel;
-    private String[] arrColumnsCarousel;
 
-    public GalleryImageViewCard(Record record, String strImagePath, boolean isMobile, int userId, String strUserName, long sessionCreation,
-                                String hostname, String publicIp, boolean isEditable, RecordService recordService, String sqlCarousel, String[] arrColumnsCarousel) {
+    public StoryItemViewCard(Record record, String strImagePath, boolean isMobile, int userId, String strUserName, long sessionCreation,
+                             String hostname, String publicIp, boolean isEditable, RecordService recordService) { //, String sqlCarousel, String[] arrColumnsCarousel) {
         this.recordService = recordService;
         this.isMobile = isMobile;
         this.record = record;
         this.strImagePath = strImagePath;
-        this.sqlCarousel = sqlCarousel;
-        this.arrColumnsCarousel = arrColumnsCarousel;
 
 
         this.addClassName("gallery-view-card");
@@ -98,6 +92,8 @@ public class GalleryImageViewCard extends Div {
         String strAvatarPath = record.getColumnData("avatar_path");
         String strPhotoUserJoined = record.getColumnData("date_joined");
 
+        String strDescr = record.getColumnData("descr");
+
         String strCity = record.getColumnData("city_name");
         if (strCity == null || strCity.equalsIgnoreCase("null") || strCity.isEmpty()) {
             strCity = "not defined";
@@ -112,7 +108,7 @@ public class GalleryImageViewCard extends Div {
 
                 return new FileInputStream(file);
             } catch (final FileNotFoundException e) {
-                logErrorInDb(e, "GalleryImageViewCard StreamResource FileNotFoundException", hostname, userId, strUserName, publicIp, sessionCreation, file.getAbsolutePath());
+                logErrorInDb(e, "StoryItemViewCard StreamResource FileNotFoundException", hostname, userId, strUserName, publicIp, sessionCreation, file.getAbsolutePath());
                 // logErrorInDb(e,hostname,"CreationsViewCard StreamResource",userId,strUserName,file.getAbsolutePath());
                 logger.error("FileNotFoundException  " + e.getMessage());
             }
@@ -129,7 +125,7 @@ public class GalleryImageViewCard extends Div {
 
         Image image = new Image();
         image.addClassNames(Width.FULL, Height.FULL);
-
+        image.addClassNames(BorderRadius.LARGE);
 
         image.setSrc(imageResource);
         divImage.add(image);
@@ -287,7 +283,7 @@ public class GalleryImageViewCard extends Div {
 
 
         Div divApertureTitle = new Div("Aperture:");
-        divApertureTitle.addClassNames(LumoUtility.TextColor.TERTIARY, LumoUtility.Padding.Vertical.NONE, LumoUtility.FontSize.XSMALL);
+        divApertureTitle.addClassNames(TextColor.TERTIARY, Padding.Vertical.NONE, FontSize.XSMALL);
         Div divMetaAperture = new Div(strMetaAperture);
         if (strMetaAperture.equalsIgnoreCase("null")) {
             divApertureTitle.setVisible(false);
@@ -295,7 +291,7 @@ public class GalleryImageViewCard extends Div {
         }
 
         Div divSSTitle = new Div("Shutter Speed:");
-        divSSTitle.addClassNames(LumoUtility.TextColor.TERTIARY, LumoUtility.Padding.Vertical.NONE, LumoUtility.FontSize.XSMALL);
+        divSSTitle.addClassNames(TextColor.TERTIARY, Padding.Vertical.NONE, FontSize.XSMALL);
         Div divMetaSS = new Div(strMetaSS + " sec");
         if (strMetaSS.equalsIgnoreCase("null")) {
             divSSTitle.setVisible(false);
@@ -303,94 +299,13 @@ public class GalleryImageViewCard extends Div {
         }
 
         Div divIsoTitle = new Div("ISO:");
-        divIsoTitle.addClassNames(LumoUtility.TextColor.TERTIARY, LumoUtility.Padding.Vertical.NONE, LumoUtility.FontSize.XSMALL);
+        divIsoTitle.addClassNames(TextColor.TERTIARY, Padding.Vertical.NONE, FontSize.XSMALL);
         Div divMetaIso = new Div(strMetaIso);
 
 
         layoutPhotoMeta.add(divApertureTitle, divMetaAperture, divSSTitle, divMetaSS, divIsoTitle, divMetaIso);
 
         detailsPhotoInfo.add(layoutPhotoCameraMeta, layoutPhotoFocalLength, layoutPhotoMeta);
-
-        HorizontalLayout layoutDetailsAvatarNActions = new HorizontalLayout();
-
-
-        AvatarItem avatarItemMe = new AvatarItem(strPhotoNameOfUser, "", imgAvatarSmall);
-        Details detailsMember = new Details();
-        detailsMember.addClassNames(Width.FULL);
-        detailsMember.addClassName("member-small");
-        layoutDetailsAvatarNActions.add(avatarItemMe);
-        detailsMember.setSummary(layoutDetailsAvatarNActions);
-        AvatarItem avatarLargeItemMe = new AvatarItem(strPhotoNameOfUser, "@" + strPhotoUserName, imgAvatarMedium);
-
-        HorizontalLayout layoutMemberInfo = new HorizontalLayout();
-        layoutMemberInfo.addClassNames(
-                Overflow.HIDDEN, Width.FULL,
-                AlignItems.CENTER, JustifyContent.AROUND,
-                Margin.NONE,
-                Padding.XSMALL,
-                Gap.SMALL,
-                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                //   Background.CONTRAST_5,
-                BorderRadius.NONE
-        );
-
-        HorizontalLayout layoutMemberPhotoCount = new HorizontalLayout();
-        layoutMemberPhotoCount.addClassNames(
-//                Overflow.HIDDEN, Width.FULL,
-                AlignItems.CENTER, JustifyContent.CENTER,
-                Margin.NONE,
-                Padding.XSMALL,
-                Gap.XSMALL,
-                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                //   Background.CONTRAST_5,
-                BorderRadius.NONE
-        );
-        Div divMemberPhotoCount = new Div("111");
-        layoutMemberPhotoCount.add(FontAwesome.Regular.IMAGES.create(), divMemberPhotoCount);
-
-        HorizontalLayout layoutMemberViewCount = new HorizontalLayout();
-        layoutMemberViewCount.addClassNames(
-//                Overflow.HIDDEN, Width.FULL,
-                AlignItems.CENTER, JustifyContent.CENTER,
-                Margin.NONE,
-                Padding.XSMALL,
-                Gap.XSMALL,
-                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                //   Background.CONTRAST_5,
-                BorderRadius.NONE
-        );
-        Div divMemberViews = new Div("1");
-        layoutMemberViewCount.add(FontAwesome.Regular.EYE.create(), divMemberViews);
-
-        HorizontalLayout layoutLocationsCount = new HorizontalLayout();
-        layoutLocationsCount.addClassNames(
-//                Overflow.HIDDEN, Width.FULL,
-                AlignItems.CENTER, JustifyContent.CENTER,
-                Margin.NONE,
-                Padding.XSMALL,
-                Gap.XSMALL,
-                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                //   Background.CONTRAST_5,
-                BorderRadius.NONE
-        );
-        Div divLocations = new Div(strPhotoUserResident);
-        layoutLocationsCount.add(FontAwesome.Regular.COMPASS.create(), divLocations);
-
-        HorizontalLayout layoutDateJoined = new HorizontalLayout();
-        layoutDateJoined.addClassNames(
-//                Overflow.HIDDEN, Width.FULL,
-                AlignItems.CENTER, JustifyContent.CENTER,
-                Margin.NONE,
-                Padding.XSMALL,
-                Gap.XSMALL,
-                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                //   Background.CONTRAST_5,
-                BorderRadius.NONE
-        );
-        Div divDateJoined = new Div(strPhotoUserJoined);
-        layoutDateJoined.add(VaadinIcon.CALENDAR_CLOCK.create(), divDateJoined); // FontAwesome.Regular.CALENDAR.create()
-        layoutMemberInfo.add(layoutMemberPhotoCount, layoutMemberViewCount, layoutLocationsCount, layoutDateJoined);
-        detailsMember.add(avatarLargeItemMe, layoutMemberInfo);
 
 
         Div divTextDescription = new Div();
@@ -409,15 +324,15 @@ public class GalleryImageViewCard extends Div {
             header.setVisible(false);
         }
 
-        Div subtitle = new Div();
-        subtitle.addClassNames(FontSize.SMALL, Width.FULL, AlignItems.CENTER, JustifyContent.CENTER,
+        Div description = new Div();
+        description.addClassNames(FontSize.SMALL, Width.FULL, AlignItems.CENTER, JustifyContent.CENTER,
                 TextAlignment.CENTER,
                 Padding.XSMALL,
                 Margin.Horizontal.XSMALL
         );
-        subtitle.setText(strSubTitle);
-        if (!strSubTitle.trim().isEmpty() && !strSubTitle.equalsIgnoreCase("null")) {
-            divTextDescription.add(subtitle);
+        description.setText(strDescr);
+        if (!strDescr.trim().isEmpty() && !strDescr.equalsIgnoreCase("null")) {
+            divTextDescription.add(description);
         }
 
         Span badgePhotoType = new Span();
@@ -451,13 +366,17 @@ public class GalleryImageViewCard extends Div {
             layoutUserActions.add(btnMoreAction, btnComment, btnMoreInfo);
         }
 
+        if (strFileName == null || strFileName.isEmpty() || strFileName.equalsIgnoreCase("null")) {
+            layoutImage.setVisible(false);
+        }
+
         // badgeDateTime,linkDestination,
         if (!isEditable) {
             //anyone logged in
             if (isMobile) {
-                divPhotoInfo.add(header, divTextDescription, detailsPhotoInfo, detailsMember, getActions());
+                divPhotoInfo.add(header, divTextDescription, detailsPhotoInfo);
             } else {
-                divPhotoInfo.add(header, divTextDescription, detailsMember, getActions());
+                divPhotoInfo.add(header, divTextDescription);
             }
             this.addClassNames(JustifyContent.EVENLY);
             this.add(layoutImage, divPhotoInfo);
@@ -473,13 +392,83 @@ public class GalleryImageViewCard extends Div {
         }
     }
 
+    public StoryItemViewCard(String strUsername, String url, boolean isMobile) {
+//        addClassNames(
+//                Overflow.HIDDEN,
+//                //  Width.FULL,
+//                Background.CONTRAST_5, Display.FLEX, FlexDirection.COLUMN,
+//                BorderRadius.LARGE,
+//                // Margin.Left.NONE, Margin.Right.NONE,
+//                Padding.NONE,
+//                Margin.NONE
+//                // Margin.Left.MEDIUM, Margin.Right.MEDIUM, Margin.Top.XSMALL, Margin.Bottom.XSMALL,
+//                //AlignItems.CENTER
+//        );
+//
+//        Div divImage = new Div();
+//        divImage.addClassNames( Overflow.HIDDEN, BorderRadius.LARGE);
+//
+//        Path path = Paths.get(url);
+//        File file = path.toFile();
+//
+//        final StreamResource imageResource = new StreamResource("streamResource", () -> {
+//            try {
+//                return new FileInputStream(file);
+//            } catch (final FileNotFoundException e) {
+//                //logErrorInDb(e,hostname,"CreationsViewCard StreamResource",userId,username,file.getAbsolutePath());
+//                logger.error("FileNotFoundException  " + e.getMessage());
+//                // e.printStackTrace();
+//                return null;
+//            }
+//        });
+//
+//        Image image = new Image();
+//        image.setWidthFull();
+//        image.setHeight("auto");
+//        image.setSrc(imageResource);
+//        image.addClassNames(BorderRadius.MEDIUM);
+//
+//        divImage.add(image);
+//
+//        Span header = new Span();
+//        header.addClassNames(FontSize.MEDIUM, TextColor.SECONDARY, FontWeight.SEMIBOLD);
+//        header.getStyle().set("font-family", "Times-New-Roman, serif");
+//        header.setText("title");
+//
+//        Span objUser = new Span();
+//        objUser.addClassNames(FontSize.SMALL, TextColor.TERTIARY, FontWeight.BOLD);
+//        objUser.setText("created by me");
+//
+//        Span subtitle = new Span();
+//        subtitle.addClassNames(FontSize.SMALL, TextColor.TERTIARY);
+//        subtitle.setText("Subtitle");
+//
+//        Span badge = new Span();
+//        badge.getElement().setAttribute("theme", "badge");
+//        badge.setText("Photo Tag");
+//
+//        if(isMobile)
+//        {
+//            this.setWidthFull();
+//        } else {
+//            divImage.setMaxHeight("500px");
+//            divImage.setWidthFull();
+//            // this.setMinWidth("400px");
+//        }
+//
+//        VerticalLayout divDescription = new VerticalLayout();
+//        divDescription.addClassNames(AlignItems.START, JustifyContent.AROUND, Padding.XSMALL, Margin.XSMALL);
+//        divDescription.add( header,objUser, subtitle, badge);
+//
+//        this.add(divImage,divDescription);
+    }
+
     public Div getCardForGrid() {
         Div divCard = new Div();
 
 
         return divCard;
     }
-
 
     private HorizontalLayout getMemberActions() {
 
@@ -577,19 +566,6 @@ public class GalleryImageViewCard extends Div {
         Button btnShare = new Button(svgShare);
         btnShare.setTooltipText("Share it");
 
-        Button btnMore = new Button("View");
-        btnMore.setIcon(VaadinIcon.ARROW_RIGHT.create());
-        btnMore.setTooltipText("Larger View");
-//        btnMore.addClassName("btn-more");
-        btnMore.addClickListener(click -> {
-                    showDialogWithCarousel();
-//            click.getSource().getParent()
-//            btnMore.getUI().ifPresent(//ui ->
-//                //    ui.navigate(LearningsView.class, new RouteParameters(routeTitle))
-//           // );
-                }
-        );
-
 
         HorizontalLayout layoutActions = new HorizontalLayout();
         if (isMobile) {
@@ -618,32 +594,10 @@ public class GalleryImageViewCard extends Div {
             );
             layoutActions.addClassName("actions");// AlignItems.STRETCH, JustifyContent.EVENLY ,LumoUtility.Gap.Column.XSMALL);
         }
-        //layoutActions.setWidthFull();
 
-        if (isMobile) {
-            layoutActions.add(btnLike, btnComment, btnMoreAction, btnShare);
-        } else {
-            layoutActions.add(btnLike, btnComment, btnMoreAction, btnShare, btnMore);
-        }
+        layoutActions.add(btnLike, btnComment, btnMoreAction, btnShare);
+
         return layoutActions;
-    }
-
-    private void showDialogWithCarousel() {
-
-        Dialog dlgCarousel = new Dialog();
-        dlgCarousel.setDraggable(true);
-        dlgCarousel.setResizable(true);
-        dlgCarousel.setWidth("91%");
-        dlgCarousel.setHeight("97%");
-        dlgCarousel.addClassNames(LumoUtility.Overflow.HIDDEN,
-                Margin.NONE, Padding.SMALL,
-                AlignItems.CENTER, JustifyContent.CENTER,
-                BorderRadius.LARGE);
-        dlgCarousel.setCloseOnOutsideClick(true);
-        dlgCarousel.setCloseOnEsc(true);
-        dlgCarousel.add(genericView.loadCarouselWithThumbnails(sqlCarousel, arrColumnsCarousel));
-
-        dlgCarousel.open();
     }
 
     private HorizontalLayout getActions_as_a_backup() {
@@ -732,78 +686,6 @@ public class GalleryImageViewCard extends Div {
         layoutActions.add(menuBar);
 
         return layoutActions;
-    }
-
-
-    public GalleryImageViewCard(String strUsername, String url, boolean isMobile) {
-//        addClassNames(
-//                Overflow.HIDDEN,
-//                //  Width.FULL,
-//                Background.CONTRAST_5, Display.FLEX, FlexDirection.COLUMN,
-//                BorderRadius.LARGE,
-//                // Margin.Left.NONE, Margin.Right.NONE,
-//                Padding.NONE,
-//                Margin.NONE
-//                // Margin.Left.MEDIUM, Margin.Right.MEDIUM, Margin.Top.XSMALL, Margin.Bottom.XSMALL,
-//                //AlignItems.CENTER
-//        );
-//
-//        Div divImage = new Div();
-//        divImage.addClassNames( Overflow.HIDDEN, BorderRadius.LARGE);
-//
-//        Path path = Paths.get(url);
-//        File file = path.toFile();
-//
-//        final StreamResource imageResource = new StreamResource("streamResource", () -> {
-//            try {
-//                return new FileInputStream(file);
-//            } catch (final FileNotFoundException e) {
-//                //logErrorInDb(e,hostname,"CreationsViewCard StreamResource",userId,username,file.getAbsolutePath());
-//                logger.error("FileNotFoundException  " + e.getMessage());
-//                // e.printStackTrace();
-//                return null;
-//            }
-//        });
-//
-//        Image image = new Image();
-//        image.setWidthFull();
-//        image.setHeight("auto");
-//        image.setSrc(imageResource);
-//        image.addClassNames(BorderRadius.MEDIUM);
-//
-//        divImage.add(image);
-//
-//        Span header = new Span();
-//        header.addClassNames(FontSize.MEDIUM, TextColor.SECONDARY, FontWeight.SEMIBOLD);
-//        header.getStyle().set("font-family", "Times-New-Roman, serif");
-//        header.setText("title");
-//
-//        Span objUser = new Span();
-//        objUser.addClassNames(FontSize.SMALL, TextColor.TERTIARY, FontWeight.BOLD);
-//        objUser.setText("created by me");
-//
-//        Span subtitle = new Span();
-//        subtitle.addClassNames(FontSize.SMALL, TextColor.TERTIARY);
-//        subtitle.setText("Subtitle");
-//
-//        Span badge = new Span();
-//        badge.getElement().setAttribute("theme", "badge");
-//        badge.setText("Photo Tag");
-//
-//        if(isMobile)
-//        {
-//            this.setWidthFull();
-//        } else {
-//            divImage.setMaxHeight("500px");
-//            divImage.setWidthFull();
-//            // this.setMinWidth("400px");
-//        }
-//
-//        VerticalLayout divDescription = new VerticalLayout();
-//        divDescription.addClassNames(AlignItems.START, JustifyContent.AROUND, Padding.XSMALL, Margin.XSMALL);
-//        divDescription.add( header,objUser, subtitle, badge);
-//
-//        this.add(divImage,divDescription);
     }
 
     private VerticalLayout getPhotoMetaDataLayout(Record record) {

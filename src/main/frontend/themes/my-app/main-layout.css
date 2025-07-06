@@ -35,8 +35,9 @@
     /*padding-left: 1px;*/
     /*padding-right: 4px;*/
     margin: 0;
+}
 
-    a {
+.header-layout-filters a{
         padding: 5px;
         text-decoration: none;
         font-size: var(--lumo-font-size-m);
@@ -59,7 +60,7 @@
             transition: 0.4s;
             cursor: pointer;
         }
-    }
+
 }
 
 .header-layout-sort {
@@ -69,7 +70,9 @@
     padding: 5px;
     margin: 0;
     max-width: 120px;
-    a {
+    }
+
+.header-layout-sort a{
         min-width: 107px;
 
         padding: 5px;
@@ -94,10 +97,9 @@
             transition: 0.4s;
             cursor: pointer;
         }
-    }
 }
 
-.header-layout h3 {
+.header-layout h3{
     font-family: "Times-New-Roman", serif; /* "'Brush Script MT', cursive";*/
     text-decoration: none;
     text-align: center;
@@ -119,8 +121,9 @@
     /*padding-left: 1px;*/
     /*padding-right: 4px;*/
     margin: 0;
+}
 
-    a {
+.side-layout-filters a{
         min-width: 232px;
         padding: 4px;
         text-decoration: none;
@@ -144,7 +147,6 @@
             transition: 0.3s;
             cursor: pointer;
         }
-    }
 }
 
 .btn-suggest{
@@ -318,14 +320,6 @@ nav ul:hover li:hover ~ li:before {
 }
 
 .actions vaadin-button{
-/*    padding-left: 17px;
-    padding-right: 17px;
-    color: var(--lumo-primary-color);
-    background-color: var(--lumo-contrast-5pct);;
-    border: var(--lumo-contrast-5pct) 1px solid;
-    border-radius: 5px;
-    transition: 0.4s;*/
-
 
         text-decoration: none;
         font-weight: bold;
@@ -367,7 +361,27 @@ nav ul:hover li:hover ~ li:before {
 }
 
 
+.member-small {
+    min-width: 310px;
+    border-radius: 10px;
+    padding: 4px;
+    margin: 0;
+    text-decoration: none;
+    color: var(--lumo-contrast-70pct); /*#2D2C29;*/
+    background-color: var(--lumo-contrast-5pct);
+    border: transparent 1px solid;
+    cursor: default;
+    transition: 0.5s;
 
+    &:hover {
+        color: var(--lumo-contrast-80pct);
+        background-color: var(--lumo-contrast-5pct);
+        border: var(--lumo-contrast-5pct) 1px solid;
+        transition: 0.4s;
+        cursor: pointer;
+    }
+
+}
 
 
 .lazy-poll-container{
@@ -427,95 +441,6 @@ nav ul:hover li:hover ~ li:before {
     transition: 0.2s;
 }
 
-/*.left-menu vaadin-side-nav-item[focused]{*/
-/*    color: #c1121f; !* #ffb231;*!*/
-/*    background-color: var(--lumo-contrast-5pct);*/
-/*    border: #c1121f 3px solid;*/
-/*    border-radius: 5px;*/
-/*    font-weight: bold;*/
-/*}*/
-
-/*.left-menu vaadin-side-nav-item::part(link){*/
-/*    color: var(--lumo-primary-color);*/
-/*    background-color: transparent;*/
-/*    border: transparent 1px solid;*/
-/*    border-radius: 5px;*/
-/*    transition: 0.5s;*/
-/*            [current] {*/
-/*    color: #c1121f; !* #ffb231;*!*/
-/*    background-color: var(--lumo-contrast-5pct);*/
-/*    border: var(--lumo-contrast-20pct) 1px solid;*/
-/*    border-radius: 5px;*/
-/*    font-weight: bold;*/
-/*            }*/
-/*}*/
-
-/*.left-menu vaadin-side-nav-item::part(link):hover{*/
-/*    color: #c1121f; !* #a62f03; !*#cd5c5c;*!*/
-/*    background-color: var(--lumo-contrast-5pct);*/
-/*    border: var(--lumo-contrast-10pct) 1px solid;*/
-/*    transition: 0.4s;*/
-/*    cursor: pointer;*/
-/*}*/
-
-/*.left-menu vaadin-side-nav-item[current] {*/
-/*    color: #c1121f; !*color: #ffb231;*!*/
-/*    background-color: var(--lumo-contrast-5pct);*/
-/*    border: var(--lumo-contrast-20pct) 1px solid; !*var(--lumo-contrast-20pct)*!*/
-/*    border-radius: 5px;*/
-/*    font-weight: bold;*/
-/*}*/
-/*.left-menu a{*/
-/*    color: darkslategray; !*var(--lumo-header-text-color);;*!*/
-/*    !*background-color: var(--lumo-contrast-10pct);*!*/
-/*}*/
-
-/*.left-menu a:hover{*/
-/*    color: darkorange;*/
-/*    background-color: darkslategray;*/
-/*}*/
-
-/*.header-bar{*/
-/*    background-color: #f4f4f3;*/
-/*}*/
-
-/*.header-bar .logo-icon{*/
-/*    color: #cd5c5c;*/
-/*}*/
-
-/*.header-bar .actions{*/
-/*    gap: 8px;*/
-/*}*/
-
-/*.header-bar .actions vaadin-button {*/
-/*    padding-left: 7px;*/
-/*    padding-right: 7px;*/
-/*    margin: 2px;*/
-/*    color: var(--lumo-primary-color);*/
-/*    background-color: transparent;*/
-/*    border: transparent 1px solid;*/
-/*    border-radius: 5px;*/
-/*    transition: 0.5s;*/
-/*}*/
-
-/*.header-bar .actions vaadin-button:hover {*/
-/*    color: #c1121f; !* #a62f03; !*#cd5c5c;*!*/
-/*    background-color: var(--lumo-contrast-5pct);*/
-/*    border: var(--lumo-contrast-10pct) 1px solid;*/
-/*    transition: 0.4s;*/
-/*    cursor: pointer;*/
-
-/*}*/
-
-
-/*.header-bar .userMenuHeader {*/
-/*    background: var(--lumo-contrast-5pct);*/
-/*    padding: var(--lumo-space-s);*/
-/*    padding-inline-end: var(--lumo-space-l);*/
-/*    margin: 2px;*/
-/*    align-items: center;*/
-/*    gap: var(--lumo-space-s);*/
-/*    line-height: var(--lumo-line-height-s);*/
 footer {
   background-color: #514c3f;
   color: #fff;

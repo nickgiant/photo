@@ -1,0 +1,110 @@
+
+
+.stories-view{
+
+    /*display: grid;*/
+    /*grid-template-columns: repeat(auto-fit, minmax(390px, 1fr));*/
+    /*grid-gap: 1.5rem;*/
+
+    /*gap: 2rem;*/
+
+}
+
+.stories-view .story-list-card{
+
+    border-bottom-left-radius: 34px;
+    border-bottom-right-radius: 34px;
+    position: relative;
+    background: transparent;
+    max-width: 780px;
+    margin: 30px auto;
+    box-shadow: 0px 0px 30px 2px var(--lumo-contrast-20pct);
+}
+
+
+.stories-view .story-list-card h3{
+          font-family:  "Lucida Console", "Lucida Sans Typewriter", sans-serif;
+          color: var(--lumo-secondary-text-color);
+          /*color: #4c4c4c;*/
+          font-weight: 700;
+          border-bottom: 1px solid #d8d8d8;
+          text-align: center;
+          letter-spacing: 2px;
+          padding: 4px;
+          margin: 0px, 10px;
+}
+
+.stories-view .story-list-card h4{
+        font-family:  font-family: 'Raleway', sans-serif;
+        color: #868686;
+        font-weight: 600;
+        font-size: 13px;
+        border-bottom: none;
+        /*  text-align: center;*/
+        letter-spacing: 2px;
+        padding: 4px;
+        margin: 0;
+}
+
+.stories-view .story-list-card h5{
+
+                                  font-family: 'Raleway', sans-serif;
+                                  text-transform: uppercase;
+                                  font-size: 13px;
+                                  letter-spacing: 2px;
+                                  font-weight: 500;
+                                  color: white;
+      border-radius: 4px;
+      background-color: var(--lumo-secondary-text-color); /* #868686;*/
+      white-space: nowrap;
+      border-bottom: 1px solid transparent;
+      padding: 4px;
+      margin: 0;
+}
+
+.stories-view .story-list-card{
+   color: #868686;
+}
+
+.stories-view .story-list-card .summary{
+        background-color: transparent; /*#f7fafc;*/
+                                  font-family: 'Raleway', sans-serif;
+                                  font-size: 13px;
+                                  letter-spacing: 1px;
+                                  font-weight: 600;
+                                  color: #868686;
+}
+
+
+.stories-view .story-list-card .summary span{
+        background-color: transparent; /*#f7fafc;*/
+                                  font-family: 'Raleway', sans-serif;
+                                  font-size: 12px;
+                                  letter-spacing: 1px;
+                                  font-weight: 500;
+                                  color: #868686;
+}
+
+
+
+.stories-view .story-card .actions-toolbar{
+    gap: 15px;
+
+        text-decoration: none;
+        padding-left: 17px;
+        padding-right: 17px;
+        color: var(--lumo-primary-color);
+        background-color: var(--lumo-contrast-5pct);;
+        border: var(--lumo-contrast-5pct) 1px solid;
+        border-radius: 5px;
+        transition: 0.4s;
+
+    &:hover {
+    color: #c1121f; /* #a62f03; /*#cd5c5c;*/
+    background-color: var(--lumo-contrast-5pct);
+    border: var(--lumo-contrast-20pct) 1px solid;
+    transition: 0.4s;
+    cursor: pointer;
+    }
+}
+

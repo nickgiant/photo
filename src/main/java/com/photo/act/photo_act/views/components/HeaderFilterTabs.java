@@ -131,7 +131,7 @@ public class HeaderFilterTabs extends Div {
                     LumoUtility.BorderRadius.LARGE
             );
         }
-        layoutHeaderParameters.addClassName("header-layout");
+
 
         H3 headerSection = new H3(strSection);
         headerSection.addClassNames(
@@ -140,7 +140,7 @@ public class HeaderFilterTabs extends Div {
                 LumoUtility.Padding.NONE
         );
 
-        layoutHeaderParameters.addClassName("header");
+        layoutHeaderParameters.addClassName("header-layout");
 
 
         String strFirstTab = "Subject Type";

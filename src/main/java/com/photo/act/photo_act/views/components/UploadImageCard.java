@@ -36,11 +36,12 @@ import java.util.ArrayList;
 import java.util.UUID;
 
 import static com.photo.act.photo_act.views.GalleryView.*;
-import static com.photo.act.photo_act.views.MainLayout.*;
+import static com.photo.act.photo_act.views.MainLayout.PROP_PHOTOS;
 
 public class UploadImageCard extends VerticalLayout {
 
 
+    private GenericView genericView;
     private File file;
     private String originalFileName;
     private String mimeType;
@@ -65,7 +66,8 @@ public class UploadImageCard extends VerticalLayout {
 
     private MailSend mailSend;
 
-    public UploadImageCard(int intUserId, String strUserName, long sessionCreation, String publicIp, String hostname) {
+    public UploadImageCard(RecordService recordService, int intUserId, String strUserName, long sessionCreation, String publicIp, String hostname) {
+        this.recordService = recordService;
         this.intUserId = intUserId;
         this.strUserName = strUserName;
 
@@ -75,7 +77,7 @@ public class UploadImageCard extends VerticalLayout {
         this.sessionId = Long.toString(sessionCreation);
 
         weatherService = new WeatherService("metric");
-
+        genericView = new GenericView(recordService, 1);
         utilsDate = new UtilsDate();
 
         this.sessionDateTime = utilsDate.calcDateTimeFromLong(sessionCreation, "UTC");
@@ -83,23 +85,10 @@ public class UploadImageCard extends VerticalLayout {
     }
 
     //    https://cookbook.vaadin.com/upload-image-to-file
-    public VerticalLayout getUploadImageCard(RecordService recordService) {
-        this.recordService = recordService;
+    public VerticalLayout getUploadImageCard() {
 
-        if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP)) {
-            DIR_PHOTOS_SERVER = "/home/mike/Pictures/lazy-photos";
-        }else if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_LENOVO)){
-            DIR_PHOTOS_SERVER = "/home/linux-pc/Pictures/lazy-photos";
-        } else if(hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_LENOVO_WIN)){
-            DIR_PHOTOS_SERVER =  "C:\\Users\\nickg\\Pictures\\lazy-photos";
-        } else if (hostname.equalsIgnoreCase("piot")) {
-                        DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
-        }else if (hostname.equalsIgnoreCase(HOSTNAME_SERVER_HOSTINGER)){
-            DIR_PHOTOS_SERVER = "/home/mikel/lazy-photos";
-        } else {
-            DIR_PHOTOS_SERVER = "/home/sammy/lazy-photos";
 
-        }
+        DIR_PHOTOS_SERVER = genericView.getAppProps(PROP_PHOTOS);
 
         VerticalLayout layout = new VerticalLayout();
         layout.addClassNames(LumoUtility.Width.FULL, LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER,
@@ -185,12 +174,12 @@ public class UploadImageCard extends VerticalLayout {
 
             ImageUtilsMeta imageUtilsMeta = new ImageUtilsMeta();
             File imgFile = new File(outputUploadFileName);
-            logger.info("for photo "+outputUploadFileName+" get meta info");
+            logger.info("for photo " + outputUploadFileName + " get meta info");
             StringBuilder strImageMetaInfo = new StringBuilder();
             try {
-              //  logger.info(" A for photo "+outputUploadFileName+" get meta info to html "+imgFile.getAbsolutePath());
+                //  logger.info(" A for photo "+outputUploadFileName+" get meta info to html "+imgFile.getAbsolutePath());
                 strImageMetaInfo.append(imageUtilsMeta.getMetadataInfo(imgFile));
-             //   logger.info(" B for photo "+outputUploadFileName+" get meta info to list "+imgFile.getAbsolutePath());
+                //   logger.info(" B for photo "+outputUploadFileName+" get meta info to list "+imgFile.getAbsolutePath());
                 lstPhotoMetaData = imageUtilsMeta.getListImageInfo();
                 if (lstPhotoMetaData != null && lstPhotoMetaData.size() > 0) {
                     Html imageInfo = new Html(strImageMetaInfo.toString());
@@ -249,10 +238,10 @@ public class UploadImageCard extends VerticalLayout {
 
 
                     double dblSize = Double.parseDouble(event.getContentLength() + "");
-                    String strFilesize = getFileSizeMB(dblSize)+"";
+                    String strFilesize = getFileSizeMB(dblSize) + "";
 
-                    if(strFilesize.length()>7){
-                        strFilesize = strFilesize.substring(0,5)+" MB";  //String.format("%.2f", dblSize);
+                    if (strFilesize.length() > 7) {
+                        strFilesize = strFilesize.substring(0, 5) + " MB";  //String.format("%.2f", dblSize);
                     }
 
                     String message = "Photo Uploaded ! (" + strFilesize + ")";
@@ -541,13 +530,13 @@ public class UploadImageCard extends VerticalLayout {
 
             String strPhotoShutterSpeed = lstPhotoMetaData.get(8);
             double dblPhotoShutterSpeed = 0;
-            if (!strPhotoShutterSpeed.trim().equalsIgnoreCase("null") && strPhotoShutterSpeed.trim().length()>0) {
+            if (!strPhotoShutterSpeed.trim().equalsIgnoreCase("null") && strPhotoShutterSpeed.trim().length() > 0) {
                 String strSS = "";
                 try {
 
-                    if((strPhotoShutterSpeed.indexOf("(") == -1) && (strPhotoShutterSpeed.indexOf(")") == -1)){
+                    if ((strPhotoShutterSpeed.indexOf("(") == -1) && (strPhotoShutterSpeed.indexOf(")") == -1)) {
                         strSS = strPhotoShutterSpeed; // integer
-                    }else {
+                    } else {
                         strSS = strPhotoShutterSpeed.substring(strPhotoShutterSpeed.indexOf("(") + 1, strPhotoShutterSpeed.indexOf(")"));
                     }
 
@@ -561,12 +550,12 @@ public class UploadImageCard extends VerticalLayout {
 
             double dblPhotoAperture = 0;
             String strPhotoAperture = lstPhotoMetaData.get(9);
-            if (!strPhotoAperture.trim().equalsIgnoreCase("null") && strPhotoAperture.trim().length()>0) {
+            if (!strPhotoAperture.trim().equalsIgnoreCase("null") && strPhotoAperture.trim().length() > 0) {
                 String strAperture = "";
                 try {
-                    if((strPhotoAperture.indexOf("(") == -1) && (strPhotoAperture.indexOf(")") == -1)){
+                    if ((strPhotoAperture.indexOf("(") == -1) && (strPhotoAperture.indexOf(")") == -1)) {
                         strAperture = strPhotoAperture; // integer
-                    }else {
+                    } else {
                         strAperture = strPhotoAperture.substring(strPhotoAperture.indexOf("(") + 1, strPhotoAperture.indexOf(")"));
                     }
                     //double dblF = Double.parseDouble(strAperture);
@@ -576,12 +565,17 @@ public class UploadImageCard extends VerticalLayout {
                     logger.error(e.getMessage());
                     //   logErrorInDb(e, "insertPhotoToDb", e.getMessage(),intUserId,strUserName);
                 }
+            }
 
+            int intIso = 0;
+            String strIso = lstPhotoMetaData.get(7);
+            if (strIso != null && !strIso.isEmpty() && !strIso.trim().equalsIgnoreCase(("null"))) {
+                intIso = Integer.parseInt(strIso);
             }
 
             if (insertPhotoToDb(publicIp, sessionDateTime, strNewFileName, hostname, fileShow.length(), fileMedium.length(), fileThumbs.length(), strImageMetaInfo.toString(), lstPhotoMetaData.get(0), lstPhotoMetaData.get(1),
                     lstPhotoMetaData.get(2), lstPhotoMetaData.get(3), lstPhotoMetaData.get(4), Double.parseDouble(lstPhotoMetaData.get(5)),
-                    Double.parseDouble(lstPhotoMetaData.get(6)), Integer.parseInt(lstPhotoMetaData.get(7)),
+                    Double.parseDouble(lstPhotoMetaData.get(6)), intIso,
                     dblPhotoShutterSpeed, dblPhotoAperture)) {
 
 
@@ -609,7 +603,7 @@ public class UploadImageCard extends VerticalLayout {
             );
             notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
             logErrorInDb(e, "getUploadImageCard upload failed. dir: ", this.file.getAbsolutePath(), intUserId, strUserName);
-            logger.error(" upload failed. dir: " + this.file.getAbsolutePath()+"  "+e.getMessage());
+            logger.error(" upload failed. dir: " + this.file.getAbsolutePath() + "  " + e.getMessage());
             return false;
         }
 
@@ -620,7 +614,8 @@ public class UploadImageCard extends VerticalLayout {
     private boolean insertPhotoToDb(String publicIp, String sessionDateTime, String strNewFileName, String hostname, long photoSpaceSize, long photoSpaceSizeMedium,
                                     long photoSpaceSizeThumb,
                                     String strImageMetaInfo, String strPhotoDateTime, String strPhotoCameraMake,
-                                    String strPhotoCameraModel, String strPhotoLensMake, String strPhotoLensModel, double dblPhotoFocalLength, double dblPhotoFocalLengthFF, int intPhotoISO,
+                                    String strPhotoCameraModel, String strPhotoLensMake, String strPhotoLensModel, double dblPhotoFocalLength, double dblPhotoFocalLengthFF,
+                                    int intPhotoISO,
                                     double dblPhotoShutterSpeed, double dblPhotoAperture) {
 
         // String publicIpAddress = VaadinSession.getCurrent().getBrowser().getAddress();
@@ -669,9 +664,6 @@ public class UploadImageCard extends VerticalLayout {
         }
 
 
-
-
-
         String insertSQL = "INSERT INTO photo_meta SET id = 0,  date_fromapp = now(), uploaderId = " + intUserId + ", uploader = '" + strUserName + "', name_new = '" + strNewFileName + "', hostname = '" + hostname + "', " +
                 " space_size = '" + photoSpaceSize + "', " +
                 " space_size_medium = '" + photoSpaceSizeMedium + "', " +
@@ -686,7 +678,7 @@ public class UploadImageCard extends VerticalLayout {
                 " meta_focal_length = '" + dblPhotoFocalLength + "', " +
                 " meta_focal_length_ff = '" + dblPhotoFocalLengthFF + "', " +
                 " meta_iso = '" + intPhotoISO + "' " +
-                " , meta_shutter_speed = '" + dblPhotoShutterSpeed + "' "+
+                " , meta_shutter_speed = '" + dblPhotoShutterSpeed + "' " +
                 " , meta_aperture = '" + dblPhotoAperture + "' ";
 
 

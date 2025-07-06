@@ -1,23 +1,18 @@
 package com.photo.act.photo_act.views.components;
 
-import com.flowingcode.vaadin.addons.carousel.Carousel;
-import com.flowingcode.vaadin.addons.carousel.Slide;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.services.WeatherImageService;
 import com.photo.act.photo_act.services.WeatherService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
-import com.photo.act.photo_act.views.AlbumsView;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.UI;
-import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.contextmenu.HasMenuItems;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.Scroller;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -41,18 +36,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import static com.photo.act.photo_act.views.AlbumsView.*;
 import static com.photo.act.photo_act.views.AlbumsView.subPathMedium;
 import static com.photo.act.photo_act.views.AlbumsView.subPathThumbs;
-import static com.photo.act.photo_act.views.FeedView.subPathShow;
-import static com.photo.act.photo_act.views.HomeView.*;
 import static com.photo.act.photo_act.views.MainLayout.*;
-import static com.photo.act.photo_act.views.MainLayout.HOSTNAME_LAPTOP_LENOVO_WIN;
 
 public class GenericView {
 
 
-    public static String             DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
+    public static String DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
     private String sessionid;
     private long sessionCreation;
     private String sessionDateTime;
@@ -73,15 +64,17 @@ public class GenericView {
     private String dirChar = FileSystems.getDefault().getSeparator();
 
 
+    private int userId;
     private UtilsDate utilsDate;
     private String strOS;
     private String strBrowser;
 
+    private List<Record> recProps;
 
-    public GenericView(RecordService recordService) {
+    public GenericView(RecordService recordService, int userId) {
         this.recordService = recordService;
+        this.userId = userId;
         utilsDate = new UtilsDate();
-
 
         InetAddress inetAddress = null;
         try {
@@ -93,26 +86,25 @@ public class GenericView {
         hostAddress = inetAddress.getHostAddress();
         canonicalHostname = inetAddress.getCanonicalHostName();
 
-        if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP)) {
-            DIR_PHOTOS_SERVER = "/home/mike/Pictures/lazy-photos";
-        }else if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_LENOVO)){
-            DIR_PHOTOS_SERVER = "/home/linux-pc/Pictures/lazy-photos";
-        } else if(hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_LENOVO_WIN)){
-            DIR_PHOTOS_SERVER = "C:\\Users\\nickg\\Pictures\\lazy-photos";
-        } else if (hostname.equalsIgnoreCase("piot")) {
-                        DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
-        }else if (hostname.equalsIgnoreCase(HOSTNAME_SERVER_HOSTINGER)){
-            DIR_PHOTOS_SERVER = "/home/mikel/lazy-photos";
-        } else {
-            DIR_PHOTOS_SERVER = "/home/sammy/lazy-photos";
+        String sqlReadAppConfig = "SELECT app, host, propName, propValue FROM dbinfo WHERE host like '" + hostname + "' ";
+        String[] arrCols = {"propName", "propValue"};
+        recProps = recordService.findAll(sqlReadAppConfig, arrCols);
+
+
+    }
+
+    public String getAppProps(String prop) {
+
+        for (int r = 0; r < recProps.size(); r++) {
+            String strProp = recProps.get(r).getColumnData("propName");
+            String strValue = recProps.get(r).getColumnData("propValue");
+            if (prop.equalsIgnoreCase(strProp)) {
+                return strValue;
+            } else {
+                return null;
+            }
         }
-
-
-
-
-
-
-
+        return null;
     }
 
     public VerticalLayout getWeatherCurrent(String destination, String country) {
@@ -277,19 +269,20 @@ public class GenericView {
 
     }
 
-    public Image getAvatarImage(String strImagePath, String altDescr, String width, String height) {
+    public Image getAvatarImage(String strAvatarPath, String altDescr, String width, String height) {
 
-
-        Path path = Paths.get(strImagePath);
+        String strAvatarFullPath = getAppProps(PROP_PHOTOS) + dirChar + SUB_PATH_AVATARS + dirChar + strAvatarPath;
+        Path path = Paths.get(strAvatarFullPath);
         File file = path.toFile();
 
         final StreamResource imageResource = new StreamResource("streamResource", () -> {
             try {
+                logger.info("GenericView strAvatarFullPath:" + file.getAbsolutePath());
                 return new FileInputStream(file);
             } catch (final FileNotFoundException e) {
-                //logErrorInDb(e, "AlbumsView StreamResource FileNotFoundException", hostname, userId, "", publicIp, sessionCreation, file.getAbsolutePath());
+                logErrorInDb(e, "GenericView StreamResource FileNotFoundException", hostname, userId, "", publicIp, sessionCreation, file.getAbsolutePath());
                 // logErrorInDb(e,hostname,"CreationsViewCard StreamResource",userId,strUserName,file.getAbsolutePath());
-                logger.error("FileNotFoundException  " + e.getMessage() + "  " + file.getAbsolutePath());
+                logger.error("GenericView FileNotFoundException  " + e.getMessage() + "  " + file.getAbsolutePath());
             }
             return null;
         });
@@ -304,7 +297,7 @@ public class GenericView {
         return image;
     }
 
-    public VerticalLayout loadCarouselWithThumbnails(String sqlRead, String[] arrColumnNames){
+    public VerticalLayout loadCarouselWithThumbnails(String sqlRead, String[] arrColumnNames) {
         VerticalLayout layoutAll = new VerticalLayout();
         layoutAll.addClassNames(LumoUtility.Overflow.HIDDEN,
                 LumoUtility.Width.FULL, LumoUtility.Height.FULL,
@@ -313,9 +306,8 @@ public class GenericView {
                 LumoUtility.BorderRadius.LARGE);
 
 
-        String strPathShow = DIR_PHOTOS_SERVER + dirChar + subPathMedium;
-        String strPathThumbs= DIR_PHOTOS_SERVER + dirChar + subPathThumbs;
-
+        String strPathShow = getAppProps("dir-photos") + dirChar + subPathMedium;
+        String strPathThumbs = getAppProps("dir-photos") + dirChar + subPathThumbs;
 
 
         ArrayList<Image> lstImage = new ArrayList<>();
@@ -328,11 +320,10 @@ public class GenericView {
             lstImageThumbs.add(getImageFromDb(record, strPathThumbs));
 
 
-
         }
 
 
-       // Slide[] slides = new Slide[lstImage.size()];
+        // Slide[] slides = new Slide[lstImage.size()];
 //        for (int i = 0; i < lstImage.size(); i++) {
 //
 //            Image image = lstImage.get(i);
@@ -432,7 +423,7 @@ public class GenericView {
         scroller.addClassNames(
                 LumoUtility.Width.FULL,
                 LumoUtility.Margin.NONE, LumoUtility.Padding.NONE,
-                LumoUtility.AlignItems.CENTER,LumoUtility.JustifyContent.CENTER);
+                LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER);
 
 
         HorizontalLayout layoutThumbs = new HorizontalLayout();
@@ -441,11 +432,11 @@ public class GenericView {
                 LumoUtility.Display.INLINE_FLEX,
                 LumoUtility.Margin.NONE, LumoUtility.Padding.XSMALL,
                 LumoUtility.Background.CONTRAST_5,
-                LumoUtility.AlignItems.CENTER,LumoUtility.JustifyContent.CENTER);
+                LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER);
         layoutThumbs.setHeight("105px");
         scroller.setContent(layoutThumbs);
 
-        for(int t =0; t<lstImageThumbs.size();t++){
+        for (int t = 0; t < lstImageThumbs.size(); t++) {
 //            Div btnThumb = new Div();
             Div divBtnPhoto = new Div();
             Image imageThumb = lstImageThumbs.get(t);
@@ -464,7 +455,7 @@ public class GenericView {
 
 //            btnThumb.add(divBtnPhoto);
             final int tFinal = t;
-            divBtnPhoto.addClickListener(click->{
+            divBtnPhoto.addClickListener(click -> {
 
                 divCarousel.removeAll();
                 divCarousel.add(lstImage.get(tFinal));
@@ -476,17 +467,17 @@ public class GenericView {
             layoutThumbs.add(divBtnPhoto);
         }
 
-        layoutCarouselAndInfo.add(divCarousel,layoutPhotoInfo);
-        layoutAll.add(layoutCarouselAndInfo,scroller);
+        layoutCarouselAndInfo.add(divCarousel, layoutPhotoInfo);
+        layoutAll.add(layoutCarouselAndInfo, scroller);
 
         return layoutAll;
     }
 
-    private VerticalLayout getPhotoMetaInfoOnCarousel(Record record){
+    private VerticalLayout getPhotoMetaInfoOnCarousel(Record record) {
 
 
         VerticalLayout layoutPhotoInfo = new VerticalLayout();
-        layoutPhotoInfo.addClassNames(LumoUtility.Overflow.SCROLL  ,
+        layoutPhotoInfo.addClassNames(LumoUtility.Overflow.SCROLL,
                 LumoUtility.Width.FULL, LumoUtility.Height.FULL,
                 LumoUtility.Padding.NONE, LumoUtility.Margin.NONE,
                 LumoUtility.Gap.XSMALL,
@@ -519,7 +510,7 @@ public class GenericView {
         Div divMetaLensTitle = new Div("Lens");
         divMetaLensTitle.addClassNames(LumoUtility.TextColor.TERTIARY, LumoUtility.Padding.Vertical.NONE, LumoUtility.FontSize.XSMALL);
         Div divMetaLens = new Div(strMetaLensModel);
-        layoutPhotoCameraMeta.add(divMetaCameraTitle,divMetaCamera,divMetaLensTitle,divMetaLens);
+        layoutPhotoCameraMeta.add(divMetaCameraTitle, divMetaCamera, divMetaLensTitle, divMetaLens);
 
         VerticalLayout layoutPhotoMeta = new VerticalLayout();
         layoutPhotoMeta.addClassNames(
@@ -533,16 +524,16 @@ public class GenericView {
         );
         Div divFocalTitle = new Div("Focal Length");
         divFocalTitle.addClassNames(LumoUtility.TextColor.TERTIARY, LumoUtility.Padding.Vertical.NONE, LumoUtility.FontSize.XSMALL);
-        Div divMetaFocalLength = new Div(strMetaFocalLength+" mm");
-        if(strMetaFocalLength.equalsIgnoreCase("null")){
+        Div divMetaFocalLength = new Div(strMetaFocalLength + " mm");
+        if (strMetaFocalLength.equalsIgnoreCase("null")) {
             divFocalTitle.setVisible(false);
             divMetaFocalLength.setVisible(false);
         }
 
         Div divFocalFFTitle = new Div("Focal Length (Full Frame)");
         divFocalFFTitle.addClassNames(LumoUtility.TextColor.TERTIARY, LumoUtility.Padding.Vertical.NONE, LumoUtility.FontSize.XSMALL);
-        Div divMetaFocalLengthFF = new Div(strMetaFocalLengthFF+" mm");
-        if(strMetaFocalLength.equalsIgnoreCase(strMetaFocalLengthFF) || strMetaFocalLengthFF.equalsIgnoreCase("null")){
+        Div divMetaFocalLengthFF = new Div(strMetaFocalLengthFF + " mm");
+        if (strMetaFocalLength.equalsIgnoreCase(strMetaFocalLengthFF) || strMetaFocalLengthFF.equalsIgnoreCase("null")) {
             divFocalFFTitle.setVisible(false);
             divMetaFocalLengthFF.setVisible(false);
         }
@@ -550,15 +541,15 @@ public class GenericView {
         Div divApertureTitle = new Div("Aperture");
         divApertureTitle.addClassNames(LumoUtility.TextColor.TERTIARY, LumoUtility.Padding.Vertical.NONE, LumoUtility.FontSize.XSMALL);
         Div divMetaAperture = new Div(strMetaAperture);
-        if(strMetaAperture.equalsIgnoreCase("null")){
+        if (strMetaAperture.equalsIgnoreCase("null")) {
             divApertureTitle.setVisible(false);
             divMetaAperture.setVisible(false);
         }
 
         Div divSSTitle = new Div("Shutter Speed");
         divSSTitle.addClassNames(LumoUtility.TextColor.TERTIARY, LumoUtility.Padding.Vertical.NONE, LumoUtility.FontSize.XSMALL);
-        Div divMetaSS = new Div(strMetaShutterSpeed+" sec");
-        if(strMetaShutterSpeed.equalsIgnoreCase("null")){
+        Div divMetaSS = new Div(strMetaShutterSpeed + " sec");
+        if (strMetaShutterSpeed.equalsIgnoreCase("null")) {
             divSSTitle.setVisible(false);
             divMetaSS.setVisible(false);
         }
@@ -567,10 +558,10 @@ public class GenericView {
         divIsoTitle.addClassNames(LumoUtility.TextColor.TERTIARY, LumoUtility.Padding.Vertical.NONE, LumoUtility.FontSize.XSMALL);
         Div divMetaIso = new Div(strMetaIso);
 
-        layoutPhotoMeta.add(divFocalTitle,divMetaFocalLength,divFocalFFTitle,divMetaFocalLengthFF,divApertureTitle, divMetaAperture,
-                divSSTitle, divMetaSS, divIsoTitle,divMetaIso);
+        layoutPhotoMeta.add(divFocalTitle, divMetaFocalLength, divFocalFFTitle, divMetaFocalLengthFF, divApertureTitle, divMetaAperture,
+                divSSTitle, divMetaSS, divIsoTitle, divMetaIso);
 
-        layoutPhotoInfo.add(layoutPhotoCameraMeta,layoutPhotoMeta);
+        layoutPhotoInfo.add(layoutPhotoCameraMeta, layoutPhotoMeta);
         return layoutPhotoInfo;
     }
 
@@ -598,7 +589,7 @@ public class GenericView {
             strTitle = "image";
         }
 
-        String strImagePath = strPath + dirChar + strFileName;
+        String strImagePath = strPathIn + dirChar + strFileName;
         logger.info(" strImagePath " + strImagePath);
 //        Image image1 = new Image("https://images.unsplash.com/photo-1536048810607-3dc7f86981cb?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80", "img2");
         //GalleryImageViewCard imageGalleryViewCard = new GalleryImageViewCard(record,strImagePath,isMobile,userId, strUsername, sessionCreation,hostname,publicIp, isEditable, linkUploader, lstRouterLinks, recordService);
@@ -624,7 +615,6 @@ public class GenericView {
         image.setSrc(imageResource);
         return image;
     }
-
 
 
     private void getUserClientInfo() {
@@ -702,6 +692,9 @@ public class GenericView {
 
     }
 
+    private void logErrorInDb(Exception e, String function, String hostname, int userId, String strUsername, String publicIp, long sessionCreation, String info) {
+        recordService.logErrorInDb(e, hostname, function, userId, strUsername, publicIp, Long.toString(sessionCreation), info);
+    }
 
     private List<Record> getRecordsFromDb(String sql, String[] arrColumnNames) {
         logger.info(" photo  getRecordsFromDb:   " + sql);
@@ -738,7 +731,6 @@ public class GenericView {
 
         //divLogo.getStyle().setColor("rgba(231, 24, 24, 0.5)");
         //divLogo.getStyle().setColor("#d64f00");
-
 
 
         Span divPhotoActMoto = new Span("[ Network and Act around Photography ]");
@@ -814,7 +806,7 @@ public class GenericView {
                 LumoUtility.Background.PRIMARY,
                 LumoUtility.BorderRadius.NONE);
 
-        footer.add(cameraLogo,appName, divPhotoActMoto, divLineBottom);
+        footer.add(cameraLogo, appName, divPhotoActMoto, divLineBottom);
         return footer;
     }
 

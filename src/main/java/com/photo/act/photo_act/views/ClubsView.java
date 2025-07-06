@@ -4,6 +4,7 @@ import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
+import com.photo.act.photo_act.views.components.GenericView;
 import com.photo.act.photo_act.views.components.HeaderFilterTabs;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.HasStyle;
@@ -37,7 +38,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import static com.photo.act.photo_act.views.GalleryView.DIR_PHOTOS_SERVER;
 import static com.photo.act.photo_act.views.MainLayout.*;
 
 //@PageTitle("Image Gallery")
@@ -47,6 +47,7 @@ import static com.photo.act.photo_act.views.MainLayout.*;
 //@Menu(order = 0, icon = "line-awesome/svg/th-list-solid.svg")
 public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEnterObserver, HasComponents, HasDynamicTitle, HasStyle {
 
+    public static String DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
     private String strColorOfIcons = "#a62f03"; //"#f9943b";//"#a62c5c";//"#7d1e32";
 
     private static final Logger logger = LoggerFactory.getLogger(ClubsView.class);
@@ -69,8 +70,7 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
     public static String subPathMedium = "photo-medium";
     public static String subPathUpload = "photo-upload";
     public static String subPathShow = "photo-show";
-
-    public static String             DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
+    private GenericView genericView;
 
     private String publicIp;
     private String strPath;
@@ -117,7 +117,7 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
 
     public ClubsView(RecordService recordService) {
         this.recordService = recordService;
-
+        genericView = new GenericView(recordService, 1);
         utilsDate = new UtilsDate();
 
 
@@ -190,20 +190,7 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
         hostAddress = inetAddress.getHostAddress();
         canonicalHostname = inetAddress.getCanonicalHostName();
 
-        if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP)) {
-                     DIR_PHOTOS_SERVER = "/home/mike/Pictures/lazy-photos";
-        }else if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_LENOVO)){
-            DIR_PHOTOS_SERVER = "/home/linux-pc/Pictures/lazy-photos";
-        } else if(hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_LENOVO_WIN)){
-            DIR_PHOTOS_SERVER =  "C:\\Users\\nickg\\Pictures\\lazy-photos";
-        } else if (hostname.equalsIgnoreCase("piot")) {
-                        DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
-        }else if (hostname.equalsIgnoreCase(HOSTNAME_SERVER_HOSTINGER)){
-            DIR_PHOTOS_SERVER = "/home/mikel/lazy-photos";
-        } else {
-            DIR_PHOTOS_SERVER = "/home/sammy/lazy-photos";
-
-        }
+        DIR_PHOTOS_SERVER = genericView.getAppProps(PROP_PHOTOS);
 
 
         verticalLayout = new VerticalLayout();
@@ -236,7 +223,7 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
 
         Html htmlTitle = new Html("<title>'photoact.net Network and Act around Photography'</title>");
         Html htmlMeta = new Html("<meta name='description' content='Get the latest uploaded photos from our community of photographers.'>");
-        verticalLayout.add(htmlTitle,htmlMeta);
+        verticalLayout.add(htmlTitle, htmlMeta);
 
         this.add(verticalLayout);
     }
@@ -687,9 +674,9 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
         btnLike.setTooltipText("Like It");
 
 
-        StreamResource iconAction = new StreamResource("testimonial-icon.svg",
-                () -> getClass().getResourceAsStream("/icons/testimonial-icon.svg"));
-        SvgIcon svgAction = new SvgIcon(iconAction);
+//        StreamResource iconAction = new StreamResource("stories.svg",
+//                () -> getClass().getResourceAsStream("/icons/stories.svg"));
+//        SvgIcon svgAction = new SvgIcon(iconAction);
         Button btnMoreAction = new Button(VaadinIcon.BOOKMARK.create());//svgAction);
         btnMoreAction.setTooltipText("Save to list");
 
@@ -938,10 +925,9 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
         if (strPath == null || strPath.isEmpty()) {
             strPath = "NULL";
         } else {
-            strPath = strPath.replace("\\","-");
+            strPath = strPath.replace("\\", "-");
             strPath = "'" + strPath + "'";
         }
-
 
 
         logger.info("photo visitor:" + publicIp + " . " + hostname + " . " + hostAddress + " . " + canonicalHostname + "  .  " + browser + " " + sessionid);

@@ -17,6 +17,7 @@ header h1 {
   padding: 40px 0 25px;
   font-family:  "Lucida Console", "Lucida Sans Typewriter", sans-serif;
 }
+
 header span {
   text-transform: uppercase;
   letter-spacing: 7px;
@@ -47,7 +48,6 @@ header p {
     /*text-decoration-thickness: 30%;*/
     color: var(--lumo-secondary-text-color);
 }
-
 
 .home-view h4 {
     font-family: "Times-New-Roman", serif; /* "'Brush Script MT', cursive";*/
@@ -80,19 +80,12 @@ header p {
     border-radius: 6px;
     transition: 0.5s;
     &:hover {
-
         color:   #cd5c5c; /*#a62f03; /*#cd5c5c;*/
         background-color: var(--lumo-contrast-10pct);
         /*border: var(--lumo-contrast-20pct) 1px solid;*/
         transition: 0.4s;
         cursor: pointer;
     }
-}
-
-.home-view .carousel{
-    max-width: 920px;
-    height: auto;
-    box-shadow: 1px 1px 6px lightgrey;
 }
 
 .home-view .learning-photo-genres {
@@ -107,8 +100,9 @@ header p {
     /*padding-left: 1px;*/
     /*padding-right: 4px;*/
     margin: 0;
+}
 
-    h3 {
+.home-view .learning-photo-genres h3 {
         font-size: 18px;
         line-height: 24px;
         font-weight: 800;
@@ -120,9 +114,13 @@ header p {
         font-family: Times-New-Roman, serif;
         /*font-weight: bold;*/
         color: #466ca8; /* #6c9494;*/
-    }
+}
 
-    div {
+.home-view .learning-photo-genres div{
+
+         border-top: 1px solid #666666;
+         border-bottom: 1px solid #666666;
+
         min-height: 110px;
         font-size: 14px;
         font-weight: 400;
@@ -134,9 +132,9 @@ header p {
         font-family: Roboto, serif;
         /*font-weight: normal;*/
         color: #666666; /* #6c9494;*/
-    }
+}
 
-        h6 {
+.home-view .learning-photo-genres h6{
             font-size: 14px;
             line-height: 24px;
             font-weight: 600;
@@ -148,9 +146,9 @@ header p {
             font-family: Roboto, serif;
             /*font-weight: bold;*/
             color: #666666; /* #6c9494;*/
-        }
+}
 
-    a {
+.home-view .learning-photo-genres a {
         color: #666666; /* #466ca8; /* #6c9494;*/
        /* min-height: 180px;*/
         background-color: #d9e5f7;
@@ -175,9 +173,8 @@ header p {
             cursor: pointer;
             scale: 1.11;
         }
-    }
-}
 
+}
 
 .home-view .container-uploaded-lines{
     display: grid;

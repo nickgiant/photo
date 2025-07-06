@@ -103,7 +103,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
     public static String subPathUpload = "photo-upload";
     public static String subPathShow = "photo-show";
 
-    public static String             DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
+    public static String DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
 
 
     private String publicIp;
@@ -182,27 +182,27 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
             + " , lc2.cat_title AS cat_title2, lc2.cat_title_type AS cat_title_type2 "
             + " , l.id, l.title, l.picture, l.format, l.url, l.parent_id, l.child_index, l.tutor_id, l.artists_ref, l.description, l.duration, l.pages, l.published "
             + " , DATE_FORMAT(l.published, '%Y') AS year_published "
-            + " , l.dateInsert, " +
-            "                 ( case " +
-            "                WHEN TIMEDIFF(NOW(), l.dateInsert) <= '00:06:00' THEN 'almost now'" +
-            "                WHEN TIMEDIFF(NOW(), l.dateInsert) <= '00:18:00' THEN '10 minutes ago'" +
-            "                WHEN TIMEDIFF(NOW(), l.dateInsert) <= '00:48:00' THEN '30 minutes ago'" +
-            "                WHEN TIMEDIFF(NOW(), l.dateInsert) <= '01:37:00' THEN 'an hour ago'" +
-            "                WHEN TIMEDIFF(NOW(), l.dateInsert) <= '02:40:00' THEN 'two hours ago'" +
-            "                WHEN TIMEDIFF(NOW(), l.dateInsert) <= '03:42:00' THEN 'three hours ago'" +
-            "                WHEN TIMEDIFF(NOW(), l.dateInsert) <= '04:28:00' THEN 'four hours ago'" +
-            "                WHEN TIMEDIFF(NOW(), l.dateInsert) <= '05:35:00' THEN 'five hours ago'" +
-            "                WHEN TIMEDIFF(NOW(), l.dateInsert) <= '06:35:00' THEN 'six hours ago'" +
-            "                WHEN TIMEDIFF(NOW(), l.dateInsert) <= '07:35:00' THEN 'seven hours ago'" +
-            "                WHEN TIMEDIFF(NOW(), l.dateInsert) <= '08:35:00' THEN 'eight hours ago'" +
-            "                when DATE(l.dateInsert) = DATE(NOW())  then CONCAT('today at ' , DATE_FORMAT(l.dateInsert, '%H:%i %p') )" +
-            "                when DATE(DATE(l.dateInsert) + 1) = DATE(NOW()) then CONCAT('Yesterday at ' , DATE_FORMAT(l.dateInsert, '%H:%i %p') )" +
-            "                when DATE(DATE(l.dateInsert) + 2) = DATE(NOW())  then CONCAT('Last ' , DATE_FORMAT(l.dateInsert, '%W on %H:%i %p') )" +
-            "                when DATE(DATE(l.dateInsert) + 6) >= DATE(NOW())  then CONCAT('Last ' , DATE_FORMAT(l.dateInsert, '%W') )" +
-            "                when DATE(DATE(l.dateInsert) + 6) < DATE(NOW())  then CONCAT('' , DATE_FORMAT(l.dateInsert, '%D of %M %Y') )" +
-            "                ELSE DATE_FORMAT(l.dateInsert, '%D %M %Y') " +
-            "              END ) " +
-            " AS date_created "
+            + " , l.dateInsert " +
+//            "                 ( case " +
+//            "                WHEN TIMEDIFF(NOW(), l.dateInsert) <= '00:06:00' THEN 'almost now'" +
+//            "                WHEN TIMEDIFF(NOW(), l.dateInsert) <= '00:18:00' THEN '10 minutes ago'" +
+//            "                WHEN TIMEDIFF(NOW(), l.dateInsert) <= '00:48:00' THEN '30 minutes ago'" +
+//            "                WHEN TIMEDIFF(NOW(), l.dateInsert) <= '01:37:00' THEN 'an hour ago'" +
+//            "                WHEN TIMEDIFF(NOW(), l.dateInsert) <= '02:40:00' THEN 'two hours ago'" +
+//            "                WHEN TIMEDIFF(NOW(), l.dateInsert) <= '03:42:00' THEN 'three hours ago'" +
+//            "                WHEN TIMEDIFF(NOW(), l.dateInsert) <= '04:28:00' THEN 'four hours ago'" +
+//            "                WHEN TIMEDIFF(NOW(), l.dateInsert) <= '05:35:00' THEN 'five hours ago'" +
+//            "                WHEN TIMEDIFF(NOW(), l.dateInsert) <= '06:35:00' THEN 'six hours ago'" +
+//            "                WHEN TIMEDIFF(NOW(), l.dateInsert) <= '07:35:00' THEN 'seven hours ago'" +
+//            "                WHEN TIMEDIFF(NOW(), l.dateInsert) <= '08:35:00' THEN 'eight hours ago'" +
+//            "                when DATE(l.dateInsert) = DATE(NOW())  then CONCAT('today at ' , DATE_FORMAT(l.dateInsert, '%H:%i %p') )" +
+//            "                when DATE(DATE(l.dateInsert) + 1) = DATE(NOW()) then CONCAT('Yesterday at ' , DATE_FORMAT(l.dateInsert, '%H:%i %p') )" +
+//            "                when DATE(DATE(l.dateInsert) + 2) = DATE(NOW())  then CONCAT('Last ' , DATE_FORMAT(l.dateInsert, '%W on %H:%i %p') )" +
+//            "                when DATE(DATE(l.dateInsert) + 6) >= DATE(NOW())  then CONCAT('Last ' , DATE_FORMAT(l.dateInsert, '%W') )" +
+//            "                when DATE(DATE(l.dateInsert) + 6) < DATE(NOW())  then CONCAT('' , DATE_FORMAT(l.dateInsert, '%D of %M %Y') )" +
+//            "                ELSE DATE_FORMAT(l.dateInsert, '%D %M %Y') " +
+//            "              END ) " +
+            " ,  getDateDiffFromNow(l.dateInsert) AS date_created "
             + " , l.tutor_id, l.tutor_id_team, l.category_id, l.category_id2, t.tutor_name, t.website, t.url_fb, t.url_yt, t.url_insta, t.url_flickr, t.url_wikipedia, t.url_ref1 " +
             " , t.url_ref2, t.url_ref3, t.city_base, t.country_base, t.userIdInsert, t.username, t.date_inserted" +
             " , l.userId_post " +
@@ -227,7 +227,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         this.recordService = recordService;
 
         utilsDate = new UtilsDate();
-        genericView = new GenericView(recordService);
+        genericView = new GenericView(recordService, 1);
 
 
         constructUI();
@@ -346,16 +346,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         hostAddress = inetAddress.getHostAddress();
         canonicalHostname = inetAddress.getCanonicalHostName();
 
-        if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP)) {
-            DIR_PHOTOS_SERVER = "/home/mike/Pictures/lazy-photos";
-        } else if (hostname.equalsIgnoreCase("piot")) {
-                        DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
-        }else if (hostname.equalsIgnoreCase(HOSTNAME_SERVER_HOSTINGER)){
-            DIR_PHOTOS_SERVER = "/home/mikel/lazy-photos";
-        } else {
-            DIR_PHOTOS_SERVER = "/home/sammy/lazy-photos";
-
-        }
+        DIR_PHOTOS_SERVER = genericView.getAppProps(PROP_PHOTOS);
 
         filtersColumn = new VerticalLayout();
         if (isMobile) {
@@ -421,7 +412,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
 
         Html htmlTitle = new Html("<title>'photoact.net Network and Act around Photography'</title>");
         Html htmlMeta = new Html("<meta name='description' content='Get reviews of the latest uploaded video learnings and books.'>");
-        verticalLayout.add(htmlTitle,htmlMeta);
+        verticalLayout.add(htmlTitle, htmlMeta);
 
 
     }
@@ -787,6 +778,9 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         String strMemberSince = record.getColumnData("member_since");
         String strAvatarPath = record.getColumnData("avatar_path");
 
+        String strImage = record.getColumnData("picture");
+        String dateCreated = record.getColumnData("date_created");
+
 
         if (isTeam) {
             strTutor = strTeamName;
@@ -810,7 +804,6 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
 //            divTutorTeam.setVisible(true);
 //        }
 
-        String strImage = record.getColumnData("picture");
 
         if (!strImage.equalsIgnoreCase("null") && !strImage.equalsIgnoreCase("")) {
             strImage = strPath + "/" + strImage;
@@ -838,11 +831,10 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
 //        RouterLink linkLearningTitle = new RouterLink(strTitle, LearningsView.class, new RouteParameters(routeTitle));
 
 
-        H5 titleName = new H5(strTitle);
+        H4 titleName = new H4(strTitle);
         titleName.addClassName(TextColor.SECONDARY);
 
 
-        String dateCreated = record.getColumnData("date_created");
 //        SimpleDateFormat toui = new SimpleDateFormat("dd/MM/yyyy");
 //        SimpleDateFormat fromdb = new SimpleDateFormat("yyyy-MM-dd");
 
@@ -1053,27 +1045,91 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
 //            linkPhotoCategory2.setVisible(true);
 //        }
 
-        Span spCategorySmall = new Span(strCategory);
-        spCategorySmall.getElement().getThemeList().add("badge contrast");
-        Span spCategory2Small = new Span(strCategory2);
-        spCategory2Small.getElement().getThemeList().add("badge contrast");
+
+        HorizontalLayout layoutCategorySmallAll = new HorizontalLayout();
+        layoutCategorySmallAll.addClassNames(
+                //  Overflow.HIDDEN, Width.FULL,
+                AlignItems.CENTER, JustifyContent.CENTER,
+                Margin.NONE,
+                Padding.NONE,
+                Gap.XSMALL,
+                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+                //   Background.CONTRAST_5,
+                BorderRadius.NONE
+        );
+        HorizontalLayout layoutCategorySmall = new HorizontalLayout();
+        layoutCategorySmall.addClassNames(
+//                Overflow.HIDDEN, Width.FULL,
+                AlignItems.CENTER, JustifyContent.CENTER,
+                Margin.NONE,
+                Padding.NONE,
+                Gap.XSMALL,
+                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+                //   Background.CONTRAST_5,
+                BorderRadius.NONE
+        );
+        H5 spCategorySmall = new H5(strCategory);
+        spCategorySmall.addClassNames(AlignItems.CENTER, TextAlignment.CENTER, JustifyContent.CENTER);
+        layoutCategorySmall.add(FontAwesome.Solid.TAG.create(), spCategorySmall);
+
+        layoutCategorySmallAll.add(layoutCategorySmall);
+
+
+        HorizontalLayout layoutCategory2SmallAll = new HorizontalLayout();
+        layoutCategory2SmallAll.addClassNames(
+                //  Overflow.HIDDEN, Width.FULL,
+                AlignItems.CENTER, JustifyContent.CENTER,
+                Margin.NONE,
+                Padding.NONE,
+                Gap.XSMALL,
+                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+                //   Background.CONTRAST_5,
+                BorderRadius.NONE
+        );
+        HorizontalLayout layoutCategory2Small = new HorizontalLayout();
+        layoutCategory2Small.addClassNames(
+//                Overflow.HIDDEN, Width.FULL,
+                AlignItems.CENTER, JustifyContent.CENTER,
+                Margin.NONE,
+                Padding.NONE,
+                Gap.XSMALL,
+                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+                //   Background.CONTRAST_5,
+                BorderRadius.NONE
+        );
+        H5 spCategory2Small = new H5(strCategory2);
+        spCategory2Small.addClassNames(AlignItems.CENTER, TextAlignment.CENTER, JustifyContent.CENTER);
+        layoutCategory2Small.add(FontAwesome.Solid.TAG.create(), spCategory2Small);
+
+        layoutCategory2SmallAll.add(layoutCategory2Small);
+
+//        spCategorySmall.getElement().getThemeList().add("badge contrast");
+
+//        spCategory2Small.getElement().getThemeList().add("badge contrast");
         if (strCategory2.isEmpty() || strCategory2.equalsIgnoreCase("null") || strCategory2.equalsIgnoreCase("")) {
-            spCategory2Small.setVisible(false);
+            layoutCategory2SmallAll.setVisible(false);
         }
 
-        String strAvatarFullPath = DIR_PHOTOS_SERVER + dirChar + SUB_PATH_AVATARS + dirChar + strAvatarPath;
-        Image imgAvatarSmall = genericView.getAvatarImage(strAvatarFullPath, strNameOfUser, "40px", "40px");
-        AvatarItem avatarItemSmall = new AvatarItem(strNameOfUser, "", imgAvatarSmall);
-        avatarItemSmall.addClassNames(Width.FULL, AlignItems.STRETCH, JustifyContent.BETWEEN);
-        Span spAvatarItemSmall = new Span(avatarItemSmall);
+
+//        Image imgAvatarSmall = genericView.getAvatarImage(strAvatarPath, strNameOfUser, "40px", "40px");
+//        AvatarItem avatarItemSmall = new AvatarItem(strNameOfUser, "", imgAvatarSmall);
+//        avatarItemSmall.addClassNames(Width.FULL, AlignItems.STRETCH, JustifyContent.BETWEEN);
+//        Span spAvatarItemSmall = new Span(avatarItemSmall);
+
+        HorizontalLayout layoutTutorSmallAll = new HorizontalLayout();
+        StreamResource iconTutorSmall = new StreamResource("man-user-circle-black-icon.svg",
+                () -> getClass().getResourceAsStream("/icons/man-user-circle-black-icon.svg"));
+        SvgIcon svgTutorSmall = new SvgIcon(iconTutorSmall);
+        Div imgPersonSmall = new Div(svgTutorSmall);
 
         Div divTutorInfoSmall = new Div();
+        divTutorInfoSmall.setText(strTutor);
         divTutorInfoSmall.addClassName(TextColor.SECONDARY);
-        divTutorInfoSmall.setVisible(false);
-        if (!strTutor.equalsIgnoreCase("null") && !strTutor.isEmpty()) {
-            divTutorInfoSmall.setText(strTutor);
-            divTutorInfoSmall.setVisible(true);
+        if (strTutor.equalsIgnoreCase("null") || strTutor.isEmpty()) {
+
+            divTutorInfoSmall.setVisible(false);
         }
+        layoutTutorSmallAll.add(svgTutorSmall, divTutorInfoSmall);
 
         Div divYearPublished = new Div();
         divYearPublished.addClassName(TextColor.SECONDARY);
@@ -1087,12 +1143,6 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
                 () -> getClass().getResourceAsStream("/icons/info-circle-line-icon.svg"));
         SvgIcon svgInfo = new SvgIcon(iconInfo);
 
-        StreamResource iconTutor = new StreamResource("man-user-circle-black-icon.svg",
-                () -> getClass().getResourceAsStream("/icons/man-user-circle-black-icon.svg"));
-        SvgIcon svgTutor = new SvgIcon(iconTutor);
-
-
-        Div imgPerson = new Div(svgTutor);
 
         HorizontalLayout layoutExtLinks = new HorizontalLayout();
         layoutExtLinks.addClassNames(
@@ -1149,14 +1199,40 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
 //                BoxShadow.XSMALL
         );
         layoutIDDataSmall.addClassName("item-id-info");
-        layoutIDDataSmall.add(imgPerson, divTutor, layoutExtLinks, divFormat, divYearPublished);
+        layoutIDDataSmall.add(imgPersonSmall, divTutor, layoutExtLinks, divFormat, divYearPublished);
 
 
-        Div dayUpdatedLabelSmall = new Div("Info Created: ");
+        Div dayUpdatedLabelSmall = new Div("Info Posted: ");
         dayUpdatedLabelSmall.addClassName(TextColor.SECONDARY);
 
-        Div dayUpdatedSmall = new Div(dateCreated);
-        dayUpdatedSmall.getElement().getThemeList().add("badge contrast");
+
+        HorizontalLayout layoutDateSmallAll = new HorizontalLayout();
+        layoutDateSmallAll.addClassNames(
+                //  Overflow.HIDDEN, Width.FULL,
+                AlignItems.CENTER, JustifyContent.CENTER,
+                Margin.NONE,
+                Padding.NONE,
+                Gap.XSMALL,
+                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+                //   Background.CONTRAST_5,
+                BorderRadius.NONE
+        );
+        HorizontalLayout layoutDateSmall = new HorizontalLayout();
+        layoutDateSmall.addClassNames(
+//                Overflow.HIDDEN, Width.FULL,
+                AlignItems.CENTER, JustifyContent.CENTER,
+                Margin.NONE,
+                Padding.NONE,
+                Gap.XSMALL,
+                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+                //   Background.CONTRAST_5,
+                BorderRadius.NONE
+        );
+        H4 divDateCreatedSmall = new H4(dateCreated);
+        divDateCreatedSmall.addClassNames(AlignItems.CENTER, TextAlignment.CENTER, JustifyContent.CENTER);
+        layoutDateSmall.add(FontAwesome.Solid.CALENDAR_DAY.create(), divDateCreatedSmall);
+
+        layoutDateSmallAll.add(layoutDateSmall);
 
 
         VerticalLayout layoutItemInfoSmall = new VerticalLayout();
@@ -1168,8 +1244,8 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
 //                BoxShadow.XSMALL
         );
         layoutItemInfoSmall.addClassName("item-id-info");
-        layoutItemInfoSmall.add(imgInfo, dayUpdatedLabelSmall, dayUpdatedSmall, spCategorySmall, spCategory2Small, spAvatarItemSmall);
-        layoutSourceCardSmall.setMaxWidth("240px");
+        layoutItemInfoSmall.add(imgInfo, dayUpdatedLabelSmall, layoutDateSmallAll, layoutCategorySmallAll, layoutCategory2SmallAll, layoutTutorSmallAll);
+        layoutSourceCardSmall.setMaxWidth("310px");
         layoutSourceCardSmall.add(layoutIDDataSmall, layoutItemInfoSmall);
 
 
@@ -1178,6 +1254,13 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
                 Margin.MEDIUM, Padding.LARGE,
                 Width.FULL);
         layoutDataSmall.add(layoutImageSmall, htmlVideoSmall, layoutSourceCardSmall);
+
+
+        StreamResource iconTutor = new StreamResource("man-user-circle-black-icon.svg",
+                () -> getClass().getResourceAsStream("/icons/man-user-circle-black-icon.svg"));
+        SvgIcon svgTutor = new SvgIcon(iconTutor);
+
+        Div imgPerson = new Div(svgTutor);
 
         HorizontalLayout layoutSourceCardNormal = new HorizontalLayout();
         layoutSourceCardNormal.addClassNames(
@@ -1204,9 +1287,9 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         layoutIDDataNormal.add(imgPerson, divTutor, layoutExtLinks, divFormat, divYearPublished);
 
 
-        Span spCategoryNormal = new Span(strCategory);
+        H5 spCategoryNormal = new H5(strCategory);
         spCategoryNormal.getElement().getThemeList().add("badge contrast");
-        Span spCategory2Normal = new Span(strCategory2);
+        H5 spCategory2Normal = new H5(strCategory2);
         spCategory2Normal.getElement().getThemeList().add("badge contrast");
         if (strCategory2.isEmpty() || strCategory2.equalsIgnoreCase("null") || strCategory2.equalsIgnoreCase("")) {
             spCategory2Normal.setVisible(false);
@@ -1232,8 +1315,8 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         );
         layoutItemInfoNormal.add(imgInfo, dayUpdatedLabelNormal, dayUpdatedNormal, spCategoryNormal, spCategory2Normal);
 
-        layoutIDDataNormal.setMinWidth("240px");
-        layoutItemInfoNormal.setMinWidth("240px");
+        layoutIDDataNormal.setMinWidth("280px");
+        layoutItemInfoNormal.setMinWidth("280px");
         layoutSourceCardNormal.addClassName("item-id-info");
         layoutSourceCardNormal.add(layoutIDDataNormal, layoutItemInfoNormal);
 
@@ -1411,6 +1494,25 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
                 TextColor.TERTIARY
         );
 
+        StreamResource iconRate = new StreamResource("star-empty-icon.svg",
+                () -> getClass().getResourceAsStream("/icons/star-empty-icon.svg"));
+        SvgIcon svgRate = new SvgIcon(iconRate);
+
+        HorizontalLayout layoutRate = new HorizontalLayout();
+        layoutRate.addClassNames(
+//                Overflow.HIDDEN, Width.FULL,
+                AlignItems.CENTER, JustifyContent.CENTER,
+                Margin.NONE,
+                Padding.XSMALL,
+                Gap.XSMALL,
+                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+                //   Background.CONTRAST_5,
+                BorderRadius.NONE
+        );
+        Div divRate = new Div("1");
+        layoutRate.add(svgRate, divRate);
+
+
         HorizontalLayout layoutViewCount = new HorizontalLayout();
         layoutViewCount.addClassNames(
 //                Overflow.HIDDEN, Width.FULL,
@@ -1443,19 +1545,6 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         Div divCommentCount = new Div("1");
         layoutComment.add(svgComments, divCommentCount);
 
-        HorizontalLayout layoutLocationsCount = new HorizontalLayout();
-        layoutLocationsCount.addClassNames(
-//                Overflow.HIDDEN, Width.FULL,
-                AlignItems.CENTER, JustifyContent.CENTER,
-                Margin.NONE,
-                Padding.XSMALL,
-                Gap.XSMALL,
-                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                //   Background.CONTRAST_5,
-                BorderRadius.NONE
-        );
-        Div divLocations = new Div("1");
-        layoutLocationsCount.add(FontAwesome.Regular.COMPASS.create(), divLocations);
 
         HorizontalLayout layoutSavedInListCount = new HorizontalLayout();
         layoutSavedInListCount.addClassNames(
@@ -1470,7 +1559,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         );
         Div divDate = new Div("1");
         layoutSavedInListCount.add(VaadinIcon.BOOKMARK.create(), divDate); // FontAwesome.Regular.CALENDAR.create()
-        layoutPhotosInfo.add(layoutViewCount, layoutComment, layoutLocationsCount, layoutSavedInListCount);
+        layoutPhotosInfo.add(layoutRate, layoutViewCount, layoutComment, layoutSavedInListCount);
 
         return layoutPhotosInfo;
     }
@@ -1658,9 +1747,9 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         btnLike.setTooltipText("Like It");
 
 
-        StreamResource iconAction = new StreamResource("testimonial-icon.svg",
-                () -> getClass().getResourceAsStream("/icons/testimonial-icon.svg"));
-        SvgIcon svgAction = new SvgIcon(iconAction);
+//        StreamResource iconAction = new StreamResource("stories.svg",
+//                () -> getClass().getResourceAsStream("/icons/stories.svg"));
+//        SvgIcon svgAction = new SvgIcon(iconAction);
         Button btnMoreAction = new Button(VaadinIcon.BOOKMARK.create());//svgAction);
         btnMoreAction.setTooltipText("Save to list");
 
@@ -2053,12 +2142,12 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
     }
 
     public Details getMemberDetail(String strUserIdPost, String strAvatarPath, String strUserName, String strNameOfUser, String strUserJoined) {
-        String strAvatarFullPath = DIR_PHOTOS_SERVER + dirChar + SUB_PATH_AVATARS + dirChar + strAvatarPath;
-        Image imgAvatarSmall = genericView.getAvatarImage(strAvatarFullPath, strNameOfUser, "40px", "40px");
+
+        Image imgAvatarSmall = genericView.getAvatarImage(strAvatarPath, strNameOfUser, "40px", "40px");
         AvatarItem avatarItemMe = new AvatarItem(strNameOfUser, "", imgAvatarSmall);
         avatarItemMe.addClassNames(Width.FULL, AlignItems.STRETCH, JustifyContent.BETWEEN);
 
-        Image imgAvatarMedium = genericView.getAvatarImage(strAvatarFullPath, strNameOfUser, "70px", "70px");
+        Image imgAvatarMedium = genericView.getAvatarImage(strAvatarPath, strNameOfUser, "70px", "70px");
         AvatarItem avatarLargeItemMe = new AvatarItem(strNameOfUser, "@" + strUserName, imgAvatarMedium);
 
 

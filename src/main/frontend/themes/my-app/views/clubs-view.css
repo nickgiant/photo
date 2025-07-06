@@ -32,7 +32,7 @@
     align-items: center;
     justify-items: center;
 
-    & a {
+    &a {
         /*padding: var(--lumo-space-xs); !* var(--lumo-space-m);*!*/
         padding: 4px;
         margin: 0px;
@@ -97,7 +97,7 @@
     /*transition: 0.8s;*/
 }
 
-.clubs-view .footer div{
+.clubs-view .footer &div{
     font-family: "Times New Roman", Times, serif;
     background-color: #dcd9d5;
     color: #4d4d4d;

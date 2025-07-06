@@ -3,7 +3,7 @@ package com.photo.act.photo_act.views.components;
 import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
-import com.photo.act.photo_act.views.AlbumsView;
+import com.photo.act.photo_act.views.StoriesView;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.details.Details;
@@ -29,16 +29,16 @@ import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-public class AlbumViewCard extends VerticalLayout {
+public class StoryViewCard extends VerticalLayout {
 
-    private static final Logger logger = LoggerFactory.getLogger(AlbumViewCard.class);
+    private static final Logger logger = LoggerFactory.getLogger(StoryViewCard.class);
     private RecordService recordService;
     private boolean isMobile;
     private GenericView genericView;
 
     private String dirChar = FileSystems.getDefault().getSeparator();
 
-    public AlbumViewCard(Record record, String strImagePath, boolean isMobile, int userId, String strUserName, long sessionCreation,
+    public StoryViewCard(Record record, String strImagePath, boolean isMobile, int userId, String strUserName, long sessionCreation,
                          String hostname, String publicIp, boolean isEditable, RecordService recordService) {
         this.recordService = recordService;
         this.isMobile = isMobile;
@@ -47,7 +47,7 @@ public class AlbumViewCard extends VerticalLayout {
         genericView = new GenericView(recordService, userId);
 
         this.addClassNames(AlignItems.CENTER, JustifyContent.BETWEEN, TextAlignment.CENTER);
-        this.addClassName("album-info-card");
+        this.addClassName("story-list-card");
 
 
         if (record == null) {
@@ -58,12 +58,16 @@ public class AlbumViewCard extends VerticalLayout {
         String strTitle = record.getColumnData("title");
         String strDescription = record.getColumnData("description");
 
-        String strAlbumPhotoCount = record.getColumnData("album_photo_count").toString();
-        int intAlbumPhotoCount = Integer.parseInt(strAlbumPhotoCount);
+        String strStoryPhotoCount = record.getColumnData("story_photo_count");
+
 //        String strCreator = record.getColumnData("creator");
         String strVisibleTo = record.getColumnData("visible_to");
         String strPhotoUrl = record.getColumnData("name_new");
 
+        String strCategory = record.getColumnData("cat_title");
+        String strCategoryGr = record.getColumnData("cat_title_gr");
+
+        String strDateCreated = record.getColumnData("datetime_story_created");
         String strPhoto1 = record.getColumnData("photo_1");
         String strPhoto2 = record.getColumnData("photo_2");
 
@@ -90,22 +94,21 @@ public class AlbumViewCard extends VerticalLayout {
         Path path = Paths.get(imagePath);
         File file = path.toFile();
 
+        logger.info("imagePath: " + imagePath);
+
         final StreamResource imageResource = new StreamResource("streamResource", () -> {
             try {
                 //ImageUtilsMeta imageUtilsMeta = new ImageUtilsMeta();
                 //imageUtilsMeta.printPhotoMetadataValue(file);
-
+                logger.info("StoryViewCard file: " + file.getAbsolutePath());
                 return new FileInputStream(file);
             } catch (final FileNotFoundException e) {
-                logErrorInDb(e, "GalleryImageViewCard StreamResource FileNotFoundException", hostname, userId, strUserName, publicIp, sessionCreation, file.getAbsolutePath());
+                logErrorInDb(e, "StoryViewCard StreamResource FileNotFoundException", hostname, userId, strUserName, publicIp, sessionCreation, file.getAbsolutePath());
                 // logErrorInDb(e,hostname,"CreationsViewCard StreamResource",userId,strUserName,file.getAbsolutePath());
                 logger.error("FileNotFoundException  " + e.getMessage());
             }
             return null;
         });
-
-        HorizontalLayout layoutImage = new HorizontalLayout();
-        layoutImage.addClassName("image-div");
 
 
         Div divImage = new Div();
@@ -116,21 +119,23 @@ public class AlbumViewCard extends VerticalLayout {
         image.setSrc(imageResource);
         divImage.add(image);
 
-        layoutImage.add(divImage);
 
-        VerticalLayout divPhotoInfo = new VerticalLayout();
-        divPhotoInfo.addClassNames(Overflow.HIDDEN, TextColor.TERTIARY,
-                AlignItems.CENTER, JustifyContent.CENTER,
-                Padding.NONE, Margin.NONE, //Margin.Top.LARGE,
-                Gap.XSMALL,
-                BorderRadius.LARGE
-        );
+//        VerticalLayout divPhotoInfo = new VerticalLayout();
+//        divPhotoInfo.addClassNames(Overflow.HIDDEN, TextColor.TERTIARY,
+//                AlignItems.CENTER, JustifyContent.CENTER,
+//                Padding.NONE, Margin.NONE, //Margin.Top.LARGE,
+//                Gap.XSMALL,
+//                BorderRadius.LARGE
+//        );
 
+
+        Div divTextDescription = new Div();
+        divTextDescription.addClassNames(Width.FULL, JustifyContent.CENTER, AlignItems.CENTER, Padding.NONE, Margin.NONE);
 
         H3 header = new H3();
         header.addClassNames(FontSize.LARGE, FontWeight.SEMIBOLD,
                 Width.FULL, TextAlignment.CENTER, AlignItems.CENTER, JustifyContent.CENTER,
-                Padding.MEDIUM, Margin.NONE
+                Padding.XSMALL, Margin.NONE
         );
 //        header.getStyle().set("font-family", "Times-New-Roman, serif");
         header.setText(strTitle);
@@ -140,19 +145,34 @@ public class AlbumViewCard extends VerticalLayout {
             header.setVisible(false);
         }
 
-        Div subtitle = new Div();
-        subtitle.addClassNames(FontSize.SMALL,
-                Width.FULL, TextAlignment.CENTER, AlignItems.CENTER, JustifyContent.CENTER,
+
+        HorizontalLayout layoutCategoryAll = new HorizontalLayout();
+        layoutCategoryAll.addClassNames(
+                //  Overflow.HIDDEN, Width.FULL,
+                AlignItems.CENTER, JustifyContent.CENTER,
+                Margin.NONE,
                 Padding.NONE,
-                Margin.NONE
+                Gap.XSMALL,
+                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+                //   Background.CONTRAST_5,
+                BorderRadius.NONE
         );
-        subtitle.addClassName("bottom-line");
+        HorizontalLayout layoutCategory = new HorizontalLayout();
+        layoutCategory.addClassNames(
+//                Overflow.HIDDEN, Width.FULL,
+                AlignItems.CENTER, JustifyContent.CENTER,
+                Margin.NONE,
+                Padding.NONE,
+                Gap.XSMALL,
+                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+                //   Background.CONTRAST_5,
+                BorderRadius.NONE
+        );
+        H5 divCategory = new H5(strCategory);
+        divCategory.addClassNames(AlignItems.CENTER, TextAlignment.CENTER, JustifyContent.CENTER);
+        layoutCategory.add(FontAwesome.Solid.TAG.create(), divCategory);
 
-        if (!strDescription.trim().isEmpty() && !strDescription.equalsIgnoreCase("null")) {
-            subtitle.setText(strDescription);
-        } else {
-
-        }
+        layoutCategoryAll.add(layoutCategory);
 
 
         HorizontalLayout layoutPhotoCountAll = new HorizontalLayout();
@@ -177,7 +197,7 @@ public class AlbumViewCard extends VerticalLayout {
                 //   Background.CONTRAST_5,
                 BorderRadius.NONE
         );
-        H4 divPhotoCount = new H4(intAlbumPhotoCount + "");
+        H4 divPhotoCount = new H4(strStoryPhotoCount);
         layoutPhotoCount.add(FontAwesome.Regular.IMAGES.create(), divPhotoCount);
         H4 divCountLabel = new H4("Photos");
 //        divCountLabel.addClassNames(FontSize.XXSMALL);
@@ -206,7 +226,7 @@ public class AlbumViewCard extends VerticalLayout {
                 //   Background.CONTRAST_5,
                 BorderRadius.NONE
         );
-        H4 divDateCreated = new H4(strDateAlbumCreated);
+        H4 divDateCreated = new H4(strDateCreated);
         divDateCreated.addClassNames(AlignItems.CENTER, TextAlignment.CENTER, JustifyContent.CENTER);
         layoutDate.add(FontAwesome.Solid.CALENDAR_DAY.create(), divDateCreated);
 
@@ -215,24 +235,35 @@ public class AlbumViewCard extends VerticalLayout {
 
         HorizontalLayout divSubHeaderAll = new HorizontalLayout();
         divSubHeaderAll.addClassNames(Width.FULL, AlignItems.END,
-                JustifyContent.BETWEEN, Margin.NONE, Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL
-        );
-        divSubHeaderAll.add(layoutPhotoCountAll, layoutDateAll);
+                JustifyContent.BETWEEN, Margin.NONE, Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL);
+        divSubHeaderAll.add(layoutCategoryAll, layoutPhotoCountAll, layoutDateAll);
 
+        Paragraph subtitle = new Paragraph();
+//        subtitle.addClassNames(FontSize.SMALL,
+//                Width.FULL, TextAlignment.CENTER, AlignItems.CENTER, JustifyContent.CENTER,
+//                Padding.NONE,
+//                Margin.NONE
+//        );
+
+        if (!strDescription.trim().isEmpty() && !strDescription.equalsIgnoreCase("null")) {
+            subtitle.setText(strDescription);
+        } else {
+
+        }
+        divTextDescription.add(subtitle);
 
         HorizontalLayout layoutPhotosInfo = new HorizontalLayout();
         layoutPhotosInfo.addClassNames(
                 Overflow.HIDDEN, Width.FULL,
-                AlignItems.CENTER, JustifyContent.BETWEEN,
+                AlignItems.CENTER, JustifyContent.EVENLY,
                 Margin.NONE,
-                Padding.Horizontal.MEDIUM,
+                Padding.NONE,
                 Gap.XSMALL,
                 //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
                 //   Background.CONTRAST_5,
                 BorderRadius.NONE
         );
         layoutPhotosInfo.addClassName("summary");
-
 
         StreamResource iconRate = new StreamResource("star-empty-icon.svg",
                 () -> getClass().getResourceAsStream("/icons/star-empty-icon.svg"));
@@ -266,34 +297,6 @@ public class AlbumViewCard extends VerticalLayout {
         divRateLabel.addClassNames(FontSize.XXSMALL);
         layoutRateAll.add(layoutRate, divRateLabel);
 
-
-//        VerticalLayout layoutPhotoCountAll = new VerticalLayout();
-//        layoutPhotoCountAll.addClassNames(
-//                //  Overflow.HIDDEN, Width.FULL,
-//                AlignItems.CENTER, JustifyContent.CENTER,
-//                Margin.NONE,
-//                Padding.NONE,
-//                Gap.XSMALL,
-//                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-//                //   Background.CONTRAST_5,
-//                BorderRadius.NONE
-//        );
-//        HorizontalLayout layoutPhotoCount = new HorizontalLayout();
-//        layoutPhotoCount.addClassNames(
-////                Overflow.HIDDEN, Width.FULL,
-//                AlignItems.CENTER, JustifyContent.CENTER,
-//                Margin.NONE,
-//                Padding.NONE,
-//                Gap.XSMALL,
-//                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-//                //   Background.CONTRAST_5,
-//                BorderRadius.NONE
-//        );
-//        Div divPhotoCount = new Div(intAlbumPhotoCount + "");
-//        layoutPhotoCount.add(FontAwesome.Regular.IMAGES.create(), divPhotoCount);
-//        Div divCountLabel = new Div("Photos");
-//        divCountLabel.addClassNames(FontSize.XXSMALL);
-//        layoutPhotoCountAll.add(layoutPhotoCount, divCountLabel);
 
         VerticalLayout layoutViewCountAll = new VerticalLayout();
         layoutViewCountAll.addClassNames(
@@ -427,8 +430,9 @@ public class AlbumViewCard extends VerticalLayout {
 
         layoutUserActions.add(btnMoreAction, btnComment, btnMoreInfo);
 
-//         divPhotoInfo.add(layoutPhotosInfo); //, layoutUserActions);
-        //       routerLinkAlbum.add(header, subtitle, layoutImage, divPhotoInfo);
+
+        //     divPhotoInfo.add(layoutPhotosInfo); //, layoutUserActions);
+//        routerLinkAlbum.add(header, subtitle, layoutImage, divPhotoInfo);
 
 
 //        Avatar userAvatar = new Avatar(strAlbumUserName);
@@ -526,23 +530,22 @@ public class AlbumViewCard extends VerticalLayout {
         layoutMemberInfo.add(layoutMemberPhotoCount, layoutMemberViewCount, layoutMemberLocationsCount, layoutDateJoined);
         detailsMember.add(avatarLargeItemMe, layoutMemberInfo);
 
-
         layoutPhotosInfo.add(layoutRateAll, layoutViewCountAll, layoutLocationsCountAll, detailsMember);
 
-        RouteParam routeAlbum = new RouteParam("title", strTitle);
-        RouteParam routeUploader = new RouteParam("member", strAlbumUserName);
+        RouteParam routeMember = new RouteParam("member", strAlbumUserName);
+        RouteParam routeStory = new RouteParam("title", strTitle);
 
-        Button btnMore = new Button("View Album");
+        Button btnMore = new Button("View Story");
         btnMore.setIcon(VaadinIcon.ARROW_RIGHT.create());
 //        btnMore.addClassName("btn-more");
         btnMore.addClickListener(click -> {
             btnMore.getUI().ifPresent(ui ->
-                    ui.navigate(AlbumsView.class, new RouteParameters(routeAlbum, routeUploader))
+                    ui.navigate(StoriesView.class, new RouteParameters(routeMember, routeStory))
             );
         });
 
 //        this.addClassNames(Border.NONE, Padding.NONE, Margin.NONE);
-        this.add(layoutImage, header, subtitle, divSubHeaderAll, layoutPhotosInfo, getActions(btnMore));
+        this.add(divImage, header, divSubHeaderAll, layoutPhotosInfo, subtitle, getActions(btnMore));
 
     }
 

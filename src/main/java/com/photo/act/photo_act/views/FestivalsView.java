@@ -41,7 +41,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import static com.photo.act.photo_act.views.GalleryView.DIR_PHOTOS_SERVER;
 import static com.photo.act.photo_act.views.MainLayout.*;
 
 
@@ -77,11 +76,12 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
     public static String subPathUpload = "photo-upload";
     public static String subPathShow = "photo-show";
 
-    public static String             DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
+    public static String DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
 
     String[] arrFestivalsColumnNames = {"nameShort", "city_name", "country", "periodOfYear", "type", "website", "url_facebook", "url_instagram", "url_youtube", "activities", "image_top", "image_logo", "dateInsert", "title", "subtitle", "formatedDateFrom", "formatedDateTo",
             "edition_description", "formatedDateUpdated", "title_of_place", "address_of_place", "url_planned", "url_fb", "url_insta"};
 
+    private int userId;
     private String publicIp;
     private String strPath;
     private String hostname;
@@ -147,7 +147,7 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
         this.recordService = recordService;
         utilsDate = new UtilsDate();
 
-        genericView = new GenericView(recordService);
+        genericView = new GenericView(recordService, 1);
 
         constructUI();
     }
@@ -274,20 +274,7 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
         hostAddress = inetAddress.getHostAddress();
         canonicalHostname = inetAddress.getCanonicalHostName();
 
-        if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP)) {
-            DIR_PHOTOS_SERVER = "/home/mike/Pictures/lazy-photos";
-        }else if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_LENOVO)){
-            DIR_PHOTOS_SERVER = "/home/linux-pc/Pictures/lazy-photos";
-        } else if(hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_LENOVO_WIN)){
-            DIR_PHOTOS_SERVER = "C:\\Users\\nickg\\Pictures\\lazy-photos";
-
-        } else if (hostname.equalsIgnoreCase("piot")) {
-                        DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
-        }else if (hostname.equalsIgnoreCase(HOSTNAME_SERVER_HOSTINGER)){
-            DIR_PHOTOS_SERVER = "/home/mikel/lazy-photos";
-        } else {
-            DIR_PHOTOS_SERVER = "/home/sammy/lazy-photos";
-        }
+        DIR_PHOTOS_SERVER = genericView.getAppProps(PROP_PHOTOS);
 
         filtersColumn = new VerticalLayout();
         if (isMobile) {
@@ -352,7 +339,7 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
 
         Html htmlTitle = new Html("<title>'photoact.net Network and Act around Photography'</title>");
         Html htmlMeta = new Html("<meta name='description' content='Get info about events that take place around globe for friends of photography.'>");
-        verticalLayout.add(htmlTitle,htmlMeta);
+        verticalLayout.add(htmlTitle, htmlMeta);
 
 
         this.add(verticalLayout);
@@ -732,7 +719,7 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
         String strImageLogo;
         String strImageTop;
 
-        String strUrlEdition= record.getColumnData("url_planned");
+        String strUrlEdition = record.getColumnData("url_planned");
         String strUrlEdFacebook = record.getColumnData("url_fb");
         String strUrlEdInsta = record.getColumnData("url_insta");
 
@@ -856,7 +843,7 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
 //        linkWebsite.setClassName("external-links");
         String festUrl = record.getColumnData("website");
         //"fest url: "+ festUrl);
-        if(!strUrlEdition.isEmpty() && !strUrlEdition.equalsIgnoreCase("null")){
+        if (!strUrlEdition.isEmpty() && !strUrlEdition.equalsIgnoreCase("null")) {
             linkWebsite.setHref(strUrlEdition);
             linkWebsite.setTarget("_blank");
             linkWebsite.setVisible(true);
@@ -888,11 +875,11 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
         // linkFacebookNewTab.addClassName("external-links");
         linkFacebookNewTab.add(FontAwesome.Brands.FACEBOOK.create());
         String festUrlFace = record.getColumnData("url_facebook");
-        if(!strUrlEdFacebook.isEmpty() && !strUrlEdFacebook.equalsIgnoreCase("null")){
+        if (!strUrlEdFacebook.isEmpty() && !strUrlEdFacebook.equalsIgnoreCase("null")) {
             linkFacebookNewTab.setHref(strUrlEdFacebook);
             linkFacebookNewTab.setTarget("_blank");
             linkFacebookNewTab.setVisible(true);
-        }else if (!festUrlFace.equalsIgnoreCase("null") && !festUrlFace.equalsIgnoreCase("")) {
+        } else if (!festUrlFace.equalsIgnoreCase("null") && !festUrlFace.equalsIgnoreCase("")) {
             linkFacebookNewTab.setHref(festUrlFace);
             linkFacebookNewTab.setTarget("_blank");
             linkFacebookNewTab.setVisible(true);
@@ -905,7 +892,7 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
         //linkInstaNewTab.getStyle().setColor(strColorExternalweb);
         // linkInstaNewTab.setClassName("external-links");
         String festUrlInsta = record.getColumnData("url_instagram");
-        if(!strUrlEdInsta.isEmpty() && !strUrlEdInsta.equalsIgnoreCase("null")) {
+        if (!strUrlEdInsta.isEmpty() && !strUrlEdInsta.equalsIgnoreCase("null")) {
             linkInstaNewTab.setHref(strUrlEdInsta);
             linkInstaNewTab.setTarget("_blank");
             linkInstaNewTab.setVisible(true);
@@ -933,7 +920,7 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
         }
 
 
-            layoutExtLinks.add(linkWebsite, linkFacebookNewTab, linkInstaNewTab, linkYTNewTab);
+        layoutExtLinks.add(linkWebsite, linkFacebookNewTab, linkInstaNewTab, linkYTNewTab);
 
 
         StreamResource iconInfo = new StreamResource("info-circle-line-icon.svg",
@@ -1182,9 +1169,9 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
         btnLike.setTooltipText("Like It");
 
 
-        StreamResource iconAction = new StreamResource("testimonial-icon.svg",
-                () -> getClass().getResourceAsStream("/icons/testimonial-icon.svg"));
-        SvgIcon svgAction = new SvgIcon(iconAction);
+//        StreamResource iconAction = new StreamResource("stories.svg",
+//                () -> getClass().getResourceAsStream("/icons/stories.svg"));
+//        SvgIcon svgAction = new SvgIcon(iconAction);
         Button btnMoreAction = new Button(VaadinIcon.BOOKMARK.create());//svgAction);
         btnMoreAction.setTooltipText("Save to list");
 

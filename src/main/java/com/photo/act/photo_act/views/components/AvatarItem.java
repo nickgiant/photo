@@ -3,17 +3,17 @@ package com.photo.act.photo_act.views.components;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.HasSize;
 import com.vaadin.flow.component.avatar.Avatar;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Image;
-import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 
 public class AvatarItem extends Composite<HorizontalLayout> implements HasSize {
 
-    private Span heading = new Span();
+    private Div heading = new Div();
 
-    private Span description = new Span();
+    private Div description = new Div();
 
     public AvatarItem() {
 

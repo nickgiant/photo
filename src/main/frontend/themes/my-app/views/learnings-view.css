@@ -1,8 +1,9 @@
 
 .learnings-view .post-title-bar {
     background-color: #f9f9f9; /*#d8cebe; /*#e6ecf0; /*#edf7f5;*/
+}
 
-    h3 {
+.learnings-view .post-title-bar h3{
         text-transform: capitalize;
         text-decoration: none;
         text-align: center;
@@ -12,8 +13,6 @@
         letter-spacing: 1px;
         font-size: 12pt;
         color: var(--lumo-secondary-text-color);
-    }
-
 }
 
 .learnings-view .video-container-small {
@@ -108,8 +107,9 @@
     /*padding: 14px;*/
     /*margin: 0px;*/
     border-radius: var(--lumo-border-radius-m);
+}
 
-    a {
+.learnings-view .item-id-info a{
         text-decoration: none;
         text-align: center;
         padding: 4px;
@@ -127,8 +127,37 @@
             transition: 0.4s;
             cursor: pointer;
         }
-    }
 }
+
+
+
+.learnings-view .item-id-info h4{
+        font-family:  font-family: 'Raleway', sans-serif;
+        color: #868686;
+        font-weight: 600;
+        font-size: 13px;
+        border-bottom: none;
+        letter-spacing: 2px;
+        padding: 4px;
+        margin: 0;
+}
+
+.learnings-view .item-id-info h5{
+
+                                  font-family: 'Raleway', sans-serif;
+                                  text-transform: uppercase;
+                                  font-size: 13px;
+                                  letter-spacing: 2px;
+                                  font-weight: 500;
+                                  color: white;
+      border-radius: 4px;
+      background-color: var(--lumo-secondary-text-color); /* #868686;*/
+      white-space: nowrap;
+      border-bottom: 1px solid transparent;
+      padding: 4px;
+      margin: 0;
+}
+
 
 .learnings-view .item-id-info .external-links {
         padding: 1px;
@@ -137,7 +166,9 @@
         /*padding-bottom: var(--lumo-space-xs);*/
         /*align-items: center;*/
         /*justify-items: center;*/
-        a{
+}
+
+.learnings-view .item-id-info .external-links a{
             padding: 4px;
             margin: 0px;
             border-radius: 6px;
@@ -150,7 +181,6 @@
                 border: var(--lumo-contrast-5pct) 1px solid;
                 color: var(--lumo-header-text-color); /*#9fafd5; */
             }
-        }
 }
 
 

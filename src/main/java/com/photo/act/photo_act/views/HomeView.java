@@ -25,9 +25,7 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.page.Meta;
 import com.vaadin.flow.component.select.Select;
-import com.vaadin.flow.dom.Style;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.VaadinService;
@@ -49,7 +47,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import static com.photo.act.photo_act.views.GalleryView.*;
 import static com.photo.act.photo_act.views.MainLayout.*;
 
 //@PageTitle("Photo Act")
@@ -93,8 +90,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
     public static String subPathUpload = "photo-upload";
     public static String subPathShow = "photo-show";
 
-    public static String             DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
-
+    public static String DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
 
 
     private String publicIp;
@@ -110,7 +106,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
 
     String[] arrColLearningTopics = {"cat_title", "cat_title2", "cat_title_type", "cat_title_type2", "cat_type",
-            "cat_description_min",  "cat_type_count"};
+            "cat_description_min", "cat_type_count"};
 
     String sqlLearningTopics = "SELECT "
             + " lc.cat_title, lc.cat_title_type, lc.cat_type, lc.cat_description_min "
@@ -119,7 +115,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 //            + " l.id, l.title, l.picture, l.section , l.category, l.format, l.url, l.parent_id, l.child_index, l.tutor_id, l.artists_ref, l.description, l.duration, l.pages, l.published, l.userIdInsert, l.username, l.dateInsert "
 //            + ", l.tutor_id, l.tutor_id_team, t.tutor_name, t.website, t.url_fb, t.url_yt, t.url_insta, t.url_flickr, t.url_wikipedia, t.url_ref1, t.url_ref2, t.url_ref3, t.city_base, t.country_base, t.userIdInsert, t.username, t.date_inserted "
 //            + " FROM learnings_categories lc2 RIGHT JOIN learnings l ON lc2.id = l.category_id2, learnings_categories lc " // "LEFT JOIN learnings_categories lc ON lc.id = l.category_id "
-           + " FROM learnings l, learnings_categories lc "
+            + " FROM learnings l, learnings_categories lc "
 //            + " FROM learnings_categories lc "
 //            + " WHERE 1 = 1 "
             + " WHERE lc.id = l.category_id "
@@ -153,7 +149,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         this.recordService = recordService;
 
         utilsDate = new UtilsDate();
-        genericView = new GenericView(recordService);
+        genericView = new GenericView(recordService, 1);
 
         constructUI();
 
@@ -207,26 +203,27 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         };
 
         String sqlReadGallery = "SELECT pm.name_org, pm.name_new, pm.title, pm.subtitle, pm.photo_type, pm.uploader, pm.uploaderId, pm.photo_type, pm.contains, " +
-                " pm.space_size, pm.space_size_medium, pm.space_size_thumb,  d.city_name, DATE_FORMAT(pm.meta_date, '%W %D %M %Y %H:%i %p') AS meta_date, " + //, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description, DATE_FORMAT(f.dateInsert , '%D %M %Y') AS formatedDateUpdated  " +
-                "                 ( case " +
-                "                WHEN TIMEDIFF(NOW(), pm.date_inserted) <= '00:06:00' THEN 'almost now'" +
-                "                WHEN TIMEDIFF(NOW(), pm.date_inserted) <= '00:18:00' THEN '10 minutes ago'" +
-                "                WHEN TIMEDIFF(NOW(), pm.date_inserted) <= '00:48:00' THEN '30 minutes ago'" +
-                "                WHEN TIMEDIFF(NOW(), pm.date_inserted) <= '01:37:00' THEN 'an hour ago'" +
-                "                WHEN TIMEDIFF(NOW(), pm.date_inserted) <= '02:40:00' THEN 'two hours ago'" +
-                "                WHEN TIMEDIFF(NOW(), pm.date_inserted) <= '03:42:00' THEN 'three hours ago'" +
-                "                WHEN TIMEDIFF(NOW(), pm.date_inserted) <= '04:28:00' THEN 'four hours ago'" +
-                "                WHEN TIMEDIFF(NOW(), pm.date_inserted) <= '05:35:00' THEN 'five hours ago'" +
-                "                WHEN TIMEDIFF(NOW(), pm.date_inserted) <= '06:35:00' THEN 'six hours ago'" +
-                "                WHEN TIMEDIFF(NOW(), pm.date_inserted) <= '07:35:00' THEN 'seven hours ago'" +
-                "                WHEN TIMEDIFF(NOW(), pm.date_inserted) <= '08:35:00' THEN 'eight hours ago'" +
-                "                when DATE(DATE(pm.date_inserted) + 1) = DATE(NOW()) then CONCAT('Yesterday at ' , DATE_FORMAT(pm.date_inserted, '%H:%i %p') )" +
-                "                when DATE(DATE(pm.date_inserted) + 2) = DATE(NOW())  then CONCAT('Last ' , DATE_FORMAT(pm.date_inserted, '%W at %H:%i %p') )" +
-                "                when DATE(DATE(pm.date_inserted) + 6) >= DATE(NOW())  then CONCAT('Last ' , DATE_FORMAT(pm.date_inserted, '%W') )" +
-                "                when DATE(DATE(pm.date_inserted) + 6) < DATE(NOW())  then CONCAT('' , DATE_FORMAT(pm.date_inserted, '%D %M %Y') )" +
-                "                ELSE DATE_FORMAT(pm.date_inserted, '%D %M %Y') " +
-                "              END ) " +
-                " AS date_inserted " +
+                " pm.space_size, pm.space_size_medium, pm.space_size_thumb,  d.city_name, DATE_FORMAT(pm.meta_date, '%W %D %M %Y %H:%i %p') AS meta_date " +
+                //, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description, DATE_FORMAT(f.dateInsert , '%D %M %Y') AS formatedDateUpdated  " +
+//                "                 ( case " +
+//                "                WHEN TIMEDIFF(NOW(), pm.date_inserted) <= '00:06:00' THEN 'almost now'" +
+//                "                WHEN TIMEDIFF(NOW(), pm.date_inserted) <= '00:18:00' THEN '10 minutes ago'" +
+//                "                WHEN TIMEDIFF(NOW(), pm.date_inserted) <= '00:48:00' THEN '30 minutes ago'" +
+//                "                WHEN TIMEDIFF(NOW(), pm.date_inserted) <= '01:37:00' THEN 'an hour ago'" +
+//                "                WHEN TIMEDIFF(NOW(), pm.date_inserted) <= '02:40:00' THEN 'two hours ago'" +
+//                "                WHEN TIMEDIFF(NOW(), pm.date_inserted) <= '03:42:00' THEN 'three hours ago'" +
+//                "                WHEN TIMEDIFF(NOW(), pm.date_inserted) <= '04:28:00' THEN 'four hours ago'" +
+//                "                WHEN TIMEDIFF(NOW(), pm.date_inserted) <= '05:35:00' THEN 'five hours ago'" +
+//                "                WHEN TIMEDIFF(NOW(), pm.date_inserted) <= '06:35:00' THEN 'six hours ago'" +
+//                "                WHEN TIMEDIFF(NOW(), pm.date_inserted) <= '07:35:00' THEN 'seven hours ago'" +
+//                "                WHEN TIMEDIFF(NOW(), pm.date_inserted) <= '08:35:00' THEN 'eight hours ago'" +
+//                "                when DATE(DATE(pm.date_inserted) + 1) = DATE(NOW()) then CONCAT('Yesterday at ' , DATE_FORMAT(pm.date_inserted, '%H:%i %p') )" +
+//                "                when DATE(DATE(pm.date_inserted) + 2) = DATE(NOW())  then CONCAT('Last ' , DATE_FORMAT(pm.date_inserted, '%W at %H:%i %p') )" +
+//                "                when DATE(DATE(pm.date_inserted) + 6) >= DATE(NOW())  then CONCAT('Last ' , DATE_FORMAT(pm.date_inserted, '%W') )" +
+//                "                when DATE(DATE(pm.date_inserted) + 6) < DATE(NOW())  then CONCAT('' , DATE_FORMAT(pm.date_inserted, '%D %M %Y') )" +
+//                "                ELSE DATE_FORMAT(pm.date_inserted, '%D %M %Y') " +
+//                "              END ) " +
+                " , getDateDiffFromNow(pm.date_inserted) AS date_inserted " +
                 " , usr.username, usr.nameOfUser, usr.avatar_path, DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since " +
                 " FROM dbuser usr, photo_meta pm LEFT JOIN destination d ON pm.destination_Id = d.id ";
 //                    " WHERE pm.hostname like '"+hostname+"' "+
@@ -250,7 +247,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
         Div divMainImage = new Div();
         Image mainImage = new Image();
-        String strMainImagePath = DIR_PHOTOS_SERVER+dirChar+"photographer.jpg";
+        String strMainImagePath = DIR_PHOTOS_SERVER + dirChar + "photographer.jpg";
 
         final StreamResource imageMainResource = new StreamResource("streamResource", () -> {
             try {
@@ -292,7 +289,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
         });
 
-        verticalLayout.add(divMainImage,div1, div2, btnRegister);
+        verticalLayout.add(divMainImage, div1, div2, btnRegister);
 
         Div layoutLearningTopics = loadLearningTopics(sqlLearningTopics, arrColLearningTopics);
 
@@ -309,10 +306,10 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 //        H3 titleCarousel = new H3("10 Recently Uploaded Photos:");
 //        verticalLayout.add(titleCarousel, getCarousel(lstImage));
 
-        H3 titleLastLearnings = new H3("Last Posted Learnings");
-
-        Div layoutLastLearnings = loadLastLearnings(sqlLearningsRead, arrColumnsLearning);
-        verticalLayout.add(titleLastLearnings, layoutLastLearnings);
+//        H3 titleLastLearnings = new H3("Last Posted Learnings");
+//
+//        Div layoutLastLearnings = loadLastLearnings(sqlLearningsRead, arrColumnsLearning);
+//        verticalLayout.add(titleLastLearnings, layoutLastLearnings);
 
 
         H3 titleLastPhotos = new H3("Last 20 Photos that Members Uploaded:");
@@ -441,7 +438,6 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
                 AlignItems.CENTER, JustifyContent.CENTER
         );
 
-
         InetAddress inetAddress = null;
         try {
             inetAddress = InetAddress.getLocalHost();
@@ -452,21 +448,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         hostAddress = inetAddress.getHostAddress();
         canonicalHostname = inetAddress.getCanonicalHostName();
 
-        if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP)) {
-            DIR_PHOTOS_SERVER = "/home/mike/Pictures/lazy-photos";
-        }else if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_LENOVO)){
-            DIR_PHOTOS_SERVER = "/home/linux-pc/Pictures/lazy-photos";
-        } else if(hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_LENOVO_WIN)){
-            DIR_PHOTOS_SERVER = "C:\\Users\\nickg\\Pictures\\lazy-photos";
-
-        } else if (hostname.equalsIgnoreCase("piot")) {
-                        DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
-        }else if (hostname.equalsIgnoreCase(HOSTNAME_SERVER_HOSTINGER)){
-            DIR_PHOTOS_SERVER = "/home/mikel/lazy-photos";
-        } else {
-            DIR_PHOTOS_SERVER = "/home/sammy/lazy-photos";
-
-        }
+        DIR_PHOTOS_SERVER = genericView.getAppProps(PROP_PHOTOS);
 
         verticalLayout = new VerticalLayout();
         verticalLayout.setId("verticalLayout-home");
@@ -497,7 +479,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
         Html htmlTitle = new Html("<title>'photoact.net Network and Act around Photography'</title>");
         Html htmlMeta = new Html("<meta name='description' content='Get the latest updates from our community of photographers.'>");
-        verticalLayout.add(htmlTitle,htmlMeta);
+        verticalLayout.add(htmlTitle, htmlMeta);
 
         this.setWidthFull();
 
@@ -517,7 +499,6 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 //        sqlLearningsReadOrderBy =" ORDER BY l.dateInsert DESC";
 //        String sqlRead = sqlLearningsRead + strWhereSubClause + sqlLearningsReadOrderBy;
 
-        GenericView genericView = new GenericView(recordService);
 
         VerticalLayout layoutWeather = genericView.getWeatherCurrent(city, country);
 
@@ -627,13 +608,13 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
             // badgeLocation.getElement().setAttribute("theme", "badge");
             badgeLocation.getElement().getThemeList().add("badge contrast");
 
-            Div divUploadedAt = new Div("uploaded on");
+            Div divUploadedAt = new Div("uploaded");
             divUploadedAt.addClassNames(FontSize.XSMALL);
             Div divLocation = new Div("photo shoot at");
             divLocation.addClassNames(FontSize.XSMALL);
 
-            String strAvatarFullPath = DIR_PHOTOS_SERVER + dirChar + SUB_PATH_AVATARS + dirChar + strAvatarPath;
-            Image imgAvatarMedium = genericView.getAvatarImage(strAvatarFullPath, strNameOfUser, "50px", "50px");
+
+            Image imgAvatarMedium = genericView.getAvatarImage(strAvatarPath, strNameOfUser, "50px", "50px");
             AvatarItem avatarLargeItemMe = new AvatarItem(strNameOfUser, "@" + strUsername, imgAvatarMedium);
 
 //            Avatar userAvatar = new Avatar(strUploader);
@@ -1116,17 +1097,17 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
             }
             String strCount = lstCategoriesCount.get(c);
             int intCount = Integer.parseInt(strCount);
-            if(intCount==1) {
+            if (intCount == 1) {
                 strCount = strCount + " Learning";
-            }else{
+            } else {
                 strCount = strCount + " Learnings";
             }
             H6 divCount = new H6(strCount);
 
             RouteParam routeCategory = new RouteParam("category", captionCategory);
             RouterLink linkPhotoCategory = new RouterLink(LearningsView.class, new RouteParameters(routeCategory));
-            linkPhotoCategory.addClassNames(AlignItems.CENTER,JustifyContent.BETWEEN);
-            linkPhotoCategory.add(categoryTitle, categoryDescription,divCount);
+            linkPhotoCategory.addClassNames(AlignItems.CENTER, JustifyContent.BETWEEN);
+            linkPhotoCategory.add(categoryTitle, categoryDescription, divCount);
 
             panelOfTopics.add(linkPhotoCategory);
         }
@@ -1188,16 +1169,16 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
             String strCount = lstCategoriesCount.get(c);
 
             int intCount = Integer.parseInt(strCount);
-            if(intCount==1) {
+            if (intCount == 1) {
                 strCount = strCount + " Learning";
-            }else{
+            } else {
                 strCount = strCount + " Learnings";
             }
             H6 divCount = new H6(strCount);
 
             RouteParam routeCategory = new RouteParam("genre", captionCategory);
             RouterLink linkPhotoCategory = new RouterLink(LearningsView.class, new RouteParameters(routeCategory));
-            linkPhotoCategory.add(genreTitle, genreDescription,divCount);
+            linkPhotoCategory.add(genreTitle, genreDescription, divCount);
 
             panelOfGenres.add(linkPhotoCategory);
         }
@@ -1219,9 +1200,9 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         btnLike.setTooltipText("Like It");
 
 
-        StreamResource iconAction = new StreamResource("testimonial-icon.svg",
-                () -> getClass().getResourceAsStream("/icons/testimonial-icon.svg"));
-        SvgIcon svgAction = new SvgIcon(iconAction);
+//        StreamResource iconAction = new StreamResource("stories.svg",
+//                () -> getClass().getResourceAsStream("/icons/stories.svg"));
+//        SvgIcon svgAction = new SvgIcon(iconAction);
         Button btnMoreAction = new Button(VaadinIcon.BOOKMARK.create());//svgAction);
         btnMoreAction.setTooltipText("Save to list");
 
