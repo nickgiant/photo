@@ -10,6 +10,7 @@ import com.photo.act.photo_act.services.WeatherImageService;
 import com.photo.act.photo_act.services.WeatherService;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.photo.act.photo_act.views.components.GalleryImageViewCard;
+import com.photo.act.photo_act.views.components.GenericView;
 import com.photo.act.photo_act.views.components.UploadImageCard;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.HasStyle;
@@ -45,7 +46,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import static com.photo.act.photo_act.views.GalleryView.DIR_PHOTOS_SERVER;
 import static com.photo.act.photo_act.views.MainLayout.*;
 
 //@PageTitle("Image Gallery")
@@ -56,6 +56,7 @@ import static com.photo.act.photo_act.views.MainLayout.*;
 @Menu(order = 0, icon = "line-awesome/svg/th-list-solid.svg")
 public class CommonsView extends Main implements HasUrlParameter<String>, BeforeEnterObserver, HasComponents, HasDynamicTitle, HasStyle {
 
+    public static String DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
     private String strColorOfIcons = "#a62f03"; //"#f9943b";//"#a62c5c";//"#7d1e32";
 
     private static final Logger logger = LoggerFactory.getLogger(CommonsView.class);
@@ -78,8 +79,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
     public static String subPathMedium = "photo-medium";
     public static String subPathUpload = "photo-upload";
     public static String subPathShow = "photo-show";
-
-    public static String             DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
+    private GenericView genericView;
 
     private String publicIp;
     private String strPath;
@@ -122,7 +122,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
 
     public CommonsView(RecordService recordService) {
         this.recordService = recordService;
-
+        genericView = new GenericView(recordService, 1);
         utilsDate = new UtilsDate();
 
 
@@ -264,7 +264,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
             verticalLayout.add(loadHeader("Upload Photos", "Upload my photos.", SECTION_MY_PHOTOS));
 
 
-            UploadImageCard uploadImageCard = new UploadImageCard(userId, strUsername, sessionCreation, publicIp, hostname);
+            UploadImageCard uploadImageCard = new UploadImageCard(recordService, userId, strUsername, sessionCreation, publicIp, hostname);
 
             uploadImageCard.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
@@ -277,7 +277,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
             );
 
 //            verticalLayout.add(uploadImageCard.getLocationSelectionLayout());
-            verticalLayout.add(uploadImageCard.getUploadImageCard(recordService));
+            verticalLayout.add(uploadImageCard.getUploadImageCard());
 
             verticalLayout.add(loadFooter());
         } else {
@@ -315,21 +315,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         hostAddress = inetAddress.getHostAddress();
         canonicalHostname = inetAddress.getCanonicalHostName();
 
-        if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP)) {
-                     DIR_PHOTOS_SERVER = "/home/mike/Pictures/lazy-photos";
-        }else if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_LENOVO)){
-            DIR_PHOTOS_SERVER = "/home/linux-pc/Pictures/lazy-photos";
-        } else if(hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_LENOVO_WIN)){
-            DIR_PHOTOS_SERVER =  "C:\\Users\\nickg\\Pictures\\lazy-photos";
-        } else if (hostname.equalsIgnoreCase("piot")) {
-                        DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
-        }else if (hostname.equalsIgnoreCase(HOSTNAME_SERVER_HOSTINGER)){
-            DIR_PHOTOS_SERVER = "/home/mikel/lazy-photos";
-        } else {
-            DIR_PHOTOS_SERVER = "/home/sammy/lazy-photos";
-
-        }
-
+        DIR_PHOTOS_SERVER = genericView.getAppProps(PROP_PHOTOS);
 
         UI.getCurrent().getPage().retrieveExtendedClientDetails(extendedClientDetails -> {
             if (extendedClientDetails == null) {
@@ -629,7 +615,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         logger.info(" strImagePath " + strImagePath);
 
         GalleryImageViewCard imageGalleryViewCard = new GalleryImageViewCard(record, strImagePath, isMobile, userId, strUsername, sessionCreation, hostname, publicIp, isEditable,
-                recordService,sqlReadGallery,arrColumnNamesGallery);
+                recordService, sqlReadGallery, arrColumnNamesGallery);
         imageGalleryViewCard.addClassNames(Background.CONTRAST_5, BorderColor.CONTRAST_10, TextColor.TERTIARY);
         imageGalleryViewCard.addClassName("image-card");
         imageGalleryViewCard.addClassName("bottom-radius-shadow");
@@ -1262,9 +1248,9 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         btnLike.setTooltipText("Like It");
 
 
-        StreamResource iconAction = new StreamResource("testimonial-icon.svg",
-                () -> getClass().getResourceAsStream("/icons/testimonial-icon.svg"));
-        SvgIcon svgAction = new SvgIcon(iconAction);
+//        StreamResource iconAction = new StreamResource("stories.svg",
+//                () -> getClass().getResourceAsStream("/icons/stories.svg"));
+//        SvgIcon svgAction = new SvgIcon(iconAction);
         Button btnMoreAction = new Button(VaadinIcon.BOOKMARK.create());//svgAction);
         btnMoreAction.setTooltipText("Save to list");
 
@@ -1769,9 +1755,9 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         btnLike.setTooltipText("Like It");
 
 
-        StreamResource iconAction = new StreamResource("testimonial-icon.svg",
-                () -> getClass().getResourceAsStream("/icons/testimonial-icon.svg"));
-        SvgIcon svgAction = new SvgIcon(iconAction);
+//        StreamResource iconAction = new StreamResource("stories.svg",
+//                () -> getClass().getResourceAsStream("/icons/stories.svg"));
+//        SvgIcon svgAction = new SvgIcon(iconAction);
         Button btnMoreAction = new Button(VaadinIcon.BOOKMARK.create());//svgAction);
         btnMoreAction.setTooltipText("Save to list");
 
@@ -2126,9 +2112,9 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         btnLike.setTooltipText("Like It");
 
 
-        StreamResource iconAction = new StreamResource("testimonial-icon.svg",
-                () -> getClass().getResourceAsStream("/icons/testimonial-icon.svg"));
-        SvgIcon svgAction = new SvgIcon(iconAction);
+//        StreamResource iconAction = new StreamResource("stories.svg",
+//                () -> getClass().getResourceAsStream("/icons/stories.svg"));
+//        SvgIcon svgAction = new SvgIcon(iconAction);
         Button btnMoreAction = new Button(VaadinIcon.BOOKMARK.create());//svgAction);
         btnMoreAction.setTooltipText("Save to list");
 
@@ -2643,9 +2629,9 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         btnLike.setTooltipText("Like It");
 
 
-        StreamResource iconAction = new StreamResource("testimonial-icon.svg",
-                () -> getClass().getResourceAsStream("/icons/testimonial-icon.svg"));
-        SvgIcon svgAction = new SvgIcon(iconAction);
+//        StreamResource iconAction = new StreamResource("stories.svg",
+//                () -> getClass().getResourceAsStream("/icons/stories.svg"));
+//        SvgIcon svgAction = new SvgIcon(iconAction);
         Button btnMoreAction = new Button(VaadinIcon.BOOKMARK.create());//svgAction);
         btnMoreAction.setTooltipText("Save to list");
 
@@ -2696,9 +2682,9 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         btnLike.setTooltipText("Like It");
 
 
-        StreamResource iconAction = new StreamResource("testimonial-icon.svg",
-                () -> getClass().getResourceAsStream("/icons/testimonial-icon.svg"));
-        SvgIcon svgAction = new SvgIcon(iconAction);
+//        StreamResource iconAction = new StreamResource("stories.svg",
+//                () -> getClass().getResourceAsStream("/icons/stories.svg"));
+//        SvgIcon svgAction = new SvgIcon(iconAction);
         Button btnMoreAction = new Button(VaadinIcon.BOOKMARK.create());//svgAction);
         btnMoreAction.setTooltipText("Save to list");
 
@@ -3121,9 +3107,9 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         btnLike.setTooltipText("Like It");
 
 
-        StreamResource iconAction = new StreamResource("testimonial-icon.svg",
-                () -> getClass().getResourceAsStream("/icons/testimonial-icon.svg"));
-        SvgIcon svgAction = new SvgIcon(iconAction);
+//        StreamResource iconAction = new StreamResource("stories.svg",
+//                () -> getClass().getResourceAsStream("/icons/stories.svg"));
+//        SvgIcon svgAction = new SvgIcon(iconAction);
         Button btnMoreAction = new Button(VaadinIcon.BOOKMARK.create());//svgAction);
         btnMoreAction.setTooltipText("Save to list");
 

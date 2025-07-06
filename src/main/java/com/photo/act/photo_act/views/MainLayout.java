@@ -50,6 +50,7 @@ public class MainLayout extends AppLayout {
     public static final String HOSTNAME_LAPTOP_LENOVO = "linux-pc-LOQ-15ARP9";
 
     public static final String HOSTNAME_SERVER_HOSTINGER = "srv882238";
+    public static final String PROP_PHOTOS = "dir-photos";
 
     private static final Logger logger = LoggerFactory.getLogger(MainLayout.class);
     private boolean isMobile;
@@ -94,7 +95,7 @@ public class MainLayout extends AppLayout {
         }
         String hostname = inetAddress.getHostName();
 
-        isMobile = VaadinSession.getCurrent().getBrowser().isAndroid() || VaadinSession.getCurrent().getBrowser().isIPhone();
+        isMobile = VaadinSession.getCurrent().getBrowser().isAndroid() || VaadinSession.getCurrent().getBrowser().isIPhone() || VaadinSession.getCurrent().getBrowser().isWindowsPhone();
 
         userId = 1;
         strUsername = "visitor-user";
@@ -213,6 +214,11 @@ public class MainLayout extends AppLayout {
                         .getResourceAsStream("/icons/user-profile-icon.svg"));
         SvgIcon svgMember = new SvgIcon(imageResourceMember);
 
+        StreamResource imageResourceStories = new StreamResource("story.svg",
+                () -> getClass()
+                        .getResourceAsStream("/icons/story.svg"));
+        SvgIcon svgStories = new SvgIcon(imageResourceStories);
+
 
         MenuItemInfo menuItemHome;
         if (isMobile) {  // VaadinIcon.CAMERA.create()
@@ -223,12 +229,14 @@ public class MainLayout extends AppLayout {
 
         return new MenuItemInfo[]{ //
                 menuItemHome,
-                new MenuItemInfo("Events", VaadinIcon.CALENDAR_USER.create(), FestivalsView.class), //  LineAwesomeIcon.PENCIL_RULER_SOLID.create(),
-                new MenuItemInfo("Learnings", VaadinIcon.BOOK.create(), LearningsView.class), //  LineAwesomeIcon.PENCIL_RULER_SOLID.create(),
-                // new MenuItemInfo("Festivals", LineAwesomeIcon.OBJECT_GROUP.create(), FestivalsView.class), //  LineAwesomeIcon.PENCIL_RULER_SOLID.create(),
+
+
+                //  new MenuItemInfo("Stories", svgStories, StoriesView.class), //  LineAwesomeIcon.PENCIL_RULER_SOLID.create(),
                 new MenuItemInfo("Albums", FontAwesome.Solid.PHOTO_FILM.create(), AlbumsView.class), //
                 new MenuItemInfo("Photos", VaadinIcon.PICTURE.create(), GalleryView.class), //
-                new MenuItemInfo("Member", svgMember, UploadView.class), //
+                new MenuItemInfo("Learnings", VaadinIcon.BOOK.create(), LearningsView.class), //  LineAwesomeIcon.PENCIL_RULER_SOLID.create(),
+                new MenuItemInfo("Events", VaadinIcon.CALENDAR_USER.create(), FestivalsView.class), //  LineAwesomeIcon.PENCIL_RULER_SOLID.create(),
+                new MenuItemInfo("Members", svgMember, MembersView.class), //
 
                 // new MenuItemInfo("Checkout Form", LineAwesomeIcon.CREDIT_CARD.create(), CheckoutFormView.class), //
         };

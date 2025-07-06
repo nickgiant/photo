@@ -183,22 +183,32 @@ public class ImageUtilsMeta {
             String strTimeOrg = getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_DATE_TIME_ORIGINAL);
             String strTimeDigi = getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_DATE_TIME_DIGITIZED);
 
-            if(strTimeOrg==null || strTimeOrg.isEmpty() || strTimeOrg.trim().equalsIgnoreCase("null")) {
+            if (strTimeOrg == null || strTimeOrg.isEmpty() || strTimeOrg.trim().equalsIgnoreCase("null")) {
                 lstInfo.add(strTimeDigi); // date time
-            }else{
+            } else {
                 lstInfo.add(strTimeOrg); // date time
             }
             lstInfo.add(getTagValue(jpegMetadata, TiffTagConstants.TIFF_TAG_MAKE)); // camera make
             lstInfo.add(getTagValue(jpegMetadata, TiffTagConstants.TIFF_TAG_MODEL)); // camera model
-            lstInfo.add(getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_LENS_MAKE).replaceAll(", , , , ,", "").trim()); // lens make
+
+            String lensMake = getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_LENS_MAKE).replaceAll(", , , , ,", "").trim(); // lens make
+            if (!lensMake.trim().equalsIgnoreCase("null")) {
+                lstInfo.add(lensMake);
+            } else {
+                lstInfo.add("'Not Available'");
+            }
 
             String lensModel = getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_LENS_MODEL).replaceAll(", ", "").trim();
-            if (lensModel.length() > 0) {
-                if (lensModel.startsWith("'") && lensModel.endsWith("'")) {
-                    lstInfo.add(lensModel); // camera model
-                } else {
-                    lstInfo.add("'" + lensModel + "'");
+            if (!lensModel.trim().equalsIgnoreCase("null")) {
+                if (lensModel.length() > 0) {
+                    if (lensModel.startsWith("'") && lensModel.endsWith("'")) {
+                        lstInfo.add(lensModel); // camera model
+                    } else {
+                        lstInfo.add("'" + lensModel + "'");
+                    }
                 }
+            } else {
+                lstInfo.add("'Not Available'");
             }
 
             lstInfo.add(getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_FOCAL_LENGTH)); // focal length
@@ -207,26 +217,21 @@ public class ImageUtilsMeta {
 
             String strShutterSpeed = getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_SHUTTER_SPEED_VALUE);
             String strExposure = getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_EXPOSURE_TIME);
-            if(strShutterSpeed==null || strShutterSpeed.isEmpty() || strShutterSpeed.trim().equalsIgnoreCase("null")) {
+            if (strShutterSpeed == null || strShutterSpeed.isEmpty() || strShutterSpeed.trim().equalsIgnoreCase("null")) {
                 lstInfo.add(strExposure); // shutter speed
-            }else{
+            } else {
                 lstInfo.add(strShutterSpeed); // shutter speed
             }
 
-           String strAperture = getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_APERTURE_VALUE);
+            String strAperture = getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_APERTURE_VALUE);
             String strFNumber = getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_FNUMBER);
-            if(strAperture==null || strAperture.isEmpty() || strAperture.trim().equalsIgnoreCase("null")) {
+            if (strAperture == null || strAperture.isEmpty() || strAperture.trim().equalsIgnoreCase("null")) {
                 lstInfo.add(strFNumber); // aperture
-            }else{
+            } else {
                 lstInfo.add(strAperture); // aperture
             }
 
             lstInfo.add(getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_METERING_MODE));
-
-
-
-
-
 
 
 //
