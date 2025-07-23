@@ -4,12 +4,20 @@ import com.flickr4java.flickr.people.User;
 import com.flickr4java.flickr.photos.Photo;
 import com.flowingcode.vaadin.addons.carousel.Carousel;
 import com.flowingcode.vaadin.addons.carousel.Slide;
+import com.github.appreciated.apexcharts.ApexChartsBuilder;
+import com.github.appreciated.apexcharts.config.builder.ChartBuilder;
+import com.github.appreciated.apexcharts.config.builder.LegendBuilder;
+import com.github.appreciated.apexcharts.config.builder.ResponsiveBuilder;
+import com.github.appreciated.apexcharts.config.chart.Type;
+import com.github.appreciated.apexcharts.config.legend.HorizontalAlign;
+import com.github.appreciated.apexcharts.helper.Series;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.services.PhotoFlickrService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.photo.act.photo_act.views.components.AvatarItem;
+import com.photo.act.photo_act.views.components.DialogRegistration;
 import com.photo.act.photo_act.views.components.GenericView;
 import com.photo.act.photo_act.views.components.HeaderFilterTabs;
 import com.vaadin.flow.component.HasComponents;
@@ -30,6 +38,7 @@ import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
+import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.theme.lumo.LumoUtility.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,8 +57,10 @@ import java.util.List;
 import java.util.Locale;
 
 import static com.photo.act.photo_act.views.MainLayout.*;
+import static com.photo.act.photo_act.views.MeView.subPathSmall;
 
-//@PageTitle("Photo Act")
+@AnonymousAllowed
+
 @Route(value = "") //":category?")
 //@RouteAlias(value = "home") // empty on homepage
 @RouteAlias(value = "home/:category?", layout = MainLayout.class)
@@ -105,36 +116,60 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
     private String strColorExternalweb = "#9fafd5";
 
 
-    String[] arrColLearningTopics = {"cat_title", "cat_title2", "cat_title_type", "cat_title_type2", "cat_type",
-            "cat_description_min", "cat_type_count"};
+    String[] arrColLearningTopics = {"cat_title", "cat_title_type", "cat_type", "cat_location_count", "cat_title_count", "cat_description_min", "cat_description_big"};
 
-    String sqlLearningTopics = "SELECT "
-            + " lc.cat_title, lc.cat_title_type, lc.cat_type, lc.cat_description_min "
-            + " , count (l.category_id) AS cat_type_count "
-//            + " , lc2.cat_title AS cat_title2, lc2.cat_title_type AS cat_title_type2, lc2.cat_type AS cat_type2, count (lc2.cat_type) AS cat_type_count2 "
-//            + " l.id, l.title, l.picture, l.section , l.category, l.format, l.url, l.parent_id, l.child_index, l.tutor_id, l.artists_ref, l.description, l.duration, l.pages, l.published, l.userIdInsert, l.username, l.dateInsert "
-//            + ", l.tutor_id, l.tutor_id_team, t.tutor_name, t.website, t.url_fb, t.url_yt, t.url_insta, t.url_flickr, t.url_wikipedia, t.url_ref1, t.url_ref2, t.url_ref3, t.city_base, t.country_base, t.userIdInsert, t.username, t.date_inserted "
-//            + " FROM learnings_categories lc2 RIGHT JOIN learnings l ON lc2.id = l.category_id2, learnings_categories lc " // "LEFT JOIN learnings_categories lc ON lc.id = l.category_id "
-            + " FROM learnings l, learnings_categories lc "
-//            + " FROM learnings_categories lc "
+    String sqlLearningTopics =
+            " SELECT l.id, lc.id, lc.cat_title, lc.cat_title_type, lc.cat_type, cat_description_min, cat_description_big, " +
+                    " count(l.has_location) AS cat_location_count , count(lc.cat_title) AS cat_title_count, lc.cat_order " +
+                    " FROM learnings l LEFT JOIN learnings_categories lc ON l.category_id = lc.id " +
+                    " WHERE 1 = 1 " +
+                    " AND lc.cat_type not LIKE '%genre%' " +
+                    " AND lc.cat_type not LIKE 'not show' " +
+                    " GROUP BY lc.cat_type " +
+                    " ORDER BY lc.cat_order ASC";
+
+
+    String[] arrColLearningGenres = {"cat_title", "cat_title_type", "cat_type", "cat_location_count", "cat_title_count", "cat_description_min", "cat_description_big"};
+
+    String sqlLearningGenres = //f.nameShort, f.location, f.country, f.periodOfYear, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description  " +
+            " SELECT lc.id, lc.cat_title, lc.cat_title_type, lc.cat_type, l.cat_genre_id, count(l.has_location) AS cat_location_count, count(lc.cat_title) AS cat_title_count, cat_description_min, cat_description_big " +
+
+                    " FROM learnings l LEFT JOIN learnings_categories lc ON l.cat_genre_id = lc.id " +
+                    " WHERE 1 = 1 " +
+                    " AND lc.cat_type LIKE '%genre%' " +
+                    " GROUP BY lc.cat_title " +
+                    " ORDER BY lc.cat_order ASC";
+
+
+//    String[] arrColLearningTopics = {"cat_title", "cat_title2", "cat_title_type", "cat_title_type2", "cat_type",
+//            "cat_description_min", "cat_type_count"};
+//
+//    String sqlLearningTopics = "SELECT "
+//            + " lc.cat_title, lc.cat_title_type, lc.cat_type, lc.cat_description_min "
+//            + " , count (l.category_id) AS cat_type_count "
+////            + " , lc2.cat_title AS cat_title2, lc2.cat_title_type AS cat_title_type2, lc2.cat_type AS cat_type2, count (lc2.cat_type) AS cat_type_count2 "
+////            + " l.id, l.title, l.picture, l.section , l.category, l.format, l.url, l.parent_id, l.child_index, l.tutor_id, l.artists_ref, l.description, l.duration, l.pages, l.published, l.userIdInsert, l.username, l.dateInsert "
+////            + ", l.tutor_id, l.tutor_id_team, t.tutor_name, t.website, t.url_fb, t.url_yt, t.url_insta, t.url_flickr, t.url_wikipedia, t.url_ref1, t.url_ref2, t.url_ref3, t.city_base, t.country_base, t.userIdInsert, t.username, t.date_inserted "
+//            + " FROM learnings l, learnings_categories lc "
+////            + " FROM learnings_categories lc "
+////            + " WHERE 1 = 1 "
+//            + " WHERE lc.id = l.category_id "
+//            + " AND lc.cat_type NOT LIKE '%genre%' "
+//            + " GROUP BY lc.cat_type "
+//            + " ORDER BY lc.cat_order ASC ";
+
+
+//    String[] arrColLearningGenres = {"cat_title", "cat_title2", "cat_title_type", "cat_type", "cat_description_min", "cat_description_big", "cat_genre_count"};
+//
+//    String sqlLearningGenres = "SELECT  " //f.nameShort, f.location, f.country, f.periodOfYear, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description  " +
+//            + " lc.cat_title, lc.cat_title_type, lc.cat_type, lc.cat_description_min, count (lc.cat_title) AS cat_genre_count, "
+//            + " lc2.cat_title AS cat_title2, lc2.cat_title_type AS cat_title_type2, lc2.cat_type AS cat_type2, count (lc2.cat_title) AS cat_genre_count2 "
+    /// /            + " l.id, l.title, l.picture, l.section , l.category, l.format, l.url, l.parent_id, l.child_index, l.tutor_id, l.artists_ref, l.description, l.duration, l.pages, l.published, l.userIdInsert, l.username, l.dateInsert "
+    /// /            + ", l.tutor_id, l.tutor_id_team, t.tutor_name, t.website, t.url_fb, t.url_yt, t.url_insta, t.url_flickr, t.url_wikipedia, t.url_ref1, t.url_ref2, t.url_ref3, t.city_base, t.country_base, t.userIdInsert, t.username, t.date_inserted "
+//            + " FROM learnings_categories lc2 RIGHT JOIN learnings l ON lc2.id = l.category_id2 LEFT JOIN learnings_categories lc ON lc.id = l.category_id "
 //            + " WHERE 1 = 1 "
-            + " WHERE lc.id = l.category_id "
-            + " AND lc.cat_type NOT LIKE '%genre%' "
-            + " GROUP BY lc.cat_type "
-            + " ORDER BY lc.cat_order ASC ";
-
-
-    String[] arrColLearningGenres = {"cat_title", "cat_title2", "cat_title_type", "cat_type", "cat_description_min", "cat_description_big", "cat_genre_count"};
-
-    String sqlLearningGenres = "SELECT  " //f.nameShort, f.location, f.country, f.periodOfYear, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description  " +
-            + " lc.cat_title, lc.cat_title_type, lc.cat_type, lc.cat_description_min, count (lc.cat_title) AS cat_genre_count, "
-            + " lc2.cat_title AS cat_title2, lc2.cat_title_type AS cat_title_type2, lc2.cat_type AS cat_type2, count (lc2.cat_title) AS cat_genre_count2 "
-//            + " l.id, l.title, l.picture, l.section , l.category, l.format, l.url, l.parent_id, l.child_index, l.tutor_id, l.artists_ref, l.description, l.duration, l.pages, l.published, l.userIdInsert, l.username, l.dateInsert "
-//            + ", l.tutor_id, l.tutor_id_team, t.tutor_name, t.website, t.url_fb, t.url_yt, t.url_insta, t.url_flickr, t.url_wikipedia, t.url_ref1, t.url_ref2, t.url_ref3, t.city_base, t.country_base, t.userIdInsert, t.username, t.date_inserted "
-            + " FROM learnings_categories lc2 RIGHT JOIN learnings l ON lc2.id = l.category_id2 LEFT JOIN learnings_categories lc ON lc.id = l.category_id "
-            + " WHERE 1 = 1 "
-            + " AND ( lc.cat_type LIKE '%genre%') "
-            + " GROUP BY lc.cat_title ORDER BY lc.cat_order ASC ";
+//            + " AND ( lc.cat_type LIKE '%genre%') "
+//            + " GROUP BY lc.cat_title ORDER BY lc.cat_order ASC ";
 
     String sqlLearningsReadOrderBy;
 
@@ -199,10 +234,10 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
         String[] arrColumnNamesGallery = {"name_org", "name_new", "title", "subtitle", "photo_type", "uploader", "uploaderId", "photo_type", "contains",
                 "space_size", "space_size_medium", "space_size_thumb", "city_name", "meta_date", "date_inserted",
-                "username", "nameOfUser", "avatar_path", "member_since"
+                "username", "name", "surname", "avatar_path", "member_since"
         };
 
-        String sqlReadGallery = "SELECT pm.name_org, pm.name_new, pm.title, pm.subtitle, pm.photo_type, pm.uploader, pm.uploaderId, pm.photo_type, pm.contains, " +
+        String sqlReadGallery = "SELECT pm.name_org, pm.name_new, pm.title, pm.subtitle, pm.photo_type, pm.uploader, pm.uploaderId, pm.photo_type, pm.contains_tags, " +
                 " pm.space_size, pm.space_size_medium, pm.space_size_thumb,  d.city_name, DATE_FORMAT(pm.meta_date, '%W %D %M %Y %H:%i %p') AS meta_date " +
                 //, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description, DATE_FORMAT(f.dateInsert , '%D %M %Y') AS formatedDateUpdated  " +
 //                "                 ( case " +
@@ -224,21 +259,29 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 //                "                ELSE DATE_FORMAT(pm.date_inserted, '%D %M %Y') " +
 //                "              END ) " +
                 " , getDateDiffFromNow(pm.date_inserted) AS date_inserted " +
-                " , usr.username, usr.nameOfUser, usr.avatar_path, DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since " +
+                " , usr.username, usr.name, usr.surname, usr.avatar_path, DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since " +
                 " FROM dbuser usr, photo_meta pm LEFT JOIN destination d ON pm.destination_Id = d.id ";
 //                    " WHERE pm.hostname like '"+hostname+"' "+
 //                    " ORDER BY pm.title ASC ";
-        String sqlGalleryAll = sqlReadGallery + " WHERE pm.hostname like '" + hostname + "' AND pm.visible_to = 'ALL' " +
+        String sqlGalleryAll = sqlReadGallery + " WHERE pm.visible_to = 'ALL' " +
                 " AND usr.userId = pm.uploaderId";
 //        if(!strDestination.equalsIgnoreCase(STR_ALL_DESTINATIONS)) {
 //            sqlGalleryAll = sqlGalleryAll + " AND d.city_name LIKE '" + strDestination + "' ";
 //        }
         sqlGalleryAll = sqlGalleryAll + " ORDER BY pm.date_inserted DESC, pm.title ASC, pm.meta_date DESC, pm.name_new ASC ";
 
-        ArrayList<Image> lstImage = loadImagesFromDbToCarousel(sqlGalleryAll + " LIMIT 10 ", arrColumnNamesGallery, false, false);
+//        ArrayList<Image> lstImage = loadImagesFromDbToCarousel(sqlGalleryAll + " LIMIT 10 ", arrColumnNamesGallery, false, false);
 
+        String[] arrColsUploadsGrouped = {"Month", "Photos"};
+
+        String sqlUploadsGrouped = "SELECT DATE_FORMAT(pm.date_inserted, '%M %Y') as 'Month', COUNT(DATE_FORMAT(pm.date_inserted, '%M %Y')) AS 'Photos'" +
+                " FROM photo_meta pm " +
+                " WHERE visible_to LIKE 'all' " +
+                " GROUP BY DATE_FORMAT(pm.date_inserted, '%M %Y') " +
+                " ORDER BY DATE_FORMAT(pm.date_inserted, '%Y %m') ";
+
+        H1 titlePage = new H1(APP_NAME);
         Span subTitle = new Span("[ Network and Act around Photography ]");
-        H1 titlePage = new H1("photoact.net");
 
         Header siteHeader = new Header(titlePage, subTitle);
         siteHeader.addClassNames(Width.FULL);
@@ -274,22 +317,34 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         divMainImage.add(mainImage);
 
 
-        Div div1 = new Div("We are a community site, exchanging info and links in order to improve our skills in photography!");
-        Div div2 = new Div("Currently, we share info about events and learnings. We also have space for our photos and albums.");
+        Div div1 = new Div("We are a community site, with members exchanging info and links in order to improve our skills in photography!");
+        Div div2 = new Div("Currently, we share info about events and learnings. Of course, we also have space for our photos and albums.");
 
         StreamResource imageResourceMember = new StreamResource("user-profile-icon.svg",
                 () -> getClass()
                         .getResourceAsStream("/icons/user-profile-icon.svg"));
         SvgIcon svgMember = new SvgIcon(imageResourceMember);
-        Button btnRegister = new Button("Become a Member");
+        Button btnRegister = new Button("Register");
         btnRegister.setIcon(svgMember);
         btnRegister.addClassName("btn-register");
 //        btnSuggestEvent.setIcon(svgComments);
         btnRegister.addClickListener(click -> {
-
+            displayRegisterDialog();
         });
 
-        verticalLayout.add(divMainImage, div1, div2, btnRegister);
+
+        HorizontalLayout layoutUserBtns = new HorizontalLayout();
+        String usrName = genericView.checkIfAuthUserName();
+        if (usrName == null) {
+            layoutUserBtns.add(btnRegister);
+        } else {
+
+            mainImage.setHeight("16rem");
+            mainImage.setWidth("auto");
+            layoutUserBtns.add(genericView.getAuthUserPanel(usrName));
+        }
+
+        verticalLayout.add(divMainImage, div1, div2, layoutUserBtns);
 
         Div layoutLearningTopics = loadLearningTopics(sqlLearningTopics, arrColLearningTopics);
 
@@ -311,9 +366,11 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 //        Div layoutLastLearnings = loadLastLearnings(sqlLearningsRead, arrColumnsLearning);
 //        verticalLayout.add(titleLastLearnings, layoutLastLearnings);
 
+        H3 titleGraphLastPhotos = new H3("Uploads in last months:");
+        verticalLayout.add(titleGraphLastPhotos, loadGraphUploads(sqlUploadsGrouped, arrColsUploadsGrouped));
 
         H3 titleLastPhotos = new H3("Last 20 Photos that Members Uploaded:");
-        Div layoutLastPhotos = loadUploadedPhotos(sqlGalleryAll + " LIMIT 20 ", arrColumnNamesGallery, false, true);
+        Div layoutLastPhotos = loadUploadedPhotos(sqlGalleryAll + " LIMIT 20 ", arrColumnNamesGallery, false, false);
         verticalLayout.add(titleLastPhotos, layoutLastPhotos);
 
 
@@ -346,6 +403,19 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
     }
 
     private void getUserClientInfo() {
+
+
+        InetAddress inetAddress = null;
+        try {
+            inetAddress = InetAddress.getLocalHost();
+        } catch (UnknownHostException e) {
+            throw new RuntimeException(e);
+        }
+        hostname = inetAddress.getHostName();
+        hostAddress = inetAddress.getHostAddress();
+        canonicalHostname = inetAddress.getCanonicalHostName();
+
+        DIR_PHOTOS_SERVER = genericView.getAppProps(PROP_PHOTOS);
 
         sessionid = VaadinSession.getCurrent().getSession().getId();
         sessionCreation = VaadinSession.getCurrent().getSession().getCreationTime();
@@ -551,7 +621,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         strPath = DIR_PHOTOS_SERVER + dirChar;
         String strPath;
         if (!isThumbnails) {
-            strPath = DIR_PHOTOS_SERVER + dirChar + subPathShow;
+            strPath = DIR_PHOTOS_SERVER + dirChar + subPathSmall;
         } else {
             strPath = DIR_PHOTOS_SERVER + dirChar + subPathThumbs;
         }
@@ -588,13 +658,14 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
             String strDateUploaded = record.getColumnData("date_inserted");
 
             String strUsername = record.getColumnData("username");
-            String strNameOfUser = record.getColumnData("nameOfUser");
+            String strName = record.getColumnData("name");
+            String strSurname = record.getColumnData("surname");
             String strAvatarPath = record.getColumnData("avatar_path");
             String strMemberSince = record.getColumnData("member_since");
 
             Image image = getImageThumbFromDb(record, strPath);
             image.getStyle().setWidth("auto");
-            image.getStyle().setMaxHeight("91px");
+            image.getStyle().setMaxHeight("170px");
             image.addClassNames(BorderRadius.SMALL);
 
             Icon iconLocation = VaadinIcon.LOCATION_ARROW_CIRCLE_O.create();
@@ -614,8 +685,8 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
             divLocation.addClassNames(FontSize.XSMALL);
 
 
-            Image imgAvatarMedium = genericView.getAvatarImage(strAvatarPath, strNameOfUser, "50px", "50px");
-            AvatarItem avatarLargeItemMe = new AvatarItem(strNameOfUser, "@" + strUsername, imgAvatarMedium);
+            Image imgAvatarMedium = genericView.getAvatarImage(strAvatarPath, strName + " " + strSurname, "80px", "80px");
+            AvatarItem avatarLargeItemMe = new AvatarItem(strName + " " + strSurname, "@" + strUsername, imgAvatarMedium);
 
 //            Avatar userAvatar = new Avatar(strUploader);
 //            userAvatar.setImage("https://randomuser.me/api/portraits/men/17.jpg");
@@ -864,6 +935,69 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         return layoutCarousel;
     }
 
+    private VerticalLayout loadGraphUploads(String sqlRead, String[] arrColumnNames) {
+
+
+        List<Record> lstRecords = getRecordsFromDb(sqlRead, arrColumnNames);
+        Series<Object> data = new Series<>();
+        data.setName("Photos");
+        Object[] intPhotos = new Object[lstRecords.size()];
+        String[] strMonths = new String[lstRecords.size()];
+        for (int r = 0; r < lstRecords.size(); r++) {
+
+            intPhotos[r] = Integer.parseInt(lstRecords.get(r).getColumnData("photos"));
+            strMonths[r] = lstRecords.get(r).getColumnData("month");
+
+        }
+
+        data.setData(intPhotos);
+
+        VerticalLayout layoutUploads = new VerticalLayout();
+        layoutUploads.addClassName("chart-panel");
+        layoutUploads.addClassNames(AlignItems.CENTER);
+        if (isMobile) {
+            layoutUploads.setWidth("97%");
+        } else {
+            layoutUploads.setWidth("82%");
+            layoutUploads.setMaxWidth("1100px");
+        }
+//        layoutUploads.getStyle().set
+
+        ApexChartsBuilder charts1 = new ApexChartsBuilder();
+        charts1.withChart(ChartBuilder.get()
+                        .withType(Type.AREA).withHeight("400px")
+                        .build())
+                .withLabels(strMonths)
+                .withColors()
+                .withLegend(LegendBuilder.get()
+                        .withPosition(com.github.appreciated.apexcharts.config.legend.Position.LEFT)
+                        .withHorizontalAlign(HorizontalAlign.LEFT)
+                        .build())
+                .withSeries(data)
+                .withResponsive(ResponsiveBuilder.get()
+                        .withBreakpoint(480.0)
+                        .build())
+                //.withTitle(title1)
+                .build();
+//        Div divTitle1 = new Div("Interesting Subject & well structured");
+//        divTitle1.getStyle().setColor("#5d6f87");
+//        divTitle1.setWidthFull();
+//        Div layoutGraph1 = new Div();
+//        layoutGraph1.setClassName("lazy-poll-graph");
+//        layoutGraph1.setMinHeight("190px");
+//        layoutGraph1.add(divTitle1, charts1.build());
+
+        layoutUploads.add(charts1.build());
+
+        return layoutUploads;
+    }
+
+
+    private List<Record> getRecordsFromDb(String sql, String[] arrColumnNames, Object[] sqlParValue, String[] sqlParType) {
+        logger.info(" photo  getRecordsFromDb with params:   " + sql);
+        return recordService.findAll(sql, arrColumnNames, sqlParValue, sqlParType);
+    }
+
     private ArrayList<Image> loadImagesFromDbToCarousel(String sqlRead, String[] arrColumnNames, boolean isEditable, boolean isThumbnails) {
         strPath = DIR_PHOTOS_SERVER + dirChar;
         String strPath;
@@ -1081,7 +1215,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         for (int r = 0; r < lstLearningCategoriesRecs.size(); r++) {
             lstCategories.add(lstLearningCategoriesRecs.get(r).getColumnData("cat_type"));
             String strDescr = lstLearningCategoriesRecs.get(r).getColumnData("cat_description_min");
-            String strCount = lstLearningCategoriesRecs.get(r).getColumnData("cat_type_count");
+            String strCount = lstLearningCategoriesRecs.get(r).getColumnData("cat_title_count");
             lstCategoriesCount.add(strCount);
             lstCategoriesDescriptions.add(strDescr);
         }
@@ -1151,7 +1285,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         for (int r = 0; r < lstLearningCategoriesRecs.size(); r++) {
             lstCategories.add(lstLearningCategoriesRecs.get(r).getColumnData("cat_title"));
             String strDescr = lstLearningCategoriesRecs.get(r).getColumnData("cat_description_min");
-            String strCount = lstLearningCategoriesRecs.get(r).getColumnData("cat_genre_count");
+            String strCount = lstLearningCategoriesRecs.get(r).getColumnData("cat_title_count");
             lstCategoriesCount.add(strCount);
             if (strDescr != null && !strDescr.isEmpty() && !strDescr.equalsIgnoreCase("null")) {
                 lstCategoriesDescriptions.add(strDescr);
@@ -1324,6 +1458,12 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         return layoutTabsInfo;
     }
 
+
+    private void displayRegisterDialog() {
+        DialogRegistration dialogRegister = new DialogRegistration(isMobile, "", sessionCreation, hostname, publicIp, recordService,
+                section, "register-from-home-view");
+        dialogRegister.open();
+    }
 
     private List<Record> getRecordsFromDb(String sql, String[] arrColumnNames) {
 

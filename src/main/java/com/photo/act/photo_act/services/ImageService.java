@@ -7,7 +7,6 @@ import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.utils.ImageUtilsMeta;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
-import com.vaadin.flow.server.VaadinSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -140,20 +139,18 @@ public class ImageService {
 
         ArrayList<String> lstQueryUpdate = new ArrayList<String>();
 
-        String sqlReadPhotos = "SELECT name_new FROM photo_meta WHERE uploaderId = "+intUserId+ " ORDER BY id DESC ";
+        String sqlReadPhotos = "SELECT name_new FROM photo_meta WHERE uploaderId = " + intUserId + " ORDER BY id DESC ";
         String[] arrColumns = {"name_new"};
-        List<Record> lstPhotoFilenames = recordService.findAll(sqlReadPhotos,arrColumns);
+        List<Record> lstPhotoFilenames = recordService.findAll(sqlReadPhotos, arrColumns);
 
         Notification notificationStart = Notification.show(
-                lstPhotoFilenames.size()+" Photos for User:"+intUserId,
+                lstPhotoFilenames.size() + " Photos for User:" + intUserId,
                 5000,
                 Notification.Position.MIDDLE
         );
         notificationStart.addThemeVariants(NotificationVariant.LUMO_CONTRAST);
 
-
-
-        for(int l=0;l<lstPhotoFilenames.size();l++) {
+        for (int l = 0; l < lstPhotoFilenames.size(); l++) {
             String strNewFileName = lstPhotoFilenames.get(l).getColumnData("name_new");
 
 
@@ -164,8 +161,6 @@ public class ImageService {
             ImageUtilsMeta imageUtilsMeta = new ImageUtilsMeta();
             File imgFile = new File(outputUploadFileName);
             logger.info("for photo " + outputUploadFileName + " get meta info");
-
-
 
 
 //            Notification notificationA = Notification.show(
@@ -202,16 +197,16 @@ public class ImageService {
             String strFl;
             try {
                 if (strFocalLength.indexOf("(") == -1 && strFocalLength.indexOf(")") == -1) {
-                    strFl =   strFocalLength;
+                    strFl = strFocalLength;
                 } else {
-                    strFl =   strFocalLength.substring(strFocalLength.indexOf("(") + 1, strFocalLength.indexOf(")"));
+                    strFl = strFocalLength.substring(strFocalLength.indexOf("(") + 1, strFocalLength.indexOf(")"));
                 }
                 dblPhotoFocalLength = Double.parseDouble(strFl);
             } catch (Exception e) {
                 logger.error(e.getMessage());
 
 
-                String errorMessage = "strFocalLength: "+strFocalLength+"  " + e.getMessage();
+                String errorMessage = "strFocalLength: " + strFocalLength + "  " + e.getMessage();
                 Notification notification = Notification.show(
                         errorMessage,
                         5000,
@@ -220,22 +215,22 @@ public class ImageService {
                 notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
             }
 
-           // double dblPhotoFocalLengthFF = Double.parseDouble(lstPhotoMetaData.get(6));
+            // double dblPhotoFocalLengthFF = Double.parseDouble(lstPhotoMetaData.get(6));
             String strFocalLengthFF = lstPhotoMetaData.get(6);
             double dblPhotoFocalLengthFF = 0;
             String strFlFF;
             try {
                 if (strFocalLengthFF.indexOf("(") == -1 && strFocalLengthFF.indexOf(")") == -1) {
-                    strFlFF =   strFocalLengthFF;
+                    strFlFF = strFocalLengthFF;
                 } else {
-                    strFlFF =   strFocalLengthFF.substring(strFocalLengthFF.indexOf("(") + 1, strFocalLengthFF.indexOf(")"));
+                    strFlFF = strFocalLengthFF.substring(strFocalLengthFF.indexOf("(") + 1, strFocalLengthFF.indexOf(")"));
                 }
                 dblPhotoFocalLengthFF = Double.parseDouble(strFlFF);
             } catch (Exception e) {
                 logger.error(e.getMessage());
 
 
-                String errorMessage = "strFocalLengthFF: "+strFocalLengthFF+"  " + e.getMessage();
+                String errorMessage = "strFocalLengthFF: " + strFocalLengthFF + "  " + e.getMessage();
                 Notification notification = Notification.show(
                         errorMessage,
                         5000,
@@ -243,9 +238,6 @@ public class ImageService {
                 );
                 notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
             }
-
-
-
 
 
             int intPhotoISO = Integer.parseInt(lstPhotoMetaData.get(7));
@@ -256,9 +248,9 @@ public class ImageService {
             if (!strPhotoShutterSpeed.equalsIgnoreCase("null")) {
                 String strSS = "";
                 try {
-                    if(strPhotoShutterSpeed.indexOf("(")==-1 && strPhotoShutterSpeed.indexOf(")")==-1){
+                    if (strPhotoShutterSpeed.indexOf("(") == -1 && strPhotoShutterSpeed.indexOf(")") == -1) {
                         strSS = strPhotoShutterSpeed; // is integer
-                    }else {
+                    } else {
                         strSS = strPhotoShutterSpeed.substring(strPhotoShutterSpeed.indexOf("(") + 1, strPhotoShutterSpeed.indexOf(")"));
                     }
                     dblPhotoShutterSpeed = Double.parseDouble(strSS);
@@ -266,7 +258,7 @@ public class ImageService {
                     logger.error(e.getMessage());
 
 
-                    String errorMessage = "strPhotoShutterSpeed: "+strPhotoShutterSpeed+"  " + e.getMessage();
+                    String errorMessage = "strPhotoShutterSpeed: " + strPhotoShutterSpeed + "  " + e.getMessage();
                     Notification notification = Notification.show(
                             errorMessage,
                             5000,
@@ -275,9 +267,9 @@ public class ImageService {
                     notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
                 }
 
-            }else {
+            } else {
 
-                String errorMessage = "strPhotoShutterSpeed: "+strPhotoShutterSpeed;
+                String errorMessage = "strPhotoShutterSpeed: " + strPhotoShutterSpeed;
                 Notification notification = Notification.show(
                         errorMessage,
                         5000,
@@ -294,9 +286,9 @@ public class ImageService {
             if (!strPhotoAperture.equalsIgnoreCase("null")) {
                 String strAperture = "";
                 try {
-                    if((strPhotoAperture.indexOf("(") == -1) && (strPhotoAperture.indexOf(")") == -1)){
+                    if ((strPhotoAperture.indexOf("(") == -1) && (strPhotoAperture.indexOf(")") == -1)) {
                         strAperture = strPhotoAperture; // integer
-                    }else {
+                    } else {
                         strAperture = strPhotoAperture.substring(strPhotoAperture.indexOf("(") + 1, strPhotoAperture.indexOf(")"));
                     }
 
@@ -305,7 +297,7 @@ public class ImageService {
                     logger.error(e.getMessage());
 
 
-                    String errorMessage = "strPhotoAperture: "+strPhotoAperture+"  " + e.getMessage();
+                    String errorMessage = "strPhotoAperture: " + strPhotoAperture + "  " + e.getMessage();
                     Notification notification = Notification.show(
                             errorMessage,
                             5000,
@@ -313,8 +305,8 @@ public class ImageService {
                     );
                     notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
                 }
-            }else{
-                String errorMessage = "strPhotoAperture: "+strPhotoAperture;
+            } else {
+                String errorMessage = "strPhotoAperture: " + strPhotoAperture;
                 Notification notification = Notification.show(
                         errorMessage,
                         5000,
@@ -324,11 +316,7 @@ public class ImageService {
             }
 
 
-
-
-
-
-            if(strPhotoLensMake.isEmpty()){
+            if (strPhotoLensMake.isEmpty()) {
                 strPhotoLensMake = "''";
             }
 
@@ -349,7 +337,7 @@ public class ImageService {
                     " , meta_shutter_speed = '" + dblPhotoShutterSpeed + "' " +
                     " , meta_aperture = '" + dblPhotoAperture + "' " +
 
-                    " WHERE name_new LIKE '" + strNewFileName + "' AND uploaderId = "+intUserId+ " ORDER BY id DESC ";
+                    " WHERE name_new LIKE '" + strNewFileName + "' AND uploaderId = " + intUserId + " ORDER BY id DESC ";
 
             logger.info("  updateSQL SQL:   " + updateSQL);
 
@@ -357,10 +345,10 @@ public class ImageService {
             lstQueryUpdate.add(updateSQL);
 
 
-            recordService.insertOneRecordWithQuery(updateSQL,null,null);
+            recordService.insertOneRecordWithQuery(updateSQL, null, null);
 
             Notification notificationC = Notification.show(
-                    l+" F  "+strPhotoAperture+" = ("+dblPhotoAperture+")    SS  "+strPhotoShutterSpeed+" = ("+dblPhotoShutterSpeed+") --->" +lstQueryUpdate.size(),
+                    l + " F  " + strPhotoAperture + " = (" + dblPhotoAperture + ")    SS  " + strPhotoShutterSpeed + " = (" + dblPhotoShutterSpeed + ") --->" + lstQueryUpdate.size(),
                     8000,
                     Notification.Position.TOP_START
             );
@@ -384,7 +372,7 @@ public class ImageService {
 //        }
 //
         Notification notificationLast = Notification.show(
-                "  Last "+lstQueryUpdate.size()+"  =  "+lstPhotoFilenames.size(),
+                "  Last " + lstQueryUpdate.size() + "  =  " + lstPhotoFilenames.size(),
                 5000,
                 Notification.Position.MIDDLE
         );
@@ -394,11 +382,11 @@ public class ImageService {
 //
 //
 
-          // recordService.setGlobalInfo(hostname, intUserId, strUserName, publicIp, sessionId);
+        // recordService.setGlobalInfo(hostname, intUserId, strUserName, publicIp, sessionId);
 //            if (recordService.massRecordInsert(lstQueryUpdate, null, null) >0) {
 //               return true;
 //            } else {
-              //  logErrorInDb(null, "UploadImageCard insertPhotoToDb.", insertSQL, intUserId, strUserName);
+        //  logErrorInDb(null, "UploadImageCard insertPhotoToDb.", insertSQL, intUserId, strUserName);
 //                return false;
 //            }
 

@@ -118,8 +118,8 @@ header p {
 
 .home-view .learning-photo-genres div{
 
-         border-top: 1px solid #666666;
-         border-bottom: 1px solid #666666;
+         border-top: 1px solid #466ca8; /*#666666;*/
+         border-bottom: 1px solid #466ca8; /* #666666;*/
 
         min-height: 110px;
         font-size: 14px;
@@ -151,7 +151,7 @@ header p {
 .home-view .learning-photo-genres a {
         color: #666666; /* #466ca8; /* #6c9494;*/
        /* min-height: 180px;*/
-        background-color: #d9e5f7;
+        background-color: transparent; /*#d9e5f7;*/
         border-radius: 4px;
         border: 1px solid #c7d8f1;
         padding: 18px 10px 12px;
@@ -166,8 +166,9 @@ header p {
 
         &:hover {
             color:  #466ca8; /* #6c9494;*/
-            background-color: #d9e5f7; /*#edf7f5;*/
-            border: #466ca8 1px solid; /* #6c9494;*/
+            background-color: transparent; /*#d9e5f7;*/
+            border: 1px solid #c7d8f1;
+           /* border: #466ca8 1px solid; /* #6c9494;*/
             box-shadow: 2px 2px 10px lightgrey;
             transition: 0.4s;
             cursor: pointer;
@@ -178,7 +179,7 @@ header p {
 
 .home-view .container-uploaded-lines{
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(460px, 1fr)); /*minmax(min(70px, 8vw), 1fr)); /*repeat(auto-fit, minmax(80px, 1fr));*/
+    grid-template-columns: repeat(auto-fit, minmax(580px, 1fr)); /*minmax(min(70px, 8vw), 1fr)); /*repeat(auto-fit, minmax(80px, 1fr));*/
     grid-gap: 2.2rem;
     padding: 1.3rem;
     margin: 0;
@@ -193,7 +194,16 @@ header p {
         position: relative;
         border-radius: 14px;
     box-shadow: 1px 1px 5px lightgrey;
-    min-width: 454px;
+    min-width: 565px;
+}
+
+.home-view .chart-panel{
+
+    padding: 25px;
+    background-color: var(--lumo-contrast-5pct);
+    box-shadow: 1px 1px 8px var(--lumo-contrast-20pct);
+    border-radius: 24px;
+
 }
 
 .home-view .container-weather{

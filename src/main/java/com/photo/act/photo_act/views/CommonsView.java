@@ -32,6 +32,7 @@ import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.theme.lumo.LumoUtility.*;
+import jakarta.annotation.security.PermitAll;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.vaadin.addons.taefi.component.ToggleButtonGroup;
@@ -47,7 +48,9 @@ import java.util.List;
 import java.util.Locale;
 
 import static com.photo.act.photo_act.views.MainLayout.*;
+import static com.photo.act.photo_act.views.MeView.subPathSmall;
 
+@PermitAll
 //@PageTitle("Image Gallery")
 //@RouteAlias("") // empty on homepage
 //@Route(value = ":section?")
@@ -259,7 +262,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
             recordService.findAll(sqlRead, arrColumns);
 
             verticalLayout.add(loadFooter());
-        } else if (section.equalsIgnoreCase(SECTION_UPLOAD)) {
+        } else if (section.equalsIgnoreCase(SECTION_MEMBERS)) {
 
             verticalLayout.add(loadHeader("Upload Photos", "Upload my photos.", SECTION_MY_PHOTOS));
 
@@ -496,7 +499,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         //   "Friday", "Saturday", "Sunday");
         // checkboxGroup.addThemeVariants(CheckboxGroupVariant.LUMO_VERTICAL);
 //        Div lblFilterSubject = new Div("Subject");
-        if (!strSection.equalsIgnoreCase(SECTION_UPLOAD)) {
+        if (!strSection.equalsIgnoreCase(SECTION_MEMBERS)) {
             layoutFilters.add(checkboxGroupSubject);
         }
 
@@ -518,7 +521,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         // checkboxGroup.addThemeVariants(CheckboxGroupVariant.LUMO_VERTICAL);
 //        Div lblFilterLocation = new Div("Location");
         if (!strSection.equalsIgnoreCase(SECTION_LEARNINGS) && !strSection.equalsIgnoreCase(SECTION_WEBSITES)
-                && !strSection.equalsIgnoreCase(SECTION_HOME) && !strSection.equalsIgnoreCase(SECTION_UPLOAD)) {
+                && !strSection.equalsIgnoreCase(SECTION_HOME) && !strSection.equalsIgnoreCase(SECTION_MEMBERS)) {
             layoutFilters.add(checkboxGroupLocation);
         }
 
@@ -560,7 +563,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
         }
 
 
-        if (strSection.equalsIgnoreCase(SECTION_UPLOAD)) {
+        if (strSection.equalsIgnoreCase(SECTION_MEMBERS)) {
             headerContainerMaster.add(headerTextContainer);
             headerContainerSecondary.add(layoutFilters);
         } else {
@@ -590,7 +593,7 @@ public class CommonsView extends Main implements HasUrlParameter<String>, Before
     }
 
     private GalleryImageViewCard loadImageGalleryThumbsFromDb(Record record, boolean isEditable) {
-        strPath = DIR_PHOTOS_SERVER + dirChar + subPathThumbs;
+        strPath = DIR_PHOTOS_SERVER + dirChar + subPathSmall;
 
 
         String strFileName = record.getColumnData("name_new");

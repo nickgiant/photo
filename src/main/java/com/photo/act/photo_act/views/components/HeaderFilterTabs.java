@@ -3,6 +3,7 @@ package com.photo.act.photo_act.views.components;
 //https://codepen.io/broskibro/pen/VwKRmKQ
 
 import com.photo.act.photo_act.db.RecordService;
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Html;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
@@ -24,7 +25,7 @@ public class HeaderFilterTabs extends Div {
 
     }
 
-    public VerticalLayout getHeader(String strHeader, String strSubHeader, String strSection, Div layoutFilters) {
+    public VerticalLayout getHeader(String strHeader, String strSubHeader, String strSection, Component layoutFilters) {
 
 
         Div tabHeader = new Div();
@@ -110,7 +111,7 @@ public class HeaderFilterTabs extends Div {
         VerticalLayout layoutHeaderParameters = new VerticalLayout();
         if (isMobile) {
             layoutHeaderParameters.addClassNames(
-                    LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER,
+                    LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.BETWEEN,
                     LumoUtility.Overflow.HIDDEN, LumoUtility.Width.FULL,
                     LumoUtility.Margin.NONE,
                     LumoUtility.Padding.NONE,
@@ -121,7 +122,7 @@ public class HeaderFilterTabs extends Div {
             );
         } else {
             layoutHeaderParameters.addClassNames(
-                    LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER,
+                    LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.BETWEEN,
                     LumoUtility.Overflow.HIDDEN, LumoUtility.Width.FULL,
                     LumoUtility.Margin.NONE,
                     LumoUtility.Padding.SMALL,

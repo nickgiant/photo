@@ -26,7 +26,7 @@ import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
-import com.vaadin.flow.server.auth.AnonymousAllowed;
+import jakarta.annotation.security.PermitAll;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.vaadin.lineawesome.LineAwesomeIcon;
@@ -52,7 +52,7 @@ import static com.photo.act.photo_act.views.MainLayout.*;
 @RouteAlias(value = "travel/:section/:member?", layout = MainLayout.class)
 @Route(value = "travel/:section/:subsection/:member?", layout = MainLayout.class)
 
-@AnonymousAllowed
+@PermitAll
 public class TravelView extends Composite<VerticalLayout> implements HasUrlParameter<String>, HasComponents, HasDynamicTitle, HasStyle, BeforeEnterObserver {
 
     private VerticalLayout panelContainer;

@@ -1,10 +1,12 @@
 package com.photo.act.photo_act.views;
 
+import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.services.ImageService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
+import com.photo.act.photo_act.views.components.DialogRegistration;
 import com.photo.act.photo_act.views.components.GenericView;
 import com.photo.act.photo_act.views.components.HeaderFilterTabs;
 import com.photo.act.photo_act.views.components.UploadImageCard;
@@ -14,7 +16,6 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.CheckboxGroup;
 import com.vaadin.flow.component.html.*;
-import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -25,23 +26,30 @@ import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.theme.lumo.LumoUtility.*;
+import jakarta.annotation.security.PermitAll;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.FileSystems;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
 import static com.photo.act.photo_act.views.MainLayout.*;
 
-//@PageTitle("Image Gallery")
-//@RouteAlias("") // empty on homepage
+
+//@RolesAllowed("Admin")
+@PermitAll
+
 @Route(value = "members") //":section?")
-@RouteAlias(value = "members/name/:member?", layout = MainLayout.class)
+//@RouteAlias(value = "members/name/:member?", layout = MainLayout.class)
 //@RouteAlias(value = ":section/:member?", layout = MainLayout.class)
 //@Menu(order = 0, icon = "line-awesome/svg/th-list-solid.svg")
 public class MembersView extends Main implements HasUrlParameter<String>, BeforeEnterObserver, HasComponents, HasDynamicTitle, HasStyle {
@@ -58,7 +66,7 @@ public class MembersView extends Main implements HasUrlParameter<String>, Before
     private String timeZoneId;
     private String locale;
     private String localeName;
-    private String section = SECTION_UPLOAD;
+    String[] arrColumnsMemberExists = {"userId", "username", "username", "resident", "date_joined", "member_since", "avatar_path"};
     private String forMemberName;
     private RecordService recordService;
     private String strHeader;
@@ -70,7 +78,10 @@ public class MembersView extends Main implements HasUrlParameter<String>, Before
     public static String subPathShow = "photo-show";
 
     public static String DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
-
+    String sqlDoesMemberExist = "SELECT usr.userId, usr.username, usr.username, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined " +
+            " , DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since, usr.avatar_path " +
+            " FROM dbuser usr " +
+            " WHERE 1 = 1 ";
 
     private String publicIp;
     private String strPath;
@@ -79,27 +90,40 @@ public class MembersView extends Main implements HasUrlParameter<String>, Before
     private String canonicalHostname;
 
     private int userId;
-    String[] arrColumnsMemberExists = {"userId", "username", "nameOfUser", "resident", "date_joined", "member_since", "avatar_path"
-    };
+    String[] arrColumnsMembers = {"userId", "username", "username", "resident", "date_joined", "member_since", "member_for",
+            "avatar_path", "name", "surname", "short_bio", "url_insta", "url_fb", "url_flickr", "url_yt", "email", "resident", "resident_country",
+            "count_photos", "count_albums", "count_learnings"};
 
     private String strUrlRequestToBeLogged;
-    String sqlDoesMemberExist = "SELECT usr.userId, usr.username, usr.nameOfUser, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined " +
-            " , DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since, usr.avatar_path " +
+    String sqlMembers = "SELECT " +
+            "   usr.userId, usr.username, usr.username, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined,  " +
+            " DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since , getDateDiffFromNow(usr.date_joined) AS member_for " +
+            " , usr.avatar_path, name, surname, short_bio, url_insta, url_fb, url_flickr, url_yt, email, resident, resident_country " +
+            " , count_photos, count_albums, count_learnings " +
+            //     "--  , pa.inc, pm.title, pm.id, pm.name_new, pm.title, pm.subtitle, pm.space_size, pm.location_by_user\\n\" +\n" +
             " FROM dbuser usr " +
-            " WHERE 1 = 1 ";
+            " WHERE 1 = 1  " +
+            " AND usertype <> 'Guest' " +
+            " ORDER BY username ";
     String[] arrColumnsMemberPhotos = {"photo_count", "photo_size",
-            "userId", "username", "nameOfUser", "resident", "date_joined", "member_since", "avatar_path"
+            "userId", "username", "name", "surname", "resident", "resident_country", "date_joined", "member_since", "avatar_path",
+            "short_bio", "url_fb", "url_yt", "url_insta", "url_flickr", "url_website",
+            "count_photos", "count_albums", "count_learnings"
     };
     String sqlMemberPhotos = "SELECT count(pm.id) AS photo_count, SUM(pm.space_size) AS photo_size " +
-            " ,  usr.userId, usr.username, usr.nameOfUser, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined,  DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since " +
-            " , usr.avatar_path " +
+            " ,  usr.userId, usr.username, usr.resident, usr.resident_country, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined,  DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since " +
+            " , usr.avatar_path, usr.name, usr.surname " +
+            " , usr.short_bio, usr.url_fb, usr.url_yt, usr.url_insta, usr.url_flickr, usr.url_website " +
+            " , count_photos, count_albums, count_learnings " +
             //     "--  , pa.inc, pm.title, pm.id, pm.name_new, pm.title, pm.subtitle, pm.space_size, pm.location_by_user\\n\" +\n" +
             " FROM dbuser usr LEFT JOIN photo_meta pm ON pm.uploaderId = usr.userId " +
             " WHERE 1 = 1  " +
-            " AND pm.visible_to  = 'ALL' ";
+            " AND role <> 'Guest' ";
+    //            " AND pm.visible_to  = 'ALL' ";
     String sqlMemberPhotosGroupBy =
             " GROUP BY usr.userid " +
-                    " ORDER BY usr.nameOfUser ASC ";
+                    " ORDER BY usr.userid ASC ";
+    private String section = SECTION_MEMBERS;
     private String strMember;
 
 
@@ -125,10 +149,8 @@ public class MembersView extends Main implements HasUrlParameter<String>, Before
             "  pm.location_by_user, pm.location_area, pm.location_country_code, pm.location_lat, pm.location_lon " +
             //, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description, DATE_FORMAT(f.dateInsert , '%D %M %Y') AS formatedDateUpdated  " +
             " FROM  photo_meta pm LEFT JOIN destination d ON pm.destination_Id = d.id ";
-
-
-    UtilsDate utilsDate;
-    String sessionDateTime;
+    private UtilsDate utilsDate;
+    private String sessionDateTime;
 
     private String strOS;
     private String strBrowser;
@@ -152,7 +174,6 @@ public class MembersView extends Main implements HasUrlParameter<String>, Before
 
     @Override
     public void beforeEnter(@OptionalParameter BeforeEnterEvent event) {
-//        section = event.getRouteParameters().get("section").orElse(SECTION_HOME);
         strMember = event.getRouteParameters().get("member").orElse("all-members");
 
         getUserClientInfo();
@@ -168,47 +189,78 @@ public class MembersView extends Main implements HasUrlParameter<String>, Before
 
 
         if (strMember == null || strMember.isEmpty() || strMember.equalsIgnoreCase(STR_ALL_MEMBERS)) {
-            verticalLayout.add(loadHeader("Members", "", ""));
 
-            StreamResource imageResourceMember = new StreamResource("user-profile-icon.svg",
-                    () -> getClass()
-                            .getResourceAsStream("/icons/user-profile-icon.svg"));
-            SvgIcon svgMember = new SvgIcon(imageResourceMember);
 
-            Div divHaveToBeAMember = new Div("You have to be a member in order to upload photos!");
+            H1 titlePage = new H1(APP_NAME);
+            Span subTitle = new Span("[ Network and Act around Photography ]");
 
-            Button btnRegister = new Button("Become a Member");
-            btnRegister.setIcon(svgMember);
-            btnRegister.addClassName("btn-register");
-//        btnSuggestEvent.setIcon(svgComments);
-            btnRegister.addClickListener(click -> {
+            Header siteHeader = new Header(titlePage, subTitle);
+            siteHeader.addClassNames(Width.FULL);
 
+            verticalLayout.add(siteHeader);
+
+            Div divMainImage = new Div();
+            Image mainImage = new Image();
+            String strMainImagePath = DIR_PHOTOS_SERVER + dirChar + "photographer.jpg";
+
+            final StreamResource imageMainResource = new StreamResource("streamResource", () -> {
+                try {
+
+                    Path path = Paths.get(strMainImagePath);
+                    File file = path.toFile();
+                    return new FileInputStream(file);
+                } catch (final FileNotFoundException e) {
+//                logErrorInDb(e, "GalleryImageViewCard StreamResource FileNotFoundException", hostname, userId, strUserName, publicIp, sessionCreation, file.getAbsolutePath());
+                    // logErrorInDb(e,hostname,"CreationsViewCard StreamResource",userId,strUserName,file.getAbsolutePath());
+                    logger.error(e.getMessage());
+                }
+                return null;
             });
 
-            verticalLayout.add(divHaveToBeAMember, btnRegister);
+
+            mainImage.setSrc(imageMainResource);
+            mainImage.setAlt("sketch image of a photographer");
+            mainImage.setHeight("14rem");
+            mainImage.setWidth("auto");
+            mainImage.getStyle().setBorderRadius("40px");
+            mainImage.getStyle().setPadding("10px");
+
+            divMainImage.add(mainImage);
+
+
+            Div div1 = new Div("We are a community site, with members exchanging info and links in order to improve our skills in photography!");
+            Div div2 = new Div("Currently, we share info about events and learnings. Of course, we also have space for our photos and albums.");
+
+
+            verticalLayout.add(divMainImage, div1, div2);
+
+            verticalLayout.add(loadHeader("Members", "", ""));
+
+
+            String sqlMembers = sqlMemberPhotos + " " + sqlMemberPhotosGroupBy;
+            verticalLayout.add(getMembersPanels(sqlMembers, arrColumnsMemberPhotos, false));
 
         } else {
-            verticalLayout.add(loadHeader("Member", "", ""));
-
-            String sqlMember = sqlMemberPhotos + " AND usr.username = '" + strMember + "' " + sqlMemberPhotosGroupBy;
-            int intUserId = loadMember(sqlMember, arrColumnsMemberPhotos, false);
-            if (intUserId > 0) {
-                loadUploadView(intUserId, strMember);
-            } else if (intUserId == 0) {
-                String sqlMemberExists = sqlDoesMemberExist + " AND usr.username = '" + strMember + "' ";
-                intUserId = checkMemberExists(sqlMemberExists, arrColumnsMemberExists, false);
-                if (intUserId > 0) {
-                    loadUploadView(intUserId, strMember);
-                }
-            }
+//            verticalLayout.add(loadHeader("Member", "", ""));
+//
+//            String sqlMember = sqlMemberPhotos + " AND usr.username = '" + strMember + "' " + sqlMemberPhotosGroupBy;
+//            int intUserId = loadMember(sqlMember, arrColumnsMemberPhotos, false);
+//            if (intUserId > 0) {
+//                loadUploadView(intUserId, strMember);
+//            } else if (intUserId == 0) {
+//                String sqlMemberExists = sqlDoesMemberExist + " AND usr.username = '" + strMember + "' ";
+//                intUserId = checkMemberExists(sqlMemberExists, arrColumnsMemberExists, false);
+//                if (intUserId > 0) {
+//                    loadUploadView(intUserId, strMember);
+//                }
+//            }
         }
-
 
         this.removeAll();
         this.add(verticalLayout);
         this.add(genericView.loadFooter(isMobile));
 
-        logVisitorToDb();
+        logVisitorToDb("");
 
     }
 
@@ -252,7 +304,7 @@ public class MembersView extends Main implements HasUrlParameter<String>, Before
                     // Margin.Horizontal.SMALL,
                     Margin.NONE, Padding.NONE,
                     Padding.Top.XSMALL,
-//                    Gap.MEDIUM,
+                    Gap.SMALL,
                     AlignItems.CENTER, JustifyContent.CENTER
             );
         } else {
@@ -264,10 +316,10 @@ public class MembersView extends Main implements HasUrlParameter<String>, Before
                     Margin.NONE,
                     Padding.XLARGE,
                     Padding.Top.XSMALL,
-//                    Gap.LARGE,
+                    Gap.MEDIUM,
                     AlignItems.CENTER, JustifyContent.CENTER
             );
-            verticalLayout.getStyle().set("gap", "3rem");
+//            verticalLayout.getStyle().set("gap", "3rem");
         }
         this.setWidthFull();
 
@@ -492,6 +544,11 @@ public class MembersView extends Main implements HasUrlParameter<String>, Before
         verticalLayout.add(uploadImageCard.getUploadImageCard());
     }
 
+    private void displayRegisterDialog() {
+        DialogRegistration dialogRegister = new DialogRegistration(isMobile, "", sessionCreation, hostname, publicIp, recordService, section, "register-from-members-view");
+        dialogRegister.open();
+    }
+
     private void getUserClientInfo() {
 
         sessionid = VaadinSession.getCurrent().getSession().getId();
@@ -579,50 +636,6 @@ public class MembersView extends Main implements HasUrlParameter<String>, Before
         return recordService.findAll(sql, arrColumnNames, sqlParValue, sqlParType);
     }
 
-    private int loadMember(String sqlRead, String[] arrColumnNames, boolean isEditable) {
-
-        int intUserId = 0;
-        VerticalLayout layoutMember = new VerticalLayout();
-        layoutMember.addClassNames(Width.FULL,
-                AlignItems.CENTER, JustifyContent.CENTER,
-                TextColor.TERTIARY,
-                Padding.LARGE,
-                Gap.SMALL
-        );
-
-        List<Record> lstRecords = getRecordsFromDb(sqlRead, arrColumnNames);
-
-        if (lstRecords == null) {
-            logger.warn(" lstRecords is null");
-        } else if (lstRecords.isEmpty()) {
-            logger.warn(" lstRecords is empty");
-        } else if (lstRecords.size() == 1) {
-
-            Record rec = lstRecords.get(0);
-            String strUserId = rec.getColumnData("userId");
-            intUserId = Integer.parseInt(strUserId);
-
-            String strNameOfUser = rec.getColumnData("nameOfUser");
-            String strCountOfPhotosOfAlbums = rec.getColumnData("photo_count");
-            String strMemberSince = rec.getColumnData("member_since");
-            String strAvatarPath = rec.getColumnData("avatar_path");
-
-
-            Image imgAvatar = genericView.getAvatarImage(strAvatarPath, strNameOfUser, "130px", "130px");
-//            Image imgAvatar = getAvatarImage(strAvatarPath, strNameOfUser, "120px", "120px");
-
-            H3 objMember = new H3(strNameOfUser);
-            Div divMemberSince = new Div("Member since " + strMemberSince);
-            Div divAlbumsAndPhotos = new Div("Already uploaded " + strCountOfPhotosOfAlbums + " photos");
-            layoutMember.add(imgAvatar, objMember, divMemberSince, divAlbumsAndPhotos);
-        } else {
-            logger.warn(" lstRecords is more than one record");
-        }
-
-        verticalLayout.add(layoutMember);
-        return intUserId;
-    }
-
 
     private int checkMemberExists(String sqlRead, String[] arrColumnNames, boolean isEditable) {
 
@@ -650,7 +663,7 @@ public class MembersView extends Main implements HasUrlParameter<String>, Before
                 logger.error("strUserId: " + strUserId + "    " + e.getMessage());
             }
 
-            String strNameOfUser = rec.getColumnData("nameOfUser");
+            String strNameOfUser = rec.getColumnData("username");
             String strCountOfPhotosOfAlbums = rec.getColumnData("photo_count");
             String strMemberSince = rec.getColumnData("member_since");
             String strAvatarPath = rec.getColumnData("avatar_path");
@@ -670,7 +683,189 @@ public class MembersView extends Main implements HasUrlParameter<String>, Before
         return intUserId;
     }
 
-    private void logVisitorToDb() {
+    private VerticalLayout getMembersPanels(String sqlRead, String[] arrColumnNames, boolean isEditable) {
+
+        VerticalLayout membersLayout = new VerticalLayout();
+        membersLayout.addClassNames(
+                AlignItems.CENTER, JustifyContent.CENTER,
+                Padding.MEDIUM,
+                Margin.NONE,
+                Gap.LARGE
+        );
+
+        int intUserId = 0;
+
+
+        List<Record> lstRecords = getRecordsFromDb(sqlRead, arrColumnNames);
+
+        if (lstRecords == null) {
+            logger.warn("check lstRecords is null");
+        } else if (lstRecords.isEmpty()) {
+            logger.warn("check lstRecords is empty");
+        } else if (lstRecords.size() >= 1) {
+
+            for (int r = 0; r < lstRecords.size(); r++) {
+
+                VerticalLayout layoutMember = new VerticalLayout();
+                layoutMember.addClassNames(
+                        AlignItems.CENTER, JustifyContent.CENTER,
+                        TextColor.TERTIARY,
+                        Padding.LARGE,
+                        Margin.LARGE,
+                        Gap.MEDIUM
+                );
+                layoutMember.getStyle().setBorderRadius("60px");
+                layoutMember.getStyle().setMaxWidth("610px");
+//                layoutMember.getStyle().set("border", "lightgrey 1px solid");
+                layoutMember.addClassNames(AlignItems.CENTER, JustifyContent.CENTER, TextAlignment.CENTER, Background.CONTRAST_5);
+
+                Record rec = lstRecords.get(r);
+                String strUserId = rec.getColumnData("userId");
+                try {
+                    intUserId = Integer.parseInt(strUserId);
+                } catch (NumberFormatException e) {
+                    logger.error("strUserId: " + strUserId + "    " + e.getMessage());
+                }
+
+                String strName = rec.getColumnData("name");
+                String strSurname = rec.getColumnData("surname");
+                String strUsername = rec.getColumnData("username");
+                String strMemberSince = rec.getColumnData("member_since");
+                String strAvatarPath = rec.getColumnData("avatar_path");
+
+                String strResident = rec.getColumnData("resident");
+                String strResidentCountry = rec.getColumnData("resident_country");
+
+                String strShortBio = rec.getColumnData("short_bio");
+                String strFb = rec.getColumnData("url_fb");
+                String strYt = rec.getColumnData("url_yt");
+                String strInsta = rec.getColumnData("url_insta");
+                String strFlickr = rec.getColumnData("url_flickr");
+                String strWebsite = rec.getColumnData("url_website");
+
+                String strCountPhotos = rec.getColumnData("count_photos");
+                String strCountAlbums = rec.getColumnData("count_albums");
+                String strCountLearnings = rec.getColumnData("count_learnings");
+
+                Anchor linkWebsite = new Anchor();
+                linkWebsite.add(FontAwesome.Solid.LINK.create());
+//                linkWebsite.setVisible(false);
+                if (strWebsite != null && !strWebsite.equalsIgnoreCase("null") && !strWebsite.isEmpty()) {
+                    linkWebsite.setVisible(true);
+                    linkWebsite.setHref(strWebsite);
+                    linkWebsite.setTarget("_blank");
+                }
+
+                Anchor linkTutorYt = new Anchor();
+                linkTutorYt.add(FontAwesome.Brands.YOUTUBE.create());
+                // linkTutorYt.getStyle().setColor(strColorExternalweb);
+                // linkTutorYt.setClassName("lazy-result-line-button");
+//                linkTutorYt.setVisible(false);
+                if (strYt != null && !strYt.equalsIgnoreCase("null") && !strYt.isEmpty()) {
+
+                    linkTutorYt.setHref(strYt);
+                    linkTutorYt.setTarget("_blank");
+                    linkTutorYt.setVisible(true);
+                }
+
+                Anchor linkTutorFacebook = new Anchor();
+                linkTutorFacebook.add(FontAwesome.Brands.FACEBOOK_F.create());
+                // linkTutorWikipedia.getStyle().setColor(strColorExternalweb);
+                //   linkTutorWikipedia.setClassName("lazy-result-line-button");
+//            linkTutorFacebook.setVisible(false);
+
+                if (strFb != null && !strFb.equalsIgnoreCase("null") && !strFb.isEmpty()) {
+                    //linkTutorYt.setText("YouTube");
+                    //strUrlTutorWikipedia = "https://www.youtube.com/"+strUrlTutorYt;
+                    linkTutorFacebook.setHref(strFb);
+                    linkTutorFacebook.setTarget("_blank");
+                    linkTutorFacebook.setVisible(true);
+                }
+
+                Anchor linkTutorInsta = new Anchor();
+                //  linkTutorInsta.setClassName("lazy-result-line-button");
+                linkTutorInsta.add(FontAwesome.Brands.INSTAGRAM.create());
+                // linkTutorInsta.getStyle().setColor(strColorExternalweb);
+//            linkTutorInsta.setVisible(false);
+                if (strInsta != null && !strInsta.equalsIgnoreCase("null") && !strInsta.isEmpty()) {
+                    linkTutorInsta.setHref(strInsta);
+                    linkTutorInsta.setTarget("_blank");
+//                linkTutorInsta.setVisible(true);
+                }
+
+                Anchor linkFlickr = new Anchor();
+                linkFlickr.add(FontAwesome.Brands.FLICKR.create());
+                // linkTutorYt.getStyle().setColor(strColorExternalweb);
+                // linkTutorYt.setClassName("lazy-result-line-button");
+//                linkFlickr.setVisible(false);
+                if (strFlickr != null && !strFlickr.equalsIgnoreCase("null") && !strFlickr.isEmpty()) {
+
+                    linkFlickr.setHref(strFlickr);
+                    linkFlickr.setTarget("_blank");
+                    linkFlickr.setVisible(true);
+                }
+
+                Div divBioTitle = new Div("Short Bio");
+                divBioTitle.addClassNames(TextColor.TERTIARY, FontWeight.BOLD);
+
+                HorizontalLayout layoutMemberLinks = new HorizontalLayout();
+                layoutMemberLinks.add(linkWebsite, linkTutorFacebook, linkTutorYt, linkTutorInsta, linkTutorYt, linkFlickr);
+
+                Div divBio = new Div();
+//            divBio.setVisible(false);
+                if (strShortBio != null && !strShortBio.equalsIgnoreCase("null") && !strShortBio.isEmpty()) {
+                    divBio.setVisible(true);
+                    divBio.setText(strShortBio);
+                } else {
+//                divBio.setVisible(false);
+                }
+
+                Image imgAvatar = genericView.getAvatarImage(strAvatarPath, strUsername, "150px", "150px");
+//            Image imgAvatar = getAvatarImage(strAvatarPath, strNameOfUser, "120px", "120px");
+
+                H3 objName = new H3(strName + " " + strSurname);
+                objName.addClassNames(TextColor.SECONDARY, FontWeight.EXTRABOLD);
+                H4 objMember = new H4(strUsername);
+                objMember.addClassNames(TextColor.SECONDARY, FontWeight.EXTRABOLD);
+                Div divMemberSince = new Div("Member since " + strMemberSince);
+                divMemberSince.addClassNames(TextColor.SECONDARY, FontWeight.MEDIUM);
+
+                VerticalLayout layoutMemberCard = new VerticalLayout();
+                layoutMemberCard.getStyle().setBorderRadius("30px");
+                layoutMemberCard.getStyle().setWidth("330px");
+                layoutMemberCard.getStyle().set("border", "lightgrey 1px solid");
+                layoutMemberCard.addClassNames(AlignItems.CENTER, JustifyContent.CENTER, TextAlignment.CENTER, Background.CONTRAST_5);
+                layoutMemberCard.add(imgAvatar, objName, objMember, layoutMemberLinks, divMemberSince);
+
+                Div divResident = new Div("Lives at " + strResident + ", " + strResidentCountry);
+
+
+                VerticalLayout layoutContribution = new VerticalLayout();
+                Div divContribTitle = new Div("Contributed with");
+                Div divCounts = new Div(strCountPhotos + ":Photos,  " + strCountAlbums + ":Albums,  " + strCountLearnings + ":Learnings");
+
+                layoutContribution.add(divContribTitle, divCounts);
+                layoutContribution.getStyle().setBorderRadius("10px");
+                layoutContribution.getStyle().setWidth("330px");
+                layoutContribution.getStyle().set("border", "lightgrey 1px solid");
+                layoutContribution.addClassNames(AlignItems.CENTER, JustifyContent.CENTER, TextAlignment.CENTER, Background.CONTRAST_5);
+
+                layoutMember.add(layoutMemberCard, layoutContribution, divBioTitle, divBio, divResident);
+                //layoutMember.add(imgAvatar, objName, objMember, divMemberSince, divShortBio, divResident, );
+
+                membersLayout.add(layoutMember);
+            }
+
+        } else {
+            logger.warn("check lstRecords is more than one record");
+        }
+
+
+        return membersLayout;
+    }
+
+
+    private void logVisitorToDb(String logText) {
 
 //        category = category.replaceAll("'", " ");
 //        category = category.replaceAll("\"", " ");
@@ -705,12 +900,13 @@ public class MembersView extends Main implements HasUrlParameter<String>, Before
             strUrlRequestToBeLogged = "'" + strUrlRequestToBeLogged + "'";
         }
 
-        if (strPath == null || strPath.isEmpty()) {
-            strPath = "NULL";
-        } else {
-            strPath = strPath.replace("\\", "-");
-            strPath = "'" + strPath + "'";
-        }
+//        if (strPath == null || strPath.isEmpty()) {
+//            strPath = "NULL";
+//        } else {
+//            strPath = strPath.replace("\\", "-");
+//            strPath = strPath.replace("'", "");
+//            strPath = "'" + strPath + "'";
+//        }
 
 
         logger.info("photo visitor:" + publicIp + " . " + hostname + " . " + hostAddress + " . " + canonicalHostname + "  .  " + browser + " " + sessionid);
@@ -719,7 +915,7 @@ public class MembersView extends Main implements HasUrlParameter<String>, Before
                 + " browserVersionMajor = '" + versionOfBrowserMajor + "', browserVersionMinor = '" + versionOfBrowserMinor + "', urlParameter = NULL , timeZoneId = '" + timeZoneId + "', "
                 + " appVersion = '" + APP_NAME + "-" + APP_VERSION + "', sessionId = '" + sessionid + "', sessionCreationTime = '" + sessionDateTime + "', hostname = '" + hostname + "', "
                 + " hostAddress = '" + hostAddress + "', os = '" + strOS + "', browser = '" + strBrowser + "', section = '" + section + "',"
-                + " item = " + strPath + ", ref = " + strUrlRequestToBeLogged + ", "
+                + " item = '" + logText + "' , ref = " + strUrlRequestToBeLogged + ", "
                 + " locale = '" + locale + "', localeName ='" + localeName + "' ";
 
         ArrayList<String> lstQueryInsert = new ArrayList<String>();

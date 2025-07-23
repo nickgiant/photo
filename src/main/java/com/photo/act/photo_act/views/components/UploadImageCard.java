@@ -1,9 +1,9 @@
 package com.photo.act.photo_act.views.components;
 
 import com.photo.act.photo_act.db.RecordService;
+import com.photo.act.photo_act.services.EmailSendService;
 import com.photo.act.photo_act.services.WeatherService;
 import com.photo.act.photo_act.utils.ImageUtilsMeta;
-import com.photo.act.photo_act.utils.MailSend;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.vaadin.flow.component.Html;
 import com.vaadin.flow.component.Text;
@@ -37,6 +37,8 @@ import java.util.UUID;
 
 import static com.photo.act.photo_act.views.GalleryView.*;
 import static com.photo.act.photo_act.views.MainLayout.PROP_PHOTOS;
+import static com.photo.act.photo_act.views.MeView.subPathLarge;
+import static com.photo.act.photo_act.views.MeView.subPathSmall;
 
 public class UploadImageCard extends VerticalLayout {
 
@@ -47,9 +49,6 @@ public class UploadImageCard extends VerticalLayout {
     private String mimeType;
     private RecordService recordService;
 
-//    private MultiFileBuffer multiFileBuffer = new MultiFileBuffer();
-
-    //MultiFileMemoryBuffer multiFileMemoryBuffer = new MultiFileMemoryBuffer();
 
     private static final Logger logger = LoggerFactory.getLogger(UploadImageCard.class);
     private UtilsDate utilsDate;
@@ -64,7 +63,9 @@ public class UploadImageCard extends VerticalLayout {
     private String sessionDateTime;
     private WeatherService weatherService;
 
-    private MailSend mailSend;
+    private EmailSendService mailSend;
+
+    private String strMailboxSend = "info@photoact.net";
 
     public UploadImageCard(RecordService recordService, int intUserId, String strUserName, long sessionCreation, String publicIp, String hostname) {
         this.recordService = recordService;
@@ -81,12 +82,11 @@ public class UploadImageCard extends VerticalLayout {
         utilsDate = new UtilsDate();
 
         this.sessionDateTime = utilsDate.calcDateTimeFromLong(sessionCreation, "UTC");
-        mailSend = new MailSend();
+        mailSend = new EmailSendService();
     }
 
     //    https://cookbook.vaadin.com/upload-image-to-file
     public VerticalLayout getUploadImageCard() {
-
 
         DIR_PHOTOS_SERVER = genericView.getAppProps(PROP_PHOTOS);
 
@@ -165,7 +165,7 @@ public class UploadImageCard extends VerticalLayout {
                 );
                 notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
 
-                mailSend.sendSimpleMail("nickgiant@yahoo.com", "getUploadImageCard to upload  " + errorMessage + "  -  " + publicIp, " " + publicIp + " " + hostname + "  -  " + errorMessage);
+                mailSend.sendSimpleMail(strMailboxSend, "nickgiant@yahoo.com", "getUploadImageCard to upload  " + errorMessage + "  -  " + publicIp, " " + publicIp + " " + hostname + "  -  " + errorMessage);
                 logErrorInDb(e, "getUploadImageCard to upload", this.file.getAbsolutePath(), intUserId, strUserName);
 
                 logger.error(" upload " + e.getMessage());
@@ -195,10 +195,7 @@ public class UploadImageCard extends VerticalLayout {
 //                            Notification.Position.MIDDLE
 //                    );
 //                    notification.addThemeVariants(NotificationVariant.LUMO_WARNING);
-
-
                 }
-
             } catch (Exception e) {
 
                 btnSave.setVisible(false);
@@ -211,10 +208,9 @@ public class UploadImageCard extends VerticalLayout {
                 );
                 notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
 
-                mailSend.sendSimpleMail("nickgiant@yahoo.com", "getUploadImageCard  strImage Meta Info  " + errorMessage + "  -  " + publicIp, " " + publicIp + " " + hostname + "  -  " + errorMessage);
+                mailSend.sendSimpleMail(strMailboxSend, "nickgiant@yahoo.com", "getUploadImageCard  strImage Meta Info  " + errorMessage + "  -  " + publicIp, " " + publicIp + " " + hostname + "  -  " + errorMessage);
 
                 logErrorInDb(e, "getUploadImageCard  strImage Meta Info " + e.getMessage(), this.file.getAbsolutePath(), intUserId, strUserName);
-
 
                 logger.error(" strImage Meta Info " + e.getMessage());
 //                throw new RuntimeException(e);
@@ -245,11 +241,12 @@ public class UploadImageCard extends VerticalLayout {
                     }
 
                     String message = "Photo Uploaded ! (" + strFilesize + ")";
-                    Notification notification = Notification.show(message, 7000, Notification.Position.MIDDLE);
+                    Notification notification = Notification.show(message, 6000, Notification.Position.MIDDLE);
                     notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
 
-                    mailSend.sendSimpleMail("nickgiant@yahoo.com", message, " " + publicIp + " " + hostname + " " + strImageMetaInfo);
-
+                    logger.info("to sent mail");
+                    mailSend.sendSimpleMail(strMailboxSend, "nickgiant@yahoo.com", message, " " + publicIp + " " + hostname + " " + strImageMetaInfo);
+                    logger.info("mail sent");
 
                 }
             });
@@ -315,7 +312,7 @@ public class UploadImageCard extends VerticalLayout {
             output.removeAll();
             output.add(new Text(strMessage));
 
-            mailSend.sendSimpleMail("nickgiant@yahoo.com", strMessage + "  -  " + publicIp, " " + publicIp + " " + hostname + "  -  " + strMessage);
+            mailSend.sendSimpleMail(strMailboxSend, "nickgiant@yahoo.com", strMessage + "  -  " + publicIp, " " + publicIp + " " + hostname + "  -  " + strMessage);
             logErrorInDb(null, "addFailedListener " + event.getReason(), this.file.getAbsolutePath(), intUserId, strUserName);
 
 
@@ -331,7 +328,7 @@ public class UploadImageCard extends VerticalLayout {
             );
             notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
 
-            mailSend.sendSimpleMail("nickgiant@yahoo.com", errorMessage + "  -  " + publicIp, " " + publicIp + " " + hostname + "  -  " + errorMessage);
+            mailSend.sendSimpleMail(strMailboxSend, "nickgiant@yahoo.com", errorMessage + "  -  " + publicIp, " " + publicIp + " " + hostname + "  -  " + errorMessage);
             logErrorInDb(null, "addFileRejectedListener " + event.getErrorMessage(), this.file.getAbsolutePath(), intUserId, strUserName);
         });
 
@@ -436,9 +433,9 @@ public class UploadImageCard extends VerticalLayout {
     }
 
     /**
-     * Receive a uploaded file to a file.
+     * Receive an uploaded file to a file.
      */
-//    https://cookbook.vaadin.com/upload-image-to-file
+//  https://cookbook.vaadin.com/upload-image-to-file
     public OutputStream receiveUpload(String originalFileName, String MIMEType) {
         this.originalFileName = originalFileName;
         this.mimeType = MIMEType;
@@ -489,27 +486,63 @@ public class UploadImageCard extends VerticalLayout {
         File fileShow = new File(outputShowFileName);
 
 
-        String strPathMedium = DIR_PHOTOS_SERVER + dirChar + subPathMedium;
-        String outputMediumFileName = strPathMedium + dirChar + strNewFileName;
-        File fileMedium = new File(outputMediumFileName);
-
-        String strPathThumbs = DIR_PHOTOS_SERVER + dirChar + subPathThumbs;
-        String outputThumbsFileName = strPathThumbs + dirChar + strNewFileName;
-        File fileThumbs = new File(outputThumbsFileName);
         try {
             FileUtils.copyFileToDirectory(fileUploaded, directoryShow);
 
 
-            BufferedImage bImage = ImageIO.read(fileUploaded);
-            BufferedImage bufferedMedium = Scalr.resize(bImage, Scalr.Method.AUTOMATIC, Scalr.Mode.FIT_TO_WIDTH, 2000, Scalr.OP_ANTIALIAS);   //  Imgscalr    https://www.baeldung.com/java-resize-image
-            ImageIO.write(bufferedMedium, "jpg", fileMedium);
-
-            BufferedImage bImageM = ImageIO.read(fileUploaded);
-            BufferedImage bufferedThumb = Scalr.resize(bImageM, Scalr.Method.AUTOMATIC, Scalr.Mode.FIT_TO_WIDTH, 890, Scalr.OP_ANTIALIAS);   //  Imgscalr    https://www.baeldung.com/java-resize-image
+            int intSize = 140;
+            String strSubPath = subPathThumbs;
+            String strPathThumbs = DIR_PHOTOS_SERVER + dirChar + strSubPath;
+            String outputThumbsFileName = strPathThumbs + dirChar + strNewFileName;
+            File fileThumbs = new File(outputThumbsFileName);
+            BufferedImage bImageT = ImageIO.read(fileShow);
+            BufferedImage bufferedThumb = Scalr.resize(bImageT, Scalr.Method.QUALITY, Scalr.Mode.AUTOMATIC, intSize, Scalr.OP_ANTIALIAS);   //  Imgscalr    https://www.baeldung.com/java-resize-image
             ImageIO.write(bufferedThumb, "jpg", fileThumbs);
 
-            logger.info("photo copy size: " + fileUploaded.length() + "  - >   " + fileShow.length() + "  - >  " + fileThumbs.length() + "  - >  " + fileMedium.length());
-            logger.info("photo copy size MB: " + getFileSizeAsString(fileUploaded) + "  - >   " + getFileSizeAsString(fileShow) + "  - >   " + getFileSizeAsString(fileThumbs));
+            intSize = 660;
+            strSubPath = subPathSmall;
+            String strPathSmall = DIR_PHOTOS_SERVER + dirChar + strSubPath;
+            String outputSmallFileName = strPathSmall + dirChar + strNewFileName;
+            File fileSmall = new File(outputSmallFileName);
+            BufferedImage bImageS = ImageIO.read(fileShow);
+            BufferedImage bufferedSmall = Scalr.resize(bImageS, Scalr.Method.QUALITY, Scalr.Mode.AUTOMATIC, intSize, Scalr.OP_ANTIALIAS);   //  Imgscalr    https://www.baeldung.com/java-resize-image
+            ImageIO.write(bufferedSmall, "jpg", fileSmall);
+
+
+            intSize = 1040;
+            strSubPath = subPathMedium;
+            String strPathMedium = DIR_PHOTOS_SERVER + dirChar + strSubPath;
+            String outputMediumFileName = strPathMedium + dirChar + strNewFileName;
+            File fileMedium = new File(outputMediumFileName);
+            BufferedImage bImageM = ImageIO.read(fileShow);
+            BufferedImage bufferedMedium = Scalr.resize(bImageM, Scalr.Method.QUALITY, Scalr.Mode.AUTOMATIC, intSize, Scalr.OP_ANTIALIAS);   //  Imgscalr    https://www.baeldung.com/java-resize-image
+            ImageIO.write(bufferedMedium, "jpg", fileMedium);
+
+            intSize = 1990;
+            strSubPath = subPathLarge;
+            String strPathLarge = DIR_PHOTOS_SERVER + dirChar + strSubPath;
+            String outputLargeFileName = strPathLarge + dirChar + strNewFileName;
+            File fileLarge = new File(outputLargeFileName);
+            BufferedImage bImageL = ImageIO.read(fileShow);
+            BufferedImage bufferedLarge = Scalr.resize(bImageL, Scalr.Method.QUALITY, Scalr.Mode.AUTOMATIC, intSize, Scalr.OP_ANTIALIAS);   //  Imgscalr    https://www.baeldung.com/java-resize-image
+            ImageIO.write(bufferedLarge, "jpg", fileLarge);
+
+            logger.info("path to compress from: " + fileShow.getAbsolutePath());
+            logger.info("path to compress   to:   " + strPathLarge);
+
+
+//
+//            } catch (IOException e) {
+//
+//                String errorMessage = "reCompress failed: " + e.getMessage();
+//
+//                Notification notification = Notification.show(
+//                        errorMessage,
+//                        5000,
+//                        Notification.Position.MIDDLE
+//                );
+//                notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+//            }
 
 
             logger.info(" before insert:  0 " + lstPhotoMetaData.get(0) + " 1 " + lstPhotoMetaData.get(1) + " 2 " + lstPhotoMetaData.get(2) + " 3 " + lstPhotoMetaData.get(3)
@@ -573,7 +606,8 @@ public class UploadImageCard extends VerticalLayout {
                 intIso = Integer.parseInt(strIso);
             }
 
-            if (insertPhotoToDb(publicIp, sessionDateTime, strNewFileName, hostname, fileShow.length(), fileMedium.length(), fileThumbs.length(), strImageMetaInfo.toString(), lstPhotoMetaData.get(0), lstPhotoMetaData.get(1),
+            if (insertPhotoToDb(publicIp, sessionDateTime, strNewFileName, hostname, fileShow.length(), fileLarge.length(),
+                    fileMedium.length(), fileSmall.length(), fileThumbs.length(), strImageMetaInfo.toString(), lstPhotoMetaData.get(0), lstPhotoMetaData.get(1),
                     lstPhotoMetaData.get(2), lstPhotoMetaData.get(3), lstPhotoMetaData.get(4), Double.parseDouble(lstPhotoMetaData.get(5)),
                     Double.parseDouble(lstPhotoMetaData.get(6)), intIso,
                     dblPhotoShutterSpeed, dblPhotoAperture)) {
@@ -611,8 +645,8 @@ public class UploadImageCard extends VerticalLayout {
 
     }
 
-    private boolean insertPhotoToDb(String publicIp, String sessionDateTime, String strNewFileName, String hostname, long photoSpaceSize, long photoSpaceSizeMedium,
-                                    long photoSpaceSizeThumb,
+    private boolean insertPhotoToDb(String publicIp, String sessionDateTime, String strNewFileName, String hostname, long photoSpaceSize, long photoSpaceSizeLarge,
+                                    long photoSpaceSizeMedium, long photoSpaceSizeSmall, long photoSpaceSizeThumb,
                                     String strImageMetaInfo, String strPhotoDateTime, String strPhotoCameraMake,
                                     String strPhotoCameraModel, String strPhotoLensMake, String strPhotoLensModel, double dblPhotoFocalLength, double dblPhotoFocalLengthFF,
                                     int intPhotoISO,
@@ -666,7 +700,9 @@ public class UploadImageCard extends VerticalLayout {
 
         String insertSQL = "INSERT INTO photo_meta SET id = 0,  date_fromapp = now(), uploaderId = " + intUserId + ", uploader = '" + strUserName + "', name_new = '" + strNewFileName + "', hostname = '" + hostname + "', " +
                 " space_size = '" + photoSpaceSize + "', " +
+                " space_size_large = '" + photoSpaceSizeLarge + "', " +
                 " space_size_medium = '" + photoSpaceSizeMedium + "', " +
+                " space_size_small = '" + photoSpaceSizeSmall + "', " +
                 " space_size_thumb = '" + photoSpaceSizeThumb + "', " +
                 " meta_all = ? , " +
 //                " meta_date = DATE_FORMAT("+strPhotoDateTime+", '%Y:%m:%d %h:%i:%s')";

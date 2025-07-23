@@ -10,6 +10,7 @@ import javax.crypto.spec.SecretKeySpec;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.security.SecureRandom;
 import java.security.spec.KeySpec;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -36,7 +37,7 @@ public class UtilsString {
         listQueryValue = new ArrayList();
     }
 
-    public static boolean isEmailSysntaxValid(String email) {
+    public boolean isEmailSysntaxValid(String email) {
         boolean isValid = false;
 
         //Initialize reg ex for email.
@@ -53,6 +54,31 @@ public class UtilsString {
         return isValid;
 
 
+    }
+
+    public String generateRandomString(int length) {
+        // You can customize the characters that you want to add into
+        // the random strings
+        String CHAR_LOWER = "abcdefghijklmnopqrstuvwxyz";
+        String CHAR_UPPER = CHAR_LOWER.toUpperCase();
+        String NUMBER = "0123456789";
+
+        String DATA_FOR_RANDOM_STRING = CHAR_LOWER + CHAR_UPPER + NUMBER;
+        SecureRandom random = new SecureRandom();
+
+        if (length < 1) throw new IllegalArgumentException();
+
+        StringBuilder sb = new StringBuilder(length);
+
+        for (int i = 0; i < length; i++) {
+            // 0-62 (exclusive), random returns 0-61
+            int rndCharAt = random.nextInt(DATA_FOR_RANDOM_STRING.length());
+            char rndChar = DATA_FOR_RANDOM_STRING.charAt(rndCharAt);
+
+            sb.append(rndChar);
+        }
+
+        return sb.toString();
     }
 
     public static void main(String args[]) {

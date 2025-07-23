@@ -87,7 +87,7 @@ public class StoryItemViewCard extends Div {
         String strMetaAperture = record.getColumnData("meta_aperture");
 
         String strPhotoUserName = record.getColumnData("username");
-        String strPhotoNameOfUser = record.getColumnData("nameOfUser");
+        String strPhotoNameOfUser = record.getColumnData("username");
         String strPhotoUserResident = record.getColumnData("resident");
         String strAvatarPath = record.getColumnData("avatar_path");
         String strPhotoUserJoined = record.getColumnData("date_joined");

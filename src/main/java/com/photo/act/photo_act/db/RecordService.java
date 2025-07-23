@@ -42,7 +42,7 @@ public class RecordService {
     private UtilsDouble utilsDouble;
 
     private String hostname;
-//    private String function;
+    //    private String function;
     private int userId;
     private String username;
     private String ip;
@@ -50,12 +50,12 @@ public class RecordService {
 //    private String info;
 
     public void setGlobalInfo(String hostname, int userId, String username, String ip, String sessionId) {
-       this.hostname= hostname;
+        this.hostname = hostname;
 //       this.function = function;
-       this.userId = userId;
-       this.username = username;
-       this.ip=ip;
-       this.sessionId = sessionId;
+        this.userId = userId;
+        this.username = username;
+        this.ip = ip;
+        this.sessionId = sessionId;
 //       this.info = info;
 
     }
@@ -80,7 +80,7 @@ public class RecordService {
             platformTransactionManager.rollback(status);
             String function = "RecordService.massRecordInsert";
             logger.error("Error: ------------------- " + function + " : " + e.getMessage() + "       cause: " + e.getCause());
-            logErrorInDb(e,hostname,function,userId,username,ip,sessionId,"");
+            logErrorInDb(e, hostname, function, userId, username, ip, sessionId, "");
             displayDialogError(e);
         }
         return insertRecordsCount;
@@ -214,7 +214,7 @@ public class RecordService {
 
         String sql = sqlReadOnly;//"SELECT id, firstname, lastname FROM customer";
         //ArrayList lstColumnNames = new ArrayList();
-       // String[] strSelectColumnNames = utilsString.getQuerySelectFieldsAsArray(sql);//{"id","firstname","lastname"};
+        // String[] strSelectColumnNames = utilsString.getQuerySelectFieldsAsArray(sql);//{"id","firstname","lastname"};
 
 
         List<Record> lstRecordSet = new ArrayList<>();
@@ -226,7 +226,7 @@ public class RecordService {
             Record rec = new Record();
             for (int s = 0; s < strSelectColumnNames.length; s++) {
                 // System.out.println("RecordService.findAll " + strSelectColumnNames[s] + "   " + row.get(strSelectColumnNames[s]));
-                rec.addColumnData(strSelectColumnNames[s], row.get(strSelectColumnNames[s]) + "");
+                rec.addColumnData(strSelectColumnNames[s], row.get(strSelectColumnNames[s]) != null ? row.get(strSelectColumnNames[s]) : "");
 	        	/*Long.parseLong(row.get("id")+""),
 	        			row.get("firstname")+"",
 	        			row.get("lastname")+"");*/
@@ -245,7 +245,7 @@ public class RecordService {
 
         String sql = sqlReadOnly;//"SELECT id, firstname, lastname FROM customer";
         //ArrayList lstColumnNames = new ArrayList();
-      //  String[] strSelectColumnNames = utilsString.getQuerySelectFieldsAsArray(sql);//{"id","firstname","lastname"};
+        //  String[] strSelectColumnNames = utilsString.getQuerySelectFieldsAsArray(sql);//{"id","firstname","lastname"};
 
         for (int v = 0; v < sqlParValue.length; v++) {
             logger.info(v + "  " + sqlParValue[v] + "  " + sqlParType[v]);
@@ -313,7 +313,7 @@ public class RecordService {
             //			System.out.println("updateRecord2 "+(intFieldValueType.length+intFieldValueTypeWhere.length)+" = "+intFieldValueTypeAll.length);
 
         }
-        System.out.println("insertOneRecordWithQuery sqlReadOny:" + sql);
+        System.out.println("findAll sqlReadOny:" + sql);
 
 
         // int res = jdbcTemplate.update(sql, fieldValuesAll, intFieldValueTypeAll);
@@ -390,7 +390,7 @@ public class RecordService {
     public void logErrorInDb(Exception e, String hostname, String function, int userId, String username, String ip, String sessionid, String info) {
         String strCause = "";
         String strMessage = "";
-        if (e!= null && e.getCause() != null) {
+        if (e != null && e.getCause() != null) {
             strCause = e.getCause().toString().replaceAll("'", "").replaceAll("\"", "").substring(0, Math.min(e.getCause().toString().trim().length(), 480)).trim();
             strMessage = e.getMessage().replaceAll("'", "").replaceAll("\"", "").substring(0, Math.min(e.getMessage().trim().length(), 480)).trim();
         }
@@ -400,7 +400,7 @@ public class RecordService {
                 + " , ? "
                 + " , '" + APP_VERSION + "', ? )";
 
-        Object[] arrValue = {strMessage,strCause, info};
+        Object[] arrValue = {strMessage, strCause, info};
         String[] arrType = {"java.lang.String", "java.lang.String", "java.lang.String"};
         this.insertOneRecordWithQuery(sqlError, arrValue, arrType);
 

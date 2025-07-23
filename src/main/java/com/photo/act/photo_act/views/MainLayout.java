@@ -67,8 +67,9 @@ public class MainLayout extends AppLayout {
     public static final String SECTION_MY_FAVOURITES = "my-favourites";
     public static final String SECTION_MY_TEAMS = "my-teams";
     public static final String SECTION_MY_PHOTOS = "my-photos";
-    public static final String SECTION_UPLOAD = "upload";
+    public static final String SECTION_MEMBERS = "members";
     public static final String SECTION_FEED = "feed";
+    public static final String SECTION_LOGIN = "login";
 
     public static final String STR_ALL_MEMBERS = "all-members";
     public static final String STR_ALL_ALBUMS = "all-albums";
@@ -80,7 +81,7 @@ public class MainLayout extends AppLayout {
     public static final String SUB_PATH_AVATARS = "avatars";
     public static final String SUB_PATH_AVATARS_THUMBS = "avatars_thumbs";
 
-    public static final String strNameOfUser = "My Self";
+    public String strNameOfUser = "My Self";
 
     private int userId;
     private String strUsername;
@@ -147,12 +148,12 @@ public class MainLayout extends AppLayout {
 
         Nav nav = new Nav();
         if (isMobile) {
-            nav.addClassNames(Display.FLEX, Overflow.AUTO,
-                    Margin.NONE, Padding.NONE //Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL,
+            nav.addClassNames(Display.FLEX, Overflow.AUTO, Width.FULL,
+                    Margin.NONE, Padding.NONE, AlignItems.CENTER, JustifyContent.EVENLY //Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL,
             );
         } else {
             nav.addClassNames(Display.FLEX, Overflow.AUTO,
-                    Margin.NONE, Padding.NONE //Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL,
+                    Margin.NONE, Padding.NONE, AlignItems.CENTER, JustifyContent.EVENLY //Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL,
             );
         }
 
@@ -161,12 +162,12 @@ public class MainLayout extends AppLayout {
         if (isMobile) {
             list.addClassNames(Display.FLEX, Width.FULL,
                     ListStyleType.NONE, Margin.NONE, Padding.NONE,
-                    FontSize.XXSMALL
+                    FontSize.XXSMALL, AlignItems.CENTER, JustifyContent.EVENLY
             );
         } else {
             list.addClassNames(Display.FLEX, Width.FULL,
                     ListStyleType.NONE, Margin.NONE, Padding.NONE,
-                    FontSize.MEDIUM
+                    FontSize.MEDIUM, AlignItems.CENTER, JustifyContent.EVENLY
             );
         }
         nav.add(list);
@@ -187,11 +188,9 @@ public class MainLayout extends AppLayout {
             UI.getCurrent().getElement().getStyle().set(txtObject2.getValue(), txtValue2.getValue());
         });
 
-        //  header.add(nav); //, txtObject1, txtValue1, txtObject2, txtValue2, btnStyle);
-
         HorizontalLayout headerLayout = new HorizontalLayout();
         headerLayout.addClassNames(Width.FULL,
-                AlignItems.CENTER, JustifyContent.AROUND,
+                AlignItems.CENTER, JustifyContent.EVENLY,
                 Padding.NONE, Margin.NONE,
                 Gap.MEDIUM
         );
@@ -208,11 +207,15 @@ public class MainLayout extends AppLayout {
 
     private MenuItemInfo[] createMenuItems() {
 
-
         StreamResource imageResourceMember = new StreamResource("user-profile-icon.svg",
                 () -> getClass()
                         .getResourceAsStream("/icons/user-profile-icon.svg"));
         SvgIcon svgMember = new SvgIcon(imageResourceMember);
+
+        StreamResource imageResourceGroup = new StreamResource("group-icon.svg",
+                () -> getClass()
+                        .getResourceAsStream("/icons/group-icon.svg"));
+        SvgIcon svgGroup = new SvgIcon(imageResourceGroup);
 
         StreamResource imageResourceStories = new StreamResource("story.svg",
                 () -> getClass()
@@ -220,26 +223,36 @@ public class MainLayout extends AppLayout {
         SvgIcon svgStories = new SvgIcon(imageResourceStories);
 
 
-        MenuItemInfo menuItemHome;
-        if (isMobile) {  // VaadinIcon.CAMERA.create()
-            menuItemHome = new MenuItemInfo(APP_NAME, FontAwesome.Solid.CAMERA.create(), HomeView.class);//  LineAwesomeIcon.PENCIL_RULER_SOLID.create(),
+        if (isMobile) {
+            return new MenuItemInfo[]{ //
+                    new MenuItemInfo(APP_NAME, FontAwesome.Solid.CAMERA.create(), HomeView.class),//  LineAwesomeIcon.PENCIL_RULER_SOLID.create(),
+                    //  new MenuItemInfo("Stories", svgStories, StoriesView.class), //  LineAwesomeIcon.PENCIL_RULER_SOLID.create(),
+                    new MenuItemInfo("", FontAwesome.Solid.PHOTO_FILM.create(), AlbumsView.class), //
+                    new MenuItemInfo("", VaadinIcon.PICTURE.create(), GalleryView.class), //
+                    new MenuItemInfo("", VaadinIcon.BOOK.create(), LearningsView.class), //  LineAwesomeIcon.PENCIL_RULER_SOLID.create(),
+                    new MenuItemInfo("", VaadinIcon.CALENDAR_USER.create(), FestivalsView.class), //  LineAwesomeIcon.PENCIL_RULER_SOLID.create(),
+                    new MenuItemInfo("", svgGroup, MembersView.class), //
+                    new MenuItemInfo("", svgMember, MeView.class), //
+
+                    // new MenuItemInfo("Checkout Form", LineAwesomeIcon.CREDIT_CARD.create(), CheckoutFormView.class), //
+            };
+
         } else {
-            menuItemHome = new MenuItemInfo(APP_NAME, FontAwesome.Solid.HOME.create(), HomeView.class);//  LineAwesomeIcon.PENCIL_RULER_SOLID.create(),
+            return new MenuItemInfo[]{ //
+
+                    new MenuItemInfo(APP_NAME, FontAwesome.Solid.HOME.create(), HomeView.class),//  LineAwesomeIcon.PENCIL_RULER_SOLID.create(),
+                    //  new MenuItemInfo("Stories", svgStories, StoriesView.class), //  LineAwesomeIcon.PENCIL_RULER_SOLID.create(),
+                    new MenuItemInfo("Albums", FontAwesome.Solid.PHOTO_FILM.create(), AlbumsView.class), //
+                    new MenuItemInfo("Photos", VaadinIcon.PICTURE.create(), GalleryView.class), //
+                    new MenuItemInfo("Learnings", VaadinIcon.BOOK.create(), LearningsView.class), //  LineAwesomeIcon.PENCIL_RULER_SOLID.create(),
+                    new MenuItemInfo("Events", VaadinIcon.CALENDAR_USER.create(), FestivalsView.class), //  LineAwesomeIcon.PENCIL_RULER_SOLID.create(),
+                    new MenuItemInfo("Members", svgGroup, MembersView.class), //
+                    new MenuItemInfo("Me", svgMember, MeView.class), //
+
+                    // new MenuItemInfo("Checkout Form", LineAwesomeIcon.CREDIT_CARD.create(), CheckoutFormView.class), //
+            };
         }
 
-        return new MenuItemInfo[]{ //
-                menuItemHome,
-
-
-                //  new MenuItemInfo("Stories", svgStories, StoriesView.class), //  LineAwesomeIcon.PENCIL_RULER_SOLID.create(),
-                new MenuItemInfo("Albums", FontAwesome.Solid.PHOTO_FILM.create(), AlbumsView.class), //
-                new MenuItemInfo("Photos", VaadinIcon.PICTURE.create(), GalleryView.class), //
-                new MenuItemInfo("Learnings", VaadinIcon.BOOK.create(), LearningsView.class), //  LineAwesomeIcon.PENCIL_RULER_SOLID.create(),
-                new MenuItemInfo("Events", VaadinIcon.CALENDAR_USER.create(), FestivalsView.class), //  LineAwesomeIcon.PENCIL_RULER_SOLID.create(),
-                new MenuItemInfo("Members", svgMember, MembersView.class), //
-
-                // new MenuItemInfo("Checkout Form", LineAwesomeIcon.CREDIT_CARD.create(), CheckoutFormView.class), //
-        };
     }
 
     private void addHeaderContent() {

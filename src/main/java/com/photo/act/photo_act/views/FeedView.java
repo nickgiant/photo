@@ -24,6 +24,7 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import jakarta.annotation.security.PermitAll;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,9 +36,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
-import static com.photo.act.photo_act.views.GalleryView.DIR_PHOTOS_SERVER;
 import static com.photo.act.photo_act.views.MainLayout.*;
 
+@PermitAll
 //@PageTitle("Feed")
 @Route("feed")
 //@Menu(order = 2, icon = "line-awesome/svg/list-solid.svg")  //, icon = LineAwesomeIconUrl.LIST_SOLID)
@@ -79,7 +80,7 @@ public class FeedView extends Div implements AfterNavigationObserver {
     public static String subPathUpload = "photo-upload";
     public static String subPathShow = "photo-show";
 
-    public static String             DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
+    public static String DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
 
     private String strPath;
 
@@ -114,13 +115,13 @@ public class FeedView extends Div implements AfterNavigationObserver {
 
         if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP)) {
             DIR_PHOTOS_SERVER = "/home/mike/Pictures/lazy-photos";
-        }else if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_LENOVO)){
+        } else if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_LENOVO)) {
             DIR_PHOTOS_SERVER = "/home/linux-pc/Pictures/lazy-photos";
-        } else if(hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_LENOVO_WIN)){
-            DIR_PHOTOS_SERVER =  "C:\\Users\\nickg\\Pictures\\lazy-photos";
+        } else if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_LENOVO_WIN)) {
+            DIR_PHOTOS_SERVER = "C:\\Users\\nickg\\Pictures\\lazy-photos";
         } else if (hostname.equalsIgnoreCase("piot")) {
-                        DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
-        }else if (hostname.equalsIgnoreCase(HOSTNAME_SERVER_HOSTINGER)){
+            DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
+        } else if (hostname.equalsIgnoreCase(HOSTNAME_SERVER_HOSTINGER)) {
             DIR_PHOTOS_SERVER = "/home/mikel/lazy-photos";
         } else {
             DIR_PHOTOS_SERVER = "/home/sammy/lazy-photos";
@@ -529,7 +530,7 @@ public class FeedView extends Div implements AfterNavigationObserver {
         if (strPath == null || strPath.isEmpty()) {
             strPath = "NULL";
         } else {
-            strPath = strPath.replace("\\","-");
+            strPath = strPath.replace("\\", "-");
             strPath = "'" + strPath + "'";
         }
 

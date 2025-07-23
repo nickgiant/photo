@@ -32,6 +32,7 @@ import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
+import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import com.vaadin.flow.theme.lumo.LumoUtility.*;
 import org.slf4j.Logger;
@@ -49,8 +50,8 @@ import java.util.Locale;
 
 import static com.photo.act.photo_act.views.MainLayout.*;
 
-//@PageTitle("Image Gallery")
-//@RouteAlias("") // empty on homepage
+@AnonymousAllowed
+
 @Route(value = "learnings") //":category?")
 @RouteAlias(value = "learnings/category/:category?", layout = MainLayout.class)
 @RouteAlias(value = "learnings/genre/:genre?", layout = MainLayout.class)
@@ -140,77 +141,53 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
             //, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description, DATE_FORMAT(f.dateInsert , '%D %M %Y') AS formatedDateUpdated  " +
             " FROM  photo_meta pm LEFT JOIN destination d ON pm.destination_Id = d.id ";
 
-    String[] arrColumnsLearningTypes = {"cat_title", "cat_title2", "cat_title_type", "cat_title_type2", "cat_type", "cat_type2", "cat_type_count", "cat_type_count2", "cat_description_min"};
+    String[] arrColumnsLearningTypes = {"cat_title", "cat_title_type", "cat_type", "cat_location_count", "cat_title_count", "cat_description_min", "cat_description_big"};
 
-    String sqlLearningTypes = "SELECT "
-            + " lc.cat_title, lc.cat_title_type, lc.cat_type, lc.cat_description_min "
-//            + " , lc2.cat_title AS cat_title2, lc2.cat_title_type AS cat_title_type2, lc2.cat_type AS cat_type2, count (lc2.cat_type) AS cat_type_count2 "
-//            + " l.id, l.title, l.picture, l.section , l.category, l.format, l.url, l.parent_id, l.child_index, l.tutor_id, l.artists_ref, l.description, l.duration, l.pages, l.published, l.userIdInsert, l.username, l.dateInsert "
-//            + ", l.tutor_id, l.tutor_id_team, t.tutor_name, t.website, t.url_fb, t.url_yt, t.url_insta, t.url_flickr, t.url_wikipedia, t.url_ref1, t.url_ref2, t.url_ref3, t.city_base, t.country_base, t.userIdInsert, t.username, t.date_inserted "
-//            + " FROM learnings_categories lc2 RIGHT JOIN learnings l ON lc2.id = l.category_id2, learnings_categories lc " // "LEFT JOIN learnings_categories lc ON lc.id = l.category_id "
-//            + " FROM learnings l, learnings_categories lc "
-            + " FROM learnings_categories lc "
-            + " WHERE 1 = 1 "
-//            + " WHERE 1 = 1 AND lc.id = l.category_id "
-            + " AND lc.cat_type NOT LIKE '%genre%' "
-            + " GROUP BY lc.cat_type "
-            + " ORDER BY lc.cat_order ASC ";
+    String sqlLearningTypes =
+            " SELECT l.id, lc.id, lc.cat_title, lc.cat_title_type, lc.cat_type, cat_description_min, cat_description_big, " +
+                    " count(l.has_location) AS cat_location_count , count(lc.cat_title) AS cat_title_count, lc.cat_order " +
+                    " FROM learnings l LEFT JOIN learnings_categories lc ON l.category_id = lc.id " +
+                    " WHERE 1 = 1 " +
+                    " AND lc.cat_type not LIKE '%genre%' " +
+                    " AND lc.cat_type not LIKE 'not show' " +
+                    " GROUP BY lc.cat_type " +
+                    " ORDER BY lc.cat_order ASC";
 
 
-    String[] arrColLearningCategories = {"cat_title", "cat_title2", "cat_title_type", "cat_type", "cat_description_min", "cat_description_big", "cat_count"};
+    String[] arrColLearningCategories = {"cat_title", "cat_title_type", "cat_type", "cat_location_count", "cat_title_count", "cat_description_min", "cat_description_big"};
 
-    String sqlLearningCategoriesRead = "SELECT  " //f.nameShort, f.location, f.country, f.periodOfYear, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description  " +
-            + " lc.cat_title, lc.cat_title_type, lc.cat_type, lc.cat_description_min, count (lc.cat_title) AS cat_count, "
-            + " lc2.cat_title AS cat_title2, lc2.cat_title_type AS cat_title_type2, lc2.cat_type AS cat_type2, count (lc2.cat_title) AS cat_count2 "
-//            + " l.id, l.title, l.picture, l.section , l.category, l.format, l.url, l.parent_id, l.child_index, l.tutor_id, l.artists_ref, l.description, l.duration, l.pages, l.published, l.userIdInsert, l.username, l.dateInsert "
-//            + ", l.tutor_id, l.tutor_id_team, t.tutor_name, t.website, t.url_fb, t.url_yt, t.url_insta, t.url_flickr, t.url_wikipedia, t.url_ref1, t.url_ref2, t.url_ref3, t.city_base, t.country_base, t.userIdInsert, t.username, t.date_inserted "
-            + " FROM learnings_categories lc2 RIGHT JOIN learnings l ON lc2.id = l.category_id2 LEFT JOIN learnings_categories lc ON lc.id = l.category_id "
-            + " WHERE 1 = 1 "
-            + " AND ( lc.cat_type LIKE '%genre%') "
-            + " GROUP BY lc.cat_title ORDER BY lc.cat_order ASC ";
+    String sqlLearningCategoriesRead = //f.nameShort, f.location, f.country, f.periodOfYear, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description  " +
+            " SELECT lc.id, lc.cat_title, lc.cat_title_type, lc.cat_type, l.cat_genre_id, count(l.has_location) AS cat_location_count, count(lc.cat_title) AS cat_title_count, cat_description_min, cat_description_big " +
+
+                    " FROM learnings l LEFT JOIN learnings_categories lc ON l.cat_genre_id = lc.id " +
+                    " WHERE 1 = 1 " +
+                    " AND lc.cat_type LIKE '%genre%' " +
+                    " GROUP BY lc.cat_title " +
+                    " ORDER BY lc.cat_order ASC";
 
 
-    String[] arrColumnsLearning = {"title", "picture", "cat_title", "cat_title2", "cat_title_type", "cat_title_type2", "cat_type", "format", "url", "artists_ref", "description", "duration", "pages", "published", "year_published",
-            "category_id", "category_id2", "tutor_name", "website", "url_fb", "url_yt", "url_insta", "url_flickr", "url_wikipedia", "url_ref1", "url_ref2", "url_ref3",
+    String[] arrColumnsLearning = {"title", "picture", "cat_title", "cat_title_genre", "cat_title_type", "cat_title_type_genre", "cat_type", "format", "url", "artists_ref", "description", "duration", "pages", "published", "year_published",
+            "has_location", "category_id", "tutor_name", "website", "url_fb", "url_yt", "url_insta", "url_flickr", "url_wikipedia", "url_ref1", "url_ref2", "url_ref3",
             "dateInsert", "date_created",
-            "username", "nameOfUser", "avatar_path", "member_since"};
+            "username", "username", "avatar_path", "member_since"};
 
     // learnings: l.id, l.title, l.picture, l.section , l.category, l.format, l.url, l.parent_id, l.child_index, l.tutor_id, l.artists_ref, l.description, l.duration, l.pages, l.published, l.userIdInsert, l.username, l.dateInsert
 // learnings_tutor:  lt.id, lt.tutor_name, lt.learnings_team_id, lt.website, lt.url_fb, lt.url_yt, lt.url_insta, lt.url_flickr, lt.url_wikipedia, lt.url_ref1, lt.url_ref2, lt.url_ref3, lt.url_flckr, lt.city_base, lt.country_base, lt.userIdInsert, lt.username, lt.date_inserted
-    String sqlLearningsRead = "SELECT  " //f.nameShort, f.location, f.country, f.periodOfYear, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description  " +
-            + " lc.cat_title, lc.cat_title_type, lc.cat_type "
-            + " , lc2.cat_title AS cat_title2, lc2.cat_title_type AS cat_title_type2 "
-            + " , l.id, l.title, l.picture, l.format, l.url, l.parent_id, l.child_index, l.tutor_id, l.artists_ref, l.description, l.duration, l.pages, l.published "
-            + " , DATE_FORMAT(l.published, '%Y') AS year_published "
-            + " , l.dateInsert " +
-//            "                 ( case " +
-//            "                WHEN TIMEDIFF(NOW(), l.dateInsert) <= '00:06:00' THEN 'almost now'" +
-//            "                WHEN TIMEDIFF(NOW(), l.dateInsert) <= '00:18:00' THEN '10 minutes ago'" +
-//            "                WHEN TIMEDIFF(NOW(), l.dateInsert) <= '00:48:00' THEN '30 minutes ago'" +
-//            "                WHEN TIMEDIFF(NOW(), l.dateInsert) <= '01:37:00' THEN 'an hour ago'" +
-//            "                WHEN TIMEDIFF(NOW(), l.dateInsert) <= '02:40:00' THEN 'two hours ago'" +
-//            "                WHEN TIMEDIFF(NOW(), l.dateInsert) <= '03:42:00' THEN 'three hours ago'" +
-//            "                WHEN TIMEDIFF(NOW(), l.dateInsert) <= '04:28:00' THEN 'four hours ago'" +
-//            "                WHEN TIMEDIFF(NOW(), l.dateInsert) <= '05:35:00' THEN 'five hours ago'" +
-//            "                WHEN TIMEDIFF(NOW(), l.dateInsert) <= '06:35:00' THEN 'six hours ago'" +
-//            "                WHEN TIMEDIFF(NOW(), l.dateInsert) <= '07:35:00' THEN 'seven hours ago'" +
-//            "                WHEN TIMEDIFF(NOW(), l.dateInsert) <= '08:35:00' THEN 'eight hours ago'" +
-//            "                when DATE(l.dateInsert) = DATE(NOW())  then CONCAT('today at ' , DATE_FORMAT(l.dateInsert, '%H:%i %p') )" +
-//            "                when DATE(DATE(l.dateInsert) + 1) = DATE(NOW()) then CONCAT('Yesterday at ' , DATE_FORMAT(l.dateInsert, '%H:%i %p') )" +
-//            "                when DATE(DATE(l.dateInsert) + 2) = DATE(NOW())  then CONCAT('Last ' , DATE_FORMAT(l.dateInsert, '%W on %H:%i %p') )" +
-//            "                when DATE(DATE(l.dateInsert) + 6) >= DATE(NOW())  then CONCAT('Last ' , DATE_FORMAT(l.dateInsert, '%W') )" +
-//            "                when DATE(DATE(l.dateInsert) + 6) < DATE(NOW())  then CONCAT('' , DATE_FORMAT(l.dateInsert, '%D of %M %Y') )" +
-//            "                ELSE DATE_FORMAT(l.dateInsert, '%D %M %Y') " +
-//            "              END ) " +
-            " ,  getDateDiffFromNow(l.dateInsert) AS date_created "
-            + " , l.tutor_id, l.tutor_id_team, l.category_id, l.category_id2, t.tutor_name, t.website, t.url_fb, t.url_yt, t.url_insta, t.url_flickr, t.url_wikipedia, t.url_ref1 " +
-            " , t.url_ref2, t.url_ref3, t.city_base, t.country_base, t.userIdInsert, t.username, t.date_inserted" +
-            " , l.userId_post " +
-            " , usr.username, usr.nameOfUser, usr.avatar_path, DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since "
-            + " FROM learnings_categories lc, learnings l LEFT JOIN learnings_categories lc2 ON lc2.id = l.category_id2, tutor t, dbuser usr  "
-            + " WHERE 1 = 1 "
-            + " AND l.userId_post = usr.userId"
-            + " AND lc.id = l.category_id AND l.tutor_id = t.id ";
+    String sqlLearningsRead = //f.nameShort, f.location, f.country, f.periodOfYear, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description  " +
+            "SELECT lc.cat_title , lc2.cat_title AS cat_title_genre,  lc.cat_type , lc.cat_title_type, " +
+                    " lc2.cat_title_type AS cat_title_type_genre , l.has_location " +
+                    " , l.id, l.title, l.picture, l.format, l.url, l.tutor_id, l.artists_ref, l.description, l.duration, l.pages, l.published " +
+                    " , DATE_FORMAT(l.published, '%Y') AS year_published " +
+                    " , l.dateInsert " +
+                    " ,  getDateDiffFromNow(l.dateInsert) AS date_created " +
+                    " , l.tutor_id, l.tutor_id_team, l.category_id, t.tutor_name, t.website, t.url_fb, t.url_yt, t.url_insta, t.url_flickr, t.url_wikipedia, t.url_ref1 " +
+                    " , t.url_ref2, t.url_ref3, t.city_base, t.country_base, t.userIdInsert, t.username, t.date_inserted " +
+                    " , l.userId_post " +
+                    " , usr.username, usr.username, usr.avatar_path, DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since " +
+                    "  FROM learnings_categories lc, learnings l LEFT JOIN learnings_categories lc2 ON lc2.id = l.cat_genre_id, tutor t, dbuser usr " +
+                    "  WHERE 1 = 1 " +
+                    " AND l.userId_post = usr.userId " +
+                    " AND lc.id = l.category_id AND l.tutor_id = t.id ";
 
     String sqlLearningsReadOrderBy;
 
@@ -758,7 +735,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
 
         String strTitle = record.getColumnData("title");
         String strCategory = record.getColumnData("cat_title");
-        String strCategory2 = record.getColumnData("cat_title2");
+        String strCatGenre = record.getColumnData("cat_title_genre");
 
         String strFormat = record.getColumnData("format");
         String strDuration = record.getColumnData("duration");
@@ -774,13 +751,14 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         String strUserIdSuggest = record.getColumnData("userId_suggest");
 
         String strUsername = record.getColumnData("username");
-        String strNameOfUser = record.getColumnData("nameOfUser");
+        String strNameOfUser = record.getColumnData("username");
         String strMemberSince = record.getColumnData("member_since");
         String strAvatarPath = record.getColumnData("avatar_path");
 
         String strImage = record.getColumnData("picture");
         String dateCreated = record.getColumnData("date_created");
 
+        String strHasLocation = record.getColumnData("has_location");
 
         if (isTeam) {
             strTutor = strTeamName;
@@ -1036,10 +1014,10 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
 //        RouteParam routeCategory = new RouteParam("category", strCategory);
 //        RouterLink linkPhotoCategory = new RouterLink(strCategory, LearningsView.class, new RouteParameters(routeCategory));
 //
-//        RouteParam routeCategory2 = new RouteParam("category", strCategory2);
-//        RouterLink linkPhotoCategory2 = new RouterLink(strCategory2, LearningsView.class, new RouteParameters(routeCategory2));
+//        RouteParam routeCategory2 = new RouteParam("category", strCatGenre);
+//        RouterLink linkPhotoCategory2 = new RouterLink(strCatGenre, LearningsView.class, new RouteParameters(routeCategory2));
 //
-//        if (strCategory2 == null || strCategory2.equalsIgnoreCase("") || strCategory2.equalsIgnoreCase("null") || strCategory2.isEmpty()) {
+//        if (strCatGenre == null || strCatGenre.equalsIgnoreCase("") || strCatGenre.equalsIgnoreCase("null") || strCatGenre.isEmpty()) {
 //            linkPhotoCategory2.setVisible(false);
 //        } else {
 //            linkPhotoCategory2.setVisible(true);
@@ -1072,6 +1050,9 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         spCategorySmall.addClassNames(AlignItems.CENTER, TextAlignment.CENTER, JustifyContent.CENTER);
         layoutCategorySmall.add(FontAwesome.Solid.TAG.create(), spCategorySmall);
 
+        if (strCategory == null || strCategory.isEmpty() || strCategory.equalsIgnoreCase("null")) {
+            layoutCategorySmallAll.setVisible(false);
+        }
         layoutCategorySmallAll.add(layoutCategorySmall);
 
 
@@ -1097,16 +1078,12 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
                 //   Background.CONTRAST_5,
                 BorderRadius.NONE
         );
-        H5 spCategory2Small = new H5(strCategory2);
+        H5 spCategory2Small = new H5(strCatGenre);
         spCategory2Small.addClassNames(AlignItems.CENTER, TextAlignment.CENTER, JustifyContent.CENTER);
         layoutCategory2Small.add(FontAwesome.Solid.TAG.create(), spCategory2Small);
 
         layoutCategory2SmallAll.add(layoutCategory2Small);
-
-//        spCategorySmall.getElement().getThemeList().add("badge contrast");
-
-//        spCategory2Small.getElement().getThemeList().add("badge contrast");
-        if (strCategory2.isEmpty() || strCategory2.equalsIgnoreCase("null") || strCategory2.equalsIgnoreCase("")) {
+        if (strCatGenre == null || strCatGenre.isEmpty() || strCatGenre.equalsIgnoreCase("null")) {
             layoutCategory2SmallAll.setVisible(false);
         }
 
@@ -1287,13 +1264,22 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         layoutIDDataNormal.add(imgPerson, divTutor, layoutExtLinks, divFormat, divYearPublished);
 
 
+        HorizontalLayout layoutCategoryNormal = new HorizontalLayout();
         H5 spCategoryNormal = new H5(strCategory);
-        spCategoryNormal.getElement().getThemeList().add("badge contrast");
-        H5 spCategory2Normal = new H5(strCategory2);
-        spCategory2Normal.getElement().getThemeList().add("badge contrast");
-        if (strCategory2.isEmpty() || strCategory2.equalsIgnoreCase("null") || strCategory2.equalsIgnoreCase("")) {
-            spCategory2Normal.setVisible(false);
+        spCategoryNormal.addClassNames(AlignItems.CENTER, TextAlignment.CENTER, JustifyContent.CENTER);
+        layoutCategoryNormal.add(FontAwesome.Solid.TAG.create(), spCategoryNormal);
+        if (strCategory == null || strCategory.isEmpty() || strCategory.equalsIgnoreCase("null")) {
+            layoutCategoryNormal.setVisible(false);
         }
+
+        HorizontalLayout layoutCategory2Normal = new HorizontalLayout();
+        H5 spCategory2Normal = new H5(strCatGenre);
+        spCategory2Normal.addClassNames(AlignItems.CENTER, TextAlignment.CENTER, JustifyContent.CENTER);
+        layoutCategory2Normal.add(FontAwesome.Solid.TAG.create(), spCategory2Normal);
+        if (strCatGenre == null || strCatGenre.isEmpty() || strCatGenre.equalsIgnoreCase("null")) {
+            layoutCategory2Normal.setVisible(false);
+        }
+
 
         Div dayUpdatedLabelNormal = new Div("Info Created: ");
         dayUpdatedLabelNormal.addClassName(TextColor.SECONDARY);
@@ -1313,7 +1299,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
                 Gap.SMALL
 //                BoxShadow.XSMALL
         );
-        layoutItemInfoNormal.add(imgInfo, dayUpdatedLabelNormal, dayUpdatedNormal, spCategoryNormal, spCategory2Normal);
+        layoutItemInfoNormal.add(imgInfo, dayUpdatedLabelNormal, dayUpdatedNormal, layoutCategoryNormal, layoutCategory2Normal);
 
         layoutIDDataNormal.setMinWidth("280px");
         layoutItemInfoNormal.setMinWidth("280px");
@@ -1453,10 +1439,10 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
             }
             RouterLink linkPhotoCategory = new RouterLink(strCategory, LearningsView.class, new RouteParameters(routeCategory));
 
-            RouteParam routeCategory2 = new RouteParam("category", strCategory2);
-            RouterLink linkPhotoCategory2 = new RouterLink(strCategory2, LearningsView.class, new RouteParameters(routeCategory2));
+            RouteParam routeCategory2 = new RouteParam("category", strCatGenre);
+            RouterLink linkPhotoCategory2 = new RouterLink(strCatGenre, LearningsView.class, new RouteParameters(routeCategory2));
 
-            if (strCategory2 == null || strCategory2.equalsIgnoreCase("") || strCategory2.equalsIgnoreCase("null") || strCategory2.isEmpty()) {
+            if (strCatGenre == null || strCatGenre.equalsIgnoreCase("") || strCatGenre.equalsIgnoreCase("null") || strCatGenre.isEmpty()) {
                 linkPhotoCategory2.setVisible(false);
             } else {
                 linkPhotoCategory2.setVisible(true);
@@ -2235,6 +2221,19 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
     }
 
     private void getUserClientInfo() {
+
+
+        InetAddress inetAddress = null;
+        try {
+            inetAddress = InetAddress.getLocalHost();
+        } catch (UnknownHostException e) {
+            throw new RuntimeException(e);
+        }
+        hostname = inetAddress.getHostName();
+        hostAddress = inetAddress.getHostAddress();
+        canonicalHostname = inetAddress.getCanonicalHostName();
+
+        DIR_PHOTOS_SERVER = genericView.getAppProps(PROP_PHOTOS);
 
         sessionid = VaadinSession.getCurrent().getSession().getId();
         sessionCreation = VaadinSession.getCurrent().getSession().getCreationTime();

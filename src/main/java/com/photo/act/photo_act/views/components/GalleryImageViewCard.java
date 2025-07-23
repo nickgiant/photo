@@ -93,15 +93,14 @@ public class GalleryImageViewCard extends Div {
         String strMetaAperture = record.getColumnData("meta_aperture");
 
         String strPhotoUserName = record.getColumnData("username");
-        String strPhotoNameOfUser = record.getColumnData("nameOfUser");
+        String strPhotoNameUser = record.getColumnData("name");
+        String strPhotoSurnameUser = record.getColumnData("surname");
         String strPhotoUserResident = record.getColumnData("resident");
         String strAvatarPath = record.getColumnData("avatar_path");
         String strPhotoUserJoined = record.getColumnData("date_joined");
 
         String strCity = record.getColumnData("city_name");
-        if (strCity == null || strCity.equalsIgnoreCase("null") || strCity.isEmpty()) {
-            strCity = "not defined";
-        }
+
         Path path = Paths.get(strImagePath);
         File file = path.toFile();
 
@@ -126,6 +125,7 @@ public class GalleryImageViewCard extends Div {
         );
 
         Div divImage = new Div();
+        divImage.addClassNames(Width.FULL, Height.AUTO);
 
         Image image = new Image();
         image.addClassNames(Width.FULL, Height.FULL);
@@ -202,8 +202,13 @@ public class GalleryImageViewCard extends Div {
                 //   Background.CONTRAST_5,
                 BorderRadius.NONE
         );
+
         Div divLocation = new Div(strCity);
         layoutLocationCount.add(FontAwesome.Regular.COMPASS.create(), divLocation);
+
+        if (strCity == null || strCity.equalsIgnoreCase("null") || strCity.isEmpty()) {
+            layoutLocationCount.setVisible(false);
+        }
 
         HorizontalLayout layoutSpot = new HorizontalLayout();
         layoutSpot.addClassNames(
@@ -237,8 +242,6 @@ public class GalleryImageViewCard extends Div {
         Div divDate = new Div(strPhotoDate);
         layoutDate.add(VaadinIcon.CALENDAR.create(), divDate);
 
-        layoutPhotosInfo.add(layoutViewCount, layoutLocationCount, layoutSpot, layoutDate);
-
 
         Details detailsPhotoInfo = new Details();
         detailsPhotoInfo.addClassNames(Width.FULL);
@@ -268,12 +271,19 @@ public class GalleryImageViewCard extends Div {
                 Gap.XSMALL,
                 BorderRadius.NONE
         );
-        Div divMetaFocalLength = new Div("Focal Length " + strMetaFocalLength + " mm");
-        Div divMetaFocalLengthFF = new Div("(FF) " + strMetaFocalLengthFF + " mm");
+
+        Div divMetaFocalLengthTitle = new Div("Focal Length ");
+        divMetaFocalLengthTitle.addClassNames(LumoUtility.TextColor.TERTIARY, LumoUtility.Padding.Vertical.NONE, LumoUtility.FontSize.XSMALL);
+        Div divMetaFocalLength = new Div(strMetaFocalLength + " mm");
+
+        Div divMetaFocalLengthFFTitle = new Div("(Full Frame) ");
+        divMetaFocalLengthFFTitle.addClassNames(LumoUtility.TextColor.TERTIARY, LumoUtility.Padding.Vertical.NONE, LumoUtility.FontSize.XSMALL);
+        Div divMetaFocalLengthFF = new Div(strMetaFocalLengthFF + " mm");
         if (strMetaFocalLength.equalsIgnoreCase(strMetaFocalLengthFF)) {
             divMetaFocalLengthFF.setVisible(false);
+            divMetaFocalLengthFFTitle.setVisible(false);
         }
-        layoutPhotoFocalLength.add(divMetaFocalLength, divMetaFocalLengthFF);
+        layoutPhotoFocalLength.add(divMetaFocalLengthTitle, divMetaFocalLength, divMetaFocalLengthFFTitle, divMetaFocalLengthFF);
 
         HorizontalLayout layoutPhotoMeta = new HorizontalLayout();
         layoutPhotoMeta.addClassNames(
@@ -314,13 +324,25 @@ public class GalleryImageViewCard extends Div {
         HorizontalLayout layoutDetailsAvatarNActions = new HorizontalLayout();
 
 
-        AvatarItem avatarItemMe = new AvatarItem(strPhotoNameOfUser, "", imgAvatarSmall);
+        AvatarItem avatarItemMe = new AvatarItem(strPhotoNameUser + " " + strPhotoSurnameUser, "", imgAvatarSmall);
+        avatarItemMe.addClassNames(Padding.NONE, Margin.NONE, AlignItems.CENTER);
+
         Details detailsMember = new Details();
         detailsMember.addClassNames(Width.FULL);
         detailsMember.addClassName("member-small");
-        layoutDetailsAvatarNActions.add(avatarItemMe);
-        detailsMember.setSummary(layoutDetailsAvatarNActions);
-        AvatarItem avatarLargeItemMe = new AvatarItem(strPhotoNameOfUser, "@" + strPhotoUserName, imgAvatarMedium);
+
+        if (isMobile) {
+            layoutPhotosInfo.add(layoutViewCount, layoutLocationCount, layoutSpot, layoutDate);
+            layoutDetailsAvatarNActions.add(avatarItemMe);
+            detailsMember.setSummary(layoutDetailsAvatarNActions);
+        } else {
+
+            HorizontalLayout layoutPhotoInfo = new HorizontalLayout(avatarItemMe, layoutViewCount, layoutSpot, layoutDate);
+            layoutPhotoInfo.addClassNames(Width.FULL, Padding.NONE, Margin.NONE, AlignItems.CENTER, JustifyContent.AROUND);
+            detailsMember.setSummary(layoutPhotoInfo);
+        }
+        AvatarItem avatarLargeItemMe = new AvatarItem(strPhotoNameUser + " " + strPhotoSurnameUser, "@" + strPhotoUserName, imgAvatarMedium);
+        avatarLargeItemMe.addClassNames(Width.FULL, Padding.MEDIUM, Margin.NONE);
 
         HorizontalLayout layoutMemberInfo = new HorizontalLayout();
         layoutMemberInfo.addClassNames(
@@ -389,8 +411,13 @@ public class GalleryImageViewCard extends Div {
         );
         Div divDateJoined = new Div(strPhotoUserJoined);
         layoutDateJoined.add(VaadinIcon.CALENDAR_CLOCK.create(), divDateJoined); // FontAwesome.Regular.CALENDAR.create()
-        layoutMemberInfo.add(layoutMemberPhotoCount, layoutMemberViewCount, layoutLocationsCount, layoutDateJoined);
-        detailsMember.add(avatarLargeItemMe, layoutMemberInfo);
+        if (isMobile) {
+            layoutMemberInfo.add(layoutMemberPhotoCount, layoutMemberViewCount, layoutLocationsCount, layoutDateJoined);
+            detailsPhotoInfo.add(avatarLargeItemMe, layoutMemberInfo);
+        } else {
+//            layoutMemberInfo.add();
+            detailsMember.add(avatarLargeItemMe, layoutPhotoCameraMeta, layoutPhotoFocalLength, layoutPhotoMeta);
+        }
 
 
         Div divTextDescription = new Div();
@@ -455,9 +482,9 @@ public class GalleryImageViewCard extends Div {
         if (!isEditable) {
             //anyone logged in
             if (isMobile) {
-                divPhotoInfo.add(header, divTextDescription, detailsPhotoInfo, detailsMember, getActions());
+                divPhotoInfo.add(header, divTextDescription, detailsPhotoInfo, detailsMember, getActions(strCity));
             } else {
-                divPhotoInfo.add(header, divTextDescription, detailsMember, getActions());
+                divPhotoInfo.add(header, divTextDescription, detailsMember, getActions(strCity));
             }
             this.addClassNames(JustifyContent.EVENLY);
             this.add(layoutImage, divPhotoInfo);
@@ -544,7 +571,7 @@ public class GalleryImageViewCard extends Div {
         return layoutActions;
     }
 
-    private HorizontalLayout getActions() {
+    private HorizontalLayout getActions(String strCity) {
 
         StreamResource iconLike = new StreamResource("star-empty-icon.svg",
                 () -> getClass().getResourceAsStream("/icons/star-empty-icon.svg"));
@@ -577,12 +604,16 @@ public class GalleryImageViewCard extends Div {
         Button btnShare = new Button(svgShare);
         btnShare.setTooltipText("Share it");
 
-        Button btnMore = new Button("View");
+        Button btnMore = new Button("View Larger");
         btnMore.setIcon(VaadinIcon.ARROW_RIGHT.create());
-        btnMore.setTooltipText("Larger View");
+        if (strCity == null || strCity.equalsIgnoreCase("null") || strCity.isEmpty()) {
+            btnMore.setTooltipText("Larger Photo View");
+        } else {
+            btnMore.setTooltipText("Larger Photo View with photos from " + strCity);
+        }
 //        btnMore.addClassName("btn-more");
         btnMore.addClickListener(click -> {
-                    showDialogWithCarousel();
+                    showDialogWithCarousel(strCity);
 //            click.getSource().getParent()
 //            btnMore.getUI().ifPresent(//ui ->
 //                //    ui.navigate(LearningsView.class, new RouteParameters(routeTitle))
@@ -595,9 +626,9 @@ public class GalleryImageViewCard extends Div {
         if (isMobile) {
             layoutActions.addClassNames(
                     Overflow.HIDDEN, //Width.FULL,
-                    AlignItems.CENTER, JustifyContent.CENTER,
-                    Margin.SMALL,
-                    Padding.NONE
+                    AlignItems.CENTER, JustifyContent.EVENLY,
+                    Margin.NONE,
+                    Padding.SMALL
 //                    Gap.XSMALL,
                     //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
                     //   Background.CONTRAST_5,
@@ -608,9 +639,9 @@ public class GalleryImageViewCard extends Div {
         } else {
             layoutActions.addClassNames(
                     Overflow.HIDDEN, //Width.FULL,
-                    AlignItems.CENTER, JustifyContent.CENTER,
-                    Margin.SMALL,
-                    Padding.NONE
+                    AlignItems.CENTER, JustifyContent.BETWEEN,
+                    Margin.NONE,
+                    Padding.SMALL
 //                    Gap.LARGE,
                     //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
                     //   Background.CONTRAST_5,
@@ -628,7 +659,7 @@ public class GalleryImageViewCard extends Div {
         return layoutActions;
     }
 
-    private void showDialogWithCarousel() {
+    private void showDialogWithCarousel(String strCity) {
 
         Dialog dlgCarousel = new Dialog();
         dlgCarousel.setDraggable(true);
@@ -641,7 +672,7 @@ public class GalleryImageViewCard extends Div {
                 BorderRadius.LARGE);
         dlgCarousel.setCloseOnOutsideClick(true);
         dlgCarousel.setCloseOnEsc(true);
-        dlgCarousel.add(genericView.loadCarouselWithThumbnails(sqlCarousel, arrColumnsCarousel));
+        dlgCarousel.add(genericView.loadCarouselWithThumbnails(sqlCarousel, arrColumnsCarousel, strCity));
 
         dlgCarousel.open();
     }

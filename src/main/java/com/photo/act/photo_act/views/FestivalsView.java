@@ -24,6 +24,7 @@ import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
+import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import com.vaadin.flow.theme.lumo.LumoUtility.*;
 import org.slf4j.Logger;
@@ -43,6 +44,7 @@ import java.util.Locale;
 
 import static com.photo.act.photo_act.views.MainLayout.*;
 
+@AnonymousAllowed
 
 @Route(value = "events")
 @RouteAlias(value = "events/country/:country?", layout = MainLayout.class)

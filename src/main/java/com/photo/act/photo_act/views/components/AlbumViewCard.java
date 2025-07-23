@@ -70,7 +70,7 @@ public class AlbumViewCard extends VerticalLayout {
         String strDateAlbumCreated = record.getColumnData("datetime_album_created");
 
         String strAlbumUserName = record.getColumnData("username");
-        String strAlbumNameOfUser = record.getColumnData("nameOfUser");
+        String strAlbumNameOfUser = record.getColumnData("username");
         String strUserResident = record.getColumnData("resident");
         String strAvatarPath = record.getColumnData("avatar_path");
         String strUserJoined = record.getColumnData("date_joined");

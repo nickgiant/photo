@@ -1,37 +1,41 @@
 package com.photo.act.photo_act.views;
 
+import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
+import com.photo.act.photo_act.services.ImageService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.photo.act.photo_act.views.components.GenericView;
 import com.photo.act.photo_act.views.components.HeaderFilterTabs;
+import com.photo.act.photo_act.views.components.UploadImageCard;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.HasStyle;
-import com.vaadin.flow.component.Html;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.CheckboxGroup;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.SvgIcon;
-import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
+import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.theme.lumo.LumoUtility.*;
 import jakarta.annotation.security.PermitAll;
+import org.imgscalr.Scalr;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.vaadin.addons.taefi.component.ToggleButtonGroup;
-import org.vaadin.lineawesome.LineAwesomeIcon;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.FileSystems;
@@ -41,19 +45,58 @@ import java.util.Locale;
 
 import static com.photo.act.photo_act.views.MainLayout.*;
 
+
+//@RolesAllowed("Admin")
 @PermitAll
-//@PageTitle("Image Gallery")
-//@RouteAlias("") // empty on homepage
-@Route(value = "clubs") //":section?")
+
+@Route(value = "me") //":section?")
+//@RouteAlias(value = "members/name/:member?", layout = MainLayout.class)
 //@RouteAlias(value = ":section/:member?", layout = MainLayout.class)
 //@Menu(order = 0, icon = "line-awesome/svg/th-list-solid.svg")
-public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEnterObserver, HasComponents, HasDynamicTitle, HasStyle {
+public class MeView extends Main implements HasUrlParameter<String>, BeforeEnterObserver, HasComponents, HasDynamicTitle, HasStyle {
 
+    private static final Logger logger = LoggerFactory.getLogger(MeView.class);
+    public static String subPathThumbs = "photo-thumbs";
+    public static String subPathSmall = "photo-small";
+    public static String subPathMedium = "photo-medium";
+    public static String subPathLarge = "photo-large";
+    public static String subPathUpload = "photo-upload";
+    public static String subPathShow = "photo-show";
     public static String DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
+    String[] arrColumnsMemberExists = {"userId", "username", "username", "resident", "date_joined", "member_since", "avatar_path"};
+    String sqlDoesMemberExist = "SELECT usr.userId, usr.username, usr.username, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined " +
+            " , DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since, usr.avatar_path " +
+            " FROM dbuser usr " +
+            " WHERE 1 = 1 ";
+    String[] arrColumnsMembers = {"userId", "username", "username", "resident", "date_joined", "member_since", "member_for",
+            "avatar_path", "name", "surname", "short_bio", "url_insta", "url_fb", "url_flickr", "url_yt", "email", "resident", "resident_country",
+            "count_photos", "count_albums", "count_learnings"};
+    String sqlMembers = "SELECT " +
+            "   usr.userId, usr.username, usr.username, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined,  " +
+            " DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since , getDateDiffFromNow(usr.date_joined) AS member_for " +
+            " , usr.avatar_path, name, surname, short_bio, url_insta, url_fb, url_flickr, url_yt, email, resident, resident_country " +
+            " , count_photos, count_albums, count_learnings " +
+            //     "--  , pa.inc, pm.title, pm.id, pm.name_new, pm.title, pm.subtitle, pm.space_size, pm.location_by_user\\n\" +\n" +
+            " FROM dbuser usr " +
+            " WHERE 1 = 1  " +
+            " AND usertype <> 'Guest' " +
+            " ORDER BY username ";
+    String[] arrColumnsMemberPhotos = {"photo_count", "photo_size",
+            "userId", "username", "name", "surname", "resident", "resident_country", "date_joined", "member_since", "avatar_path",
+            "short_bio", "url_fb", "url_yt", "url_insta", "url_flickr", "url_website"
+    };
+    String sqlMemberPhotos = "SELECT count(pm.id) AS photo_count, SUM(pm.space_size) AS photo_size " +
+            " ,  usr.userId, usr.username, usr.resident, usr.resident_country, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined,  DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since " +
+            " , usr.avatar_path, usr.name, usr.surname " +
+            " , usr.short_bio, usr.url_fb, usr.url_yt, usr.url_insta, usr.url_flickr, usr.url_website " +
+            //     "--  , pa.inc, pm.title, pm.id, pm.name_new, pm.title, pm.subtitle, pm.space_size, pm.location_by_user\\n\" +\n" +
+            " FROM dbuser usr LEFT JOIN photo_meta pm ON pm.uploaderId = usr.userId " +
+            " WHERE 1 = 1  " +
+            " AND pm.visible_to  = 'ALL' ";
+    String sqlMemberPhotosGroupBy =
+            " GROUP BY usr.userid " +
+                    " ORDER BY usr.username ASC ";
     private String strColorOfIcons = "#a62f03"; //"#f9943b";//"#a62c5c";//"#7d1e32";
-
-    private static final Logger logger = LoggerFactory.getLogger(ClubsView.class);
-
     private VerticalLayout verticalLayout;
     private String sessionid;
     private long sessionCreation;
@@ -62,32 +105,19 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
     private String timeZoneId;
     private String locale;
     private String localeName;
-    private String section = SECTION_CLUBS;
+    private String section = SECTION_MEMBERS;
     private String forMemberName;
     private RecordService recordService;
     private String strHeader;
-
     private String dirChar = FileSystems.getDefault().getSeparator();
-    public static String subPathThumbs = "photo-thumbs";
-    public static String subPathMedium = "photo-medium";
-    public static String subPathUpload = "photo-upload";
-    public static String subPathShow = "photo-show";
-    private GenericView genericView;
-
+    private String strMember;
     private String publicIp;
     private String strPath;
     private String hostname;
     private String hostAddress;
     private String canonicalHostname;
-
-    private String strOS;
-    private String strBrowser;
-
     private int userId;
-    private String strUsername;
-
-    private String strColorExternalweb = "#9fafd5";
-
+    private String strUrlRequestToBeLogged;
     private String[] arrClubsColumnNames = {"org_name", "org_type", "org_type_parent", "city", "used_for", "country", "url", "url_local_events", "url_fb", "url_yt", "url_insta",
             "url_flickr", "url_wikipedia"};
     private String sqlShowClubsSelect = "SELECT id, org_name, org_type, org_type_parent , city , used_for , country , url , city, address, pc, country, map_x, map_y, url, " +
@@ -112,16 +142,20 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
             " FROM  photo_meta pm LEFT JOIN destination d ON pm.destination_Id = d.id ";
 
 
-    UtilsDate utilsDate;
-    String sessionDateTime;
-    private String strUrlRequestToBeLogged;
+    private UtilsDate utilsDate;
+    private String sessionDateTime;
 
+    private int intUserId;
 
-    public ClubsView(RecordService recordService) {
+    private String strOS;
+    private String strBrowser;
+    private GenericView genericView;
+
+    public MeView(RecordService recordService) {
         this.recordService = recordService;
-        genericView = new GenericView(recordService, 1);
-        utilsDate = new UtilsDate();
 
+        utilsDate = new UtilsDate();
+        genericView = new GenericView(recordService, 1);
 
         constructUI();
 
@@ -135,32 +169,44 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
 
     @Override
     public void beforeEnter(@OptionalParameter BeforeEnterEvent event) {
-//        section = event.getRouteParameters().get("section").orElse(SECTION_HOME);
-        forMemberName = event.getRouteParameters().get("forMemberName").orElse("all-members");
 
         getUserClientInfo();
 
         UI.getCurrent().getPage().fetchCurrentURL(currentUrl -> {
             // This is your own method that you may do something with the url.
             // Note that this method runs asynchronously
-
             strUrlRequestToBeLogged = currentUrl.toExternalForm();
-
         });
-
-        userId = 1;
-        strUsername = "visitor-user";
 
         verticalLayout.removeAll();
 
-        verticalLayout.add(loadHeader("Photography Clubs", "and their events around earth.", ""));
+        verticalLayout.add(loadHeader("", "", ""));
 
-        loadClubs(sqlShowClubsSelect + sqlShowClubsWhere + sqlShowClubsOrder, arrClubsColumnNames);
+        StreamResource imageResourceMember = new StreamResource("user-profile-icon.svg",
+                () -> getClass()
+                        .getResourceAsStream("/icons/user-profile-icon.svg"));
+        SvgIcon svgMember = new SvgIcon(imageResourceMember);
+
+//            Div divHaveToBeAMember = new Div("You have to be a member in order to upload photos!");
+
+        HorizontalLayout layoutUser = new HorizontalLayout();
+        String usrName = genericView.checkIfAuthUserName();
+
+        strMember = usrName;
+
+        String sqlMember = sqlMemberPhotos + " AND usr.username = '" + strMember + "' " + sqlMemberPhotosGroupBy;
+        layoutUser.add(loadMemberInfo(sqlMember, arrColumnsMemberPhotos, false));
+
+        verticalLayout.add(layoutUser);
+        loadUploadView(intUserId, strMember);
 
 
-//            verticalLayout.add(loadFooter());
+        this.removeAll();
+        this.add(verticalLayout);
+        this.add(genericView.loadFooter(isMobile));
 
-        logVisitorToDb();
+        logVisitorToDb("");
+
     }
 
     @Override
@@ -169,6 +215,7 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
     }
 
     private void constructUI() {
+        addClassNames("upload-view");
         addClassNames(Overflow.HIDDEN, Width.FULL,
                 // Margin.LARGE, //.Left.MEDIUM, Margin.Right.MEDIUM,
                 //  Padding.Left.MEDIUM, Padding.Left.MEDIUM,
@@ -179,20 +226,6 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
                 //Margin.Vertical.MEDIUM, Padding.Vertical.NONE,
                 AlignItems.CENTER, JustifyContent.CENTER
         );
-
-        addClassName("clubs-view");
-
-        InetAddress inetAddress = null;
-        try {
-            inetAddress = InetAddress.getLocalHost();
-        } catch (UnknownHostException e) {
-            throw new RuntimeException(e);
-        }
-        hostname = inetAddress.getHostName();
-        hostAddress = inetAddress.getHostAddress();
-        canonicalHostname = inetAddress.getCanonicalHostName();
-
-        DIR_PHOTOS_SERVER = genericView.getAppProps(PROP_PHOTOS);
 
 
         verticalLayout = new VerticalLayout();
@@ -222,12 +255,8 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
             );
             verticalLayout.getStyle().set("gap", "3rem");
         }
+        this.setWidthFull();
 
-        Html htmlTitle = new Html("<title>'photoact.net Network and Act around Photography'</title>");
-        Html htmlMeta = new Html("<meta name='description' content='Get the latest uploaded photos from our community of photographers.'>");
-        verticalLayout.add(htmlTitle, htmlMeta);
-
-        this.add(verticalLayout);
     }
 
     private VerticalLayout loadHeader(String strHeader, String strSubHeader, String strSection) {
@@ -237,7 +266,7 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
         HorizontalLayout headerContainerMaster = new HorizontalLayout();
         if (isMobile) {
             headerContainerMaster.addClassNames(
-                    AlignItems.CENTER, JustifyContent.EVENLY,
+                    AlignItems.CENTER, JustifyContent.CENTER,
                     Overflow.HIDDEN, Width.FULL,
                     Margin.NONE,
                     Padding.NONE,
@@ -248,7 +277,7 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
             );
         } else {
             headerContainerMaster.addClassNames(
-                    AlignItems.CENTER, JustifyContent.EVENLY,
+                    AlignItems.CENTER, JustifyContent.CENTER,
                     Overflow.HIDDEN, Width.FULL,
                     Margin.NONE,
                     Padding.NONE,
@@ -266,13 +295,13 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
 
         H2 header = new H2(strHeader);
         header.addClassNames(
-                AlignItems.CENTER, JustifyContent.START,
+                AlignItems.CENTER, JustifyContent.CENTER,
                 Margin.Bottom.NONE, Margin.Top.NONE, FontSize.LARGE, FontWeight.BOLD, TextColor.SECONDARY);
 //        header.getStyle().set("font-family", "Times-New-Roman, serif");
 
         Div subheader = new Div(strSubHeader);
         subheader.addClassNames(
-                AlignItems.CENTER, JustifyContent.START,
+                AlignItems.CENTER, JustifyContent.CENTER,
                 Margin.Bottom.NONE, Margin.Top.NONE, FontSize.SMALL, TextColor.SECONDARY);
 
         H3 divSection = new H3(strSection);
@@ -290,7 +319,7 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
         Div headerContainerSecondary = new Div();
         if (isMobile) {
             headerContainerSecondary.addClassNames(
-                    AlignItems.CENTER, JustifyContent.EVENLY,
+                    AlignItems.CENTER, JustifyContent.CENTER,
                     Overflow.HIDDEN, Width.FULL,
                     Margin.NONE,
                     Padding.NONE,
@@ -301,7 +330,7 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
             );
         } else {
             headerContainerSecondary.addClassNames(
-                    AlignItems.CENTER, JustifyContent.EVENLY,
+                    AlignItems.CENTER, JustifyContent.CENTER,
                     Overflow.HIDDEN, Width.FULL,
                     Margin.NONE,
                     Padding.NONE,
@@ -312,12 +341,11 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
             );
         }
 
-
         VerticalLayout layoutFilters = new VerticalLayout();
         if (isMobile) {
             layoutFilters.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
-                    AlignItems.CENTER, JustifyContent.EVENLY,
+                    AlignItems.CENTER, JustifyContent.CENTER,
                     Margin.NONE,
                     Padding.NONE,
                     Gap.SMALL,
@@ -328,7 +356,7 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
         } else {
             layoutFilters.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
-                    AlignItems.CENTER, JustifyContent.EVENLY,
+                    AlignItems.CENTER, JustifyContent.CENTER,
                     Margin.NONE,
                     Padding.NONE,
                     Gap.SMALL,
@@ -348,7 +376,6 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
 
         layoutFilters.add(checkboxGroupSubject);
 
-
 //        CheckboxGroup<String> checkboxGroupFormat = new CheckboxGroup<>();
 //        checkboxGroupFormat.setTooltipText("Format");
 ////        checkboxGroupFormat.setLabel("Format");
@@ -356,14 +383,12 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
 ////        Div lblFilterFormat = new Div("Format");
 //        layoutFilters.add(checkboxGroupFormat);
 
-
         CheckboxGroup<String> checkboxGroupLocation = new CheckboxGroup<>();
         checkboxGroupLocation.setTooltipText("Location");
 //         checkboxGroupLocation.setLabel("Location");
         checkboxGroupLocation.setItems("Hungary", "UK", "Greece");//, "Thursday",
 
         layoutFilters.add(checkboxGroupLocation);
-
 
 //        VerticalLayout layoutHeaderParameters = new VerticalLayout();
 //        if (isMobile) {
@@ -390,7 +415,6 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
 //            );
 //        }
 
-
         Select<String> cmbView = new Select<>();
         cmbView.setLabel("View");
 
@@ -398,8 +422,12 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
                 "Wide - No MetaData", "Wide - MetaData Bottom", "Wide - MetaData Right");
         cmbView.setValue("Ordinary - No MetaData");
 
+        //        headerContainerMaster.add(headerTextContainer);
+//        layoutHeaderParameters.add(headerContainerMaster);
+
+
 //        headerContainerMaster.add(headerTextContainer);
-        headerContainerSecondary.add(layoutFilters);
+//        headerContainerSecondary.add(layoutFilters);
 //        layoutHeaderParameters.add( headerContainerSecondary, divSection);
 
         HeaderFilterTabs headerFilterTabs = new HeaderFilterTabs(recordService, isMobile);
@@ -412,397 +440,170 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
         return layoutHeaderParameters;
     }
 
-    private void loadClubs(String sqlRead, String[] arrColumnNames) {
-
-
-        List<Record> lstRecords = getRecordsFromDb(sqlRead, arrColumnNames);
-        for (int r = 0; r < lstRecords.size(); r++) {
-
-            Record rec = lstRecords.get(r);
-            verticalLayout.add(getClubItem(rec));
-        }
-
-    }
-
-    public VerticalLayout getClubItem(Record record) {
-
-        // String[] arrColumnsLearning = {"org_name","org_type","city", "country"};
-
-        String strName = record.getColumnData("org_name");
-        String strType = record.getColumnData("org_type");
-
-        String strTypeParent = record.getColumnData("org_type_parent");
-        String strCanBeUsedFor = record.getColumnData("used_for");
-
-
-        String strCountry = record.getColumnData("country");
-        String strCity = record.getColumnData("city");
-
-        String strUrl = record.getColumnData("url");
-
-        String strImage = record.getColumnData("picture");
-
-//        "url_local_events", "url_fb", "url_yt", "url_insta",
-//                "url_flickr", "url_wikipedia"
-
-        if (!strImage.equalsIgnoreCase("null") && !strImage.equalsIgnoreCase("")) {
-            strImage = strPath + "/" + strImage;
-        } else {
-            strImage = "";
-        }
-
-
-        HorizontalLayout layoutSection = new HorizontalLayout();
-        layoutSection.addClassName("category");//addClassNames(AlignItems.CENTER, JustifyContent.CENTER);
-
-
-        Div divImage = new Div();
-//        divImage.addClassName("category"); //.getStyle().setColor(strColorOfIcons);
-        Div linkCategoryRelated = new Div("Photo Clubs");//,"",);
-//        linkCategoryRelated.addClassName("category"); //.getStyle().setColor(strColorOfIcons);
-        divImage.add(LineAwesomeIcon.IMAGE.create());
-        layoutSection.add(divImage, linkCategoryRelated);
-
-
-//        RouteParam routeSection = new RouteParam("section", section);
-//        RouteParam routeItem = new RouteParam("subsection", strSubject);
-//
-//        RouterLink linkPhotoSubSection = new RouterLink(strSubject, PhotoView.class,new RouteParameters(routeSection,routeItem));
-//        linkPhotoSubSection.setClassName("lazy-result-line-button");
-
-
-//        String strDate = "";
-//        String dt = record.getColumnData("dateInsert");
-//        SimpleDateFormat toui = new SimpleDateFormat("dd/MM/yyyy");
-//        SimpleDateFormat fromdb = new SimpleDateFormat("yyyy-MM-dd");
-//
-//        try {
-//
-//            strDate = toui.format(fromdb.parse(dt));
-//        } catch (ParseException e) {
-//            logger.error(e.getMessage());
-//        }
-
-        H5 titleName = new H5(strName);
-        titleName.addClassName(TextColor.SECONDARY);
-        titleName.addClassName("lazy-result-line-title");
-
-        Div divLocation = new Div(strCity + " / " + strCountry);
-        divLocation.addClassNames(TextColor.SECONDARY);
-//        H6 dayUpdated = new H6("updated: "+strDate);
-//        dayUpdated.getStyle().setColor("#8b94a0");
-
-        HorizontalLayout layoutPostTitle = new HorizontalLayout();
-        if (isMobile) {
-            layoutPostTitle.addClassNames(
-                    Overflow.HIDDEN, Width.FULL,
-                    AlignItems.CENTER, JustifyContent.AROUND,
-                    Margin.XSMALL,
-                    Padding.XSMALL,
-                    Gap.XSMALL,
-                    //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                    Background.CONTRAST_10,
-                    Border.BOTTOM, Border.RIGHT, BorderColor.CONTRAST_20, BorderRadius.FULL);
-        } else {
-            layoutPostTitle.addClassNames(
-                    Overflow.HIDDEN, Width.FULL,
-                    AlignItems.CENTER, JustifyContent.AROUND,
-                    Margin.SMALL,
-                    Padding.SMALL,
-                    Gap.MEDIUM,
-                    //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                    Background.CONTRAST_10,
-                    Border.BOTTOM, Border.RIGHT, BorderColor.CONTRAST_20, BorderRadius.FULL);
-        }
-
-//        layoutPostTitle.setWidthFull();
-//        layoutPostTitle.setClassName("lazy-result-line-title-align");
-//        //layoutPostTitle.getStyle().setAlignItems(Style.AlignItems.CENTER);
-//        //layoutPostTitle.getStyle().setJustifyContent(Style.JustifyContent.SPACE_BETWEEN);
-//        layoutPostTitle.setPadding(true);
-//        layoutPostTitle.setSpacing(true);
-//        layoutPostTitle.setMargin(true);
-        //layoutPostTitle.addClassName("lazy-result-line-title-align");
-        layoutPostTitle.add(layoutSection, titleName, divLocation);
-
-        VerticalLayout layoutClubInfo = new VerticalLayout();
-        if (isMobile) {
-            layoutClubInfo.addClassNames(
-                    Overflow.HIDDEN, Width.FULL,
-                    AlignItems.CENTER, JustifyContent.CENTER,
-                    Margin.NONE,
-                    Padding.NONE,
-                    Gap.MEDIUM,
-                    Width.FULL,
-                    //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                    Background.CONTRAST_5, BorderRadius.NONE);
-        } else {
-            layoutClubInfo.addClassName("bottom-radius-shadow");
-            layoutClubInfo.addClassNames(
-                    Overflow.HIDDEN, Width.FULL,
-                    AlignItems.CENTER, JustifyContent.CENTER,
-                    Margin.NONE,
-                    Padding.MEDIUM,
-                    Gap.MEDIUM,
-                    Width.FULL,
-                    //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                    Background.CONTRAST_5, BorderRadius.LARGE);
-        }
-
-        HorizontalLayout layoutImage = new HorizontalLayout();
-        layoutImage.addClassNames(Border.ALL, BorderColor.CONTRAST_10, BorderRadius.LARGE);
-
-        if (!strImage.equalsIgnoreCase("null") && !strImage.equalsIgnoreCase("")) {
-            String finalStrImage = strImage;
-            final StreamResource imageResource = new StreamResource("image", () -> {
-                try {
-                    return new FileInputStream(new File(finalStrImage));
-                } catch (final FileNotFoundException e) {
-                    logger.error("FileNotFoundException learning " + e.getMessage());
-                    return null;
-                }
-            });
-
-            Image img = new Image(imageResource, "image");
-            img.setMaxHeight("240px");
-            img.getStyle().set("border-radius", "9px");
-
-            layoutImage.add(img);
-        }
-
-//        Anchor linkTutor = new Anchor();
-//        linkTutor.add(FontAwesome.Solid.LINK.create());
-//        linkTutor.setClassName("lazy-result-line-button");
-//
-//        String strUrlTutorExt = record.getColumnData("website");
-//        if(!strUrlTutorExt.equalsIgnoreCase("null") && !strUrlTutorExt.equalsIgnoreCase("")) {
-//
-//            // linkTutor.setText("Website");
-//            linkTutor.setHref(strUrlTutorExt);
-//            linkTutor.setTarget("_blank");
-//        }
-
-//        Anchor linkTutorYt = new Anchor();
-//        linkTutorYt.add(FontAwesome.Brands.YOUTUBE.create());
-//        linkTutorYt.setClassName("lazy-result-line-button");
-//        linkTutorYt.setVisible(false);
-//        String strUrlTutorYt = record.getColumnData("url_yt");
-//        if(!strUrlTutorYt.equalsIgnoreCase("null") && !strUrlTutorYt.equalsIgnoreCase("")) {
-//
-//            //linkTutorYt.setText("YouTube");
-//            strUrlTutorYt = "https://www.youtube.com/"+strUrlTutorYt;
-//            linkTutorYt.setHref(strUrlTutorYt);
-//            linkTutorYt.setTarget("_blank");
-//            linkTutorYt.setVisible(true);
-//        }
-//
-//        Anchor linkTutorWikipedia = new Anchor();
-//        linkTutorWikipedia.add(FontAwesome.Brands.WIKIPEDIA_W.create());
-//        linkTutorWikipedia.setClassName("lazy-result-line-button");
-//        linkTutorWikipedia.setVisible(false);
-//        String strUrlTutorWikipedia = record.getColumnData("url_wikipedia");
-//        if(!strUrlTutorWikipedia.equalsIgnoreCase("null") && !strUrlTutorWikipedia.equalsIgnoreCase("")) {
-//
-//            //linkTutorYt.setText("YouTube");
-//            //strUrlTutorWikipedia = "https://www.youtube.com/"+strUrlTutorYt;
-//            linkTutorWikipedia.setHref(strUrlTutorWikipedia);
-//            linkTutorWikipedia.setTarget("_blank");
-//            linkTutorWikipedia.setVisible(true);
-//        }
-//
-//        Anchor linkTutorInsta = new Anchor();
-//        linkTutorInsta.setClassName("lazy-result-line-button");
-//        linkTutorInsta.add(FontAwesome.Brands.INSTAGRAM.create());
-//        linkTutorInsta.setVisible(false);
-//        String strUrlTutorInsta = record.getColumnData("url_insta");
-//        if(!strUrlTutorInsta.equalsIgnoreCase("null") && !strUrlTutorInsta.equalsIgnoreCase("")) {
-//
-//            // linkTutorInsta.setText("Instagram");
-////            strUrlTutorInsta = "https://www.instagram.com/"+ strUrlTutorInsta;
-//            linkTutorInsta.setHref(strUrlTutorInsta);
-//            linkTutorInsta.setTarget("_blank");
-//            linkTutorInsta.setVisible(true);
-//        }
-
-        String strDescription = record.getColumnData("description");
-
-        Paragraph parDescription = new Paragraph(strDescription);
-        if (!strDescription.equalsIgnoreCase("null") && !strDescription.equalsIgnoreCase("")) {
-            parDescription.setVisible(true);
-        } else {
-            parDescription.setVisible(false);
-        }
-
-        Anchor urlLink = new Anchor();
-        urlLink.getStyle().setColor("#8b94a0");
-        urlLink.setClassName("lazy-api-link");
-        urlLink.setHref(strUrl);
-        urlLink.setTarget("_blank");
-        urlLink.setText(strUrl.toLowerCase().replace("https://", "").replace("http://", ""));
-
-
-//        HorizontalLayout layoutExtLinks = new HorizontalLayout();
-//        layoutExtLinks.addClassNames(
-//                Overflow.HIDDEN, Width.FULL,
-//                Margin.SMALL,
-//                Padding.NONE,
-//                Gap.MEDIUM,
-//                AlignItems.CENTER, JustifyContent.CENTER
-//
-//        );
-
-
-//        HorizontalLayout layoutPostRelated = new HorizontalLayout();
-//        layoutPostRelated.setWidthFull();
-//        layoutPostRelated.setPadding(false);
-//        layoutPostRelated.setSpacing(false);
-
-        layoutClubInfo.add(layoutPostTitle, parDescription, urlLink, getSubTabs("Photoclub", strName, record), getActions());
-
-        return layoutClubInfo;
-    }
-
-    private HorizontalLayout getActions() {
-
-        StreamResource iconLike = new StreamResource("star-empty-icon.svg",
-                () -> getClass().getResourceAsStream("/icons/star-empty-icon.svg"));
-        SvgIcon svgLike = new SvgIcon(iconLike);
-        Button btnLike = new Button(svgLike);
-
-        Div divInfo = new Div("1");
-        divInfo.addClassName(TextColor.DISABLED);
-
-        btnLike.setSuffixComponent(divInfo);
-        btnLike.setTooltipText("Like It");
-
-
-//        StreamResource iconAction = new StreamResource("stories.svg",
-//                () -> getClass().getResourceAsStream("/icons/stories.svg"));
-//        SvgIcon svgAction = new SvgIcon(iconAction);
-        Button btnMoreAction = new Button(VaadinIcon.BOOKMARK.create());//svgAction);
-        btnMoreAction.setTooltipText("Save to list");
-
-
-        Button btnComment = new Button(VaadinIcon.COMMENT.create());
-        btnComment.setTooltipText("Comment on it");
-
-        Button btnMoreInfo = new Button(VaadinIcon.INFO_CIRCLE_O.create());
-        btnMoreInfo.setTooltipText("More info");
-
-        StreamResource iconShare = new StreamResource("share-line-icon.svg",
-                () -> getClass().getResourceAsStream("/icons/share-line-icon.svg"));
-        SvgIcon svgShare = new SvgIcon(iconShare);
-        Button btnShare = new Button(svgShare);
-        btnShare.setTooltipText("Share it");
-
-        HorizontalLayout layoutActions = new HorizontalLayout();
-        if (isMobile) {
-            layoutActions.addClassNames(
-                    Overflow.HIDDEN, //Width.FULL,
-                    AlignItems.CENTER, JustifyContent.CENTER,
-                    Margin.SMALL,
-                    Padding.NONE
-//                    Gap.XSMALL,
-                    //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                    //   Background.CONTRAST_5,
-//                    BorderRadius.LARGE
-            );
-            layoutActions.addClassName("actions");// AlignItems.STRETCH, JustifyContent.EVENLY ,LumoUtility.Gap.Column.XSMALL);
-            layoutActions.addClassName("actions-mobile");// AlignItems.STRETCH, JustifyContent.EVENLY ,LumoUtility.Gap.Column.XSMALL);
-        } else {
-            layoutActions.addClassNames(
-                    Overflow.HIDDEN, //Width.FULL,
-                    AlignItems.CENTER, JustifyContent.CENTER,
-                    Margin.SMALL,
-                    Padding.NONE
-//                    Gap.LARGE,
-                    //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                    //   Background.CONTRAST_5,
-//                    BorderRadius.LARGE
-            );
-            layoutActions.addClassName("actions");// AlignItems.STRETCH, JustifyContent.EVENLY ,LumoUtility.Gap.Column.XSMALL);
-        }
-        //layoutActions.setWidthFull();
-
-
-        layoutActions.add(btnLike, btnMoreAction, btnComment, btnMoreInfo, btnShare);
-
-        return layoutActions;
-    }
-
-
-    private VerticalLayout getSubTabs(String strContentType, String strContentTitle, Record record) {
-
-        VerticalLayout layoutTabsInfo = new VerticalLayout();
-        if (isMobile) {
-            layoutTabsInfo.addClassNames(
-                    Overflow.HIDDEN, Width.FULL,
-                    AlignItems.CENTER, JustifyContent.CENTER,
-                    Margin.NONE,
-                    Padding.NONE,
-                    Gap.MEDIUM
-            );
-        } else {
-            layoutTabsInfo.addClassNames(
-                    Overflow.HIDDEN, Width.FULL,
-                    AlignItems.CENTER, JustifyContent.CENTER,
-                    Margin.NONE,
-                    Padding.MEDIUM,
-                    Gap.MEDIUM
-            );
-        }
-
-        HorizontalLayout layoutExtLinks = new HorizontalLayout();
-        layoutExtLinks.addClassNames(
-                Overflow.HIDDEN, Width.AUTO,
+    private void loadUploadView(int intUserId, String strMember) {
+        UploadImageCard uploadImageCard = new UploadImageCard(recordService, intUserId, strMember, sessionCreation, publicIp, hostname);
+        uploadImageCard.addClassNames(
+                Overflow.HIDDEN, Width.FULL,
                 Margin.SMALL,
                 Padding.NONE,
                 Gap.MEDIUM,
-                AlignItems.CENTER, JustifyContent.CENTER
+                Background.CONTRAST_5, BorderRadius.LARGE,
+                AlignItems.STRETCH, //JustifyContent.BETWEEN,
+                JustifyContent.EVENLY
         );
+        uploadImageCard.setMinHeight("280px");
 
-        ArrayList<String> lstLocationTabs = new ArrayList<String>();
-        lstLocationTabs.add("Reviews");
-        lstLocationTabs.add("Notes");
-        lstLocationTabs.add("Additional Sources");
-
-
-        ToggleButtonGroup btnGroup = new ToggleButtonGroup();
-        btnGroup.addClassNames(Width.SMALL,
-                Overflow.HIDDEN, Width.AUTO,
-                Margin.SMALL,
-                Padding.NONE,
-                Gap.MEDIUM,
-                AlignItems.CENTER, JustifyContent.CENTER
-        );
-        btnGroup.setItems(lstLocationTabs);
-        btnGroup.setToggleable(true);
-
-
-        Div divTabContent = new Div();
-        divTabContent.addClassNames(Width.FULL,
-                AlignItems.CENTER, JustifyContent.CENTER,
-                TextAlignment.CENTER,
-                Height.LARGE
-        );
-
-        btnGroup.addValueChangeListener(event -> {
-            if (event.getValue().toString().equalsIgnoreCase("My Notes")) {
-                divTabContent.setText(" my notes ... of " + strContentTitle + " in " + strContentType);
-            } else if (event.getValue().toString().equalsIgnoreCase("Reviews")) {
-                divTabContent.setText(strUsername + " users review 1 ...");
-            } else {
-                divTabContent.setText(strContentTitle + " ....... in " + strContentType);
-            }
+//            verticalLayout.add(uploadImageCard.getLocationSelectionLayout());
+        Button btnRefreshPhotoMeta = new Button("Refresh Photo Meta");
+        btnRefreshPhotoMeta.addClickListener(e -> {
+            reUpdateMyPhotoMetadata(intUserId);
         });
 
-        layoutTabsInfo.add(btnGroup, divTabContent);
+        HorizontalLayout layoutTextFilters = new HorizontalLayout();
+        TextField txtFrom = new TextField();
+        TextField txtTo = new TextField();
+        layoutTextFilters.add(txtFrom, txtTo);
 
 
-        return layoutTabsInfo;
+        Button btnRecompressPhotos = new Button("Recompress Thumbs");
+        btnRecompressPhotos.addClickListener(e -> {
+            reCompressPhotos(4, txtFrom.getValue(), txtTo.getValue());
+        });
+
+//        Button btnRecompressSmallPhotos = new Button("Recompress Small");
+//        btnRecompressSmallPhotos.addClickListener(e -> {
+//            reCompressPhotos(2, txtFrom.getValue(), txtTo.getValue());
+//        });
+//
+//        Button btnRecompressMediumPhotos = new Button("Recompress Medium");
+//        btnRecompressMediumPhotos.addClickListener(e -> {
+//            reCompressPhotos(3, txtFrom.getValue(), txtTo.getValue());
+//        });
+
+        // layoutTextFilters, btnRecompressPhotos, btnRecompressSmallPhotos, btnRecompressMediumPhotos,
+
+        verticalLayout.add(uploadImageCard.getUploadImageCard());
+    }
+
+
+    private void reCompressPhotos(int sizeType, String intStart, String intFinish) {
+
+        String sqlReadPhotos = "SELECT name_new FROM photo_meta WHERE id >= " + intStart + " AND id <= " + intFinish + " ORDER BY id ASC ";
+        String[] arrColumns = {"name_new"};
+        List<Record> lstPhotoFilenames = recordService.findAll(sqlReadPhotos, arrColumns);
+
+        Notification notificationStart = Notification.show(
+                lstPhotoFilenames.size() + " Photos:",
+                5000,
+                Notification.Position.MIDDLE
+        );
+        notificationStart.addThemeVariants(NotificationVariant.LUMO_CONTRAST);
+
+        for (int r = 0; r < lstPhotoFilenames.size(); r++) {
+
+            String strNewFileName = lstPhotoFilenames.get(r).getColumnData("name_new");
+
+            String strPathUpload = DIR_PHOTOS_SERVER + dirChar + subPathUpload;
+            String outputUploadFileName = strPathUpload + dirChar + strNewFileName;
+            File fileUploaded = new File(outputUploadFileName);
+
+            String strPathShow = DIR_PHOTOS_SERVER + dirChar + subPathShow;
+            String outputShowFileName = strPathShow + dirChar + strNewFileName;
+            File directoryShow = new File(strPathShow);
+            File fileShow = new File(outputShowFileName);
+
+
+//            String strPathMedium = DIR_PHOTOS_SERVER + dirChar + subPathMedium;
+//            String outputMediumFileName = strPathMedium + dirChar + strNewFileName;
+//            File fileMedium = new File(outputMediumFileName);
+//
+//            String strPathSmall = DIR_PHOTOS_SERVER + dirChar + subPathSmall;
+//            String outputSmallFileName = strPathSmall + dirChar + strNewFileName;
+//            File fileSmall = new File(outputSmallFileName);
+
+
+            try {
+                //    FileUtils.copyFileToDirectory(fileUploaded, directoryShow);
+
+
+                int intSize = 140;
+                String strSubPath = subPathThumbs;
+                if (sizeType == 1) {
+                    intSize = 140;
+                    strSubPath = subPathThumbs;
+                } else if (sizeType == 2) {
+                    intSize = 660;
+                    strSubPath = subPathSmall;
+                } else if (sizeType == 3) {
+                    intSize = 1040;
+                    strSubPath = subPathMedium;
+                } else if (sizeType == 4) {
+                    intSize = 1990;
+                    strSubPath = subPathLarge;
+                }
+
+                String strPathThumbs = DIR_PHOTOS_SERVER + dirChar + strSubPath;
+                logger.info(r + "   path to compress from: " + fileShow.getAbsolutePath());
+                logger.info("path to compress   to:   " + strPathThumbs);
+                String outputThumbsFileName = strPathThumbs + dirChar + strNewFileName;
+                File fileThumbs = new File(outputThumbsFileName);
+
+                BufferedImage bImageT = ImageIO.read(fileShow);
+                BufferedImage bufferedThumb = Scalr.resize(bImageT, Scalr.Method.QUALITY, Scalr.Mode.AUTOMATIC, intSize, Scalr.OP_ANTIALIAS);   //  Imgscalr    https://www.baeldung.com/java-resize-image
+                ImageIO.write(bufferedThumb, "jpg", fileThumbs);
+
+                logger.info("photo copy size: " + fileShow.length() + "  - > " + fileThumbs.length()); // + "  - >  " + fileMedium.length());
+                logger.info("photo copy size MB: " + getFileSizeAsString(fileShow) + "  - >   " + getFileSizeAsString(fileThumbs));
+
+            } catch (IOException e) {
+
+                String errorMessage = "reCompress failed: " + e.getMessage();
+
+                Notification notification = Notification.show(
+                        errorMessage,
+                        5000,
+                        Notification.Position.MIDDLE
+                );
+                notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+            }
+        }
+
+    }
+
+    private void reUpdateMyPhotoMetadata(int intUserId) {
+
+        ImageService imageService = new ImageService();
+        if (imageService.updatePhotoMeta(recordService, intUserId)) {
+            Notification notification = Notification.show(
+                    "Updated !",
+                    5000,
+                    Notification.Position.MIDDLE
+            );
+            notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+        } else {
+            Notification notification = Notification.show(
+                    "Error !",
+                    5000,
+                    Notification.Position.MIDDLE
+            );
+            notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+
+        }
     }
 
     private void getUserClientInfo() {
+
+        InetAddress inetAddress = null;
+        try {
+            inetAddress = InetAddress.getLocalHost();
+        } catch (UnknownHostException e) {
+            throw new RuntimeException(e);
+        }
+        hostname = inetAddress.getHostName();
+        hostAddress = inetAddress.getHostAddress();
+        canonicalHostname = inetAddress.getCanonicalHostName();
+
+        DIR_PHOTOS_SERVER = genericView.getAppProps(PROP_PHOTOS);
 
         sessionid = VaadinSession.getCurrent().getSession().getId();
         sessionCreation = VaadinSession.getCurrent().getSession().getCreationTime();
@@ -878,6 +679,19 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
     }
 
 
+    private String getFileSizeAsString(File file) {
+
+        return String.format("%.4f", getFileSizeAsDouble(file));
+
+    }
+
+    private double getFileSizeAsDouble(File file) {
+
+        double filesizeMB = (double) file.length() / (1024 * 1024);// + " mb";
+        return filesizeMB;
+    }
+
+
     private List<Record> getRecordsFromDb(String sql, String[] arrColumnNames) {
 
         logger.info(" photo  getRecordsFromDb:   " + sql);
@@ -889,7 +703,150 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
         return recordService.findAll(sql, arrColumnNames, sqlParValue, sqlParType);
     }
 
-    private void logVisitorToDb() {
+    private VerticalLayout loadMemberInfo(String sqlRead, String[] arrColumnNames, boolean isEditable) {
+
+        VerticalLayout layoutMember = new VerticalLayout();
+        layoutMember.addClassNames(Width.FULL,
+                AlignItems.CENTER, JustifyContent.CENTER,
+                TextColor.TERTIARY,
+                Padding.NONE,
+                Gap.SMALL
+//                BorderRadius.LARGE, Background.CONTRAST_5
+        );
+        layoutMember.setMaxWidth("640px");
+
+        List<Record> lstRecords = getRecordsFromDb(sqlRead, arrColumnNames);
+
+        if (lstRecords == null) {
+            logger.warn(" lstRecords is null");
+        } else if (lstRecords.isEmpty()) {
+            logger.warn(" lstRecords is empty");
+        } else if (lstRecords.size() == 1) {
+
+            Record rec = lstRecords.get(0);
+            String strUserId = rec.getColumnData("userId");
+            intUserId = Integer.parseInt(strUserId);
+
+            String strName = rec.getColumnData("name");
+            String strSurname = rec.getColumnData("surname");
+
+            String strUsername = rec.getColumnData("username");
+            String strCountOfPhotosOfAlbums = rec.getColumnData("photo_count");
+            String strMemberSince = rec.getColumnData("member_since");
+            String strAvatarPath = rec.getColumnData("avatar_path");
+
+            String strResident = rec.getColumnData("resident");
+            String strResidentCountry = rec.getColumnData("resident_country");
+
+            String strShortBio = rec.getColumnData("short_bio");
+            String strFb = rec.getColumnData("url_fb");
+            String strYt = rec.getColumnData("url_yt");
+            String strInsta = rec.getColumnData("url_insta");
+            String strFlickr = rec.getColumnData("url_flickr");
+            String strWebsite = rec.getColumnData("url_website");
+
+            Anchor linkWebsite = new Anchor();
+            linkWebsite.add(FontAwesome.Solid.LINK.create());
+            linkWebsite.setVisible(false);
+            if (strWebsite != null && !strWebsite.equalsIgnoreCase("null") && !strWebsite.isEmpty()) {
+                linkWebsite.setVisible(true);
+                linkWebsite.setHref(strWebsite);
+                linkWebsite.setTarget("_blank");
+            }
+
+            Anchor linkTutorYt = new Anchor();
+            linkTutorYt.add(FontAwesome.Brands.YOUTUBE.create());
+            // linkTutorYt.getStyle().setColor(strColorExternalweb);
+            // linkTutorYt.setClassName("lazy-result-line-button");
+            linkTutorYt.setVisible(false);
+            if (strYt != null && !strYt.equalsIgnoreCase("null") && !strYt.isEmpty()) {
+
+                linkTutorYt.setHref(strYt);
+                linkTutorYt.setTarget("_blank");
+                linkTutorYt.setVisible(true);
+            }
+
+            Anchor linkTutorFacebook = new Anchor();
+            linkTutorFacebook.add(FontAwesome.Brands.FACEBOOK_F.create());
+            // linkTutorWikipedia.getStyle().setColor(strColorExternalweb);
+            //   linkTutorWikipedia.setClassName("lazy-result-line-button");
+//            linkTutorFacebook.setVisible(false);
+
+            if (strFb != null && !strFb.equalsIgnoreCase("null") && !strFb.isEmpty()) {
+                //linkTutorYt.setText("YouTube");
+                //strUrlTutorWikipedia = "https://www.youtube.com/"+strUrlTutorYt;
+                linkTutorFacebook.setHref(strFb);
+                linkTutorFacebook.setTarget("_blank");
+                linkTutorFacebook.setVisible(true);
+            }
+
+            Anchor linkTutorInsta = new Anchor();
+            //  linkTutorInsta.setClassName("lazy-result-line-button");
+            linkTutorInsta.add(FontAwesome.Brands.INSTAGRAM.create());
+            // linkTutorInsta.getStyle().setColor(strColorExternalweb);
+//            linkTutorInsta.setVisible(false);
+            if (strInsta != null && !strInsta.equalsIgnoreCase("null") && !strInsta.isEmpty()) {
+                linkTutorInsta.setHref(strInsta);
+                linkTutorInsta.setTarget("_blank");
+//                linkTutorInsta.setVisible(true);
+            }
+
+            Anchor linkFlickr = new Anchor();
+            linkFlickr.add(FontAwesome.Brands.FLICKR.create());
+            // linkTutorYt.getStyle().setColor(strColorExternalweb);
+            // linkTutorYt.setClassName("lazy-result-line-button");
+            linkFlickr.setVisible(false);
+            if (strFlickr != null && !strFlickr.equalsIgnoreCase("null") && !strFlickr.isEmpty()) {
+
+                linkFlickr.setHref(strFlickr);
+                linkFlickr.setTarget("_blank");
+                linkFlickr.setVisible(true);
+            }
+
+            Div divBioTitle = new Div("Short Bio");
+            divBioTitle.addClassNames(TextColor.TERTIARY, FontWeight.BOLD);
+
+            HorizontalLayout layoutMemberLinks = new HorizontalLayout();
+            layoutMemberLinks.add(linkWebsite, linkTutorFacebook, linkTutorYt, linkTutorInsta, linkTutorYt, linkFlickr);
+
+            Div divBio = new Div();
+//            divBio.setVisible(false);
+            if (strShortBio != null && !strShortBio.equalsIgnoreCase("null") && !strShortBio.isEmpty()) {
+                divBio.setVisible(true);
+                divBio.setText(strShortBio);
+            } else {
+//                divBio.setVisible(false);
+            }
+
+            Image imgAvatar = genericView.getAvatarImage(strAvatarPath, strMember, "150px", "150px");
+//            Image imgAvatar = getAvatarImage(strAvatarPath, strNameOfUser, "120px", "120px");
+
+            H3 objName = new H3(strName + " " + strSurname);
+            objName.addClassNames(TextColor.SECONDARY, FontWeight.EXTRABOLD);
+            H4 objMember = new H4(strMember);
+            objMember.addClassNames(TextColor.SECONDARY, FontWeight.EXTRABOLD);
+            Div divMemberSince = new Div("Member since " + strMemberSince);
+            divMemberSince.addClassNames(TextColor.SECONDARY, FontWeight.MEDIUM);
+
+            VerticalLayout layoutMemberCard = new VerticalLayout();
+            layoutMemberCard.getStyle().setBorderRadius("30px");
+            layoutMemberCard.getStyle().setMaxWidth("300px");
+            layoutMemberCard.getStyle().set("border", "lightgrey 1px solid");
+            layoutMemberCard.addClassNames(AlignItems.CENTER, JustifyContent.CENTER, TextAlignment.CENTER, Background.CONTRAST_5);
+            layoutMemberCard.add(imgAvatar, objName, objMember, layoutMemberLinks, divMemberSince);
+
+            Div divResident = new Div("Lives at " + strResident + ", " + strResidentCountry);
+
+            layoutMember.add(layoutMemberCard, divBioTitle, divBio, divResident);
+        } else {
+            logger.warn(" lstRecords is more than one record");
+        }
+
+        return layoutMember;
+    }
+
+
+    private void logVisitorToDb(String logText) {
 
 //        category = category.replaceAll("'", " ");
 //        category = category.replaceAll("\"", " ");
@@ -924,12 +881,13 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
             strUrlRequestToBeLogged = "'" + strUrlRequestToBeLogged + "'";
         }
 
-        if (strPath == null || strPath.isEmpty()) {
-            strPath = "NULL";
-        } else {
-            strPath = strPath.replace("\\", "-");
-            strPath = "'" + strPath + "'";
-        }
+//        if (strPath == null || strPath.isEmpty()) {
+//            strPath = "NULL";
+//        } else {
+//            strPath = strPath.replace("\\", "-");
+//            strPath = strPath.replace("'", "");
+//            strPath = "'" + strPath + "'";
+//        }
 
 
         logger.info("photo visitor:" + publicIp + " . " + hostname + " . " + hostAddress + " . " + canonicalHostname + "  .  " + browser + " " + sessionid);
@@ -938,7 +896,7 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
                 + " browserVersionMajor = '" + versionOfBrowserMajor + "', browserVersionMinor = '" + versionOfBrowserMinor + "', urlParameter = NULL , timeZoneId = '" + timeZoneId + "', "
                 + " appVersion = '" + APP_NAME + "-" + APP_VERSION + "', sessionId = '" + sessionid + "', sessionCreationTime = '" + sessionDateTime + "', hostname = '" + hostname + "', "
                 + " hostAddress = '" + hostAddress + "', os = '" + strOS + "', browser = '" + strBrowser + "', section = '" + section + "',"
-                + " item = " + strPath + ", ref = " + strUrlRequestToBeLogged + ", "
+                + " item = '" + logText + "' , ref = " + strUrlRequestToBeLogged + ", "
                 + " locale = '" + locale + "', localeName ='" + localeName + "' ";
 
         ArrayList<String> lstQueryInsert = new ArrayList<String>();
@@ -963,7 +921,6 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
         return availWidth;
     }
 
-
     private String getFileSize(File file) {
 
         return String.format("%.2f", getFileSizeDouble(file));
@@ -981,6 +938,4 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
         double filesizeMB = (double) size / (1024 * 1024);// + " mb";
         return String.format("%.2f", filesizeMB);
     }
-
-
 }

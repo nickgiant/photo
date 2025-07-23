@@ -50,7 +50,7 @@
 .image-gallery-view .gallery{
 
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); /*  repeat(auto-fit, minmax(410px, 1fr)); */
+    grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); /*  repeat(auto-fit, minmax(410px, 1fr)); */
     grid-gap: 26px;
     padding: 0;
     margin: 8px;
@@ -94,7 +94,7 @@
 
 .image-gallery-view .album-info-card{
 
-    max-width: 680px;
+    max-width: 570px;
 
         border-top-left-radius: 8px;
         border-top-right-radius: 8px;
@@ -162,7 +162,7 @@
 }
 
 .image-gallery-view .album-info-card h4{
-        font-family:  font-family: 'Raleway', sans-serif;
+        font-family: 'Raleway', sans-serif;
         color: #868686;
         font-weight: 600;
         font-size: 13px;

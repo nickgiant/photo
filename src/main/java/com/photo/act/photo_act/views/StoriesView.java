@@ -31,6 +31,7 @@ import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import com.vaadin.flow.theme.lumo.LumoUtility.*;
+import jakarta.annotation.security.PermitAll;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,6 +46,8 @@ import java.util.Locale;
 import static com.photo.act.photo_act.views.LearningsView.STR_ALL_CATEGORIES;
 import static com.photo.act.photo_act.views.LearningsView.STR_ALL_TITLES;
 import static com.photo.act.photo_act.views.MainLayout.*;
+
+@PermitAll
 
 //@PageTitle("Image Gallery")
 @Route(value = "stories") //":category?")
@@ -64,9 +67,9 @@ public class StoriesView extends Main implements HasUrlParameter<String>, Before
     public static String subPathShow = "photo-show";
     public static String DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
     String[] arrColumnsMemberStories = {"stories_count"
-            , "username", "nameOfUser", "resident", "date_joined", "member_since", "avatar_path"
+            , "username", "username", "resident", "date_joined", "member_since", "avatar_path"
     };
-    String sqlMemberOfStories = "SELECT usr.username, usr.nameOfUser, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined " +
+    String sqlMemberOfStories = "SELECT usr.username, usr.username, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined " +
             " , DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since " +
             " , usr.avatar_path " +
             " , count(usr.userId) AS stories_count " +
@@ -75,18 +78,18 @@ public class StoriesView extends Main implements HasUrlParameter<String>, Before
             " AND s.story_visible_to = 'ALL' ";
     String sqlMemberOfStoriesGroupBy =
             " GROUP BY usr.userId " +
-                    " ORDER BY usr.nameOfUser ASC ";
+                    " ORDER BY usr.username ASC ";
     String[] arrColumnsStories = {"title", "description", "story_visible_to", "user_id", "date_inserted", "story_photo_count", "story_photo_size",
             "name_new", "photo_1", "photo_2", "datetime_story_created"
             , "cat_title", "cat_title_gr"
-            , "username", "nameOfUser", "resident", "date_joined", "avatar_path"
+            , "username", "username", "resident", "date_joined", "avatar_path"
     };
     String sqlStoriesAll = "SELECT s.title, s.`description`, s.story_visible_to, s.user_id, s.date_inserted " +
             " , count(sp.story_id) AS story_photo_count, SUM(pm.space_size) AS story_photo_size " +
             " , pm.name_new , s.photo_id1, p1.name_new AS photo_1 ,  s.photo_id2, p2.name_new  AS photo_2 " +
             " , getDateDiffFromNow(s.date_inserted) AS datetime_story_created " +
             " , sc.cat_title, sc.cat_title_gr " +
-            " , usr.username, usr.nameOfUser, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined, usr.avatar_path " +
+            " , usr.username, usr.username, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined, usr.avatar_path " +
             //     "--  , pa.inc, pm.title, pm.id, pm.name_new, pm.title, pm.subtitle, pm.space_size, pm.location_by_user\\n\" +\n" +
             " FROM stories_photo sp , photo_meta pm, stories_categories sc, dbuser usr, stories s LEFT JOIN photo_meta p1 ON s.photo_id1 = p1.id " +
             " LEFT JOIN photo_meta p2 ON s.photo_id2 = p2.id " +
@@ -141,7 +144,7 @@ public class StoriesView extends Main implements HasUrlParameter<String>, Before
             , "location_by_user", "location_area", "location_country_code", "location_lat", "location_lon"
             , "inc", "descr"
             , "date_inserted"
-            , "username", "nameOfUser", "resident", "date_joined", "avatar_path"
+            , "username", "username", "resident", "date_joined", "avatar_path"
     };
     private String sqlReadStoryPhotos = "SELECT s.title AS story_title, s.user_id, s.story_visible_to, s.description, " +
             " pm.name_new, pm.title, pm.subtitle, pm.photo_type, pm.uploader, pm.creator, pm.visible_to,  " +
@@ -150,7 +153,7 @@ public class StoriesView extends Main implements HasUrlParameter<String>, Before
             " , pm.meta_focal_length, pm.meta_focal_length_ff, pm.meta_iso, meta_aperture,  meta_shutter_speed " +
             " , pm.location_by_user, pm.location_area, pm.location_country_code, pm.location_lat, pm.location_lon " +
             " , sp.inc, sp.descr " +
-            " , usr.username, usr.nameOfUser, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined, usr.avatar_path " +
+            " , usr.username, usr.username, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined, usr.avatar_path " +
             //, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description, DATE_FORMAT(f.dateInsert , '%D %M %Y') AS formatedDateUpdated  " +
             " FROM dbuser usr, stories s , stories_photo sp LEFT JOIN photo_meta pm ON sp.photo_id = pm.id " +
             " WHERE s.user_Id = usr.userId AND s.id = sp.story_id ";
@@ -600,7 +603,7 @@ public class StoriesView extends Main implements HasUrlParameter<String>, Before
 
         } else if (lstRecords.size() == 1) {
             Record rec = lstRecords.get(0);
-            String strNameOfUser = rec.getColumnData("nameOfUser");
+            String strNameOfUser = rec.getColumnData("username");
             String strCountOfAlbums = rec.getColumnData("stories_count");
 //            String strCountOfPhotosOfAlbums = rec.getColumnData("album_photo_count");
             String strMemberSince = rec.getColumnData("member_since");
@@ -711,7 +714,7 @@ public class StoriesView extends Main implements HasUrlParameter<String>, Before
 
 
         String strPhotoUserName = record.getColumnData("username");
-        String strPhotoNameOfUser = record.getColumnData("nameOfUser");
+        String strPhotoNameOfUser = record.getColumnData("username");
         String strPhotoUserResident = record.getColumnData("resident");
         String strAvatarPath = record.getColumnData("avatar_path");
         String strPhotoUserJoined = record.getColumnData("date_joined");

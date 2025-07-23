@@ -1,5 +1,6 @@
 package com.photo.act.photo_act.views;
 
+import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.utils.NetUtils;
@@ -11,19 +12,22 @@ import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.HasStyle;
 import com.vaadin.flow.component.Html;
 import com.vaadin.flow.component.UI;
-import com.vaadin.flow.component.checkbox.CheckboxGroup;
-import com.vaadin.flow.component.html.*;
+import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Image;
+import com.vaadin.flow.component.html.Main;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.TabVariant;
-import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
+import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import com.vaadin.flow.theme.lumo.LumoUtility.*;
 import org.slf4j.Logger;
@@ -42,9 +46,11 @@ import java.util.List;
 import java.util.Locale;
 
 import static com.photo.act.photo_act.views.MainLayout.*;
+import static com.photo.act.photo_act.views.MeView.subPathSmall;
 
 
-//@RouteAlias("") // empty on homepage
+@AnonymousAllowed
+
 @Route(value = "photos") //":category?")
 @RouteAlias(value = "photos/member/:member?/location/:destination?", layout = MainLayout.class)
 
@@ -112,15 +118,15 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
             , "location_by_user", "location_area", "location_country_code", "location_lat", "location_lon"
             , "spot_name", "spot_type"
             , "date_inserted"
-            , "username", "nameOfUser", "resident", "date_joined", "avatar_path"
+            , "username", "surname", "name", "resident", "date_joined", "avatar_path"
     };
 
     private String sqlReadGallery = "SELECT pm.name_new, pm.title, pm.subtitle, pm.photo_type, pm.uploader, pm.creator, pm.visible_to, d.city_name, d.country, " +
-            " DATE_FORMAT(pm.meta_date, '%W %D %M %Y %H:%i %p') AS meta_date, DATE_FORMAT(pm.meta_date, '%d-%m-%Y') AS photo_date, DATE_FORMAT(pm.meta_date, '%H:%i %p') AS photo_time, " +
+            " DATE_FORMAT(pm.meta_date, '%W %D %M %Y %H:%i %p') AS meta_date, getDateDiffFromNow(pm.meta_date) AS photo_date, DATE_FORMAT(pm.meta_date, '%H:%i %p') AS photo_time, " +
             " pm.space_size, pm.space_size_medium, pm.space_size_thumb, pm.meta_camera_make, pm.meta_camera_model, pm.meta_lens_make, pm.meta_lens_model, " +
             " pm.meta_focal_length, pm.meta_focal_length_ff, pm.meta_iso, meta_aperture,  meta_shutter_speed " +
             " , pm.location_by_user, pm.location_area, pm.location_country_code, pm.location_lat, pm.location_lon " +
-            " , usr.username, usr.nameOfUser, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined, usr.avatar_path " +
+            " , usr.username, usr.surname, usr.name, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined, usr.avatar_path " +
 //            "  ds.spot_name, ds.spot_type " +
             //, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description, DATE_FORMAT(f.dateInsert , '%D %M %Y') AS formatedDateUpdated  " +
             " FROM dbuser usr, photo_meta pm LEFT JOIN destination d ON pm.destination_id = d.id " +
@@ -133,6 +139,23 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
     private String strOS;
     private String strBrowser;
 
+    private String sqlWhereAnd;
+
+    private int intPage = 1;
+    private int intRecsOnPage = 10;
+    private String strDefCountPerPage = "10";
+
+    private String sqlOrderBy = " ORDER BY pm.date_inserted DESC";
+    private String strDefOrderBy = "Newest Upload";
+
+    private Select<String> cmbCountPerPage;
+    private Select<String> cmbSortBy;
+    private VerticalLayout recsHolder;
+
+    private HorizontalLayout layoutRecControl;
+
+    private String[] arrOrderByItems = {"Newest Upload", "Oldest Upload", "Newest Shot", "Oldest Shot"};
+    private String[] arrOrderByItemsSql = {"ORDER BY pm.date_inserted DESC", "ORDER BY pm.date_inserted ASC", "ORDER BY pm.meta_date DESC", "ORDER BY pm.meta_date ASC"};
 
     public GalleryView(RecordService recordService) {
         this.recordService = recordService;
@@ -176,41 +199,45 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
             logger.error(" empty strDestination: " + strDestination);
         }
 
+        intPage = 1;
+        intRecsOnPage = Integer.parseInt(cmbCountPerPage.getValue());
+
+
         if (strMember.equalsIgnoreCase(STR_ALL_MEMBERS) && (strDestination.equalsIgnoreCase(STR_ALL_DESTINATIONS))) {
             verticalLayout.add(loadHeader("Photos", "", ""));
 
-            String sqlGalleryAll = sqlReadGallery + " AND pm.visible_to = 'ALL' ";
-            sqlGalleryAll = sqlGalleryAll + " ORDER BY pm.date_inserted DESC, pm.title ASC, meta_date DESC ";
+            sqlWhereAnd = " AND pm.visible_to = 'ALL' ";
+            // String sqlOrderBy = " ORDER BY pm.date_inserted DESC, pm.title ASC, meta_date DESC ";
 
 //            verticalLayout.add(loadCarouselWithThumbnails(sqlGalleryAll, arrColumnNamesGallery));
 
-            verticalLayout.add(loadImagesFromDb(sqlGalleryAll, arrColumnNamesGallery, false));
+            getFilterResults(sqlWhereAnd, sqlOrderBy);
         } else if (strMember.equalsIgnoreCase(STR_ALL_MEMBERS) && !strDestination.equalsIgnoreCase(STR_ALL_DESTINATIONS)) {
             verticalLayout.add(loadHeader("Photos", "", strDestination));
             verticalLayout.add(loadWeather(strDestination, ""));
 
 
-            String sqlGalleryAll = sqlReadGallery + " AND pm.visible_to = 'ALL' ";
+            sqlWhereAnd = " AND pm.visible_to = 'ALL' " + " AND d.city_name LIKE '" + strDestination + "' ";
 
-            sqlGalleryAll = sqlGalleryAll + " AND d.city_name LIKE '" + strDestination + "' ";
-
-            sqlGalleryAll = sqlGalleryAll + " ORDER BY pm.date_inserted DESC, pm.title ASC, meta_date DESC ";
+            //  String sqlOrderBy = " ORDER BY pm.date_inserted DESC, pm.title ASC, meta_date DESC ";
 
 //            verticalLayout.add(loadCarouselWithThumbnails(sqlGalleryAll, arrColumnNamesGallery));
 
-            verticalLayout.add(loadImagesFromDb(sqlGalleryAll, arrColumnNamesGallery, false));
+            getFilterResults(sqlWhereAnd, sqlOrderBy);
         } else if (!strMember.equalsIgnoreCase(STR_ALL_MEMBERS)) {
             verticalLayout.add(loadHeader("My Photos", "and how to manage them.", ""));
             verticalLayout.add(loadWeather(strDestination, ""));
-            String sqlGalleryUser = sqlReadGallery +
-                    " AND pm.visible_to = 'ALL' AND pm.uploader LIKE '" + strMember + "' " +
-                    " ORDER BY pm.date_inserted DESC, meta_date DESC";
+
+            sqlWhereAnd = " AND pm.uploader LIKE '" + strMember + "' ";
+            //  String sqlOrderBy = " ORDER BY pm.date_inserted DESC, meta_date DESC";
 
 //            verticalLayout.add(loadCarouselWithThumbnails(sqlGalleryUser, arrColumnNamesGallery));
-            verticalLayout.add(loadImagesFromDb(sqlGalleryUser, arrColumnNamesGallery, true));
+            getFilterResults(sqlWhereAnd, sqlOrderBy);
         }
 
+
         this.removeAll();
+        verticalLayout.add(recsHolder, layoutRecControl);
         this.add(verticalLayout);
         this.add(genericView.loadFooter(isMobile));
 
@@ -234,17 +261,38 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         );
         addClassName("image-gallery-view");
 
-        InetAddress inetAddress = null;
-        try {
-            inetAddress = InetAddress.getLocalHost();
-        } catch (UnknownHostException e) {
-            throw new RuntimeException(e);
-        }
-        hostname = inetAddress.getHostName();
-        hostAddress = inetAddress.getHostAddress();
-        canonicalHostname = inetAddress.getCanonicalHostName();
-
         DIR_PHOTOS_SERVER = genericView.getAppProps(PROP_PHOTOS);
+
+        cmbCountPerPage = new Select<>();
+        cmbCountPerPage.setItems("10", "20", "30", "40");//, "50", "60", "70", "80");
+        cmbCountPerPage.setValue(strDefCountPerPage);
+
+        cmbSortBy = new Select<>();
+        cmbSortBy.setItems(arrOrderByItems);
+        cmbSortBy.setValue(strDefOrderBy);
+
+
+        cmbCountPerPage.setLabel("Photos per page");
+        cmbCountPerPage.addValueChangeListener(event -> {
+            if (!event.getValue().equalsIgnoreCase(event.getOldValue())) {
+
+
+                recsHolder.removeAll();
+//                recsHolder.add(filterPage(sqlWhereAnd, null));
+                getFilterResults(sqlWhereAnd, sqlOrderBy);
+            }
+        });
+
+
+        cmbSortBy.setLabel("Show first");
+        cmbSortBy.addValueChangeListener(event -> {
+            sqlOrderBy = event.getValue();
+            if (!event.getValue().equalsIgnoreCase(event.getOldValue())) {
+                recsHolder.removeAll();
+//                recsHolder.add(filterPage(sqlWhereAnd, null));
+                getFilterResults(sqlWhereAnd, sqlOrderBy);
+            }
+        });
 
         verticalLayout = new VerticalLayout();
         if (isMobile) {
@@ -259,7 +307,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
                     Gap.MEDIUM,
                     //  Padding.NONE, //.Left.MEDIUM, Padding.Right.MEDIUM,
                     //Margin.Vertical.MEDIUM, Padding.Vertical.NONE,
-                    AlignItems.CENTER, JustifyContent.CENTER
+                    AlignItems.STRETCH, JustifyContent.CENTER
             );
         } else {
             verticalLayout.addClassNames(
@@ -271,13 +319,23 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
                     Padding.XLARGE,
                     Padding.Top.XSMALL,
                     Gap.LARGE,
-                    AlignItems.CENTER, JustifyContent.CENTER
+                    AlignItems.STRETCH, JustifyContent.CENTER
             );
 
             Html htmlTitle = new Html("<title>'photoact.net Network and Act around Photography'</title>");
             Html htmlMeta = new Html("<meta name='description' content='Get the latest uploaded photos from our community of photographers.'>");
             verticalLayout.add(htmlTitle, htmlMeta);
         }
+
+
+        recsHolder = new VerticalLayout();
+        recsHolder.addClassNames(Width.FULL,
+                Margin.NONE, Padding.NONE,
+                AlignItems.STRETCH, JustifyContent.CENTER);
+        layoutRecControl = new HorizontalLayout();
+        layoutRecControl.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER);
+
+
     }
 
     private VerticalLayout loadHeader(String strHeader, String strSubHeader, String strSection) {
@@ -285,54 +343,31 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         this.strHeader = strHeader;
 
         HorizontalLayout headerContainerMaster = new HorizontalLayout();
+        headerContainerMaster.setId("header-master");
         if (isMobile) {
             headerContainerMaster.addClassNames(
-                    AlignItems.CENTER, JustifyContent.BETWEEN,
+                    AlignItems.CENTER, JustifyContent.START,
                     Overflow.HIDDEN, Width.FULL,
                     Margin.NONE,
-                    Padding.NONE,
-                    Gap.MEDIUM,
+                    Padding.SMALL,
+                    Gap.XSMALL,
                     // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
                     //   Background.CONTRAST_5,
                     BorderRadius.NONE
             );
         } else {
             headerContainerMaster.addClassNames(
-                    AlignItems.CENTER, JustifyContent.BETWEEN,
+                    AlignItems.CENTER, JustifyContent.START,
                     Overflow.HIDDEN, Width.FULL,
                     Margin.NONE,
                     Padding.MEDIUM,
-                    Gap.XLARGE,
+                    Gap.SMALL,
                     // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
                     //   Background.CONTRAST_5,
                     BorderRadius.LARGE
             );
         }
 
-        VerticalLayout headerTextContainer = new VerticalLayout();
-        headerTextContainer.addClassNames(
-                AlignItems.CENTER, JustifyContent.START,
-                Margin.NONE, Padding.NONE,
-                Gap.XSMALL);
-
-        H2 header = new H2(strHeader);
-        header.addClassNames(
-                AlignItems.CENTER, JustifyContent.START,
-                Margin.Bottom.NONE, Margin.Top.NONE, FontSize.LARGE, FontWeight.BOLD, TextColor.SECONDARY);
-//        header.getStyle().set("font-family", "Times-New-Roman, serif");
-
-        Div subheader = new Div(strSubHeader);
-        subheader.addClassNames(
-                AlignItems.CENTER, JustifyContent.START,
-                Margin.Bottom.NONE, Margin.Top.NONE, FontSize.SMALL, TextColor.SECONDARY);
-
-
-        headerTextContainer.add(header, subheader);
-
-        Select<String> sortBy = new Select<>();
-        sortBy.setLabel("Sort by");
-        sortBy.setItems("Most Viewed", "Least Viewed", "Most Favourite", "Least Favourite", "Newest First", "Oldest First", "Most Liked", "Least Liked");
-        sortBy.setValue("Most Viewed");
 
         Div headerContainer = new Div();
         if (isMobile) {
@@ -361,8 +396,8 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
 
         VerticalLayout layoutFiltersAll = new VerticalLayout();
         layoutFiltersAll.addClassNames(
-                LumoUtility.AlignItems.CENTER, JustifyContent.START,
-                Margin.NONE, Padding.SMALL,
+                AlignItems.CENTER, JustifyContent.CENTER,
+                Margin.NONE, Padding.MEDIUM,
                 LumoUtility.FontSize.SMALL, LumoUtility.TextColor.SECONDARY,
 //                Background.CONTRAST_5,
                 TextAlignment.CENTER
@@ -371,7 +406,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         Div layoutFilters = new Div();
         if (isMobile) {
             layoutFilters.addClassNames(
-                    Overflow.HIDDEN, Width.FULL,
+                    Overflow.HIDDEN,
                     AlignItems.CENTER, JustifyContent.CENTER,
                     Margin.NONE,
                     Padding.XSMALL,
@@ -382,10 +417,10 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
                     BorderRadius.NONE);
         } else {
             layoutFilters.addClassNames(
-                    Overflow.HIDDEN, Width.FULL,
-                    AlignItems.CENTER, JustifyContent.CENTER,
+                    Overflow.HIDDEN,
+                    AlignItems.CENTER, JustifyContent.AROUND,
                     Margin.NONE,
-                    Padding.SMALL,
+                    Padding.LARGE,
                     Gap.SMALL,
                     Width.FULL,
                     //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
@@ -425,10 +460,9 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
             layoutFilters.add(linkPhotoCategory);
         }
 
-        CheckboxGroup<String> checkboxGroupSubject = new CheckboxGroup<>();
-        checkboxGroupSubject.setTooltipText("Subject");
-//        checkboxGroupSubject.setLabel("Subject");
-        checkboxGroupSubject.setItems("Photography", "Street Photography", "Landscape", "Cityscape");
+//        CheckboxGroup<String> checkboxGroupSubject = new CheckboxGroup<>();
+//        checkboxGroupSubject.setTooltipText("Subject");
+//        checkboxGroupSubject.setItems("Photography", "Street Photography", "Landscape", "Cityscape");
         //   "Friday", "Saturday", "Sunday");
         // checkboxGroup.addThemeVariants(CheckboxGroupVariant.LUMO_VERTICAL);
 //        Div lblFilterSubject = new Div("Subject");
@@ -467,12 +501,12 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
 //            );
 //        }
 
-//        Select<String> cmbView = new Select<>();
-//        cmbView.setLabel("View");
-//
-//        cmbView.setItems("Micro View", "Ordinary - No MetaData", "Ordinary - MetaData Bottom", "Ordinary - MetaData Right",
-//                "Wide - No MetaData", "Wide - MetaData Bottom","Wide - MetaData Right");
-//        cmbView.setValue("Ordinary - No MetaData");
+        Select<String> cmbView = new Select<>();
+        cmbView.setLabel("View");
+        cmbView.setItems("Micro View", "Ordinary - No MetaData", "Ordinary - MetaData Bottom", "Ordinary - MetaData Right",
+                "Wide - No MetaData", "Wide - MetaData Bottom", "Wide - MetaData Right");
+        cmbView.setValue("Ordinary - No MetaData");
+
 
         Tab tabFilterLocation = new Tab(VaadinIcon.LOCATION_ARROW_CIRCLE_O.create(), new Span("Location"));
         Tab tabFilterKeyword = new Tab(VaadinIcon.KEYBOARD_O.create(), new Span("Keyword"));
@@ -495,59 +529,163 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
 //                    BorderColor.CONTRAST_20, Border.ALL);
         }
 
-        Tabs tabsFilterBased = new Tabs(tabFilterLocation, tabFilterKeyword, tabFilterUser);
-//        tabsViewInfo.addThemeVariants(  TabsVariant.LUMO_SMALL,
-//                TabsVariant.LUMO_EQUAL_WIDTH_TABS);
-        tabsFilterBased.addClassNames(
-                Width.FULL,
-                AlignItems.CENTER, JustifyContent.END,
-                Padding.LARGE, Margin.NONE,
-//                BorderRadius.LARGE,
-                Border.ALL,
-                BorderColor.CONTRAST_5
-//                Gap.XSMALL
-        );
-        tabsFilterBased.addClassName("header-view-type");
+//        Tabs tabsFilterBased = new Tabs(tabFilterLocation, tabFilterKeyword, tabFilterUser);
+////        tabsViewInfo.addThemeVariants(  TabsVariant.LUMO_SMALL,
+////                TabsVariant.LUMO_EQUAL_WIDTH_TABS);
+//        tabsFilterBased.addClassNames(
+//                AlignItems.CENTER, JustifyContent.END,
+//                Padding.LARGE, Margin.NONE,
+////                BorderRadius.LARGE,
+//                Border.ALL,
+//                BorderColor.CONTRAST_5
+////                Gap.XSMALL
+//        );
+//        tabsFilterBased.addClassName("header-view-type");
 
-        Tabs tabsViewInfo = new Tabs(tabFilterLocation, tabFilterKeyword, tabFilterUser);
-//        tabsViewInfo.addThemeVariants(  TabsVariant.LUMO_SMALL,
-//                TabsVariant.LUMO_EQUAL_WIDTH_TABS);
-        tabsViewInfo.addClassNames(
-                Width.FULL,
-                AlignItems.CENTER, JustifyContent.END,
-                Padding.LARGE, Margin.NONE,
-//                BorderRadius.LARGE,
-                Border.ALL,
-                BorderColor.CONTRAST_5
-//                Gap.XSMALL
-        );
-        tabsViewInfo.addClassName("header-view-type");
+//        Tabs tabsViewInfo = new Tabs(tabFilterLocation, tabFilterKeyword, tabFilterUser);
+////        tabsViewInfo.addThemeVariants(  TabsVariant.LUMO_SMALL,
+////                TabsVariant.LUMO_EQUAL_WIDTH_TABS);
+//        tabsViewInfo.addClassNames(
+//
+//                AlignItems.CENTER, JustifyContent.END,
+//                Padding.LARGE, Margin.NONE,
+////                BorderRadius.LARGE,
+//                Border.ALL,
+//                BorderColor.CONTRAST_5
+////                Gap.XSMALL
+//        );
+//        tabsViewInfo.addClassName("header-view-type");
 
-        headerContainerMaster.add(headerTextContainer); //,tabsViewInfo);
+//        headerContainerMaster.add(headerTextContainer); //,tabsViewInfo);
 //        layoutHeaderParameters.add(headerContainerMaster);
 
-        H3 divSection = new H3(strSection);
-        divSection.addClassNames(
-                AlignItems.CENTER, JustifyContent.CENTER,
-                Margin.Bottom.MEDIUM, Margin.Top.MEDIUM);
+//        H3 divSection = new H3(strSection);
+//        divSection.addClassNames(
+//                AlignItems.CENTER, JustifyContent.CENTER,
+//                Margin.Bottom.MEDIUM, Margin.Top.MEDIUM);
 
+        VerticalLayout layoutViewNOrder = new VerticalLayout();
+        layoutViewNOrder.addClassNames(
+                AlignItems.START, JustifyContent.AROUND,
+                Margin.NONE, Padding.MEDIUM,
+                Gap.MEDIUM
+        );
+        layoutViewNOrder.add(cmbCountPerPage, cmbSortBy);
+        layoutViewNOrder.setMaxWidth("200px");
 
 //        headerContainerMaster.add(headerTextContainer);
         headerContainer.add(layoutFiltersAll);
+        headerContainerMaster.add(headerContainer, layoutViewNOrder);
+        headerContainerMaster.setMaxWidth("1160px");
 //        layoutHeaderParameters.add( headerContainerSecondary, divSection);
 
         HeaderFilterTabs headerFilterTabs = new HeaderFilterTabs(recordService, isMobile);
-        VerticalLayout layoutHeaderParameters = headerFilterTabs.getHeader(strHeader, strSubHeader, strSection, headerContainer);
+        VerticalLayout layoutHeaderParameters = headerFilterTabs.getHeader(strHeader, strSubHeader, strSection, headerContainerMaster);
 
 //        headerContainerMaster.add(headerTextContainer, cmbView);
 //        headerContainerSecondary.add(layoutFilters, sortBy);
-//        layoutHeaderParameters.add(headerContainerMaster,headerContainerSecondary);
+        // layoutHeaderParameters.add(headerContainerMaster);
 
         return layoutHeaderParameters;
     }
 
-    private Div loadImagesFromDb(String sqlRead, String[] arrColumnNames, boolean isEditable) {
+    private void getFilterResults(String sqlWhereAnd, String sqlOrderBy) {
+
+        recsHolder.removeAll();
+        layoutRecControl.removeAll();
+
+        Div divInfo = new Div("Page ");
+        Button btnPrevious = new Button("Previous");
+        btnPrevious.setIcon(FontAwesome.Solid.ARROW_LEFT.create());
+        Button btnNext = new Button("Next");
+        btnNext.setIcon(FontAwesome.Solid.ARROW_RIGHT.create());
+        btnNext.setIconAfterText(true);
+
+        btnPrevious.addClickListener(event -> {
+            Div divResults = null;
+            if (intPage > 1) {
+                intPage--;
+                divInfo.setText("Page " + intPage);
+                recsHolder.removeAll();
+                divResults = filterPage(sqlWhereAnd, null);
+                recsHolder.add(divResults);
+            }
+
+            if (intPage <= 1) {
+                event.getSource().setVisible(false);
+            } else {
+                event.getSource().setVisible(true);
+            }
+
+            if (divResults != null && divResults.getComponentCount() > 0) {
+                btnNext.setVisible(true);
+            } else {
+                btnNext.setVisible(false);
+            }
+        });
+
+
+        btnNext.addClickListener(event -> {
+            Div divResults = null;
+            if (intPage > 0) {
+                intPage++;
+                divInfo.setText("Page " + intPage);
+                recsHolder.removeAll();
+                divResults = filterPage(sqlWhereAnd, null);
+                recsHolder.add(divResults);
+            }
+
+            if (intPage > 1) {
+                btnPrevious.setVisible(true);
+            } else {
+                btnPrevious.setVisible(false);
+            }
+
+            if (divResults != null && divResults.getComponentCount() > 0) {
+                event.getSource().setVisible(true);
+            } else {
+                event.getSource().setVisible(false);
+            }
+        });
+
+        divInfo.setText("Page " + intPage);
+        recsHolder.add(filterPage(sqlWhereAnd, null));
+        if (intPage > 1) {
+            btnPrevious.setVisible(true);
+        } else {
+            btnPrevious.setVisible(false);
+        }
+
+
+        layoutRecControl.add(btnPrevious, divInfo, btnNext);
+
+    }
+
+    private Div filterPage(String sqlWhereAnd, String sqlOrderBy) {
+        intRecsOnPage = Integer.parseInt(cmbCountPerPage.getValue());
+
+        if (sqlWhereAnd == null) {
+            sqlWhereAnd = "";
+        }
+
+        if (sqlOrderBy == null) {
+            int intSelected = cmbSortBy.getItemPosition(cmbSortBy.getValue());
+            sqlOrderBy = arrOrderByItemsSql[intSelected];
+        }
+
+        String sqlReadPage;
+        if (intRecsOnPage == intPage * intRecsOnPage) {
+            sqlReadPage = sqlReadGallery + " " + sqlWhereAnd + " " + sqlOrderBy + " LIMIT " + intRecsOnPage + " ";
+        } else {
+            sqlReadPage = sqlReadGallery + " " + sqlWhereAnd + " " + sqlOrderBy + " LIMIT " + intRecsOnPage + " OFFSET " + (intPage * intRecsOnPage) + " ";
+        }
+        return loadImagesFromDb(sqlReadPage, arrColumnNamesGallery);
+    }
+
+    private Div loadImagesFromDb(String sqlRead, String[] arrColumnNames) {
         strPath = DIR_PHOTOS_SERVER + dirChar;
+
+        boolean isEditable = false;
 
         Div divGallery = new Div();
         divGallery.addClassName("gallery");
@@ -562,7 +700,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
     }
 
     private GalleryImageViewCard getImageGalleryThumbsFromDb(Record record, boolean isEditable) {
-        strPath = DIR_PHOTOS_SERVER + dirChar + subPathThumbs;
+        strPath = DIR_PHOTOS_SERVER + dirChar + subPathSmall;
 
         String strFileName = record.getColumnData("name_new");
         String strTitle = record.getColumnData("title");
@@ -643,6 +781,18 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
 
 
     private void getUserClientInfo() {
+
+        InetAddress inetAddress = null;
+        try {
+            inetAddress = InetAddress.getLocalHost();
+        } catch (UnknownHostException e) {
+            throw new RuntimeException(e);
+        }
+        hostname = inetAddress.getHostName();
+        hostAddress = inetAddress.getHostAddress();
+        canonicalHostname = inetAddress.getCanonicalHostName();
+
+        DIR_PHOTOS_SERVER = genericView.getAppProps(PROP_PHOTOS);
 
         sessionid = VaadinSession.getCurrent().getSession().getId();
         sessionCreation = VaadinSession.getCurrent().getSession().getCreationTime();
