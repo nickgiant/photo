@@ -585,7 +585,10 @@ public class GenericView {
 
     private HorizontalLayout selectLocation(String locationName, Select<String> cmbLocation) {
 //        List<String> lstPhotoFilenames = getImagesFilenames(sqlRead, arrColumnNames);
-        String sqlReadWithLocation = sqlReadGallery + " AND d.city_name LIKE '" + locationName + "' ";
+        String sqlReadWithLocation = sqlReadGallery;
+        if(!locationName.isEmpty()) {
+            sqlReadWithLocation = sqlReadGallery + " AND d.city_name LIKE '" + locationName + "' ";
+        }
         HorizontalLayout layoutThumbs = showThumbs(sqlReadWithLocation, arrColumnsGallery, cmbLocation);
         Image imageLarge = fetchPhotosLarge(sqlReadWithLocation, arrColumnsGallery).get(0);
         divCarousel.removeAll();
@@ -599,13 +602,20 @@ public class GenericView {
         layoutPhotoInfo.removeAll();
         divCarousel.removeAll();
 
+
         Record record = lstImageFiles.get(intImage);
 
         Image imageLarge = fetchPhotosLarge(sqlReadWithLocation, arrColumnsGallery).get(intImage);
+        imageLarge.addClassName("image-to-show");
         divCarousel.add(imageLarge);
 
-        // divCarousel.add(getImageLarge(record));
-        layoutPhotoInfo.add(getPhotoMetaInfoOnCarousel(record));
+
+
+        VerticalLayout layoutMeta = getPhotoMetaInfoOnCarousel(record);
+        layoutMeta.addClassName("image-meta-to-show");
+        layoutPhotoInfo.add(layoutMeta);
+        imageLarge.getStyle().setOpacity("1");
+        layoutMeta.getStyle().setOpacity("1");
         layoutPhotoInfo.add(cmbLocation);
         return layoutPhotoInfo;
     }
@@ -698,7 +708,7 @@ public class GenericView {
 
         String insertSQL = "INSERT INTO dbvisitor_log SET visitorlogId = 0,  timeOfVisit = now(), ipAddress = '" + publicIp + "', browserName = '" + browser + "', "
                 + " browserVersionMajor = '" + versionOfBrowserMajor + "', browserVersionMinor = '" + versionOfBrowserMinor + "', urlParameter = NULL , timeZoneId = '" + timeZoneId + "', "
-                + " appVersion = '" + APP_NAME + "-" + APP_VERSION + "', sessionId = '" + sessionid + "', sessionCreationTime = '" + sessionDateTime + "', hostname = '" + hostname + "', "
+                + " appVersion = '" + APP_NAME + "-" + APP_VERSION + "',  parentSection = 'photo',  sessionId = '" + sessionid + "', sessionCreationTime = '" + sessionDateTime + "', hostname = '" + hostname + "', "
                 + " hostAddress = '" + hostAddress + "', os = '" + strOS + "', browser = '" + strBrowser + "', section = '" + section + "',"
                 + " item = '" + logText + "', ref = " + strUrlRequestToBeLogged + ", "
                 + " locale = '" + locale + "', localeName ='" + localeName + "' ";

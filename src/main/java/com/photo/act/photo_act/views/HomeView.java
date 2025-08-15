@@ -20,10 +20,7 @@ import com.photo.act.photo_act.views.components.AvatarItem;
 import com.photo.act.photo_act.views.components.DialogRegistration;
 import com.photo.act.photo_act.views.components.GenericView;
 import com.photo.act.photo_act.views.components.HeaderFilterTabs;
-import com.vaadin.flow.component.HasComponents;
-import com.vaadin.flow.component.HasStyle;
-import com.vaadin.flow.component.Html;
-import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.*;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.CheckboxGroup;
 import com.vaadin.flow.component.html.*;
@@ -40,9 +37,13 @@ import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.theme.lumo.LumoUtility.*;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.vaadin.addons.taefi.component.ToggleButtonGroup;
+import org.w3c.dom.*;
+import org.w3c.dom.html.HTMLElement;
+import org.w3c.dom.html.HTMLHeadElement;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -126,7 +127,8 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
                     " AND lc.cat_type not LIKE '%genre%' " +
                     " AND lc.cat_type not LIKE 'not show' " +
                     " GROUP BY lc.cat_type " +
-                    " ORDER BY lc.cat_order ASC";
+                    " ORDER BY lc.cat_order ASC "+
+                    " LIMIT 6 ";
 
 
     String[] arrColLearningGenres = {"cat_title", "cat_title_type", "cat_type", "cat_location_count", "cat_title_count", "cat_description_min", "cat_description_big"};
@@ -138,7 +140,8 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
                     " WHERE 1 = 1 " +
                     " AND lc.cat_type LIKE '%genre%' " +
                     " GROUP BY lc.cat_title " +
-                    " ORDER BY lc.cat_order ASC";
+                    " ORDER BY lc.cat_order ASC "+
+                    " LIMIT 6 ";
 
 
 //    String[] arrColLearningTopics = {"cat_title", "cat_title2", "cat_title_type", "cat_title_type2", "cat_type",
@@ -180,6 +183,8 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
     private String strOS;
     private String strBrowser;
 
+    private Div layoutLastPhotos;
+
     public HomeView(RecordService recordService) {
         this.recordService = recordService;
 
@@ -193,6 +198,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
     @Override
     public String getPageTitle() {
+        strHeader = "photoact.net";
         return strHeader;
     }
 
@@ -211,25 +217,26 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 //        verticalLayout.add(layoutHeaderParameters);
 
 
-        String[] arrColumnsLearning = {"title", "picture", "cat_title", "cat_title2", "cat_title_type", "cat_title_type2", "cat_type", "format", "url", "artists_ref", "description", "duration", "pages", "published", "year_published",
-                "category_id", "category_id2", "tutor_name", "website", "url_fb", "url_yt", "url_insta", "url_flickr", "url_wikipedia", "url_ref1", "url_ref2", "url_ref3",
-                "dateInsert",
-                "cat_count"};
+        String[] arrColumnsLearning = {"title", "subtitle", "picture", "category_id", "cat_genre_id", "format", "url", "tutor_id", "artists_ref", "description", "duration", "pages", "published", "year_published",
+                "userId_post", "date_inserted",
+        "cat_title", "cat_type", "genre_title",
+                "tutor_name",
+                "username", "name", "surname"
+        };
 
         // learnings: l.id, l.title, l.picture, l.section , l.category, l.format, l.url, l.parent_id, l.child_index, l.tutor_id, l.artists_ref, l.description, l.duration, l.pages, l.published, l.userIdInsert, l.username, l.dateInsert
 // learnings_tutor:  lt.id, lt.tutor_name, lt.learnings_team_id, lt.website, lt.url_fb, lt.url_yt, lt.url_insta, lt.url_flickr, lt.url_wikipedia, lt.url_ref1, lt.url_ref2, lt.url_ref3, lt.url_flckr, lt.city_base, lt.country_base, lt.userIdInsert, lt.username, lt.date_inserted
-        String sqlLearningsRead = "SELECT  " //f.nameShort, f.location, f.country, f.periodOfYear, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description  " +
-                + " lc.cat_title, lc.cat_title_type, lc.cat_type, COUNT(lc.cat_title) AS cat_count "
-                + " , lc2.cat_title AS cat_title2, lc2.cat_title_type AS cat_title_type2 "
-                // + " , l.id, l.title, l.picture, l.format, l.url, l.parent_id, l.child_index, l.tutor_id, l.artists_ref, l.description, l.duration, l.pages, l.published, DATE_FORMAT(l.published, '%Y') AS year_published,  l.userIdInsert, l.username, l.dateInsert "
+        String sqlLearningsRead = "SELECT "
+                +" l.id, l.title,  l.subtitle, l.picture, l.category_id, l.cat_genre_id, l.format, l.url, l.tutor_id, l.artists_ref, l.description, l.duration, l.pages, l.published, DATE_FORMAT(l.published, '%Y') AS year_published,  l.userId_post, l.dateInsert, getDateDiffFromNow(l.dateInsert) AS date_inserted "
+                + " , lc.cat_title,  lc.cat_type, t.tutor_name "
+                + " , lcg.cat_title AS genre_title"
+                + " , usr.username, usr.name, usr.surname "
                 //  + " , l.tutor_id, l.tutor_id_team, l.category_id, l.category_id2, t.tutor_name, t.website, t.url_fb, t.url_yt, t.url_insta, t.url_flickr, t.url_wikipedia, t.url_ref1, t.url_ref2, t.url_ref3, t.city_base, t.country_base, t.userIdInsert, t.username, t.date_inserted "
-                + " FROM learnings_categories lc, learnings l LEFT JOIN learnings_categories lc2 ON lc2.id = l.category_id2 " //, tutor t  "
+                + " FROM learnings_categories lc, learnings l LEFT JOIN learnings_categories lcg ON l.cat_genre_id = lcg.id,  tutor t, dbuser usr " //, tutor t  "
                 + " WHERE 1 = 1 "
-                + " AND lc.id = l.category_id "  //AND l.tutor_id = t.id "
-                + " AND l.dateInsert BETWEEN NOW() - INTERVAL 12 DAY AND NOW() "
-                + " GROUP BY lc.cat_title "
+                + " AND lc.id = l.category_id AND l.tutor_id = t.id AND l.userId_post = usr.userId"
                 + " ORDER BY l.dateInsert DESC "
-                + " LIMIT 6";
+                + " LIMIT 3";
 
 
         String[] arrColumnNamesGallery = {"name_org", "name_new", "title", "subtitle", "photo_type", "uploader", "uploaderId", "photo_type", "contains",
@@ -290,7 +297,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
         Div divMainImage = new Div();
         Image mainImage = new Image();
-        String strMainImagePath = DIR_PHOTOS_SERVER + dirChar + "photographer.jpg";
+        String strMainImagePath = DIR_PHOTOS_SERVER + dirChar + "photographerM.jpg";
 
         final StreamResource imageMainResource = new StreamResource("streamResource", () -> {
             try {
@@ -346,35 +353,90 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
         verticalLayout.add(divMainImage, div1, div2, layoutUserBtns);
 
-        Div layoutLearningTopics = loadLearningTopics(sqlLearningTopics, arrColLearningTopics);
-
-        H3 titleLearnTopics = new H3("Learn About");
-        verticalLayout.add(titleLearnTopics, layoutLearningTopics);
+        Div divLearningTopics = loadLearningTopics(sqlLearningTopics, arrColLearningTopics);
+        VerticalLayout layoutLearningTopics = new VerticalLayout();
+        H2 titleLearnTopics = new H2("Learning Categories");
+        Button btnMoreLearnings = new Button("View All Learnings");
+        btnMoreLearnings.addClickListener(click->{
+            btnMoreLearnings.getUI().ifPresent(ui ->
+                    ui.navigate(LearningsView.class)
+            );
+        });
+        layoutLearningTopics.add(titleLearnTopics, divLearningTopics,btnMoreLearnings);
+        layoutLearningTopics.addClassNames(Width.FULL,AlignItems.CENTER,JustifyContent.CENTER,Padding.MEDIUM);
+        layoutLearningTopics.addClassName("page-section");
+        verticalLayout.add(layoutLearningTopics);
 
 
         Div layoutLearningGenres = loadLearningsAboutGenres(sqlLearningGenres, arrColLearningGenres);
 
-        H3 titleLearnGenres = new H3("Learnings Related to Specific Photo Genres");
-        verticalLayout.add(titleLearnGenres, layoutLearningGenres);
+        H2 titleLearnGenres = new H2("Learning Photo Genres");
+        Button btnMoreLearningGenres = new Button("View All Learnings");
+        btnMoreLearningGenres.addClickListener(click->{
+            btnMoreLearningGenres.getUI().ifPresent(ui ->
+                    ui.navigate(LearningsView.class)
+            );
+        });
+        verticalLayout.add(titleLearnGenres, layoutLearningGenres,btnMoreLearningGenres);
 
 
 //        H3 titleCarousel = new H3("10 Recently Uploaded Photos:");
 //        verticalLayout.add(titleCarousel, getCarousel(lstImage));
 
-//        H3 titleLastLearnings = new H3("Last Posted Learnings");
-//
-//        Div layoutLastLearnings = loadLastLearnings(sqlLearningsRead, arrColumnsLearning);
-//        verticalLayout.add(titleLastLearnings, layoutLastLearnings);
+        VerticalLayout layoutLastLearnings = new VerticalLayout();
+        layoutLastLearnings.addClassNames(Width.FULL,AlignItems.CENTER,JustifyContent.CENTER,Padding.MEDIUM);
+        layoutLastLearnings.addClassName("page-section");
 
-        H3 titleGraphLastPhotos = new H3("Uploads in last months:");
+        H2 titleLastLearnings = new H2("Last Posted Learnings");
+        Div divLastLearnings = loadLastLearnings(sqlLearningsRead, arrColumnsLearning);
+        layoutLastLearnings.add(titleLastLearnings, divLastLearnings);
+        verticalLayout.add(layoutLastLearnings);
+
+        H2 titleGraphLastPhotos = new H2("Photo Uploads");
         verticalLayout.add(titleGraphLastPhotos, loadGraphUploads(sqlUploadsGrouped, arrColsUploadsGrouped));
 
-        H3 titleLastPhotos = new H3("Last 20 Photos that Members Uploaded:");
-        Div layoutLastPhotos = loadUploadedPhotos(sqlGalleryAll + " LIMIT 20 ", arrColumnNamesGallery, false, false);
-        verticalLayout.add(titleLastPhotos, layoutLastPhotos);
+        VerticalLayout layoutLastPhotoUploads = new VerticalLayout();
+        layoutLastPhotoUploads.addClassNames(Width.FULL,AlignItems.CENTER,JustifyContent.CENTER,Padding.MEDIUM);
+        layoutLastPhotoUploads.addClassName("page-section");
+        H2 titleLastPhotos = new H2("Last Photos Uploaded");
+        layoutLastPhotos.addClassNames(Overflow.HIDDEN, Width.FULL,
+                AlignItems.CENTER, JustifyContent.CENTER,
+                Margin.NONE, Padding.SMALL);
+        layoutLastPhotos.addClassName("container-uploaded-lines");
 
+        HorizontalLayout layoutPhotosButton = new HorizontalLayout();
+        layoutPhotosButton.addClassNames(Margin.NONE, Padding.SMALL, AlignItems.CENTER,JustifyContent.EVENLY);
+        Button btnPhotosA = new Button("5");
+        String finalSqlGalleryAll = sqlGalleryAll;
+        btnPhotosA.addClickListener(e->{
+            layoutLastPhotos.removeAll();
+            layoutLastPhotos.add(loadUploadedPhotos(finalSqlGalleryAll + " LIMIT 5 ", arrColumnNamesGallery, false, false));
+        });
+        Button btnPhotosB = new Button("10");
+        btnPhotosB.addClickListener(e->{
+            layoutLastPhotos.removeAll();
+            layoutLastPhotos.add(loadUploadedPhotos(finalSqlGalleryAll + " LIMIT 10 ", arrColumnNamesGallery, false, false));
 
-        H3 titleWeather = new H3("Current Weather at:");
+        });
+        Button btnPhotosC = new Button("20");
+        btnPhotosC.addClickListener(e->{
+            layoutLastPhotos.removeAll();
+            layoutLastPhotos.add(loadUploadedPhotos(finalSqlGalleryAll + " LIMIT 20 ", arrColumnNamesGallery, false, false));
+        });
+
+        layoutPhotosButton.add(btnPhotosA,btnPhotosB,btnPhotosC);
+        layoutLastPhotos.add(loadUploadedPhotos(sqlGalleryAll + " LIMIT 5 ", arrColumnNamesGallery, false, false));
+
+        Button btnMorePhotos = new Button("More Photos");
+        btnMorePhotos.addClickListener(click->{
+            btnMorePhotos.getUI().ifPresent(ui ->
+                    ui.navigate(GalleryView.class)
+            );
+        });
+        layoutLastPhotoUploads.add(titleLastPhotos,layoutPhotosButton,layoutLastPhotos,btnMorePhotos);
+        verticalLayout.add(layoutLastPhotoUploads);
+
+        H2 titleWeather = new H2("Current Weather at:");
 
         Div layoutWeather = new Div();
         layoutWeather.addClassNames(Width.FULL);
@@ -508,6 +570,8 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
                 AlignItems.CENTER, JustifyContent.CENTER
         );
 
+        layoutLastPhotos = new Div();
+
         InetAddress inetAddress = null;
         try {
             inetAddress = InetAddress.getLocalHost();
@@ -547,9 +611,11 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
             );
         }
 
-        Html htmlTitle = new Html("<title>'photoact.net Network and Act around Photography'</title>");
-        Html htmlMeta = new Html("<meta name='description' content='Get the latest updates from our community of photographers.'>");
-        verticalLayout.add(htmlTitle, htmlMeta);
+        //HTMLElement htmlHead = new HTMLElement();
+
+//        HtmlContainer htmlTitle = new HtmlContainer("<title>'photoact.net Network and Act around Photography'</title>");
+//        HtmlContainer htmlMeta = new HtmlContainer("<meta name='description' content='Get the latest updates from our community of photographers.'>");
+//        verticalLayout.add(htmlTitle, htmlMeta);
 
         this.setWidthFull();
 
@@ -582,40 +648,67 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
     private Div loadLastLearnings(String sqlRead, String[] arrColumnNames) {
 
-
         Div layoutLastLearnings = new Div();
         layoutLastLearnings.addClassNames(AlignItems.CENTER, JustifyContent.CENTER,
                 Margin.XSMALL, //Margin.Vertical.SMALL,
-                Padding.XLARGE, //Padding.Vertical.SMALL,
-                Gap.LARGE);
-        layoutLastLearnings.addClassName("uploaded-line");
-
+                Padding.LARGE, //Padding.Vertical.SMALL,
+                Gap.XLARGE);
 
         List<Record> lstRecords = getRecordsFromDb(sqlRead, arrColumnNames);
         for (int r = 0; r < lstRecords.size(); r++) {
 
-            HorizontalLayout layoutLearningCat = new HorizontalLayout();
-            layoutLearningCat.addClassNames(AlignItems.CENTER, JustifyContent.CENTER,
-                    Padding.MEDIUM, Margin.XSMALL,
+            VerticalLayout layoutLearning = new VerticalLayout();
+            layoutLearning.addClassNames(AlignItems.CENTER, JustifyContent.CENTER,
+                    Padding.LARGE, Margin.LARGE,
                     TextColor.TERTIARY
             );
-            Record record = lstRecords.get(r);
-            String strCategory = record.getColumnData("cat_title");
-            String strCount = record.getColumnData("cat_count");
+            layoutLearning.addClassName("last-learning-item");
 
-            H4 h4Title = new H4(strCategory);
+            Record record = lstRecords.get(r);
+            String strTitle = record.getColumnData("title");
+            String strSubtitle = record.getColumnData("subtitle");
+            String strCategory = record.getColumnData("cat_title");
+            String strCatGenre = record.getColumnData("genre_title");
+            String strPicture = record.getColumnData("picture");
+            String strUrl = record.getColumnData("url");
+//            String strDescription = record.getColumnData("description");
+            String strDuration = record.getColumnData("duration");
+            String strPages = record.getColumnData("pages");
+            String strDateInserted = record.getColumnData("date_inserted");
+            String strTutorName = record.getColumnData("tutor_name");
+
+            H4 h4Title = new H4(strTitle);
             h4Title.addClassNames(FontWeight.BOLD, FontSize.LARGE);
 
-            Div divCategory = new Div(strCount + " about ");
 
-            layoutLearningCat.add(divCategory, h4Title);
+            Div divCategory = new Div();
+            if(!strCategory.isEmpty()){
+                divCategory.setText("Category: "+strCategory);
+            }else{
+                divCategory.setText("Genre: "+strCatGenre);
+            }
+            Div divDuration = new Div("Duration: "+strDuration);
+            Div divDateInserted = new Div("Inserted: "+strDateInserted);
 
-            layoutLastLearnings.add(layoutLearningCat);
+            H4 divTutor = new H4(strTutorName);
+            divTutor.addClassNames(FontWeight.BOLD, FontSize.LARGE);
+
+            HorizontalLayout layoutHor1 = new HorizontalLayout();
+            layoutHor1.addClassNames(Width.FULL, AlignItems.CENTER,JustifyContent.BETWEEN);
+            layoutHor1.add( divDuration, divDateInserted);
+
+            HorizontalLayout layoutHor2 = new HorizontalLayout();
+            layoutHor2.addClassNames(Width.FULL, AlignItems.CENTER,JustifyContent.BETWEEN);
+            layoutHor2.add( divTutor, divCategory);
+
+            layoutLearning.add(h4Title,layoutHor1, layoutHor2);
+
+            layoutLastLearnings.add(layoutLearning);
         }
         return layoutLastLearnings;
     }
 
-    private Div loadUploadedPhotos(String sqlRead, String[] arrColumnNames, boolean isEditable, boolean isThumbnails) {
+    private HorizontalLayout[] loadUploadedPhotos(String sqlRead, String[] arrColumnNames, boolean isEditable, boolean isThumbnails) {
 
 
         strPath = DIR_PHOTOS_SERVER + dirChar;
@@ -626,27 +719,30 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
             strPath = DIR_PHOTOS_SERVER + dirChar + subPathThumbs;
         }
 
-
-        Div layoutLastPhotos = new Div();
-        layoutLastPhotos.addClassNames(Overflow.HIDDEN, Width.FULL,
-                AlignItems.CENTER, JustifyContent.CENTER,
-                Margin.NONE, Width.FULL);
+//
+//        Div layoutLastPhotos = new Div();
+//        layoutLastPhotos.addClassNames(Overflow.HIDDEN,
+//                AlignItems.CENTER, JustifyContent.CENTER,
+//                Margin.NONE, Padding.MEDIUM);
 /*                Width.FULL, AlignItems.CENTER, JustifyContent.CENTER,
                 Margin.Horizontal.XLARGE, Margin.Vertical.SMALL,
                 Padding.Horizontal.XLARGE, Padding.Vertical.SMALL,
                 Gap.LARGE);*/
-        layoutLastPhotos.addClassName("container-uploaded-lines");
+
 
         List<Record> lstRecords = getRecordsFromDb(sqlRead, arrColumnNames);
+        HorizontalLayout[] layoutPhotoUploaded = new HorizontalLayout[lstRecords.size()];
         for (int r = 0; r < lstRecords.size(); r++) {
 
-            HorizontalLayout layoutPhotoUploaded = new HorizontalLayout();
-            layoutPhotoUploaded.addClassNames(AlignItems.CENTER, JustifyContent.BETWEEN,
-//                    Padding.XSMALL, Margin.SMALL,
+            HorizontalLayout layoutPhotoUploadedPanel = new HorizontalLayout();
+            layoutPhotoUploadedPanel.addClassNames(AlignItems.CENTER, JustifyContent.BETWEEN,
+//                   Margin.NONE, Padding.NONE,
                     TextColor.TERTIARY,
                     Background.CONTRAST_5
             );
-            layoutPhotoUploaded.addClassName("uploaded-line");
+            layoutPhotoUploadedPanel.addClassName("uploaded-line");
+
+
             Record record = lstRecords.get(r);
             String strFileName = record.getColumnData("name_new");
             String strTitle = record.getColumnData("title");
@@ -665,7 +761,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
             Image image = getImageThumbFromDb(record, strPath);
             image.getStyle().setWidth("auto");
-            image.getStyle().setMaxHeight("170px");
+            image.getStyle().setMaxHeight("120px");
             image.addClassNames(BorderRadius.SMALL);
 
             Icon iconLocation = VaadinIcon.LOCATION_ARROW_CIRCLE_O.create();
@@ -716,11 +812,12 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
             layoutDateLocationUp.addClassNames(AlignItems.CENTER, JustifyContent.CENTER, Margin.NONE, Padding.XSMALL, Gap.XSMALL);
             layoutDateLocationUp.add(divUploadedAt, badgeDateTime, divLocation, badgeLocation);
 
-            layoutPhotoUploaded.add(image, layoutMemberUp, layoutDateLocationUp);
+            layoutPhotoUploadedPanel.add(image, layoutMemberUp, layoutDateLocationUp);
 
-            layoutLastPhotos.add(layoutPhotoUploaded);
+            layoutPhotoUploadedPanel.getStyle().setOpacity("1");
+            layoutPhotoUploaded[r]= layoutPhotoUploadedPanel;
         }
-        return layoutLastPhotos;
+        return layoutPhotoUploaded;
     }
 
     private VerticalLayout loadHeader(String strHeader, String strSubHeader, String strSection) {
@@ -937,7 +1034,6 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
     private VerticalLayout loadGraphUploads(String sqlRead, String[] arrColumnNames) {
 
-
         List<Record> lstRecords = getRecordsFromDb(sqlRead, arrColumnNames);
         Series<Object> data = new Series<>();
         data.setName("Photos");
@@ -947,7 +1043,6 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
             intPhotos[r] = Integer.parseInt(lstRecords.get(r).getColumnData("photos"));
             strMonths[r] = lstRecords.get(r).getColumnData("month");
-
         }
 
         data.setData(intPhotos);
@@ -961,7 +1056,6 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
             layoutUploads.setWidth("82%");
             layoutUploads.setMaxWidth("1100px");
         }
-//        layoutUploads.getStyle().set
 
         ApexChartsBuilder charts1 = new ApexChartsBuilder();
         charts1.withChart(ChartBuilder.get()
@@ -1180,7 +1274,6 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 //        return layoutLearnings;
 //    }
     private Div loadLearningTopics(String sqlRead, String[] arrColumnNames) {
-
 
         Div panelOfTopics = new Div();
         if (isMobile) {
@@ -1523,7 +1616,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
         String insertSQL = "INSERT INTO dbvisitor_log SET visitorlogId = 0,  timeOfVisit = now(), ipAddress = '" + publicIp + "', browserName = '" + browser + "', "
                 + " browserVersionMajor = '" + versionOfBrowserMajor + "', browserVersionMinor = '" + versionOfBrowserMinor + "', urlParameter = NULL , timeZoneId = '" + timeZoneId + "', "
-                + " appVersion = '" + APP_NAME + "-" + APP_VERSION + "', sessionId = '" + sessionid + "', sessionCreationTime = '" + sessionDateTime + "', hostname = '" + hostname + "', "
+                + " appVersion = '" + APP_NAME + "-" + APP_VERSION + "', parentSection = 'photo', sessionId = '" + sessionid + "', sessionCreationTime = '" + sessionDateTime + "', hostname = '" + hostname + "', "
                 + " hostAddress = '" + hostAddress + "', os = '" + strOS + "', browser = '" + strBrowser + "', section = '" + section + "',"
                 + " item = " + strPath + ", ref = " + strUrlRequestToBeLogged + ", "
                 + " locale = '" + locale + "', localeName ='" + localeName + "' ";

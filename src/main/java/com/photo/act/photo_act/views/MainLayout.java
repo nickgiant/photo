@@ -162,12 +162,12 @@ public class MainLayout extends AppLayout {
         if (isMobile) {
             list.addClassNames(Display.FLEX, Width.FULL,
                     ListStyleType.NONE, Margin.NONE, Padding.NONE,
-                    FontSize.XXSMALL, AlignItems.CENTER, JustifyContent.EVENLY
+                     AlignItems.CENTER, JustifyContent.EVENLY
             );
         } else {
             list.addClassNames(Display.FLEX, Width.FULL,
                     ListStyleType.NONE, Margin.NONE, Padding.NONE,
-                    FontSize.MEDIUM, AlignItems.CENTER, JustifyContent.EVENLY
+                    AlignItems.CENTER, JustifyContent.EVENLY
             );
         }
         nav.add(list);

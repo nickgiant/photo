@@ -162,8 +162,6 @@ public class GalleryImageViewCard extends Div {
 
         Image imgAvatarSmall = genericView.getAvatarImage(strAvatarPath, strPhotoUserName, "40px", "40px");
         Image imgAvatarMedium = genericView.getAvatarImage(strAvatarPath, strPhotoUserName, "70px", "70px");
-//        Image imgAvatarMedium = getAvatarImage(strAvatar, strPhotoUserName, "70px", "70px");
-
 
         HorizontalLayout layoutPhotosInfo = new HorizontalLayout();
         layoutPhotosInfo.addClassNames(
@@ -482,7 +480,7 @@ public class GalleryImageViewCard extends Div {
         if (!isEditable) {
             //anyone logged in
             if (isMobile) {
-                divPhotoInfo.add(header, divTextDescription, detailsPhotoInfo, detailsMember, getActions(strCity));
+                divPhotoInfo.add(header, divTextDescription, detailsPhotoInfo, getActions(strCity));
             } else {
                 divPhotoInfo.add(header, divTextDescription, detailsMember, getActions(strCity));
             }
@@ -500,12 +498,6 @@ public class GalleryImageViewCard extends Div {
         }
     }
 
-    public Div getCardForGrid() {
-        Div divCard = new Div();
-
-
-        return divCard;
-    }
 
 
     private HorizontalLayout getMemberActions() {
@@ -763,88 +755,6 @@ public class GalleryImageViewCard extends Div {
         layoutActions.add(menuBar);
 
         return layoutActions;
-    }
-
-
-    public GalleryImageViewCard(String strUsername, String url, boolean isMobile) {
-//        addClassNames(
-//                Overflow.HIDDEN,
-//                //  Width.FULL,
-//                Background.CONTRAST_5, Display.FLEX, FlexDirection.COLUMN,
-//                BorderRadius.LARGE,
-//                // Margin.Left.NONE, Margin.Right.NONE,
-//                Padding.NONE,
-//                Margin.NONE
-//                // Margin.Left.MEDIUM, Margin.Right.MEDIUM, Margin.Top.XSMALL, Margin.Bottom.XSMALL,
-//                //AlignItems.CENTER
-//        );
-//
-//        Div divImage = new Div();
-//        divImage.addClassNames( Overflow.HIDDEN, BorderRadius.LARGE);
-//
-//        Path path = Paths.get(url);
-//        File file = path.toFile();
-//
-//        final StreamResource imageResource = new StreamResource("streamResource", () -> {
-//            try {
-//                return new FileInputStream(file);
-//            } catch (final FileNotFoundException e) {
-//                //logErrorInDb(e,hostname,"CreationsViewCard StreamResource",userId,username,file.getAbsolutePath());
-//                logger.error("FileNotFoundException  " + e.getMessage());
-//                // e.printStackTrace();
-//                return null;
-//            }
-//        });
-//
-//        Image image = new Image();
-//        image.setWidthFull();
-//        image.setHeight("auto");
-//        image.setSrc(imageResource);
-//        image.addClassNames(BorderRadius.MEDIUM);
-//
-//        divImage.add(image);
-//
-//        Span header = new Span();
-//        header.addClassNames(FontSize.MEDIUM, TextColor.SECONDARY, FontWeight.SEMIBOLD);
-//        header.getStyle().set("font-family", "Times-New-Roman, serif");
-//        header.setText("title");
-//
-//        Span objUser = new Span();
-//        objUser.addClassNames(FontSize.SMALL, TextColor.TERTIARY, FontWeight.BOLD);
-//        objUser.setText("created by me");
-//
-//        Span subtitle = new Span();
-//        subtitle.addClassNames(FontSize.SMALL, TextColor.TERTIARY);
-//        subtitle.setText("Subtitle");
-//
-//        Span badge = new Span();
-//        badge.getElement().setAttribute("theme", "badge");
-//        badge.setText("Photo Tag");
-//
-//        if(isMobile)
-//        {
-//            this.setWidthFull();
-//        } else {
-//            divImage.setMaxHeight("500px");
-//            divImage.setWidthFull();
-//            // this.setMinWidth("400px");
-//        }
-//
-//        VerticalLayout divDescription = new VerticalLayout();
-//        divDescription.addClassNames(AlignItems.START, JustifyContent.AROUND, Padding.XSMALL, Margin.XSMALL);
-//        divDescription.add( header,objUser, subtitle, badge);
-//
-//        this.add(divImage,divDescription);
-    }
-
-    private VerticalLayout getPhotoMetaDataLayout(Record record) {
-
-        VerticalLayout layoutMetaData = new VerticalLayout();
-//                    ,"space_size","space_size_medium", "space_size_thumb","meta_camera_make", "meta_camera_model","meta_lens_make","meta_lens_model"
-//                ,"meta_focal_length", "meta_focal_length_ff", "meta_iso"
-//                ,"location_by_user","location_area","location_country_code","location_lat","location_lon"
-
-        return layoutMetaData;
     }
 
     private void logErrorInDb(Exception e, String function, String hostname, int userId, String strUsername, String publicIp, long sessionCreation, String info) {

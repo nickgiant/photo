@@ -18,8 +18,10 @@ public class UsersManager implements UserDetailsManager {
     public UsersManager(RecordService recordService) {
         this.recordService = recordService;
 
-        String[] arrCols = {"userId", "username", "password", "role"};
-        String strSql = "SELECT userId , username, password, role FROM dbuser WHERE 1=1";
+        String[] arrCols = {"userId", "username", "password", "user_rights_id", "role"};
+        String strSql = " SELECT u.userId , u.username, u.password, u.user_rights_id, r.role FROM dbuser u, dbuser_rights r " +
+                " WHERE 1=1 " +
+                " AND u.user_rights_id = r.id ";
         List<Record> rec = recordService.findAll(strSql, arrCols);
 
 

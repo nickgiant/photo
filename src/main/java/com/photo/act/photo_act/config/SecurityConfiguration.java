@@ -4,6 +4,7 @@ import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.views.LoginView;
 import com.vaadin.flow.spring.security.VaadinWebSecurity;
+import jakarta.servlet.*;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -14,7 +15,9 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.provisioning.UserDetailsManager;
+import org.springframework.security.web.access.channel.SecureChannelProcessor;
 
+import java.io.IOException;
 import java.util.List;
 
 @EnableWebSecurity
@@ -30,6 +33,7 @@ public class SecurityConfiguration extends VaadinWebSecurity {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         super.configure(http);
+        //http.requiresChannel();
         setLoginView(http, LoginView.class, "/home");
 
     }
@@ -38,8 +42,10 @@ public class SecurityConfiguration extends VaadinWebSecurity {
     @Bean
     public UserDetailsManager userDetailsManager() {
 
-        String[] arrCols = {"userId", "username", "password", "role"};
-        String strSql = "SELECT userId , username, password, role FROM dbuser WHERE 1=1";
+        String[] arrCols = {"userId", "username", "password", "user_rights_id", "role"};
+        String strSql = " SELECT u.userId , u.username, u.password, u.user_rights_id, r.role FROM dbuser u, dbuser_rights r " +
+                " WHERE 1=1 " +
+                " AND u.user_rights_id = r.id ";
         List<Record> lstUsers = recordService.findAll(strSql, arrCols);
 
         InMemoryUserDetailsManager inMemoryUserDetailsManager = new InMemoryUserDetailsManager();

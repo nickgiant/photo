@@ -4,30 +4,34 @@ import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.javamail.MimeMessageHelper;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 import java.io.File;
 
 
-@Service
+@Component
 public class EmailSendService implements EmailService {
 
     private static final Logger logger = LoggerFactory.getLogger(EmailSendService.class);
 
+    private final JavaMailSender emailSender;
 
-    private JavaMailSender emailSender;
+    @Autowired
+    public EmailSendService(JavaMailSender emailSender) {
+        this.emailSender = emailSender;
+    }
 
 
     public String sendSimpleMail(String strFrom, String to, String subject, String text) {
 
 
         try {
-            emailSender = new JavaMailSenderImpl();
+           // emailSender = new JavaMailSenderImpl();
 
 
             SimpleMailMessage message = new SimpleMailMessage();
@@ -46,7 +50,7 @@ public class EmailSendService implements EmailService {
     }
 
     public String sendMailWithAttachment(String strFrom, String to, String subject, String text, String pathToAttachment, String sentAsFilename) {
-        emailSender = new JavaMailSenderImpl();
+       // emailSender = new JavaMailSenderImpl();
         try {
             MimeMessage message = emailSender.createMimeMessage();
 

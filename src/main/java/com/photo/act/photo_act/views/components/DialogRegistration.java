@@ -21,6 +21,7 @@ import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.theme.lumo.LumoUtility.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -38,11 +39,22 @@ public class DialogRegistration extends Dialog {
 
     private String dirChar = FileSystems.getDefault().getSeparator();
 
-    private EmailSendService mailSend;
+    private EmailSendService emailSendService;
+
+    private String strMailboxSend = "info@photoact.net";
+    private String strUserReferCode;
+    private String publicIp;
+
+    @Autowired
+    public DialogRegistration(EmailSendService emailSendService){
+        this.emailSendService = emailSendService;
+    }
 
     public DialogRegistration(boolean isMobile, String strUserReferCode, long sessionCreation,
                               String hostname, String publicIp, RecordService recordService, String section, String strCalledFrom) {
         this.recordService = recordService;
+        this.strUserReferCode = strUserReferCode;
+        this.publicIp = publicIp;
         this.isMobile = isMobile;
 
         int userId = 1;
@@ -53,7 +65,7 @@ public class DialogRegistration extends Dialog {
         VerticalLayout verticalLayout = new VerticalLayout();
         verticalLayout.addClassNames(AlignItems.CENTER, JustifyContent.CENTER, Padding.SMALL, Gap.MEDIUM);
 
-        mailSend = new EmailSendService();
+
 
 //        genericView = new GenericView(recordService, 1);
 
@@ -238,8 +250,10 @@ public class DialogRegistration extends Dialog {
         Notification notification = Notification.show("Check your email to activate your account.");
         notification.addThemeVariants(NotificationVariant.LUMO_CONTRAST);
 
-        mailSend.sendSimpleMail("registration@photoact.net", "nickgiant@yahoo.com", "Registration for photoact.net",
-                "Please confirm you have registered for photoact.net!");
+        emailSendService.sendSimpleMail(strMailboxSend, "nickgiant@yahoo.com", "New member!", "From IP: " + publicIp+ " username: "+strUsername +
+                " email: "+ strEmail+ " Name: " + strName +" Surname: "+ strSurname);
+//        emailSendService.sendSimpleMail(strMailboxSend, strEmail, "Registration for photoact.net",
+//                strName+" "+strSurname+", Please confirm you have registered for photoact.net!");
 
         this.setOpened(false);
 

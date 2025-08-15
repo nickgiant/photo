@@ -7,6 +7,7 @@ import com.photo.act.photo_act.views.components.DialogRegistration;
 import com.photo.act.photo_act.views.components.GenericView;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.HasStyle;
+import com.vaadin.flow.component.Html;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
@@ -68,17 +69,27 @@ public class LoginView extends VerticalLayout implements BeforeEnterObserver, Ha
         utilsDate = new UtilsDate();
         genericView = new GenericView(recordService, 1);
 
-        setSizeFull();
-        setAlignItems(Alignment.CENTER);
-        setJustifyContentMode(JustifyContentMode.CENTER);
+        constructUI();
+//        setAlignItems(Alignment.CENTER);
+//        setJustifyContentMode(JustifyContentMode.CENTER);
 
         var login = new LoginForm();
         login.setAction("login");
         login.setForgotPasswordButtonVisible(false);
+//        login.addLoginListener(l -> UI.getCurrent().navigate("/home"));
+
+//        UI.getCurrent().navigate(StringUtils.removeStart(requestedURI, "/"));
+
 
         var i18n = LoginI18n.createDefault();
         i18n.getForm().setTitle("Login");
-        // i18n.setErrorMessage();
+
+        LoginI18n.ErrorMessage i18nErrorMessage = i18n.getErrorMessage();
+        i18nErrorMessage.setTitle("Väärä käyttäjätunnus tai salasana");
+        i18nErrorMessage.setMessage(
+                "Tarkista että käyttäjätunnus ja salasana ovat oikein ja yritä uudestaan.");
+        i18n.setErrorMessage(i18nErrorMessage);
+        //i18n.setErrorMessage("Wrong credentials");
 //        i18n.getForm().setUsername("Email");
 //        i18n.getErrorMessage().setUsername("Email is required");
         login.setI18n(i18n);
@@ -120,6 +131,29 @@ public class LoginView extends VerticalLayout implements BeforeEnterObserver, Ha
     public void beforeEnter(@OptionalParameter BeforeEnterEvent event) {
 
         getUserClientInfo();
+
+    }
+
+    private void constructUI() {
+        addClassNames("home-view");
+        addClassNames(LumoUtility.Overflow.HIDDEN, LumoUtility.Width.FULL,
+                // Margin.LARGE, //.Left.MEDIUM, Margin.Right.MEDIUM,
+                //  Padding.Left.MEDIUM, Padding.Left.MEDIUM,
+                LumoUtility.Margin.NONE,
+                LumoUtility.Padding.NONE,
+                LumoUtility.Gap.MEDIUM,
+                //  Padding.NONE, //.Left.MEDIUM, Padding.Right.MEDIUM,
+                //Margin.Vertical.MEDIUM, Padding.Vertical.NONE,
+                LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER
+        );
+
+        DIR_PHOTOS_SERVER = genericView.getAppProps(PROP_PHOTOS);
+
+        Html htmlTitle = new Html("<title>'photoact.net Network and Act around Photography'</title>");
+        Html htmlMeta = new Html("<meta name='description' content='Get the latest updates from our community of photographers.'>");
+        this.add(htmlTitle, htmlMeta);
+
+        this.setWidthFull();
 
     }
 

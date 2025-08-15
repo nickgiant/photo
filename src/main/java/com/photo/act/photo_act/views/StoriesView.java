@@ -29,6 +29,7 @@ import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
+import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import com.vaadin.flow.theme.lumo.LumoUtility.*;
 import jakarta.annotation.security.PermitAll;
@@ -47,7 +48,7 @@ import static com.photo.act.photo_act.views.LearningsView.STR_ALL_CATEGORIES;
 import static com.photo.act.photo_act.views.LearningsView.STR_ALL_TITLES;
 import static com.photo.act.photo_act.views.MainLayout.*;
 
-@PermitAll
+@AnonymousAllowed
 
 //@PageTitle("Image Gallery")
 @Route(value = "stories") //":category?")
@@ -637,24 +638,8 @@ public class StoriesView extends Main implements HasUrlParameter<String>, Before
     }
 
     private StoryViewCard getStoriesFromDb(Record record, boolean isEditable) {
-        strPath = DIR_PHOTOS_SERVER + dirChar + subPathThumbs;
+        strPath = DIR_PHOTOS_SERVER + dirChar + subPathMedium;
 
-//        String strFileName = record.getColumnData("name_new");
-//        String strTitle = record.getColumnData("title");
-//        String strSubTitle = record.getColumnData("subtitle");
-//        String strPhotoType = record.getColumnData("photo_type");
-//
-//        String strCityName = record.getColumnData("city_name");
-//        String strUploader = record.getColumnData("uploader");
-//
-//        String strStoryTitle = record.getColumnData("story_title");
-
-//        RouteParam routeUploaderAll = new RouteParam("member", STR_ALL_MEMBERS);
-
-//        RouteParam routeAlbum = new RouteParam("title", strTitle);
-//        RouteParam routeUploader = new RouteParam("member", strUploader);
-//        //RouterLink linkUploader = new RouterLink(strUploader, AlbumsView.class, new RouteParameters(routeAlbum, routeUploader));
-//        RouterLink linkAlbum = new RouterLink(strTitle, AlbumsView.class, new RouteParameters(routeAlbum, routeUploader));
 
         String strImagePath = strPath; // + strFileName;
         logger.info(" strImagePath " + strImagePath);
@@ -682,7 +667,7 @@ public class StoriesView extends Main implements HasUrlParameter<String>, Before
     }
 
     private StoryItemViewCard getStoryItemsFromDb(Record record, boolean isEditable) {
-        strPath = DIR_PHOTOS_SERVER + dirChar + subPathThumbs;
+        strPath = DIR_PHOTOS_SERVER + dirChar + subPathMedium;
 
         String strFileName = record.getColumnData("name_new");
         String strTitle = record.getColumnData("title");
@@ -1089,7 +1074,7 @@ public class StoriesView extends Main implements HasUrlParameter<String>, Before
 
         String insertSQL = "INSERT INTO dbvisitor_log SET visitorlogId = 0,  timeOfVisit = now(), ipAddress = '" + publicIp + "', browserName = '" + browser + "', "
                 + " browserVersionMajor = '" + versionOfBrowserMajor + "', browserVersionMinor = '" + versionOfBrowserMinor + "', urlParameter = NULL , timeZoneId = '" + timeZoneId + "', "
-                + " appVersion = '" + APP_NAME + "-" + APP_VERSION + "', sessionId = '" + sessionid + "', sessionCreationTime = '" + sessionDateTime + "', hostname = '" + hostname + "', "
+                + " appVersion = '" + APP_NAME + "-" + APP_VERSION + "',  parentSection = 'photo',  sessionId = '" + sessionid + "', sessionCreationTime = '" + sessionDateTime + "', hostname = '" + hostname + "', "
                 + " hostAddress = '" + hostAddress + "', os = '" + strOS + "', browser = '" + strBrowser + "', section = '" + section + "',"
                 + " item = " + strPath + ", ref = " + strUrlRequestToBeLogged + ", "
                 + " locale = '" + locale + "', localeName ='" + localeName + "' ";

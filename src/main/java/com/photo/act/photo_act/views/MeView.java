@@ -3,6 +3,7 @@ package com.photo.act.photo_act.views;
 import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
+import com.photo.act.photo_act.services.EmailSendService;
 import com.photo.act.photo_act.services.ImageService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
@@ -150,9 +151,11 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
     private String strOS;
     private String strBrowser;
     private GenericView genericView;
+    private EmailSendService emailSendService;
 
-    public MeView(RecordService recordService) {
+    public MeView(RecordService recordService, EmailSendService emailSendService) {
         this.recordService = recordService;
+        this.emailSendService = emailSendService;
 
         utilsDate = new UtilsDate();
         genericView = new GenericView(recordService, 1);
@@ -441,7 +444,7 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
     }
 
     private void loadUploadView(int intUserId, String strMember) {
-        UploadImageCard uploadImageCard = new UploadImageCard(recordService, intUserId, strMember, sessionCreation, publicIp, hostname);
+        UploadImageCard uploadImageCard = new UploadImageCard(recordService, emailSendService, intUserId, strMember, sessionCreation, publicIp, hostname);
         uploadImageCard.addClassNames(
                 Overflow.HIDDEN, Width.FULL,
                 Margin.SMALL,
@@ -894,7 +897,7 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
 
         String insertSQL = "INSERT INTO dbvisitor_log SET visitorlogId = 0,  timeOfVisit = now(), ipAddress = '" + publicIp + "', browserName = '" + browser + "', "
                 + " browserVersionMajor = '" + versionOfBrowserMajor + "', browserVersionMinor = '" + versionOfBrowserMinor + "', urlParameter = NULL , timeZoneId = '" + timeZoneId + "', "
-                + " appVersion = '" + APP_NAME + "-" + APP_VERSION + "', sessionId = '" + sessionid + "', sessionCreationTime = '" + sessionDateTime + "', hostname = '" + hostname + "', "
+                + " appVersion = '" + APP_NAME + "-" + APP_VERSION + "',  parentSection = 'photo',  sessionId = '" + sessionid + "', sessionCreationTime = '" + sessionDateTime + "', hostname = '" + hostname + "', "
                 + " hostAddress = '" + hostAddress + "', os = '" + strOS + "', browser = '" + strBrowser + "', section = '" + section + "',"
                 + " item = '" + logText + "' , ref = " + strUrlRequestToBeLogged + ", "
                 + " locale = '" + locale + "', localeName ='" + localeName + "' ";

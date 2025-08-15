@@ -3,6 +3,7 @@ package com.photo.act.photo_act.views;
 import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
+import com.photo.act.photo_act.services.EmailSendService;
 import com.photo.act.photo_act.services.ImageService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
@@ -155,9 +156,11 @@ public class MembersView extends Main implements HasUrlParameter<String>, Before
     private String strOS;
     private String strBrowser;
     private GenericView genericView;
+    private EmailSendService emailSendService;
 
-    public MembersView(RecordService recordService) {
+    public MembersView(RecordService recordService, EmailSendService emailSendService) {
         this.recordService = recordService;
+        this.emailSendService = emailSendService;
 
         utilsDate = new UtilsDate();
         genericView = new GenericView(recordService, 1);
@@ -201,7 +204,7 @@ public class MembersView extends Main implements HasUrlParameter<String>, Before
 
             Div divMainImage = new Div();
             Image mainImage = new Image();
-            String strMainImagePath = DIR_PHOTOS_SERVER + dirChar + "photographer.jpg";
+            String strMainImagePath = DIR_PHOTOS_SERVER + dirChar + "photographerS.jpg";
 
             final StreamResource imageMainResource = new StreamResource("streamResource", () -> {
                 try {
@@ -232,7 +235,7 @@ public class MembersView extends Main implements HasUrlParameter<String>, Before
             Div div2 = new Div("Currently, we share info about events and learnings. Of course, we also have space for our photos and albums.");
 
 
-            verticalLayout.add(divMainImage, div1, div2);
+            verticalLayout.add(divMainImage);
 
             verticalLayout.add(loadHeader("Members", "", ""));
 
@@ -507,7 +510,7 @@ public class MembersView extends Main implements HasUrlParameter<String>, Before
     }
 
     private void loadUploadView(int intUserId, String strMember) {
-        UploadImageCard uploadImageCard = new UploadImageCard(recordService, intUserId, strMember, sessionCreation, publicIp, hostname);
+        UploadImageCard uploadImageCard = new UploadImageCard(recordService, emailSendService , intUserId, strMember, sessionCreation, publicIp, hostname);
         uploadImageCard.addClassNames(
                 Overflow.HIDDEN, Width.FULL,
                 Margin.SMALL,
@@ -913,7 +916,7 @@ public class MembersView extends Main implements HasUrlParameter<String>, Before
 
         String insertSQL = "INSERT INTO dbvisitor_log SET visitorlogId = 0,  timeOfVisit = now(), ipAddress = '" + publicIp + "', browserName = '" + browser + "', "
                 + " browserVersionMajor = '" + versionOfBrowserMajor + "', browserVersionMinor = '" + versionOfBrowserMinor + "', urlParameter = NULL , timeZoneId = '" + timeZoneId + "', "
-                + " appVersion = '" + APP_NAME + "-" + APP_VERSION + "', sessionId = '" + sessionid + "', sessionCreationTime = '" + sessionDateTime + "', hostname = '" + hostname + "', "
+                + " appVersion = '" + APP_NAME + "-" + APP_VERSION + "',  parentSection = 'photo',  sessionId = '" + sessionid + "', sessionCreationTime = '" + sessionDateTime + "', hostname = '" + hostname + "', "
                 + " hostAddress = '" + hostAddress + "', os = '" + strOS + "', browser = '" + strBrowser + "', section = '" + section + "',"
                 + " item = '" + logText + "' , ref = " + strUrlRequestToBeLogged + ", "
                 + " locale = '" + locale + "', localeName ='" + localeName + "' ";

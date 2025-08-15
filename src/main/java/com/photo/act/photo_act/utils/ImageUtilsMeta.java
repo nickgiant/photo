@@ -232,6 +232,13 @@ public class ImageUtilsMeta {
             }
 
             lstInfo.add(getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_METERING_MODE));
+            lstInfo.add(getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_EXIF_IMAGE_LENGTH));
+            lstInfo.add(getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_EXIF_IMAGE_WIDTH));
+            lstInfo.add(getTagValue(jpegMetadata, TiffTagConstants.TIFF_TAG_ORIENTATION));
+            lstInfo.add(getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_EXPOSURE_MODE));
+            lstInfo.add(getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_EXPOSURE_PROGRAM));
+
+
 
 
 //
@@ -359,6 +366,9 @@ public class ImageUtilsMeta {
             metadataInfo.append(getTagValueAsHtml(jpegMetadata, ExifTagConstants.EXIF_TAG_CAMERA_OWNER_NAME));
             //metadataInfo.append(getTagValueAsHtml(jpegMetadata, ExifTagConstants.EXIF_TAG_IMAGE_NUMBER));  // produces error
             metadataInfo.append(getTagValueAsHtml(jpegMetadata, ExifTagConstants.EXIF_TAG_IMAGE_UNIQUE_ID));
+            metadataInfo.append(getTagValueAsHtml(jpegMetadata, ExifTagConstants.EXIF_TAG_EXIF_IMAGE_LENGTH));
+            metadataInfo.append(getTagValueAsHtml(jpegMetadata, ExifTagConstants.EXIF_TAG_EXIF_IMAGE_WIDTH));
+            metadataInfo.append(getTagValueAsHtml(jpegMetadata, TiffTagConstants.TIFF_TAG_ORIENTATION));
 
             metadataInfo.append("</table>");
         } else {

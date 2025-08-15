@@ -281,8 +281,6 @@ public class ImageService {
 
             double dblPhotoAperture = 0;
             String strPhotoAperture = lstPhotoMetaData.get(9);
-
-
             if (!strPhotoAperture.equalsIgnoreCase("null")) {
                 String strAperture = "";
                 try {
@@ -315,6 +313,28 @@ public class ImageService {
                 notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
             }
 
+            String strMeteringMode = lstPhotoMetaData.get(10);
+            if (strMeteringMode==null || strMeteringMode.isEmpty() || strMeteringMode.equalsIgnoreCase("null")) {
+                strMeteringMode ="";
+            }
+
+            int intImageLength = 0;
+            String strImageLength = lstPhotoMetaData.get(11);
+            if (strImageLength==null || strImageLength.isEmpty() || strImageLength.equalsIgnoreCase("null")) {
+                intImageLength =0;
+            }else{
+                intImageLength = Integer.parseInt(strImageLength);
+            }
+
+            int intImageWidth = 0;
+            String strImageWidth = lstPhotoMetaData.get(12);
+            if (strImageWidth==null || strImageWidth.isEmpty() || strImageWidth.equalsIgnoreCase("null")) {
+                intImageWidth =0;
+            }else{
+                intImageWidth = Integer.parseInt(strImageWidth);
+            }
+
+            String strOrientation = lstPhotoMetaData.get(13);
 
             if (strPhotoLensMake.isEmpty()) {
                 strPhotoLensMake = "''";
@@ -336,6 +356,10 @@ public class ImageService {
                     " meta_iso = '" + intPhotoISO + "' " +
                     " , meta_shutter_speed = '" + dblPhotoShutterSpeed + "' " +
                     " , meta_aperture = '" + dblPhotoAperture + "' " +
+                    " , meta_metering_mode = '" + strMeteringMode + "' " +
+                    " , meta_i_length = '" + intImageLength + "' " +
+                    " , meta_i_width = '" + intImageWidth + "' " +
+                    " , meta_orientation = '" + strOrientation + "' " +
 
                     " WHERE name_new LIKE '" + strNewFileName + "' AND uploaderId = " + intUserId + " ORDER BY id DESC ";
 

@@ -203,7 +203,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         intRecsOnPage = Integer.parseInt(cmbCountPerPage.getValue());
 
 
-        if (strMember.equalsIgnoreCase(STR_ALL_MEMBERS) && (strDestination.equalsIgnoreCase(STR_ALL_DESTINATIONS))) {
+        if (strMember.equalsIgnoreCase(STR_ALL_MEMBERS) && (strDestination.equalsIgnoreCase(STR_ALL_DESTINATIONS) || (strDestination.isEmpty()))) {
             verticalLayout.add(loadHeader("Photos", "", ""));
 
             sqlWhereAnd = " AND pm.visible_to = 'ALL' ";
@@ -212,15 +212,13 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
 //            verticalLayout.add(loadCarouselWithThumbnails(sqlGalleryAll, arrColumnNamesGallery));
 
             getFilterResults(sqlWhereAnd, sqlOrderBy);
-        } else if (strMember.equalsIgnoreCase(STR_ALL_MEMBERS) && !strDestination.equalsIgnoreCase(STR_ALL_DESTINATIONS)) {
+        } else if (strMember.equalsIgnoreCase(STR_ALL_MEMBERS) && !strDestination.equalsIgnoreCase(STR_ALL_DESTINATIONS) && !strDestination.isEmpty()) {
             verticalLayout.add(loadHeader("Photos", "", strDestination));
             verticalLayout.add(loadWeather(strDestination, ""));
-
 
             sqlWhereAnd = " AND pm.visible_to = 'ALL' " + " AND d.city_name LIKE '" + strDestination + "' ";
 
             //  String sqlOrderBy = " ORDER BY pm.date_inserted DESC, pm.title ASC, meta_date DESC ";
-
 //            verticalLayout.add(loadCarouselWithThumbnails(sqlGalleryAll, arrColumnNamesGallery));
 
             getFilterResults(sqlWhereAnd, sqlOrderBy);
@@ -950,7 +948,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
 
         String insertSQL = "INSERT INTO dbvisitor_log SET visitorlogId = 0,  timeOfVisit = now(), ipAddress = '" + publicIp + "', browserName = '" + browser + "', "
                 + " browserVersionMajor = '" + versionOfBrowserMajor + "', browserVersionMinor = '" + versionOfBrowserMinor + "', urlParameter = NULL , timeZoneId = '" + timeZoneId + "', "
-                + " appVersion = '" + APP_NAME + "-" + APP_VERSION + "', sessionId = '" + sessionid + "', sessionCreationTime = '" + sessionDateTime + "', hostname = '" + hostname + "', "
+                + " appVersion = '" + APP_NAME + "-" + APP_VERSION + "',  parentSection = 'photo',  sessionId = '" + sessionid + "', sessionCreationTime = '" + sessionDateTime + "', hostname = '" + hostname + "', "
                 + " hostAddress = '" + hostAddress + "', os = '" + strOS + "', browser = '" + strBrowser + "', section = '" + section + "',"
                 + " item = " + strPath + ", ref = " + strUrlRequestToBeLogged + ", "
                 + " locale = '" + locale + "', localeName ='" + localeName + "' ";

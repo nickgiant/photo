@@ -30,22 +30,24 @@ header p {
 
 .home-view h1 {
     margin: 0;
+    font-weight: 900;
     padding: 40px 0 25px;
     font-family:  "Lucida Console", "Lucida Sans Typewriter", sans-serif;
 }
 
-.home-view h3{
-    font-family: 'Open Sans', sans-serif; /* "Times-New-Roman", serif; /* "'Brush Script MT', cursive";*/
-    text-decoration: none;
+.home-view h2{
+    padding: 24px 0 6px;
+    font-family: Georgia, serif; /*font-family: 'Open Sans', sans-serif; /* "Times-New-Roman", serif; /* "'Brush Script MT', cursive";*/
     text-align: center;
-    font-weight: bold;
+    font-weight: 600;
+    font-size: 36px;
     /*text-shadow: var(--lumo-contrast-20pct);*/
     letter-spacing: 2px;
-    font-size: 14pt;
-    /*text-decoration-color: var(--lumo-contrast-20pct);*/
-    /*text-decoration-style: dotted;*/
-    /*text-decoration-line: underline;*/
-    /*text-decoration-thickness: 30%;*/
+    text-decoration: none;
+    /*text-decoration-color: var(--lumo-secondary-text-color);
+    text-decoration-style: dotted;
+    text-decoration-line: underline;
+    text-decoration-thickness: 2px;*/
     color: var(--lumo-secondary-text-color);
 }
 
@@ -67,7 +69,7 @@ header p {
     gap: 1rem;
 }
 
-.home-view .actions-toolbar vaadin-button{
+.home-view .actions-toolbar &vaadin-button{
     /*padding-top: 1rem;*/
     /*padding-bottom: 1rem;*/
     padding-left: 17px;
@@ -151,7 +153,7 @@ header p {
 .home-view .learning-photo-genres a {
         color: #666666; /* #466ca8; /* #6c9494;*/
        /* min-height: 180px;*/
-        background-color: transparent; /*#d9e5f7;*/
+        background-color: #ffffff;/*#d9e5f7;*/
         border-radius: 4px;
         border: 1px solid #c7d8f1;
         padding: 18px 10px 12px;
@@ -166,7 +168,7 @@ header p {
 
         &:hover {
             color:  #466ca8; /* #6c9494;*/
-            background-color: transparent; /*#d9e5f7;*/
+            background-color: #ffffff;/*#d9e5f7;*/
             border: 1px solid #c7d8f1;
            /* border: #466ca8 1px solid; /* #6c9494;*/
             box-shadow: 2px 2px 10px lightgrey;
@@ -177,9 +179,15 @@ header p {
 
 }
 
+.home-view .last-learning-item{
+        background-color: #ffffff;
+        border-radius: 4px;
+        box-shadow: 1px 1px 5px lightgrey;
+}
+
 .home-view .container-uploaded-lines{
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(580px, 1fr)); /*minmax(min(70px, 8vw), 1fr)); /*repeat(auto-fit, minmax(80px, 1fr));*/
+    grid-template-columns: repeat(auto-fit, minmax(560px, 1fr)); /*minmax(min(70px, 8vw), 1fr)); /*repeat(auto-fit, minmax(80px, 1fr));*/
     grid-gap: 2.2rem;
     padding: 1.3rem;
     margin: 0;
@@ -194,11 +202,23 @@ header p {
         position: relative;
         border-radius: 14px;
     box-shadow: 1px 1px 5px lightgrey;
-    min-width: 565px;
+    /*min-width: 565px;*/
+     background-color: #ffffff;
+    	opacity: 0.00;
+        animation: fadeIn 0.9s ease-in-out;
+}
+
+.home-view .page-section{
+    background-color: var(--lumo-contrast-5pct); /* #fdeec5;*/
+    border-radius: 40px;
+}
+
+.home-view vaadin-button{
+      margin: 7px 0 15px;
 }
 
 .home-view .chart-panel{
-
+    margin: 10px;
     padding: 25px;
     background-color: var(--lumo-contrast-5pct);
     box-shadow: 1px 1px 8px var(--lumo-contrast-20pct);

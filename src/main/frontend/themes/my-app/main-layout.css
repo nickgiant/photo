@@ -213,6 +213,7 @@ nav a:any-link { /* :any-link */
     text-align: center;
     font-family: 'Open Sans', sans-serif;
     font-weight: bolder;
+
     /*padding: 0 0 .25em;*/
     position: relative;
     /*overflow: hidden;*/
@@ -271,6 +272,7 @@ nav ul {
 nav ul li {
     padding: 0 0 .25em;
     /*padding: 0 .5em .25em;*/
+
     cursor: pointer;
     position: relative;
     overflow: hidden;
@@ -453,7 +455,7 @@ footer h1 {
   text-align: center;
   text-transform: lowercase;
   font-size: 38px;
-  font-weight: 400;
+  font-weight: 600;
   letter-spacing: 2px;
   line-height: 0.8;
   padding: 32px 0 20px;

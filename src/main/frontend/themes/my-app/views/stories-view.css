@@ -1,13 +1,11 @@
 
 
 .stories-view{
-
     /*display: grid;*/
     /*grid-template-columns: repeat(auto-fit, minmax(390px, 1fr));*/
     /*grid-gap: 1.5rem;*/
 
     /*gap: 2rem;*/
-
 }
 
 .stories-view .story-list-card{
@@ -84,8 +82,6 @@
                                   font-weight: 500;
                                   color: #868686;
 }
-
-
 
 .stories-view .story-card .actions-toolbar{
     gap: 15px;
