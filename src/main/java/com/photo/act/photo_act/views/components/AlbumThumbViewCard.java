@@ -6,6 +6,7 @@ import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.views.AlbumsView;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.contextmenu.MenuItem;
+import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.SvgIcon;
@@ -29,10 +30,11 @@ import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-public class AlbumViewCard extends RouterLink {
+public class AlbumThumbViewCard extends RouterLink {
 
-    private static final Logger logger = LoggerFactory.getLogger(AlbumViewCard.class);
-    private RecordService recordService;
+    private static final Logger logger = LoggerFactory.getLogger(AlbumThumbViewCard.class);
+    private final RecordService recordService;
+    //    private RecordService recordService;
     private boolean isMobile;
     private GenericView genericView;
     private String hostname;
@@ -47,31 +49,50 @@ public class AlbumViewCard extends RouterLink {
     private String sqlReadAlbumPhotosOrderBy;
     private String[] arrColumnsCarousel;
 
-    public AlbumViewCard(Record record, String strImagePath, boolean isMobile, int userId, String strUserName, long sessionCreation,
-                         String hostname, String publicIp, int intType, RecordService recordService, String sqlCarousel, String sqlReadAlbumPhotosOrderBy,
-                         String[] arrColumnsCarousel) {
+    public AlbumThumbViewCard(Record record, String strImagePath, boolean isMobile, int userId, long sessionCreation,
+                              String hostname, String publicIp, RecordService recordService, int intType) {
         this.recordService = recordService;
         this.isMobile = isMobile;
         this.hostname = hostname;
         this.publicIp = publicIp;
         this.sessionCreation = sessionCreation;
-        this.sqlCarousel = sqlCarousel;
-        this.sqlReadAlbumPhotosOrderBy = sqlReadAlbumPhotosOrderBy;
-        this.arrColumnsCarousel = arrColumnsCarousel;
+
+        this.addClassNames(AlignItems.CENTER, JustifyContent.BETWEEN, TextAlignment.CENTER);
 
         genericView = new GenericView(recordService, userId);
-
 
         if (record == null) {
             logger.error("record is null");
         }
 
-        String strFileName = record.getColumnData("name_new");
         String strTitle = record.getColumnData("title");
         String strDescription = record.getColumnData("description");
+        String strAlbumUsername = record.getColumnData("username");
+
+        String strAlbumName = record.getColumnData("name");
+        String strAlbumSurname = record.getColumnData("surname");
+
+//        String strAlbumTitle = record.getColumnData("album_title");
+
+//        RouteParam routeUploaderAll = new RouteParam("member", STR_ALL_MEMBERS);
+
+//        RouteParam routeAlbum = new RouteParam("title", strAlbumTitle);
+//        RouteParam routeUploader = new RouteParam("member", strUploader);
+//        //RouterLink linkUploader = new RouterLink(strUploader, AlbumsView.class, new RouteParameters(routeAlbum, routeUploader));
+//        RouterLink linkAlbum = new RouterLink(strAlbumTitle, AlbumsView.class, new RouteParameters(routeAlbum, routeUploader));
+
+//        String strImagePath = strPath + dirChar; // + strFileName;
+        logger.info(" strImagePath " + strImagePath);
 
 
-        String strAlbumPhotoCount = record.getColumnData("album_photo_count").toString();
+        Div divAlbumTitle = new Div(strTitle);
+        divAlbumTitle.addClassNames(Padding.SMALL, Width.FULL, FontWeight.BOLD, TextColor.SECONDARY, TextAlignment.CENTER, FontSize.MEDIUM);
+        // Div divAlbumSubTitle = new Div(strDescription);
+        Div divUser = new Div(strAlbumName + " " + strAlbumSurname);
+        divUser.addClassNames(Width.FULL, FontWeight.LIGHT, TextColor.TERTIARY, TextAlignment.CENTER, FontSize.XSMALL);
+
+
+        String strAlbumPhotoCount = record.getColumnData("album_photo_count");
         int intAlbumPhotoCount = Integer.parseInt(strAlbumPhotoCount);
 //        String strCreator = record.getColumnData("creator");
         String strVisibleTo = record.getColumnData("visible_to");
@@ -85,10 +106,9 @@ public class AlbumViewCard extends RouterLink {
 
         String strDateAlbumCreated = record.getColumnData("datetime_album_created");
 
-        String strAlbumMemberUserid = record.getColumnData("user_id");
-        String strAlbumMemberUsername = record.getColumnData("username");
-        String strAlbumMemberName = record.getColumnData("name");
-        String strAlbumMemberSurname = record.getColumnData("surname");
+        String strAlbumUserid = record.getColumnData("user_id");
+        String strAlbumUserName = record.getColumnData("username");
+        String strAlbumNameOfUser = record.getColumnData("username");
         String strUserResident = record.getColumnData("resident");
         String strAvatarPath = record.getColumnData("avatar_path");
         String strUserJoined = record.getColumnData("date_joined");
@@ -98,10 +118,6 @@ public class AlbumViewCard extends RouterLink {
         if (!record.getColumnData("city_name").isEmpty()) {
             strCity = record.getColumnData("city_name");
         }
-
-
-        VerticalLayout layoutAll = new VerticalLayout();
-        layoutAll.addClassNames(AlignItems.CENTER, JustifyContent.BETWEEN, TextAlignment.CENTER);
 
         Div layoutImagesBox = new Div();
         layoutImagesBox.addClassName("image-matrix");
@@ -152,8 +168,8 @@ public class AlbumViewCard extends RouterLink {
         );
 
         H3 header = new H3();
-        header.addClassNames(FontSize.MEDIUM, FontWeight.SEMIBOLD,
-                Width.FULL, TextAlignment.CENTER, AlignItems.CENTER, JustifyContent.CENTER,
+        header.addClassNames(FontSize.LARGE, FontWeight.SEMIBOLD,
+                Width.FULL, TextAlignment.LEFT, AlignItems.CENTER, JustifyContent.CENTER,
                 Padding.MEDIUM, Margin.NONE
         );
 //        header.getStyle().set("font-family", "Times-New-Roman, serif");
@@ -166,7 +182,7 @@ public class AlbumViewCard extends RouterLink {
 
         Div subtitle = new Div();
         subtitle.addClassNames(FontSize.SMALL,
-                Width.FULL, TextAlignment.CENTER, AlignItems.CENTER, JustifyContent.CENTER,
+                Width.FULL, TextAlignment.LEFT, AlignItems.CENTER, JustifyContent.CENTER,
                 Padding.NONE,
                 Margin.NONE
         );
@@ -200,9 +216,9 @@ public class AlbumViewCard extends RouterLink {
                 //   Background.CONTRAST_5,
                 BorderRadius.NONE
         );
-        H4 divPhotoCount = new H4(intAlbumPhotoCount + "");
+        Div divPhotoCount = new Div(intAlbumPhotoCount + "");
         layoutPhotoCount.add(FontAwesome.Regular.IMAGES.create(), divPhotoCount);
-        H4 divCountLabel = new H4("Photos");
+        Div divCountLabel = new Div("Photos");
 //        divCountLabel.addClassNames(FontSize.XXSMALL);
         layoutPhotoCountAll.add(layoutPhotoCount, divCountLabel);
 
@@ -287,35 +303,8 @@ public class AlbumViewCard extends RouterLink {
         divRateLabel.addClassNames(FontSize.XXSMALL);
         layoutRateAll.add(layoutRate, divRateLabel);
 
-//        VerticalLayout layoutPhotoCountAll = new VerticalLayout();
-//        layoutPhotoCountAll.addClassNames(
-//                //  Overflow.HIDDEN, Width.FULL,
-//                AlignItems.CENTER, JustifyContent.CENTER,
-//                Margin.NONE,
-//                Padding.NONE,
-//                Gap.XSMALL,
-//                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-//                //   Background.CONTRAST_5,
-//                BorderRadius.NONE
-//        );
-//        HorizontalLayout layoutPhotoCount = new HorizontalLayout();
-//        layoutPhotoCount.addClassNames(
-////                Overflow.HIDDEN, Width.FULL,
-//                AlignItems.CENTER, JustifyContent.CENTER,
-//                Margin.NONE,
-//                Padding.NONE,
-//                Gap.XSMALL,
-//                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-//                //   Background.CONTRAST_5,
-//                BorderRadius.NONE
-//        );
-//        Div divPhotoCount = new Div(intAlbumPhotoCount + "");
-//        layoutPhotoCount.add(FontAwesome.Regular.IMAGES.create(), divPhotoCount);
-//        Div divCountLabel = new Div("Photos");
-//        divCountLabel.addClassNames(FontSize.XXSMALL);
-//        layoutPhotoCountAll.add(layoutPhotoCount, divCountLabel);
 
-        VerticalLayout layoutViewCountAll = new VerticalLayout();
+        HorizontalLayout layoutViewCountAll = new HorizontalLayout();
         layoutViewCountAll.addClassNames(
                 //   Overflow.HIDDEN, Width.FULL,
                 AlignItems.CENTER, JustifyContent.CENTER,
@@ -338,10 +327,12 @@ public class AlbumViewCard extends RouterLink {
                 BorderRadius.NONE
         );
         Div divViews = new Div("1");
-        layoutViewCount.add(FontAwesome.Regular.EYE.create(), divViews);
+        // layoutViewCount.add(FontAwesome.Regular.EYE.create(), divViews);
         Span divViewsLabel = new Span("Views");
-        divViewsLabel.addClassNames(FontSize.XXSMALL);
-        layoutViewCountAll.add(layoutViewCount, divViewsLabel);
+//        divViewsLabel.addClassNames(FontSize.XXSMALL);
+//        layoutViewCountAll.add(layoutViewCount, divViewsLabel);
+
+        layoutViewCountAll.add(FontAwesome.Regular.EYE.create(), divViews, divViewsLabel);
 
         VerticalLayout layoutLocationsCountAll = new VerticalLayout();
         layoutLocationsCountAll.addClassNames(
@@ -371,99 +362,20 @@ public class AlbumViewCard extends RouterLink {
         divLocationsLabel.addClassNames(FontSize.XXSMALL);
         layoutLocationsCountAll.add(layoutLocationsCount, divLocationsLabel);
 
-//        VerticalLayout layoutDateAlbumCreatedAll = new VerticalLayout();
-//        layoutDateAlbumCreatedAll.addClassNames(
-//                //    Overflow.HIDDEN, Width.FULL,
-//                AlignItems.CENTER, JustifyContent.CENTER,
-//                Margin.NONE,
-//                Padding.NONE,
-//                Gap.XSMALL,
-//                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-//                //   Background.CONTRAST_5,
-//                BorderRadius.NONE
-//        );
-//
-//        HorizontalLayout layoutDateAlbumCreated = new HorizontalLayout();
-//        layoutDateAlbumCreated.addClassNames(
-////                Overflow.HIDDEN, Width.FULL,
-//                AlignItems.CENTER, JustifyContent.CENTER,
-//                Margin.NONE,
-//                Padding.NONE,
-//                Gap.XSMALL,
-//                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-//                //   Background.CONTRAST_5,
-//                BorderRadius.NONE
-//        );
-//        Div divDate = new Div(strDateAlbumCreated);
-//        layoutDateAlbumCreated.add(VaadinIcon.CALENDAR_CLOCK.create(), divDate); // FontAwesome.Regular.CALENDAR.create()
-//        Div divAlbumCreatedLabel = new Div("Created");
-//        divAlbumCreatedLabel.addClassNames(FontSize.XXSMALL);
-//        layoutDateAlbumCreatedAll.add(layoutDateAlbumCreated, divAlbumCreatedLabel);
 
-        //RouterLink linkUploader = new RouterLink(strUploader, AlbumsView.class, new RouteParameters(routeAlbum, routeUploader));
-        //RouterLink linkAlbum = new RouterLink(strTitle, AlbumsView.class, new RouteParameters(routeAlbum, routeUploader));
-
-//        RouterLink routerLinkAlbum = new RouterLink();
-//        routerLinkAlbum.setRoute(AlbumsView.class, new RouteParameters(routeAlbum, routeUploader));
-//        routerLinkAlbum.addClassNames(AlignItems.CENTER, JustifyContent.START, TextAlignment.CENTER);
-
-
-        HorizontalLayout layoutUserActions = new HorizontalLayout();
-        layoutUserActions.addClassNames(
-                Overflow.HIDDEN, Width.FULL,
-                AlignItems.CENTER, JustifyContent.CENTER,
-                Margin.NONE,
-                Padding.NONE,
-                Gap.SMALL,
-                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                //   Background.CONTRAST_5,
-                BorderRadius.LARGE
-        );
-
-        Button btnMoreAction = new Button(VaadinIcon.EDIT.create());//svgAction);
-        btnMoreAction.setTooltipText("Edit");
-        btnMoreAction.addClassName("btn-actions");
-
-        Button btnComment = new Button(VaadinIcon.COMMENT.create());
-        btnComment.setTooltipText("Comment on it");
-
-        Button btnMoreInfo = new Button(VaadinIcon.INFO.create());//svgAction);
-        btnMoreInfo.setTooltipText("More info");
-
-        layoutUserActions.add(btnMoreAction, btnComment, btnMoreInfo);
-
-//         divPhotoInfo.add(layoutPhotosInfo); //, layoutUserActions);
-        //       routerLinkAlbum.add(header, subtitle, layoutImage, divPhotoInfo);
-
-
-//        Avatar userAvatar = new Avatar(strAlbumUserName);
-//        userAvatar.setImage(strAvatar);
-//        userAvatar.getElement().setAttribute("tabindex", "-1");
-//        userAvatar.addThemeVariants(AvatarVariant.LUMO_SMALL);
-//
-//        Avatar userAvatarLarge = new Avatar(strAlbumUserName);
-//        userAvatarLarge.setImage(strAvatar);
-//        userAvatarLarge.getElement().setAttribute("tabindex", "-1");
-//        userAvatarLarge.addThemeVariants(AvatarVariant.LUMO_XLARGE);
-
-        String strAlbumMember = strAlbumMemberName + " " + strAlbumMemberSurname;
-
-        Image imgAvatarSmall = genericView.getAvatarImage(strAvatarPath, strAlbumMember, "50px", "50px");
-        imgAvatarSmall.addClassNames(BorderRadius.FULL);
+        Image imgAvatarSmall = genericView.getAvatarImage(strAvatarPath, strAlbumNameOfUser, "40px", "40px");
         //Image imgAvatarSmall = getAvatarImage(strAvatar, strAlbumUserName, "40px", "40px");
 
-        Image imgAvatarMedium = genericView.getAvatarImage(strAvatarPath, strAlbumMember, "70px", "70px");
+        Image imgAvatarMedium = genericView.getAvatarImage(strAvatarPath, strAlbumNameOfUser, "70px", "70px");
 //        Image imgAvatarMedium = getAvatarImage(strAvatar, strAlbumUserName, "70px", "70px");
 
-        AvatarItem avatarItemMe = new AvatarItem(strAlbumMember, "", imgAvatarSmall);
-        avatarItemMe.addClassNames(Width.FULL, Padding.XSMALL, Background.CONTRAST_5, BorderRadius.MEDIUM);
-        avatarItemMe.setMinWidth("300px");
-//        Details detailsMember = new Details();
-//        detailsMember.addClassNames(Width.FULL, BorderRadius.SMALL);
+        AvatarItem avatarItemMe = new AvatarItem(strAlbumNameOfUser, "", imgAvatarSmall);
+        Details detailsMember = new Details();
+        detailsMember.addClassNames(Width.FULL, BorderRadius.SMALL);
 //        detailsMember.addThemeVariants(DetailsVariant.FILLED);
-//        detailsMember.addClassName("member-small");
-//        detailsMember.setSummary(avatarItemMe);
-        AvatarItem avatarLargeItemMe = new AvatarItem(strAlbumMember, "@" + strAlbumMemberUsername, imgAvatarMedium);
+        detailsMember.addClassName("member-small");
+        detailsMember.setSummary(avatarItemMe);
+        AvatarItem avatarLargeItemMe = new AvatarItem(strAlbumNameOfUser, "@" + strAlbumUserName, imgAvatarMedium);
 
         HorizontalLayout layoutMemberInfo = new HorizontalLayout();
         layoutMemberInfo.addClassNames(
@@ -533,26 +445,34 @@ public class AlbumViewCard extends RouterLink {
         Div divDateJoined = new Div(strUserJoined);
         layoutDateJoined.add(VaadinIcon.CALENDAR_CLOCK.create(), divDateJoined); // FontAwesome.Regular.CALENDAR.create()
         layoutMemberInfo.add(layoutMemberPhotoCount, layoutMemberViewCount, layoutMemberLocationsCount, layoutDateJoined);
-//        detailsMember.add(avatarLargeItemMe, layoutMemberInfo);
+        detailsMember.add(avatarLargeItemMe, layoutMemberInfo);
 
 
-        layoutPhotosInfo.add(layoutRateAll, layoutViewCountAll, layoutLocationsCountAll, avatarItemMe);
+        //   layoutPhotosInfo.add(layoutRateAll, layoutViewCountAll, layoutLocationsCountAll, detailsMember);
 
         RouteParam routeAlbum = new RouteParam("title", strTitle);
-        RouteParam routeMember = new RouteParam("member", strAlbumMemberUsername);
+        RouteParam routeMember = new RouteParam("member", strAlbumUserName);
 
-        // RouterLink linkViewAlbum = new RouterLink(strTitle, AlbumsView.class, new RouteParameters(routeMember, routeAlbum));
+        VerticalLayout layoutAll = new VerticalLayout();
+        layoutAll.addClassNames(Padding.MEDIUM, Margin.NONE, Gap.XSMALL, AlignItems.CENTER, JustifyContent.CENTER);
 
-        if (intType == 1) {
-            layoutAll.add(layoutImagesBox, header, subtitle, divSubHeaderAll, layoutPhotosInfo, getActions());
-        } else if (intType == 2) {
-            layoutAll.add(layoutImagesBox, header, subtitle, divSubHeaderAll, layoutPhotosInfo);
-        }
+        HorizontalLayout layoutPhotos = new HorizontalLayout();
+        layoutPhotos.addClassNames(Gap.LARGE, Padding.XSMALL);
+        layoutPhotos.setHeight("90px");
+        layoutPhotos.add(divImage1, divImage2);
 
-        layoutAll.addClassName("album-info-card");
-        this.addClassName("album-info");
-        this.setRoute(AlbumsView.class, new RouteParameters(routeMember, routeAlbum));
+        HorizontalLayout layoutCounts = new HorizontalLayout();
+        layoutCounts.addClassNames(TextColor.TERTIARY, Padding.NONE, Margin.NONE, FontSize.XSMALL);
+        layoutCounts.add(layoutPhotoCountAll, layoutViewCountAll);
+        layoutAll.setHeight("190px");
+        layoutAll.setWidth("320px");
+        layoutAll.add(divAlbumTitle, layoutPhotos, layoutCounts, divUser);
+
+        this.addClassName("album-thumb");
         this.add(layoutAll);
+
+        this.setRoute(AlbumsView.class, new RouteParameters(routeMember, routeAlbum));
+
     }
 
     private HorizontalLayout getActions() {
@@ -723,7 +643,7 @@ public class AlbumViewCard extends RouterLink {
 
                 return new FileInputStream(file);
             } catch (final FileNotFoundException e) {
-                logErrorInDb(e, "GalleryImageViewCard StreamResource FileNotFoundException", hostname, publicIp, sessionCreation, file.getAbsolutePath());
+                //            logErrorInDb(e, "GalleryImageViewCard StreamResource FileNotFoundException", hostname, publicIp, sessionCreation, file.getAbsolutePath());
                 // logErrorInDb(e,hostname,"CreationsViewCard StreamResource",userId,strUserName,file.getAbsolutePath());
                 logger.error("FileNotFoundException  " + e.getMessage());
             }
@@ -750,9 +670,9 @@ public class AlbumViewCard extends RouterLink {
         return layoutMetaData;
     }
 
-    private void logErrorInDb(Exception e, String function, String hostname, String publicIp, long sessionCreation, String info) {
-        recordService.logErrorInDb(e, hostname, function, 1, "", publicIp, Long.toString(sessionCreation), info);
-    }
+    //private void logErrorInDb(Exception e, String function, String hostname, String publicIp, long sessionCreation, String info) {
+    //      recordService.logErrorInDb(e, hostname, function, 1, "", publicIp, Long.toString(sessionCreation), info);
+    // }
 
 
 }

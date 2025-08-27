@@ -1,9 +1,11 @@
 
-.learnings-view .post-title-bar {
+
+
+.learnings-view .item-title-bar {
     background-color: #f9f9f9; /*#d8cebe; /*#e6ecf0; /*#edf7f5;*/
 }
 
-.learnings-view .post-title-bar h3{
+.learnings-view .item-title-bar h3{
         text-transform: capitalize;
         text-decoration: none;
         text-align: center;
@@ -22,7 +24,7 @@
     width: 426px;  /*426 x 240 pixels (240p)      640 x 360 pixels (360p)               854 x 480 pixels (480p)   */
     height: 240px;
     margin: 0;
-    padding: 10px;
+    padding: 4px;
     border: none;
     /*padding-top: 56.25%;  !*16:9 (9/16 = 0.5625)*!*/
     border-radius: var(--lumo-border-radius-l);
@@ -37,12 +39,12 @@
     width: 854px;  /*426 x 240 pixels (240p)      640 x 360 pixels (360p)               854 x 480 pixels (480p)   */
     height: 480px;
     margin: 0;
-    padding: 16px;
+    padding: 14px;
     border: none;
     /*padding-top: 56.25%;  !*16:9 (9/16 = 0.5625)*!*/
     border-radius: var(--lumo-border-radius-l);
 
-    box-shadow: var(--lumo-box-shadow-l);
+    box-shadow: 2px 2px 9px grey;
 }
 
 .learnings-view .btn-more{
@@ -66,6 +68,7 @@
     }
 }
 
+
 .learnings-view .video-iframe {
     position: absolute;
     width: 100%;
@@ -81,16 +84,17 @@
     right: 0;
 }
 
-.learnings-view .item-total {
-    /*border-top-left-radius: 12px;*/
-    /*border-top-right-radius: 2px;*/
+.learnings-view .item-panel {
 
-    /*border-bottom-left-radius: 10px;*/
-    /*border-bottom-right-radius: 45px;*/
+    background-color:#ffffff; /* #f3f3f3;*/
 
-    background-color: #f3f3f3;
-    box-shadow: 1px 1px 4px lightgrey;
+        max-width: 1090px;
+        margin: 4px;
+        padding: 10px;
+         padding-left: 20px;
+         padding-right: 20px;
     border-radius: 24px;
+    box-shadow: 1px 1px 6px lightgrey;
     /*border-bottom: var(--lumo-contrast-20pct) dotted 4px;*/
     /*transition: 0.7s;*/
     /*&:hover{*/
@@ -100,7 +104,11 @@
 }
 
 .learnings-view .item-id-info {
-    background: #f9f9f9;
+    background: #f8f8f8;
+
+
+    border: #f3f3f3 solid 2px;
+
     /*align-items: center;*/
     /*justify-content: center;*/
     /*gap: 0.4rem;*/
@@ -186,7 +194,7 @@
 
 .learnings-view .aggregate-detail{
     gap: 1rem;
-    background: #f9f9f9;
+    background: #f8f8f8; /* #f9f9f9;*/
     padding: 10px;
     margin: 0;
     border: none;
@@ -196,6 +204,7 @@
 
 .learnings-view .item-description {
     background: #f9f9f9;
+    border: #f3f3f3 solid 2px;
     border-radius: var(--lumo-border-radius-m);
 }
 

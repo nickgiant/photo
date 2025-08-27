@@ -210,7 +210,7 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
             );
             filtersColumn.removeAll();
             filtersColumn.setMaxWidth("290px");
-            verticalLayout.setMaxWidth("1040px");
+            verticalLayout.setMaxWidth("980px");
 
             filtersColumn.add(loadFiltersColumn(sqlDestinationTypes, arrColumnsDestinations));
 
@@ -701,7 +701,6 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
 
         HorizontalLayout layoutWithMap = new HorizontalLayout();
         layoutWithMap.addClassNames(Width.FULL);
-
 
         layoutWithMap.add(getDestinationMap(strAddressOfPlace, strTitleOfPlace, strCityName, strCountry));
 

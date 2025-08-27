@@ -43,31 +43,38 @@ public class GalleryImageViewCard extends Div {
 
     private String dirChar = FileSystems.getDefault().getSeparator();
 
+    private String[] arrDestinationNames = {"id", "title", "prefecture", "country"};
+    private String sqlReadDestination = "SELECT distinct city_name AS title , prefecture, country " +
+            " FROM  photo_meta pm LEFT JOIN destination d ON pm.destination_Id = d.id " +
+            " ORDER BY city_name ASC ";
+
     private Record record;
     private String strImagePath;
 
     private String sqlCarousel;
+    private String sqlCarouselOrderBy;
     private String[] arrColumnsCarousel;
 
     public GalleryImageViewCard(Record record, String strImagePath, boolean isMobile, int userId, String strUserName, long sessionCreation,
-                                String hostname, String publicIp, boolean isEditable, RecordService recordService, String sqlCarousel, String[] arrColumnsCarousel) {
+                                String hostname, String publicIp, boolean isEditable, RecordService recordService, String sqlCarousel, String sqlCarouselOrderBy,
+                                String[] arrColumnsCarousel) {
         this.recordService = recordService;
         this.isMobile = isMobile;
         this.record = record;
         this.strImagePath = strImagePath;
         this.sqlCarousel = sqlCarousel;
+        this.sqlCarouselOrderBy = sqlCarouselOrderBy;
         this.arrColumnsCarousel = arrColumnsCarousel;
-
 
         this.addClassName("gallery-view-card");
 
         genericView = new GenericView(recordService, userId);
 
-
         if (record == null) {
             logger.error("record is null");
         }
 
+        String strPhotoId = record.getColumnData("id");
         String strFileName = record.getColumnData("name_new");
         String strTitle = record.getColumnData("title");
         String strSubTitle = record.getColumnData("subtitle");
@@ -91,6 +98,7 @@ public class GalleryImageViewCard extends Div {
         String strMetaIso = record.getColumnData("meta_iso");
         String strMetaSS = record.getColumnData("meta_shutter_speed");
         String strMetaAperture = record.getColumnData("meta_aperture");
+        String strMetaOrientation = record.getColumnData("meta_orientation");
 
         String strPhotoUserName = record.getColumnData("username");
         String strPhotoNameUser = record.getColumnData("name");
@@ -129,9 +137,10 @@ public class GalleryImageViewCard extends Div {
 
         Image image = new Image();
         image.addClassNames(Width.FULL, Height.FULL);
-
-
         image.setSrc(imageResource);
+        if (strMetaOrientation.equalsIgnoreCase("8")) {
+//            image.getStyle().set("rotate", "-90deg");
+        }
         divImage.add(image);
 
         layoutImage.add(divImage);
@@ -157,8 +166,6 @@ public class GalleryImageViewCard extends Div {
             divPhotoInfo.addClassName("image-and-info-panel");
 //            this.addClassName("bottom-radius-shadow");
         }
-
-//        Image imgAvatarSmall = getAvatarImage(strAvatar, strPhotoUserName, "40px", "40px");
 
         Image imgAvatarSmall = genericView.getAvatarImage(strAvatarPath, strPhotoUserName, "40px", "40px");
         Image imgAvatarMedium = genericView.getAvatarImage(strAvatarPath, strPhotoUserName, "70px", "70px");
@@ -292,7 +299,6 @@ public class GalleryImageViewCard extends Div {
                 Gap.XSMALL,
                 BorderRadius.NONE
         );
-
 
         Div divApertureTitle = new Div("Aperture:");
         divApertureTitle.addClassNames(LumoUtility.TextColor.TERTIARY, LumoUtility.Padding.Vertical.NONE, LumoUtility.FontSize.XSMALL);
@@ -480,9 +486,9 @@ public class GalleryImageViewCard extends Div {
         if (!isEditable) {
             //anyone logged in
             if (isMobile) {
-                divPhotoInfo.add(header, divTextDescription, detailsPhotoInfo, getActions(strCity));
+                divPhotoInfo.add(header, divTextDescription, detailsPhotoInfo, getActions(strPhotoId, strCity));
             } else {
-                divPhotoInfo.add(header, divTextDescription, detailsMember, getActions(strCity));
+                divPhotoInfo.add(header, divTextDescription, detailsMember, getActions(strPhotoId, strCity));
             }
             this.addClassNames(JustifyContent.EVENLY);
             this.add(layoutImage, divPhotoInfo);
@@ -497,7 +503,6 @@ public class GalleryImageViewCard extends Div {
             this.add(layoutImage, divPhotoInfo);
         }
     }
-
 
 
     private HorizontalLayout getMemberActions() {
@@ -563,7 +568,7 @@ public class GalleryImageViewCard extends Div {
         return layoutActions;
     }
 
-    private HorizontalLayout getActions(String strCity) {
+    private HorizontalLayout getActions(String strPhotoId, String strCity) {
 
         StreamResource iconLike = new StreamResource("star-empty-icon.svg",
                 () -> getClass().getResourceAsStream("/icons/star-empty-icon.svg"));
@@ -585,7 +590,7 @@ public class GalleryImageViewCard extends Div {
 
 
         Button btnComment = new Button(VaadinIcon.COMMENT.create());
-        btnComment.setTooltipText("Comment on it");
+        btnComment.setTooltipText("Comment on it  " + strPhotoId);
 
 //        Button btnUpload = new Button(VaadinIcon.UPLOAD.create());
 //        btnUpload.setTooltipText("Upload your related photos");
@@ -653,6 +658,7 @@ public class GalleryImageViewCard extends Div {
 
     private void showDialogWithCarousel(String strCity) {
 
+
         Dialog dlgCarousel = new Dialog();
         dlgCarousel.setDraggable(true);
         dlgCarousel.setResizable(true);
@@ -661,10 +667,11 @@ public class GalleryImageViewCard extends Div {
         dlgCarousel.addClassNames(LumoUtility.Overflow.HIDDEN,
                 Margin.NONE, Padding.SMALL,
                 AlignItems.CENTER, JustifyContent.CENTER,
-                BorderRadius.LARGE);
+                BorderRadius.NONE);
         dlgCarousel.setCloseOnOutsideClick(true);
         dlgCarousel.setCloseOnEsc(true);
-        dlgCarousel.add(genericView.loadCarouselWithThumbnails(sqlCarousel, arrColumnsCarousel, strCity));
+        dlgCarousel = genericView.showCarouselDialog(sqlCarousel, sqlCarouselOrderBy, arrColumnsCarousel, strCity, "d.city_name",
+                sqlReadDestination, arrDestinationNames);
 
         dlgCarousel.open();
     }

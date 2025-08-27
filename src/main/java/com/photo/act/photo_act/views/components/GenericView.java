@@ -1,15 +1,19 @@
 package com.photo.act.photo_act.views.components;
 
+import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.services.WeatherImageService;
 import com.photo.act.photo_act.services.WeatherService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.contextmenu.HasMenuItems;
 import com.vaadin.flow.component.contextmenu.MenuItem;
+import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -84,8 +88,12 @@ public class GenericView {
 
     private List<Record> recProps;
 
-    private VerticalLayout layoutPhotoInfo;
+    private VerticalLayout layoutMeta;
+
     private Div divCarousel;
+    private Scroller scroller;
+    //private VerticalLayout layoutMap;
+
 
     public GenericView(RecordService recordService, int userId) {
         this.recordService = recordService;
@@ -353,116 +361,199 @@ public class GenericView {
         Image image = new Image();
         image.setWidth(width);
         image.setHeight(height);
-        image.addClassNames(LumoUtility.BorderRadius.MEDIUM);
+        image.addClassNames(LumoUtility.BorderRadius.FULL);
         image.setAlt(altDescr);
         image.setSrc(imageResource);
 
         return image;
     }
 
-    public VerticalLayout loadCarouselWithThumbnails(String sqlRead, String[] arrColumnNames, String strSelection) {
+    public Dialog showCarouselDialog(String sqlRead, String sqlReadOrderBy, String[] arrColumnNames, String strSelection, String filterColumn,
+                                     String sqlReadSelection, String[] arrColumnNamesSelection) {
 
-        sqlReadGallery = sqlRead;
-        arrColumnsGallery = arrColumnNames;
-
-        layoutPhotoInfo = new VerticalLayout();
-        divCarousel = new Div();
-
-        VerticalLayout layoutAll = new VerticalLayout();
-        layoutAll.addClassNames(LumoUtility.Overflow.HIDDEN,
-                LumoUtility.Width.FULL, LumoUtility.Height.FULL,
-                LumoUtility.Margin.NONE, LumoUtility.Padding.NONE,
+        Dialog dlgCarousel = new Dialog();
+        dlgCarousel.setDraggable(false);
+        dlgCarousel.setResizable(true);
+        dlgCarousel.setWidthFull();
+        dlgCarousel.setHeightFull();
+        dlgCarousel.addClassNames(LumoUtility.Overflow.HIDDEN,
+                LumoUtility.Margin.NONE, LumoUtility.Padding.SMALL,
                 LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER,
-                LumoUtility.BorderRadius.LARGE);
+                LumoUtility.BorderRadius.NONE);
+        dlgCarousel.setCloseOnOutsideClick(true);
+        dlgCarousel.setCloseOnEsc(true);
 
-        ArrayList<Image> lstImageThumbs = fetchPhotoThumbs(sqlReadGallery, arrColumnsGallery);
+        HorizontalLayout layoutTitle = new HorizontalLayout();
 
-
-        HorizontalLayout layoutCarouselAndInfo = new HorizontalLayout();
-        layoutCarouselAndInfo.addClassNames(LumoUtility.Overflow.HIDDEN,
-                LumoUtility.Width.FULL, LumoUtility.Height.FULL,
-                LumoUtility.BorderRadius.LARGE,
-                LumoUtility.Margin.NONE, LumoUtility.Padding.NONE,
-                LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER);
+        layoutTitle.addClassNames(LumoUtility.Width.FULL, LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.BETWEEN);
+        Div divTitle = new Div("-");
 
 
-        divCarousel.addClassNames(LumoUtility.Overflow.SCROLL,
+        List<Record> lstDestinationRecs = getRecordsFromDb(sqlReadSelection, arrColumnNamesSelection);
+        ArrayList<String> lstDestinations = new ArrayList<>();
+        for (int r = 0; r < lstDestinationRecs.size(); r++) {
+            String strDestination = lstDestinationRecs.get(r).getColumnData("title");
+            if (strDestination == null || strDestination.trim().isEmpty() || strDestination.trim().equalsIgnoreCase("null")) {
+            } else {
+                lstDestinations.add(strDestination);
+            }
+
+        }
+
+        HorizontalLayout layoutAlbumController = new HorizontalLayout();
+        layoutAlbumController.addClassNames(LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.EVENLY);
+        Select<String> cmbAlbum = new Select<>();
+        cmbAlbum.setMinWidth("330px");
+
+        Button btnLeft = new Button();
+        btnLeft.setIcon(FontAwesome.Solid.ARROW_LEFT_LONG.create());
+        Button btnRight = new Button();
+        btnRight.setIcon(FontAwesome.Solid.ARROW_RIGHT_LONG.create());
+        layoutAlbumController.add(cmbAlbum);
+
+        cmbAlbum.setItems(lstDestinations);
+
+        if (cmbAlbum.getValue() == null || cmbAlbum.getValue().equalsIgnoreCase("null") || cmbAlbum.getValue().isEmpty()) {
+            cmbAlbum.setValue(strSelection);
+        }
+
+        cmbAlbum.addValueChangeListener(event -> {
+            HorizontalLayout layoutLocationThumbs = selectLocation(event.getValue(), sqlRead, sqlReadOrderBy, filterColumn);
+            scroller.setContent(layoutLocationThumbs);
+        });
+
+        Button btnClose = new Button();
+        btnClose.setIcon(VaadinIcon.CLOSE.create());
+        btnClose.addClickListener(event -> {
+            dlgCarousel.close();
+        });
+
+        layoutTitle.add(divTitle, layoutAlbumController, btnClose);
+
+        dlgCarousel.add(layoutTitle);
+        dlgCarousel.add(loadCarouselWithThumbnails(sqlRead, sqlReadOrderBy, arrColumnNames, strSelection, filterColumn,
+                sqlReadSelection, arrColumnNamesSelection));
+        return dlgCarousel;
+    }
+
+    public VerticalLayout loadCarouselWithThumbnails(String sqlRead, String sqlReadOrderBy, String[] arrColumnNames, String strSelection, String filterColumn,
+                                                     String sqlReadSelection, String[] arrColumnNamesSelection) {
+        String sqlReadPhotos = "";
+        if (strSelection.isEmpty()) {
+            sqlReadPhotos = sqlRead + " " + sqlReadOrderBy;
+        } else {
+            sqlReadPhotos = sqlRead + " AND " + filterColumn + " LIKE '" + strSelection + "' " + sqlReadOrderBy;
+        }
+
+        arrColumnsGallery = arrColumnNames;
+//
+//        sqlReadDestination = sqlReadSelection;
+//        arrDestinationNames = arrColumnNamesSelection;
+
+        VerticalLayout layoutPhotoInfo = new VerticalLayout();
+
+        divCarousel = new Div();
+        divCarousel.addClassNames(LumoUtility.Overflow.HIDDEN,
                 LumoUtility.Width.FULL, LumoUtility.Height.AUTO,
                 LumoUtility.Margin.NONE, LumoUtility.Padding.XSMALL,
                 LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER,
                 LumoUtility.BorderRadius.LARGE);
 
-        Image imageLarge = fetchPhotosLarge(sqlReadGallery, arrColumnsGallery).get(0);
-        divCarousel.add(imageLarge);
 
-/*        Carousel carousel = new Carousel();
-        carousel.setSlides(slides);
-        //carousel.setHideNavigation(true);
-        carousel.setAutoProgress(false);
-        carousel.addClassNames(LumoUtility.Overflow.HIDDEN,
-                LumoUtility.Width.FULL, LumoUtility.Height.FULL,
-                LumoUtility.Margin.NONE, LumoUtility.Padding.XSMALL,
+        VerticalLayout layoutAll = new VerticalLayout();
+        layoutAll.addClassNames(LumoUtility.Overflow.HIDDEN,
+                LumoUtility.Width.FULL, //LumoUtility.Height.FULL,
+                LumoUtility.Margin.NONE, LumoUtility.Padding.NONE,
                 LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER,
-                LumoUtility.BorderRadius.LARGE);*/
+                LumoUtility.BorderRadius.NONE);
 
-        Div titleImg = new Div((lstImageThumbs.size()) + " photos");
+        scroller = new Scroller();
 
+        Image imageLarge = fetchPhotosLarge(sqlReadPhotos, arrColumnsGallery).get(0);
+        imageLarge.addClassNames(LumoUtility.Width.FULL, LumoUtility.Height.FULL);
+        imageLarge.addClassName("image-to-show");
+        List<Record> lstImageFiles = getRecordsFromDb(sqlRead, arrColumnNames);
+        Record record = lstImageFiles.get(0);
+
+        layoutMeta = new VerticalLayout();
+        layoutMeta.addClassNames(LumoUtility.Height.FULL,
+                LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER
+                // LumoUtility.Background.CONTRAST_5
+        );
+
+        layoutMeta.add(fetchPhotoMetaInfoOnCarousel(record));
+        imageLarge.getStyle().setOpacity("1");
+        divCarousel.add(imageLarge);
 
         layoutPhotoInfo.addClassNames(LumoUtility.Overflow.HIDDEN,
                 LumoUtility.Height.FULL, LumoUtility.Width.FULL,  //must be comment
                 LumoUtility.Margin.NONE, LumoUtility.Padding.NONE,
                 LumoUtility.BorderRadius.LARGE,
-                LumoUtility.Background.CONTRAST_5,
+//                LumoUtility.Background.CONTRAST_5,
                 LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER);
-        layoutPhotoInfo.setMaxWidth("260px");
+        layoutPhotoInfo.setWidth("260px");
 
-
-        Scroller scroller = new Scroller();
         scroller.setScrollDirection(Scroller.ScrollDirection.HORIZONTAL);
         scroller.addClassNames(
                 LumoUtility.Width.FULL,
-                LumoUtility.Margin.NONE, LumoUtility.Padding.NONE,
-                LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER);
+                LumoUtility.Margin.NONE, LumoUtility.Padding.SMALL,
+                LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER
+        );
 
-
-        Select<String> cmbAlbum = new Select<>();
-        cmbAlbum.setLabel("Album");
-
-
-        Select<String> cmbLocation = new Select<>();
-        cmbLocation.setLabel("Location");
-        List<Record> lstDestinationRecs = getRecordsFromDb(sqlReadDestination, arrDestinationNames);
-        ArrayList<String> lstDestinations = new ArrayList<>();
-        for (int r = 0; r < lstDestinationRecs.size(); r++) {
-            String strDestination = lstDestinationRecs.get(r).getColumnData("city_name");
-            if (strDestination == null || strDestination.trim().isEmpty() || strDestination.trim().equalsIgnoreCase("null")) {
-            } else {
-                lstDestinations.add(strDestination);
-                if (r == 0) {
-                    if (cmbLocation.getValue() == null || cmbLocation.getValue().equalsIgnoreCase("null") || cmbLocation.getValue().isEmpty()) {
-                        cmbLocation.setValue(strDestination);
-                    }
-                }
-            }
-
-        }
-
-        HorizontalLayout layoutThumbs = showThumbs(sqlReadGallery, arrColumnsGallery, cmbLocation);
+        HorizontalLayout layoutThumbs = fetchThumbs(sqlReadPhotos, arrColumnsGallery);
         scroller.setContent(layoutThumbs);
 
-        cmbLocation.setItems(lstDestinations);
-        cmbLocation.addValueChangeListener(event -> {
-            HorizontalLayout layoutLocationThumbs = selectLocation(event.getValue(), event.getSource());
-            scroller.setContent(layoutLocationThumbs);
-        });
-        logger.info("strSelection:" + strSelection);
-        cmbLocation.setValue(strSelection);
+        HorizontalLayout layoutThumbsFull = new HorizontalLayout();
+        layoutThumbsFull.addClassNames(LumoUtility.Width.FULL,
+                LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER,
+                LumoUtility.Margin.NONE, LumoUtility.Padding.XSMALL,
+                LumoUtility.Background.CONTRAST_5,
+                LumoUtility.BorderRadius.SMALL
+        );
 
-        layoutPhotoInfo.add(cmbLocation);
+        Button btnThumbsLeft = new Button();
+        btnThumbsLeft.setIcon(FontAwesome.Solid.ARROW_LEFT.create());
 
+        Button btnThumbsRight = new Button();
+        btnThumbsRight.setIcon(FontAwesome.Solid.ARROW_RIGHT.create());
+        // btnThumbsLeft, scroller, btnThumbsRight);
+        layoutThumbsFull.add(scroller);
 
+        layoutPhotoInfo.add(layoutMeta);
+
+        HorizontalLayout layoutCarouselAndInfo = new HorizontalLayout();
+        layoutCarouselAndInfo.addClassNames(LumoUtility.Overflow.SCROLL,
+                LumoUtility.Width.FULL,  //LumoUtility.Height.FULL,
+                LumoUtility.Margin.NONE, LumoUtility.Padding.MEDIUM,
+                LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER,
+                LumoUtility.Background.CONTRAST_5, LumoUtility.BorderRadius.LARGE
+        );
         layoutCarouselAndInfo.add(divCarousel, layoutPhotoInfo);
-        layoutAll.add(layoutCarouselAndInfo, scroller);
+
+        List<Record> lstRecord = getRecordsFromDb(sqlReadPhotos, arrColumnsGallery);
+        Record recDestination = lstRecord.get(0);
+        String strCityName = recDestination.getColumnData("album_destination_name_map");
+        String strCountry = recDestination.getColumnData("album_destination_country_map");
+
+        //      Div divLocation = new Div(strCityName + " " + strCountry);
+
+//        layoutMap = new VerticalLayout();
+//
+//        layoutMap.addClassName("image-to-show");
+//        layoutMap.add(fetchMapOnCarousel(strCityName, strCountry));
+//        layoutMap.getStyle().setOpacity("1");
+
+        if (strCityName == null || strCityName.isEmpty() || strCityName.equalsIgnoreCase("null")) {
+            layoutCarouselAndInfo.setHeight("580px");
+        } else {
+            layoutCarouselAndInfo.setHeight("570px");
+        }
+
+        VerticalLayout layoutPhotosView = new VerticalLayout();
+        layoutPhotosView.addClassNames(LumoUtility.Width.FULL, LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER);
+        layoutPhotosView.add(layoutCarouselAndInfo, layoutThumbsFull);
+
+        layoutAll.add(layoutPhotosView);
 
         return layoutAll;
     }
@@ -470,37 +561,35 @@ public class GenericView {
     private ArrayList<Image> fetchPhotoThumbs(String sqlRead, String[] arrColumnNames) {
 
         ArrayList<Image> lstImage = new ArrayList<>();
-        List<com.photo.act.photo_act.db.Record> lstRecords = getRecordsFromDb(sqlRead, arrColumnNames);
+        List<Record> lstRecords = getRecordsFromDb(sqlRead, arrColumnNames);
         for (int r = 0; r < lstRecords.size(); r++) {
-
             Record record = lstRecords.get(r);
             lstImage.add(getImageThumb(record));
         }
         return lstImage;
     }
 
-
     private ArrayList<Image> fetchPhotosLarge(String sqlRead, String[] arrColumnNames) {
 
         ArrayList<Image> lstImage = new ArrayList<>();
-        List<com.photo.act.photo_act.db.Record> lstRecords = getRecordsFromDb(sqlRead, arrColumnNames);
+        List<Record> lstRecords = getRecordsFromDb(sqlRead, arrColumnNames);
         for (int r = 0; r < lstRecords.size(); r++) {
-
             Record record = lstRecords.get(r);
             lstImage.add(getImageLarge(record));
         }
         return lstImage;
     }
 
-    private VerticalLayout getPhotoMetaInfoOnCarousel(Record record) {
+    private VerticalLayout fetchPhotoMetaInfoOnCarousel(Record record) {
 
         VerticalLayout layoutPhotoInfo = new VerticalLayout();
-        layoutPhotoInfo.addClassNames(LumoUtility.Overflow.SCROLL,
+        layoutPhotoInfo.addClassNames(LumoUtility.Overflow.HIDDEN,
                 LumoUtility.Width.FULL, LumoUtility.Height.FULL,
                 LumoUtility.Padding.NONE, LumoUtility.Margin.NONE,
                 LumoUtility.Gap.XSMALL,
                 LumoUtility.BorderRadius.LARGE,
                 LumoUtility.AlignItems.START, LumoUtility.JustifyContent.START);
+        layoutPhotoInfo.addClassName("image-meta-to-show");
 
         String strMetaCameraModel = record.getColumnData("meta_camera_model");
         String strMetaLensModel = record.getColumnData("meta_lens_model");
@@ -580,87 +669,209 @@ public class GenericView {
                 divSSTitle, divMetaSS, divIsoTitle, divMetaIso);
 
         layoutPhotoInfo.add(layoutPhotoCameraMeta, layoutPhotoMeta);
+        layoutPhotoInfo.getStyle().setOpacity("1");
         return layoutPhotoInfo;
     }
 
-    private HorizontalLayout selectLocation(String locationName, Select<String> cmbLocation) {
-//        List<String> lstPhotoFilenames = getImagesFilenames(sqlRead, arrColumnNames);
-        String sqlReadWithLocation = sqlReadGallery;
-        if(!locationName.isEmpty()) {
-            sqlReadWithLocation = sqlReadGallery + " AND d.city_name LIKE '" + locationName + "' ";
+    private VerticalLayout fetchMapOnCarousel(String strCity, String strCountry) {
+
+        VerticalLayout layoutInnerMap = new VerticalLayout();
+
+        if (strCity == null || strCity.isEmpty() || strCity.equalsIgnoreCase("null")) {
+
+            //    layoutMap.setHeight("0px");
+        } else {
+
+
+            layoutInnerMap.addClassNames(LumoUtility.Width.FULL, LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER,
+                    LumoUtility.Padding.SMALL, LumoUtility.Margin.NONE, LumoUtility.Gap.XSMALL);
+
+            IFrame frameMap = getDestinationMap(strCity, strCountry);
+            frameMap.setWidth("90%");
+            frameMap.setMaxWidth("1080px");
+            frameMap.setHeight("600px");
+            frameMap.addClassName("image-meta-to-show");
+            frameMap.getStyle().setOpacity("1");
+
+
+            layoutInnerMap.add(frameMap);
         }
-        HorizontalLayout layoutThumbs = showThumbs(sqlReadWithLocation, arrColumnsGallery, cmbLocation);
+        return layoutInnerMap;
+    }
+
+    private HorizontalLayout selectLocation(String locationName, String sqlRead, String sqlReadOrderBy, String filterColumn) {
+//        List<String> lstPhotoFilenames = getImagesFilenames(sqlRead, arrColumnNames);
+        String sqlReadWithLocation = sqlRead;
+        if (!locationName.isEmpty()) {
+            sqlReadWithLocation = sqlRead + " AND " + filterColumn + " LIKE '" + locationName + "' " + sqlReadOrderBy;
+        }
+
+        HorizontalLayout layoutThumbs = fetchThumbs(sqlReadWithLocation, arrColumnsGallery);
         Image imageLarge = fetchPhotosLarge(sqlReadWithLocation, arrColumnsGallery).get(0);
         divCarousel.removeAll();
         divCarousel.add(imageLarge);
 
+        List<Record> lstRecord = getRecordsFromDb(sqlReadWithLocation, arrColumnsGallery);
+        Record recDestination = lstRecord.get(0);
+        String strCityName = recDestination.getColumnData("album_destination_name_map");
+        String strCountry = recDestination.getColumnData("album_destination_country_map");
+
         return layoutThumbs;
     }
 
-    private VerticalLayout selectPhotoThumb(List<com.photo.act.photo_act.db.Record> lstImageFiles, String sqlReadWithLocation, int intImage, Select<String> cmbLocation) {
-
-        layoutPhotoInfo.removeAll();
-        divCarousel.removeAll();
-
+    private void selectThumb(List<Record> lstImageFiles, String sqlReadWithLocation, int intImage) {
 
         Record record = lstImageFiles.get(intImage);
 
         Image imageLarge = fetchPhotosLarge(sqlReadWithLocation, arrColumnsGallery).get(intImage);
+        imageLarge.addClassNames(LumoUtility.Width.FULL, LumoUtility.Height.FULL);
+
+        Component imgPrevious = divCarousel.getComponentAt(0);
+        imgPrevious.addClassName("image-to-hide");
+        imgPrevious.getStyle().setOpacity("0");
+        divCarousel.remove(imgPrevious);
+
         imageLarge.addClassName("image-to-show");
+        imageLarge.getStyle().setOpacity("1");
         divCarousel.add(imageLarge);
 
-
-
-        VerticalLayout layoutMeta = getPhotoMetaInfoOnCarousel(record);
-        layoutMeta.addClassName("image-meta-to-show");
-        layoutPhotoInfo.add(layoutMeta);
-        imageLarge.getStyle().setOpacity("1");
-        layoutMeta.getStyle().setOpacity("1");
-        layoutPhotoInfo.add(cmbLocation);
-        return layoutPhotoInfo;
+        layoutMeta.removeAll();
+        layoutMeta.add(fetchPhotoMetaInfoOnCarousel(record));
     }
 
-    private HorizontalLayout showThumbs(String sqlRead, String[] arrColumnNames, Select<String> cmbLocation) {
+    private HorizontalLayout fetchThumbs(String sqlRead, String[] arrColumnNames) {
 
         ArrayList<Image> lstImageThumbs = fetchPhotoThumbs(sqlRead, arrColumnNames);
-
-        List<com.photo.act.photo_act.db.Record> lstImageFiles = getRecordsFromDb(sqlRead, arrColumnNames);
+        List<Record> lstImageFiles = getRecordsFromDb(sqlRead, arrColumnNames);
 
         HorizontalLayout layoutThumbs = new HorizontalLayout();
-        layoutThumbs.addClassNames(//LumoUtility.Overflow.HIDDEN,
-                //LumoUtility.Width.FULL, //LumoUtility.Height.FULL,
+        layoutThumbs.addClassNames(LumoUtility.Overflow.HIDDEN,
+                //  don't   LumoUtility.Width.FULL, //LumoUtility.Height.FULL,
                 LumoUtility.Display.INLINE_FLEX,
-                LumoUtility.Margin.NONE, LumoUtility.Padding.XSMALL,
-                LumoUtility.Background.CONTRAST_5,
+                LumoUtility.Margin.NONE, LumoUtility.Padding.NONE,
+                LumoUtility.Gap.XSMALL,
+
                 LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER);
-        layoutThumbs.setHeight("105px");
+        layoutThumbs.setHeight("100px");
 
         for (int t = 0; t < lstImageThumbs.size(); t++) {
-//            Div btnThumb = new Div();
             Div divBtnPhoto = new Div();
-            Image imageThumb = lstImageThumbs.get(t);
-            imageThumb.setWidth("auto");
-            imageThumb.setHeight("80px");
-            divBtnPhoto.add(imageThumb);
-            divBtnPhoto.addClassNames(//LumoUtility.Overflow.HIDDEN,
-//                    LumoUtility.Width.AUTO, LumoUtility.Height.FULL,
+            divBtnPhoto.addClassNames(LumoUtility.Overflow.HIDDEN,
+                    LumoUtility.Width.FULL, LumoUtility.Height.AUTO,
                     LumoUtility.Margin.NONE, LumoUtility.Padding.SMALL,
                     LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER,
+                    LumoUtility.BorderRadius.MEDIUM
+            );
+
+            Image imageThumb = lstImageThumbs.get(t);
+            imageThumb.addClassNames(
+                    LumoUtility.Width.FULL, LumoUtility.Height.FULL,
+                    LumoUtility.Margin.NONE, LumoUtility.Padding.XSMALL,
                     LumoUtility.BorderRadius.MEDIUM);
-//
-//            divBtnPhoto.setWidth("auto");
-//            divBtnPhoto.setHeight("80px");
+
+            imageThumb.setWidth("90px");
+            imageThumb.setHeight("Auto");
+
+            divBtnPhoto.add(imageThumb);
             divBtnPhoto.addClassName("btn-thumb-photo");
 
-//            btnThumb.add(divBtnPhoto);
+
             final int tFinal = t;
             divBtnPhoto.addClickListener(click -> {
-                selectPhotoThumb(lstImageFiles, sqlRead, tFinal, cmbLocation);
+                selectThumb(lstImageFiles, sqlRead, tFinal);
             });
             layoutThumbs.add(divBtnPhoto);
         }
         return layoutThumbs;
     }
+
+    private IFrame getDestinationMap(String city, String country) {
+
+        String strHtml = "<!DOCTYPE html>\n" +
+                "<html>\n" +
+                "<head>\n" +
+                "<meta charset=\"utf-8\">\n" +
+                "<title>Add a marker using a place name</title>\n" +
+                "<meta name=\"viewport\" content=\"initial-scale=1,maximum-scale=1,user-scalable=no\">\n" +
+                "<link href=\"https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.css\" rel=\"stylesheet\">\n" +
+                "<script src=\"https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.js\"></script>\n" +
+                "<style>\n" +
+                "body { margin: 0; padding: 0; }\n" +
+                "#map { position: absolute; top: 0; bottom: 0; width: 100%; }\n" +
+                "</style>\n" +
+                "</head>\n" +
+                "<body>\n" +
+                "<div id=\"map\"></div>\n" +
+                "\n" +
+                "<script src=\"https://unpkg.com/@mapbox/mapbox-sdk/umd/mapbox-sdk.min.js\"></script>\n" +
+                "\n" +
+                "<script>\n" +
+                "\tmapboxgl.accessToken = 'pk.eyJ1Ijoibmlja2dpY2siLCJhIjoiY20xcm9nMTZ5MGJsNDJzczM1aWk0Mm1zdCJ9.qSV85DCU8ewpGjTA3uajpg';\n" +
+                "    const mapboxClient = mapboxSdk({ accessToken: mapboxgl.accessToken });\n" +
+                "    mapboxClient.geocoding\n" +
+                "        .forwardGeocode({\n" +
+                "            query: '" + city + ", " + country + "',\n" +
+                "            autocomplete: false,\n" +
+                "            limit: 1\n" +
+                "        })\n" +
+                "        .send()\n" +
+                "        .then((response) => {\n" +
+                "            if (\n" +
+                "                !response ||\n" +
+                "                !response.body ||\n" +
+                "                !response.body.features ||\n" +
+                "                !response.body.features.length\n" +
+                "            ) {\n" +
+                "                console.error('Invalid response:');\n" +
+                "                console.error(response);\n" +
+                "                return;\n" +
+                "            }\n" +
+                "            const feature = response.body.features[0];\n" +
+                "\n" +
+                "            const map = new mapboxgl.Map({\n" +
+                "                container: 'map',\n" +
+                "                // Choose from Mapbox's core styles, or make your own style with Mapbox Studio\n" +
+                "                style: 'mapbox://styles/mapbox/streets-v12',\n" +
+                "                center: feature.center,\n" +
+                "                zoom: 12\n" +
+                "            });\n" +
+                "\n" +
+                "    // Add the control to the map.\n" +
+                "    map.addControl(\n" +
+                "        new MapboxGeocoder({\n" +
+                "            accessToken: mapboxgl.accessToken,\n" +
+                "            language: 'en-GB',\n" +
+                "            mapboxgl: mapboxgl\n" +
+                "        })\n" +
+                "    );\n" +
+                "\n" +
+                "            // Create a marker and add it to the map.\n" +
+                "            new mapboxgl.Marker().setLngLat(feature.center).addTo(map);\n" +
+                "        });\n" +
+                "\n" +
+                "\n" +
+                "    map.addControl(new mapboxgl.FullscreenControl());\n" +
+                "\n" +
+                "</script>\n" +
+                "\n" +
+                "</body>\n" +
+                "</html>";
+
+        //String mapSrc = "https://api.mapbox.com/search/geocode/v6/forward?q=budapest&proximity=ip&access_token=pk.eyJ1Ijoibmlja2dpY2siLCJhIjoiY20xcm9nMTZ5MGJsNDJzczM1aWk0Mm1zdCJ9.qSV85DCU8ewpGjTA3uajpg";
+
+        //String strMaps =
+//"<iframe width='100%' height='400px' src=\""+mapSrc+"\" title=\"Navigation\" style=\"border:none;\"></iframe>";
+
+        IFrame mapsFrame = new IFrame();
+        mapsFrame.setSrcdoc(strHtml);
+        mapsFrame.setWidthFull();
+        mapsFrame.getStyle().setBorder("0px");
+        mapsFrame.getStyle().setBorderRadius("6px");
+
+
+        return mapsFrame;
+    }
+
 
     public void logVisitorToDb(String section, String logText) {
 
@@ -736,6 +947,7 @@ public class GenericView {
         String strTitle = record.getColumnData("title");
         String strSubTitle = record.getColumnData("subtitle");
         String strPhotoType = record.getColumnData("photo_type");
+        String strMetaOrientation = record.getColumnData("meta_orientation");
 
         String strCityName = record.getColumnData("city_name");
         String strUploader = record.getColumnData("uploader");
@@ -765,8 +977,11 @@ public class GenericView {
             }
             return null;
         });
-
         image.setSrc(imageResource);
+        if (strMetaOrientation.equalsIgnoreCase("8")) {
+            image.getStyle().set("rotate", "-90deg");
+        }
+
         return image;
     }
 

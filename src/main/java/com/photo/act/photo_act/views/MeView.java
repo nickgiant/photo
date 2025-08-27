@@ -22,7 +22,6 @@ import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
-import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.VaadinService;
@@ -76,10 +75,10 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
             "   usr.userId, usr.username, usr.username, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined,  " +
             " DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since , getDateDiffFromNow(usr.date_joined) AS member_for " +
             " , usr.avatar_path, name, surname, short_bio, url_insta, url_fb, url_flickr, url_yt, email, resident, resident_country " +
-            " , count_photos, count_albums, count_learnings " +
+            " , esrx.count_photos, esrx.count_albums, esrx.count_learnings_ref " +
             //     "--  , pa.inc, pm.title, pm.id, pm.name_new, pm.title, pm.subtitle, pm.space_size, pm.location_by_user\\n\" +\n" +
-            " FROM dbuser usr " +
-            " WHERE 1 = 1  " +
+            " FROM dbuser usr, dbuser_extra esrx " +
+            " WHERE usr.userId = esrx.user_id " +
             " AND usertype <> 'Guest' " +
             " ORDER BY username ";
     String[] arrColumnsMemberPhotos = {"photo_count", "photo_size",
@@ -462,30 +461,36 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
             reUpdateMyPhotoMetadata(intUserId);
         });
 
-        HorizontalLayout layoutTextFilters = new HorizontalLayout();
-        TextField txtFrom = new TextField();
-        TextField txtTo = new TextField();
-        layoutTextFilters.add(txtFrom, txtTo);
+//        HorizontalLayout layoutTextFilters = new HorizontalLayout();
+//        TextField txtFrom = new TextField();
+//        TextField txtTo = new TextField();
+//        layoutTextFilters.add(txtFrom, txtTo);
 
-
-        Button btnRecompressPhotos = new Button("Recompress Thumbs");
-        btnRecompressPhotos.addClickListener(e -> {
-            reCompressPhotos(4, txtFrom.getValue(), txtTo.getValue());
-        });
-
-//        Button btnRecompressSmallPhotos = new Button("Recompress Small");
-//        btnRecompressSmallPhotos.addClickListener(e -> {
-//            reCompressPhotos(2, txtFrom.getValue(), txtTo.getValue());
+//
+//        Button btnRecompressPhotos = new Button("Recompress Large");
+//        btnRecompressPhotos.addClickListener(e -> {
+//            reCompressPhotos(4, txtFrom.getValue(), txtTo.getValue());
 //        });
 //
 //        Button btnRecompressMediumPhotos = new Button("Recompress Medium");
 //        btnRecompressMediumPhotos.addClickListener(e -> {
 //            reCompressPhotos(3, txtFrom.getValue(), txtTo.getValue());
 //        });
+//
+//        Button btnRecompressSmallPhotos = new Button("Recompress Small");
+//        btnRecompressSmallPhotos.addClickListener(e -> {
+//            reCompressPhotos(2, txtFrom.getValue(), txtTo.getValue());
+//        });
+//
+//        Button btnRecompressThumbsPhotos = new Button("Recompress Thumbs");
+//        btnRecompressThumbsPhotos.addClickListener(e -> {
+//            reCompressPhotos(1, txtFrom.getValue(), txtTo.getValue());
+//        });
+
 
         // layoutTextFilters, btnRecompressPhotos, btnRecompressSmallPhotos, btnRecompressMediumPhotos,
 
-        verticalLayout.add(uploadImageCard.getUploadImageCard());
+        verticalLayout.add(btnRefreshPhotoMeta, uploadImageCard.getUploadImageCard());
     }
 
 

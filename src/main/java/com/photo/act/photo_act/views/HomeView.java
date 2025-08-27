@@ -20,7 +20,9 @@ import com.photo.act.photo_act.views.components.AvatarItem;
 import com.photo.act.photo_act.views.components.DialogRegistration;
 import com.photo.act.photo_act.views.components.GenericView;
 import com.photo.act.photo_act.views.components.HeaderFilterTabs;
-import com.vaadin.flow.component.*;
+import com.vaadin.flow.component.HasComponents;
+import com.vaadin.flow.component.HasStyle;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.CheckboxGroup;
 import com.vaadin.flow.component.html.*;
@@ -37,13 +39,9 @@ import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.theme.lumo.LumoUtility.*;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.vaadin.addons.taefi.component.ToggleButtonGroup;
-import org.w3c.dom.*;
-import org.w3c.dom.html.HTMLElement;
-import org.w3c.dom.html.HTMLHeadElement;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -127,7 +125,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
                     " AND lc.cat_type not LIKE '%genre%' " +
                     " AND lc.cat_type not LIKE 'not show' " +
                     " GROUP BY lc.cat_type " +
-                    " ORDER BY lc.cat_order ASC "+
+                    " ORDER BY lc.cat_order ASC " +
                     " LIMIT 6 ";
 
 
@@ -140,7 +138,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
                     " WHERE 1 = 1 " +
                     " AND lc.cat_type LIKE '%genre%' " +
                     " GROUP BY lc.cat_title " +
-                    " ORDER BY lc.cat_order ASC "+
+                    " ORDER BY lc.cat_order ASC " +
                     " LIMIT 6 ";
 
 
@@ -219,7 +217,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
         String[] arrColumnsLearning = {"title", "subtitle", "picture", "category_id", "cat_genre_id", "format", "url", "tutor_id", "artists_ref", "description", "duration", "pages", "published", "year_published",
                 "userId_post", "date_inserted",
-        "cat_title", "cat_type", "genre_title",
+                "cat_title", "cat_type", "genre_title",
                 "tutor_name",
                 "username", "name", "surname"
         };
@@ -227,7 +225,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         // learnings: l.id, l.title, l.picture, l.section , l.category, l.format, l.url, l.parent_id, l.child_index, l.tutor_id, l.artists_ref, l.description, l.duration, l.pages, l.published, l.userIdInsert, l.username, l.dateInsert
 // learnings_tutor:  lt.id, lt.tutor_name, lt.learnings_team_id, lt.website, lt.url_fb, lt.url_yt, lt.url_insta, lt.url_flickr, lt.url_wikipedia, lt.url_ref1, lt.url_ref2, lt.url_ref3, lt.url_flckr, lt.city_base, lt.country_base, lt.userIdInsert, lt.username, lt.date_inserted
         String sqlLearningsRead = "SELECT "
-                +" l.id, l.title,  l.subtitle, l.picture, l.category_id, l.cat_genre_id, l.format, l.url, l.tutor_id, l.artists_ref, l.description, l.duration, l.pages, l.published, DATE_FORMAT(l.published, '%Y') AS year_published,  l.userId_post, l.dateInsert, getDateDiffFromNow(l.dateInsert) AS date_inserted "
+                + " l.id, l.title,  l.subtitle, l.picture, l.category_id, l.cat_genre_id, l.format, l.url, l.tutor_id, l.artists_ref, l.description, l.duration, l.pages, l.published, DATE_FORMAT(l.published, '%Y') AS year_published,  l.userId_post, l.dateInsert, getDateDiffFromNow(l.dateInsert) AS date_inserted "
                 + " , lc.cat_title,  lc.cat_type, t.tutor_name "
                 + " , lcg.cat_title AS genre_title"
                 + " , usr.username, usr.name, usr.surname "
@@ -357,13 +355,13 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         VerticalLayout layoutLearningTopics = new VerticalLayout();
         H2 titleLearnTopics = new H2("Learning Categories");
         Button btnMoreLearnings = new Button("View All Learnings");
-        btnMoreLearnings.addClickListener(click->{
+        btnMoreLearnings.addClickListener(click -> {
             btnMoreLearnings.getUI().ifPresent(ui ->
                     ui.navigate(LearningsView.class)
             );
         });
-        layoutLearningTopics.add(titleLearnTopics, divLearningTopics,btnMoreLearnings);
-        layoutLearningTopics.addClassNames(Width.FULL,AlignItems.CENTER,JustifyContent.CENTER,Padding.MEDIUM);
+        layoutLearningTopics.add(titleLearnTopics, divLearningTopics, btnMoreLearnings);
+        layoutLearningTopics.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER, Padding.MEDIUM);
         layoutLearningTopics.addClassName("page-section");
         verticalLayout.add(layoutLearningTopics);
 
@@ -372,19 +370,19 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
         H2 titleLearnGenres = new H2("Learning Photo Genres");
         Button btnMoreLearningGenres = new Button("View All Learnings");
-        btnMoreLearningGenres.addClickListener(click->{
+        btnMoreLearningGenres.addClickListener(click -> {
             btnMoreLearningGenres.getUI().ifPresent(ui ->
                     ui.navigate(LearningsView.class)
             );
         });
-        verticalLayout.add(titleLearnGenres, layoutLearningGenres,btnMoreLearningGenres);
+        verticalLayout.add(titleLearnGenres, layoutLearningGenres, btnMoreLearningGenres);
 
 
 //        H3 titleCarousel = new H3("10 Recently Uploaded Photos:");
 //        verticalLayout.add(titleCarousel, getCarousel(lstImage));
 
         VerticalLayout layoutLastLearnings = new VerticalLayout();
-        layoutLastLearnings.addClassNames(Width.FULL,AlignItems.CENTER,JustifyContent.CENTER,Padding.MEDIUM);
+        layoutLastLearnings.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER, Padding.MEDIUM);
         layoutLastLearnings.addClassName("page-section");
 
         H2 titleLastLearnings = new H2("Last Posted Learnings");
@@ -396,7 +394,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         verticalLayout.add(titleGraphLastPhotos, loadGraphUploads(sqlUploadsGrouped, arrColsUploadsGrouped));
 
         VerticalLayout layoutLastPhotoUploads = new VerticalLayout();
-        layoutLastPhotoUploads.addClassNames(Width.FULL,AlignItems.CENTER,JustifyContent.CENTER,Padding.MEDIUM);
+        layoutLastPhotoUploads.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER, Padding.MEDIUM);
         layoutLastPhotoUploads.addClassName("page-section");
         H2 titleLastPhotos = new H2("Last Photos Uploaded");
         layoutLastPhotos.addClassNames(Overflow.HIDDEN, Width.FULL,
@@ -405,35 +403,35 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         layoutLastPhotos.addClassName("container-uploaded-lines");
 
         HorizontalLayout layoutPhotosButton = new HorizontalLayout();
-        layoutPhotosButton.addClassNames(Margin.NONE, Padding.SMALL, AlignItems.CENTER,JustifyContent.EVENLY);
+        layoutPhotosButton.addClassNames(Margin.NONE, Padding.SMALL, AlignItems.CENTER, JustifyContent.EVENLY);
         Button btnPhotosA = new Button("5");
         String finalSqlGalleryAll = sqlGalleryAll;
-        btnPhotosA.addClickListener(e->{
+        btnPhotosA.addClickListener(e -> {
             layoutLastPhotos.removeAll();
             layoutLastPhotos.add(loadUploadedPhotos(finalSqlGalleryAll + " LIMIT 5 ", arrColumnNamesGallery, false, false));
         });
         Button btnPhotosB = new Button("10");
-        btnPhotosB.addClickListener(e->{
+        btnPhotosB.addClickListener(e -> {
             layoutLastPhotos.removeAll();
             layoutLastPhotos.add(loadUploadedPhotos(finalSqlGalleryAll + " LIMIT 10 ", arrColumnNamesGallery, false, false));
 
         });
         Button btnPhotosC = new Button("20");
-        btnPhotosC.addClickListener(e->{
+        btnPhotosC.addClickListener(e -> {
             layoutLastPhotos.removeAll();
             layoutLastPhotos.add(loadUploadedPhotos(finalSqlGalleryAll + " LIMIT 20 ", arrColumnNamesGallery, false, false));
         });
 
-        layoutPhotosButton.add(btnPhotosA,btnPhotosB,btnPhotosC);
+        layoutPhotosButton.add(btnPhotosA, btnPhotosB, btnPhotosC);
         layoutLastPhotos.add(loadUploadedPhotos(sqlGalleryAll + " LIMIT 5 ", arrColumnNamesGallery, false, false));
 
         Button btnMorePhotos = new Button("More Photos");
-        btnMorePhotos.addClickListener(click->{
+        btnMorePhotos.addClickListener(click -> {
             btnMorePhotos.getUI().ifPresent(ui ->
                     ui.navigate(GalleryView.class)
             );
         });
-        layoutLastPhotoUploads.add(titleLastPhotos,layoutPhotosButton,layoutLastPhotos,btnMorePhotos);
+        layoutLastPhotoUploads.add(titleLastPhotos, layoutPhotosButton, layoutLastPhotos, btnMorePhotos);
         verticalLayout.add(layoutLastPhotoUploads);
 
         H2 titleWeather = new H2("Current Weather at:");
@@ -549,7 +547,6 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
             logger.info("  url:" + urlHost[0] + "  url:" + urlHost[1] + "  url:" + urlHost[2] + "  url:" + urlHost[3] + "  url:" + urlHost[4]
                     + "  url:" + urlHost[5] + "  url:" + urlHost[6] + "  url:" + urlHost[7]);
         });
-
     }
 
     @Override
@@ -682,26 +679,26 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
 
             Div divCategory = new Div();
-            if(!strCategory.isEmpty()){
-                divCategory.setText("Category: "+strCategory);
-            }else{
-                divCategory.setText("Genre: "+strCatGenre);
+            if (!strCategory.isEmpty()) {
+                divCategory.setText("Category: " + strCategory);
+            } else {
+                divCategory.setText("Genre: " + strCatGenre);
             }
-            Div divDuration = new Div("Duration: "+strDuration);
-            Div divDateInserted = new Div("Inserted: "+strDateInserted);
+            Div divDuration = new Div("Duration: " + strDuration);
+            Div divDateInserted = new Div("Inserted: " + strDateInserted);
 
             H4 divTutor = new H4(strTutorName);
             divTutor.addClassNames(FontWeight.BOLD, FontSize.LARGE);
 
             HorizontalLayout layoutHor1 = new HorizontalLayout();
-            layoutHor1.addClassNames(Width.FULL, AlignItems.CENTER,JustifyContent.BETWEEN);
-            layoutHor1.add( divDuration, divDateInserted);
+            layoutHor1.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.BETWEEN);
+            layoutHor1.add(divDuration, divDateInserted);
 
             HorizontalLayout layoutHor2 = new HorizontalLayout();
-            layoutHor2.addClassNames(Width.FULL, AlignItems.CENTER,JustifyContent.BETWEEN);
-            layoutHor2.add( divTutor, divCategory);
+            layoutHor2.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.BETWEEN);
+            layoutHor2.add(divTutor, divCategory);
 
-            layoutLearning.add(h4Title,layoutHor1, layoutHor2);
+            layoutLearning.add(h4Title, layoutHor1, layoutHor2);
 
             layoutLastLearnings.add(layoutLearning);
         }
@@ -781,7 +778,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
             divLocation.addClassNames(FontSize.XSMALL);
 
 
-            Image imgAvatarMedium = genericView.getAvatarImage(strAvatarPath, strName + " " + strSurname, "80px", "80px");
+            Image imgAvatarMedium = genericView.getAvatarImage(strAvatarPath, strName + " " + strSurname, "70px", "70px");
             AvatarItem avatarLargeItemMe = new AvatarItem(strName + " " + strSurname, "@" + strUsername, imgAvatarMedium);
 
 //            Avatar userAvatar = new Avatar(strUploader);
@@ -815,7 +812,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
             layoutPhotoUploadedPanel.add(image, layoutMemberUp, layoutDateLocationUp);
 
             layoutPhotoUploadedPanel.getStyle().setOpacity("1");
-            layoutPhotoUploaded[r]= layoutPhotoUploadedPanel;
+            layoutPhotoUploaded[r] = layoutPhotoUploadedPanel;
         }
         return layoutPhotoUploaded;
     }

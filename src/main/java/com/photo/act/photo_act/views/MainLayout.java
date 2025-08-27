@@ -75,6 +75,7 @@ public class MainLayout extends AppLayout {
     public static final String STR_ALL_ALBUMS = "all-albums";
     public static final String STR_ALL_DESTINATIONS = "all-locations";
     public static final String STR_ALL_COUNTRIES = "all-countries";
+    public static final String STR_ALL_CATEGORIES = "all-categories";
 
     public static final String SECTION_LOG = "log";
 
@@ -162,7 +163,7 @@ public class MainLayout extends AppLayout {
         if (isMobile) {
             list.addClassNames(Display.FLEX, Width.FULL,
                     ListStyleType.NONE, Margin.NONE, Padding.NONE,
-                     AlignItems.CENTER, JustifyContent.EVENLY
+                    AlignItems.CENTER, JustifyContent.EVENLY
             );
         } else {
             list.addClassNames(Display.FLEX, Width.FULL,

@@ -5,17 +5,15 @@ import com.photo.act.photo_act.utils.XmlUrlSet;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-
+@AnonymousAllowed
 @Controller
 //@RequestMapping(path = "/api")
 public class SitemapController {
-    private List<String> URLS = List.of("/", "/home",  "/albums", "/photos", "/events", "/learnings","/members","/me");
+    private List<String> URLS = List.of("/", "/home", "/albums", "/photos", "/events", "/learnings", "/members", "/me");
     private String DOMAIN = "https://photoact.net";
 
     @GetMapping(value = "/api/sitemap.xml")

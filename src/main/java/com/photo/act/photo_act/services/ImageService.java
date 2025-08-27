@@ -113,33 +113,9 @@ public class ImageService {
     public boolean updatePhotoMeta(RecordService recordService, int intUserId) {
 
 
-    /*    // String publicIpAddress = VaadinSession.getCurrent().getBrowser().getAddress();
-        String browser = VaadinSession.getCurrent().getBrowser().getBrowserApplication();
-        int versionOfBrowserMajor = VaadinSession.getCurrent().getBrowser().getBrowserMajorVersion();
-        int versionOfBrowserMinor = VaadinSession.getCurrent().getBrowser().getBrowserMinorVersion();
-        int intUiId = VaadinSession.getCurrent().getNextUIid();
-
-
-
-        String strOS = "";
-
-        if (VaadinSession.getCurrent().getBrowser().isAndroid()) {
-            strOS = "Android";
-        } else if (VaadinSession.getCurrent().getBrowser().isIPhone()) {
-            strOS = "IPhone";
-        } else if (VaadinSession.getCurrent().getBrowser().isWindows()) {
-            strOS = "Windows";
-        } else if (VaadinSession.getCurrent().getBrowser().isLinux()) {
-            strOS = "Linux";
-        } else if (VaadinSession.getCurrent().getBrowser().isMacOSX()) {
-            strOS = "Mac OS X";
-        } else {
-            strOS = "Unknown";
-        }*/
-
         ArrayList<String> lstQueryUpdate = new ArrayList<String>();
 
-        String sqlReadPhotos = "SELECT name_new FROM photo_meta WHERE uploaderId = " + intUserId + " ORDER BY id DESC ";
+        String sqlReadPhotos = "SELECT name_new FROM photo_meta WHERE uploaderId = " + intUserId + " ORDER BY id ASC ";
         String[] arrColumns = {"name_new"};
         List<Record> lstPhotoFilenames = recordService.findAll(sqlReadPhotos, arrColumns);
 
@@ -150,6 +126,7 @@ public class ImageService {
         );
         notificationStart.addThemeVariants(NotificationVariant.LUMO_CONTRAST);
 
+        int intRecsUpdated = 0;
         for (int l = 0; l < lstPhotoFilenames.size(); l++) {
             String strNewFileName = lstPhotoFilenames.get(l).getColumnData("name_new");
 
@@ -314,23 +291,23 @@ public class ImageService {
             }
 
             String strMeteringMode = lstPhotoMetaData.get(10);
-            if (strMeteringMode==null || strMeteringMode.isEmpty() || strMeteringMode.equalsIgnoreCase("null")) {
-                strMeteringMode ="";
+            if (strMeteringMode == null || strMeteringMode.isEmpty() || strMeteringMode.equalsIgnoreCase("null")) {
+                strMeteringMode = "";
             }
 
             int intImageLength = 0;
             String strImageLength = lstPhotoMetaData.get(11);
-            if (strImageLength==null || strImageLength.isEmpty() || strImageLength.equalsIgnoreCase("null")) {
-                intImageLength =0;
-            }else{
+            if (strImageLength == null || strImageLength.isEmpty() || strImageLength.equalsIgnoreCase("null")) {
+                intImageLength = 0;
+            } else {
                 intImageLength = Integer.parseInt(strImageLength);
             }
 
             int intImageWidth = 0;
             String strImageWidth = lstPhotoMetaData.get(12);
-            if (strImageWidth==null || strImageWidth.isEmpty() || strImageWidth.equalsIgnoreCase("null")) {
-                intImageWidth =0;
-            }else{
+            if (strImageWidth == null || strImageWidth.isEmpty() || strImageWidth.equalsIgnoreCase("null")) {
+                intImageWidth = 0;
+            } else {
                 intImageWidth = Integer.parseInt(strImageWidth);
             }
 
@@ -361,7 +338,7 @@ public class ImageService {
                     " , meta_i_width = '" + intImageWidth + "' " +
                     " , meta_orientation = '" + strOrientation + "' " +
 
-                    " WHERE name_new LIKE '" + strNewFileName + "' AND uploaderId = " + intUserId + " ORDER BY id DESC ";
+                    " WHERE name_new LIKE '" + strNewFileName + "' AND uploaderId = " + intUserId + " ORDER BY id ASC ";
 
             logger.info("  updateSQL SQL:   " + updateSQL);
 
@@ -369,15 +346,17 @@ public class ImageService {
             lstQueryUpdate.add(updateSQL);
 
 
-            recordService.insertOneRecordWithQuery(updateSQL, null, null);
+            intRecsUpdated = intRecsUpdated + recordService.insertOneRecordWithQuery(updateSQL, null, null);
 
-            Notification notificationC = Notification.show(
-                    l + " F  " + strPhotoAperture + " = (" + dblPhotoAperture + ")    SS  " + strPhotoShutterSpeed + " = (" + dblPhotoShutterSpeed + ") --->" + lstQueryUpdate.size(),
-                    8000,
-                    Notification.Position.TOP_START
-            );
-            notificationC.addThemeVariants(NotificationVariant.LUMO_CONTRAST);
+
         }
+
+        Notification notificationC = Notification.show(
+                intRecsUpdated + "Recs Updated",
+                8000,
+                Notification.Position.TOP_START
+        );
+        notificationC.addThemeVariants(NotificationVariant.LUMO_CONTRAST);
 
 //        ArrayList<Object[]> listInsertValues = new ArrayList<>();
 //        String[] imageInfo = {strImageMetaInfo.toString()};

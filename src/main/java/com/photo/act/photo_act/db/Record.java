@@ -1,9 +1,15 @@
 package com.photo.act.photo_act.db;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Map;
 
-public class Record {
+public class Record implements Serializable {
+
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     //Field[] listFields;
     private ArrayList<String> lstColumnName;

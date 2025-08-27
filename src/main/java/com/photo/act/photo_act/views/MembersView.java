@@ -93,33 +93,33 @@ public class MembersView extends Main implements HasUrlParameter<String>, Before
     private int userId;
     String[] arrColumnsMembers = {"userId", "username", "username", "resident", "date_joined", "member_since", "member_for",
             "avatar_path", "name", "surname", "short_bio", "url_insta", "url_fb", "url_flickr", "url_yt", "email", "resident", "resident_country",
-            "count_photos", "count_albums", "count_learnings"};
+            "count_photos", "count_albums", "count_learnings_ref"};
 
     private String strUrlRequestToBeLogged;
     String sqlMembers = "SELECT " +
             "   usr.userId, usr.username, usr.username, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined,  " +
             " DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since , getDateDiffFromNow(usr.date_joined) AS member_for " +
             " , usr.avatar_path, name, surname, short_bio, url_insta, url_fb, url_flickr, url_yt, email, resident, resident_country " +
-            " , count_photos, count_albums, count_learnings " +
+            " , usrx.count_photos, usrx.count_albums, usrx.count_learnings_ref " +
             //     "--  , pa.inc, pm.title, pm.id, pm.name_new, pm.title, pm.subtitle, pm.space_size, pm.location_by_user\\n\" +\n" +
-            " FROM dbuser usr " +
-            " WHERE 1 = 1  " +
+            " FROM dbuser usr, dbuser_extra usrx " +
+            " WHERE usr.userId = usrx.user_id  " +
             " AND usertype <> 'Guest' " +
             " ORDER BY username ";
     String[] arrColumnsMemberPhotos = {"photo_count", "photo_size",
             "userId", "username", "name", "surname", "resident", "resident_country", "date_joined", "member_since", "avatar_path",
             "short_bio", "url_fb", "url_yt", "url_insta", "url_flickr", "url_website",
-            "count_photos", "count_albums", "count_learnings"
+            "count_photos", "count_albums", "count_learnings_ref"
     };
     String sqlMemberPhotos = "SELECT count(pm.id) AS photo_count, SUM(pm.space_size) AS photo_size " +
             " ,  usr.userId, usr.username, usr.resident, usr.resident_country, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined,  DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since " +
             " , usr.avatar_path, usr.name, usr.surname " +
             " , usr.short_bio, usr.url_fb, usr.url_yt, usr.url_insta, usr.url_flickr, usr.url_website " +
-            " , count_photos, count_albums, count_learnings " +
+            " , usrx.count_photos, usrx.count_albums, usrx.count_learnings_ref " +
             //     "--  , pa.inc, pm.title, pm.id, pm.name_new, pm.title, pm.subtitle, pm.space_size, pm.location_by_user\\n\" +\n" +
-            " FROM dbuser usr LEFT JOIN photo_meta pm ON pm.uploaderId = usr.userId " +
-            " WHERE 1 = 1  " +
-            " AND role <> 'Guest' ";
+            " FROM dbuser_extra usrx, dbuser_rights usrr, dbuser usr LEFT JOIN photo_meta pm ON pm.uploaderId = usr.userId " +
+            " WHERE usr.userId = usrx.user_id  AND usrr.id = usr.user_rights_id" +
+            " AND usrr.role <> 'Guest' ";
     //            " AND pm.visible_to  = 'ALL' ";
     String sqlMemberPhotosGroupBy =
             " GROUP BY usr.userid " +
@@ -229,10 +229,6 @@ public class MembersView extends Main implements HasUrlParameter<String>, Before
             mainImage.getStyle().setPadding("10px");
 
             divMainImage.add(mainImage);
-
-
-            Div div1 = new Div("We are a community site, with members exchanging info and links in order to improve our skills in photography!");
-            Div div2 = new Div("Currently, we share info about events and learnings. Of course, we also have space for our photos and albums.");
 
 
             verticalLayout.add(divMainImage);
@@ -510,7 +506,7 @@ public class MembersView extends Main implements HasUrlParameter<String>, Before
     }
 
     private void loadUploadView(int intUserId, String strMember) {
-        UploadImageCard uploadImageCard = new UploadImageCard(recordService, emailSendService , intUserId, strMember, sessionCreation, publicIp, hostname);
+        UploadImageCard uploadImageCard = new UploadImageCard(recordService, emailSendService, intUserId, strMember, sessionCreation, publicIp, hostname);
         uploadImageCard.addClassNames(
                 Overflow.HIDDEN, Width.FULL,
                 Margin.SMALL,
@@ -748,7 +744,7 @@ public class MembersView extends Main implements HasUrlParameter<String>, Before
 
                 String strCountPhotos = rec.getColumnData("count_photos");
                 String strCountAlbums = rec.getColumnData("count_albums");
-                String strCountLearnings = rec.getColumnData("count_learnings");
+                String strCountLearningsRef = rec.getColumnData("count_learnings_ref");
 
                 Anchor linkWebsite = new Anchor();
                 linkWebsite.add(FontAwesome.Solid.LINK.create());
@@ -845,9 +841,11 @@ public class MembersView extends Main implements HasUrlParameter<String>, Before
 
                 VerticalLayout layoutContribution = new VerticalLayout();
                 Div divContribTitle = new Div("Contributed with");
-                Div divCounts = new Div(strCountPhotos + ":Photos,  " + strCountAlbums + ":Albums,  " + strCountLearnings + ":Learnings");
+                Div divCounts = new Div(strCountPhotos + ":Photos,  " + strCountAlbums + ":Albums,  ");
 
-                layoutContribution.add(divContribTitle, divCounts);
+                Div divCounts2 = new Div(strCountLearningsRef + ":Learnings Referenced");
+
+                layoutContribution.add(divContribTitle, divCounts, divCounts2);
                 layoutContribution.getStyle().setBorderRadius("10px");
                 layoutContribution.getStyle().setWidth("330px");
                 layoutContribution.getStyle().set("border", "lightgrey 1px solid");
