@@ -28,6 +28,7 @@ import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.tabs.TabSheetVariant;
 import com.vaadin.flow.router.*;
+import com.vaadin.flow.server.AppShellSettings;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
@@ -2300,6 +2301,14 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
             logger.info("  url:" + urlHost[0] + "  url:" + urlHost[1] + "  url:" + urlHost[2] + "  url:" + urlHost[3] + "  url:" + urlHost[4]
                     + "  url:" + urlHost[5] + "  url:" + urlHost[6] + "  url:" + urlHost[7]);
         });
+
+    }
+
+    public void configurePage(AppShellSettings settings) {
+
+        settings.addFavIcon("icon", "camera.png", "512x512");
+        settings.setPageTitle("photoact.net - Learnings");
+        settings.addMetaTag("description", "Community website of photographers, sharing our photos, albums, learning sources and events.");
 
     }
 

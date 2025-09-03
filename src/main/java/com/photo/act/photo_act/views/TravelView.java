@@ -47,12 +47,11 @@ import java.util.*;
 
 import static com.photo.act.photo_act.views.MainLayout.*;
 
-
+@PermitAll
 @RouteAlias(value = "travel/:section?", layout = MainLayout.class)
 @RouteAlias(value = "travel/:section/:member?", layout = MainLayout.class)
 @Route(value = "travel/:section/:subsection/:member?", layout = MainLayout.class)
 
-@PermitAll
 public class TravelView extends Composite<VerticalLayout> implements HasUrlParameter<String>, HasComponents, HasDynamicTitle, HasStyle, BeforeEnterObserver {
 
     private VerticalLayout panelContainer;

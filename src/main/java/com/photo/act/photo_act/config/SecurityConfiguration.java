@@ -29,7 +29,18 @@ public class SecurityConfiguration extends VaadinWebSecurity {
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
+
+
+        http.authorizeHttpRequests((auth) -> auth
+
+                        //                .requestMatchers("/").hasRole("USER")
+                        //                .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/**").anonymous()
+                //  .anyRequest().anonymous()
+        );
+
         super.configure(http);
+
         //http.requiresChannel();
         setLoginView(http, LoginView.class, "/home");
 

@@ -21,6 +21,7 @@ import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.tabs.TabSheetVariant;
 import com.vaadin.flow.router.*;
+import com.vaadin.flow.server.AppShellSettings;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
@@ -1213,6 +1214,13 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         return layoutResults;
     }
 
+    public void configurePage(AppShellSettings settings) {
+
+        settings.addFavIcon("icon", "camera.png", "512x512");
+        settings.setPageTitle("photoact.net - Photos");
+        settings.addMetaTag("description", "Community website of photographers, sharing our photos, albums, learning sources and events.");
+
+    }
 
     private void logVisitorToDb() {
 
