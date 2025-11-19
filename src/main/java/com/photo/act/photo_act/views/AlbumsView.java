@@ -8,17 +8,14 @@ import com.photo.act.photo_act.views.components.*;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.HasStyle;
 import com.vaadin.flow.component.UI;
-import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.Scroller;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.*;
-import com.vaadin.flow.server.AppShellSettings;
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
-import com.vaadin.flow.theme.lumo.LumoUtility;
 import com.vaadin.flow.theme.lumo.LumoUtility.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,14 +28,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import static com.photo.act.photo_act.views.HomeView.subPathLarge;
+import static com.photo.act.photo_act.views.HomeView.subPathSmall;
 import static com.photo.act.photo_act.views.MainLayout.*;
-import static com.photo.act.photo_act.views.MeView.subPathSmall;
+
 
 @AnonymousAllowed
 //@PageTitle("Image Gallery")
 @Route(value = "albums") //":category?")
-@RouteAlias(value = "albums/member/:member?/title/:title?", layout = MainLayout.class)
 @RouteAlias(value = "albums/category/:category?", layout = MainLayout.class)
+@RouteAlias(value = "albums/member/:member?/title/:title?", layout = MainLayout.class)
 
 
 //@Menu(order = 0, icon = "line-awesome/svg/th-list-solid.svg")
@@ -101,16 +100,18 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
     };
 
 
-    String[] arrColumnsMemberAlbums = {"album_count"
+    String[] arrColumnsMemberAlbums = {"id", "title", "description", "album_visible_to", "category_id"
             , "username", "name", "surname", "resident", "date_joined", "member_since", "avatar_path"
+            , "album_count"
     };
 
-    String sqlMemberOfAlbums = "SELECT usr.username, usr.name, usr.surname, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined " +
+    String sqlMemberOfAlbums = "SELECT a.id, a.title, a.description, a.album_visible_to, a.category_id " +
+            " , usr.username, usr.name, usr.surname, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined " +
             " , DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since " +
             " , usr.avatar_path " +
             " , count(usr.userId) AS album_count " +
-            " FROM dbuser usr LEFT JOIN photo_album a ON a.user_id = usr.userId " +
-            " WHERE  1 = 1 " +
+            " FROM dbuser usr, photo_album a " +
+            " WHERE a.user_id = usr.userId " +
             " AND a.album_visible_to = 'ALL' ";
 
     String sqlMemberOfAlbumsGroupBy =
@@ -132,16 +133,18 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
     String sqlAlbumsCategoriesGroupBy =
             " GROUP BY ac.cat_type " +
                     " ORDER BY ac.cat_order ASC, a.date_inserted DESC ";
-    String[] arrColumnsAlbums = {"title", "description", "album_visible_to", "user_id", "date_inserted", "album_photo_count", "album_photo_size",
+    String[] arrColumnsAlbums = {"id", "album_title", "description", "album_visible_to", "user_id", "date_inserted", "album_photo_count", "album_photo_size",
             "name_new", "photo_1", "photo_2", "photo_3", "photo_4", "datetime_album_created"
+            , "cat_type"
             , "username", "surname", "name", "resident", "date_joined", "avatar_path"
     };
-    String sqlAlbumsAll = "SELECT a.title, a.`description`, a.album_visible_to, a.user_id, a.date_inserted " +
+    String sqlAlbumsAll = "SELECT a.id, a.title AS album_title, a.description, a.album_visible_to, a.user_id, a.date_inserted " +
             " , count(pap.photo_album_id) AS album_photo_count, SUM(pm.space_size) AS album_photo_size " +
             " , pm.name_new , a.photo_id1, p1.name_new AS photo_1 , p1.meta_orientation AS meta_orientation1," +
             "  a.photo_id2, p2.name_new  AS photo_2 " +
             " , a.photo_id3, p3.name_new AS photo_3 ,  a.photo_id4, p4.name_new  AS photo_4 " +
             " , getDateDiffFromNow(a.date_inserted) AS datetime_album_created " +
+            " , ac.cat_type " +
             " , usr.username, usr.surname, usr.name, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined, usr.avatar_path " +
             //     "--  , pap.inc, pm.title, pm.id, pm.name_new, pm.title, pm.subtitle, pm.space_size, pm.location_by_user\\n\" +\n" +
             " FROM photo_album_photo pap , photo_meta pm, photo_album_categories ac, dbuser usr, photo_album a LEFT JOIN photo_meta p1 ON a.photo_id1 = p1.id " +
@@ -157,8 +160,8 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
     String sqlAlbumsOrderBy = " ORDER BY a.date_inserted DESC, a.title ASC ";
 
     private String[] arrColumnNamesAlbumPhotos = {"album_title", "album_visible_to", "description"
-            , "name_new", "title", "subtitle", "photo_type", "uploader", "creator", "visible_to", "album_destination_name_map", "album_destination_country_map", "city_name", "country"
-            , "meta_date", "photo_date", "photo_time"
+            , "id", "name_new", "title", "subtitle", "photo_type", "uploader", "creator", "visible_to", "album_destination_name_map", "album_destination_country_map", "city_name", "country"
+            , "meta_date", "photo_date", "photo_time_shot"
             , "space_size", "space_size_medium", "space_size_thumb", "meta_camera_make", "meta_camera_model", "meta_lens_make", "meta_lens_model"
             , "meta_focal_length", "meta_focal_length_ff", "meta_iso", "meta_aperture", "meta_shutter_speed", "meta_orientation"
             , "location_by_user", "location_area", "location_country_code", "location_lat", "location_lon"
@@ -167,11 +170,11 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
     };
 
     private String sqlReadAlbumPhotos = "SELECT a.title AS album_title, a.user_id, a. album_visible_to, a.description, " +
-            " pm.name_new, pm.title, pm.subtitle, pm.photo_type, pm.uploader, pm.creator, pm.visible_to, " +
+            " pm.id, pm.name_new, pm.title, pm.subtitle, pm.photo_type, pm.uploader, pm.creator, pm.visible_to, " +
             " d.city_name , d.country,  " +
             " if(da.name_for_map IS NULL, da.city_name, da.name_for_map ) AS album_destination_name_map, " +
             " da.country AS album_destination_country_map, " +
-            " DATE_FORMAT(pm.meta_date, '%W %D %M %Y %H:%i %p') AS meta_date, getDateDiffFromNow(pm.meta_date) AS photo_date, DATE_FORMAT(pm.meta_date, '%H:%i %p') AS photo_time, " +
+            " DATE_FORMAT(pm.meta_date, '%W %D %M %Y %H:%i %p') AS meta_date, DATE_FORMAT(pm.meta_date, '%M %Y') AS photo_date, DATE_FORMAT(pm.meta_date, '%d/%m/%Y - %H:%i:%S') AS photo_time_shot, " +
             " pm.space_size, pm.space_size_medium, pm.space_size_thumb, pm.meta_camera_make, pm.meta_camera_model, pm.meta_lens_make, pm.meta_lens_model, " +
             " pm.meta_focal_length, pm.meta_focal_length_ff, pm.meta_iso, meta_aperture,  meta_shutter_speed, meta_orientation " +
             " , pm.location_by_user, pm.location_area, pm.location_country_code, pm.location_lat, pm.location_lon " +
@@ -191,7 +194,7 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
     public AlbumsView(RecordService recordService) {
         this.recordService = recordService;
         utilsDate = new UtilsDate();
-        genericView = new GenericView(recordService, 1);
+        genericView = new GenericView(recordService);
 
         constructUI();
     }
@@ -213,29 +216,21 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
         VerticalLayout layoutHeaderParameters;
         verticalLayout.removeAll();
 
-        logger.warn("strCategory: " + strCategory + " strAlbumTitle: " + strAlbumTitle);
+        logger.warn("strCategory: " + strCategory + " strMember: " + strMember + " strAlbumTitle: " + strAlbumTitle);
 
         if (strAlbumTitle == null || strAlbumTitle.isEmpty() || strAlbumTitle.equalsIgnoreCase(STR_ALL_ALBUMS)) {
 
-            layoutHeaderParameters = loadHeader("Albums", "", "");
-
-            Div divFiltersTitle = new Div("Filter by Album Type");
-            divFiltersTitle.addClassNames(TextColor.TERTIARY);
-            verticalLayout.add(divFiltersTitle, loadFiltersHeader(sqlAlbumsCategoriesAll + sqlAlbumsCategoriesGroupBy, arrColumnsAlbumsCategories));
-
-
             if (!strCategory.isEmpty() && !strCategory.equalsIgnoreCase(STR_ALL_CATEGORIES)) {
-
-                H3 titleAlbumCategory = new H3(strCategory);
-                // titleAlbum.addClassName("border-bottom");
-                verticalLayout.add(titleAlbumCategory);
+                layoutHeaderParameters = loadHeader("Albums", "Collections of photos from members", "Category", strCategory);
 
                 String sqlAlbums = sqlAlbumsAll + " AND ac.cat_type = '" + strCategory + "' " + sqlAlbumsGroupBy + sqlAlbumsOrderBy;
                 loadAlbums(sqlAlbums, arrColumnsAlbums, 1);
             } else if (strMember == null || strMember.isEmpty() || strMember.equalsIgnoreCase(STR_ALL_MEMBERS) || strCategory.equalsIgnoreCase(STR_ALL_CATEGORIES)) {
+                layoutHeaderParameters = loadHeader("Albums", "Collections of photos from members", "", "");
                 String sqlAlbums = sqlAlbumsAll + sqlAlbumsGroupBy + sqlAlbumsOrderBy;
                 loadAlbums(sqlAlbums, arrColumnsAlbums, 1);
             } else {
+                layoutHeaderParameters = loadHeader("Albums", "Collections of photos from members", "", "");
                 String sqlMember = sqlMemberOfAlbums + " AND usr.username = '" + strMember + "' " + sqlMemberOfAlbumsGroupBy;
                 loadMemberOfAlbumsFromDb(sqlMember, arrColumnsMemberAlbums, false);
 
@@ -244,61 +239,33 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
             }
         } else if (!strAlbumTitle.equalsIgnoreCase(STR_ALL_ALBUMS) && !strMember.equalsIgnoreCase(STR_ALL_MEMBERS)) {
 
-            layoutHeaderParameters = loadHeader("Albums", "", "");
-            if (strMember == null || strMember.isEmpty() || strMember.equalsIgnoreCase(STR_ALL_MEMBERS)) {
+            layoutHeaderParameters = loadHeader("Albums", "Collections of photos from members", "Title", strAlbumTitle);
+//            logger.info("if2 strCategory: " + strCategory + " strMember: " + strMember + " strAlbumTitle: " + strAlbumTitle);
+            String sqlMember = sqlMemberOfAlbums + " AND usr.username = '" + strMember + "' " + sqlMemberOfAlbumsGroupBy;
+            loadMemberOfAlbumsFromDb(sqlMember, arrColumnsMemberAlbums, false);
 
-                logger.warn(" strMember: " + strMember + " must not be empty");
-//                H3 titleAlbum = new H3(strAlbumTitle);
-//                // titleAlbum.addClassName("border-bottom");
-//                verticalLayout.add(titleAlbum);
-//
-//                String sqlAlbumsPhotoAll = ""; //+ " AND pm.visible_to = 'ALL' ";
-//                String sqlAlbumsPhotoAllAND = sqlReadAlbumPhotos + " AND a.title LIKE '" + strAlbumTitle + "' ";
-//                sqlAlbumsPhotoAll = sqlAlbumsPhotoAllAND + " ORDER BY pap.inc, pap.date_inserted ASC ";
-//
-//                verticalLayout.add(loadAlbumImagesFromDb(sqlAlbumsPhotoAll, arrColumnNamesAlbumPhotos, false));
-            } else {
-                String sqlMember = sqlMemberOfAlbums + " AND usr.username = '" + strMember + "' " + sqlMemberOfAlbumsGroupBy;
-                loadMemberOfAlbumsFromDb(sqlMember, arrColumnsMemberAlbums, false);
+            String sqlAlbumsPhotoAll = sqlReadAlbumPhotos + " AND a.title = '" + strAlbumTitle + "' AND usr.username = '" + strMember + "' "
+                    + sqlReadAlbumPhotosOrderBy;
+            logger.info("sqlAlbumsPhotoAll    " + sqlAlbumsPhotoAll);
+            loadAlbumImagesFromDb(sqlAlbumsPhotoAll, arrColumnNamesAlbumPhotos, false, VIEW_PHOTO_GRID);
 
-                H3 titleAlbum = new H3(strAlbumTitle);
-                // titleAlbum.addClassName("border-bottom");
-                verticalLayout.add(titleAlbum);
-
-                //String sqlAlbumsPhotoAll = ""; // + " AND pm.visible_to = 'ALL' ";
-                // sqlAlbumsPhotoAll = sqlAlbumsPhotoAllAND + " ORDER BY pap.inc, pap.date_inserted ASC ";
-
-                String sqlAlbumsPhotoAll = sqlReadAlbumPhotos + " AND a.title = '" + strAlbumTitle + "' AND usr.username = '" + strMember + "' "
-                        + sqlReadAlbumPhotosOrderBy;
-                logger.warn("sqlAlbumsPhotoAll    " + sqlAlbumsPhotoAll);
-                verticalLayout.add(loadAlbumImagesFromDb(sqlAlbumsPhotoAll, arrColumnNamesAlbumPhotos, false));
-            }
         } else if (!strCategory.isEmpty() && !strCategory.equalsIgnoreCase(STR_ALL_CATEGORIES)) {
-
-            layoutHeaderParameters = loadHeader("Albums", "", "");
-
-            Div divFiltersTitle = new Div("Filter by Album Type");
-            divFiltersTitle.addClassNames(TextColor.TERTIARY);
-            verticalLayout.add(divFiltersTitle, loadFiltersHeader(sqlAlbumsCategoriesAll + sqlAlbumsCategoriesGroupBy, arrColumnsAlbumsCategories));
-            H3 titleAlbumCategory = new H3(strCategory);
-            // titleAlbum.addClassName("border-bottom");
-            verticalLayout.add(titleAlbumCategory);
+//            logger.info("if3 strCategory: " + strCategory + " strMember: " + strMember + " strAlbumTitle: " + strAlbumTitle);
+            layoutHeaderParameters = loadHeader("Albums", "Collections of photos from members", "Category", strCategory);
 
             String sqlAlbums = sqlAlbumsAll + " AND ac.cat_type = '" + strCategory + "' " + sqlAlbumsGroupBy + sqlAlbumsOrderBy;
             loadAlbums(sqlAlbums, arrColumnsAlbums, 1);
 
         } else {
-            layoutHeaderParameters = loadHeader("Albums", "else", "");
+            layoutHeaderParameters = loadHeader("Albums", "Collections of photos from members", "", "");
 
-            Div divFiltersTitle = new Div("Filter by Album Type");
-            divFiltersTitle.addClassNames(TextColor.TERTIARY);
-            verticalLayout.add(divFiltersTitle, loadFiltersHeader(sqlAlbumsCategoriesAll + sqlAlbumsCategoriesGroupBy, arrColumnsAlbumsCategories));
+            logger.info("else strMember:" + strMember + " strAlbumTitle:" + strAlbumTitle);
 
             String sqlAlbumsPhotoAll = sqlReadAlbumPhotos; // + " AND pm.visible_to = 'ALL' ";
-            //sqlAlbumsAll = sqlAlbumsAll + " AND a.title LIKE '" + strAlbumTitle + "' ";
+
 
             sqlAlbumsPhotoAll = sqlAlbumsPhotoAll + " ORDER BY pap.inc, pap.date_inserted ASC ";
-            verticalLayout.add(loadAlbumImagesFromDb(sqlAlbumsPhotoAll, arrColumnNamesAlbumPhotos, false));
+            loadAlbumImagesFromDb(sqlAlbumsPhotoAll, arrColumnNamesAlbumPhotos, false, VIEW_PHOTO_GRID);
         }
 
         this.removeAll();
@@ -308,7 +275,7 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
             VerticalLayout layoutMobileContent = new VerticalLayout();
             layoutMobileContent.addClassNames(Width.FULL,
                     AlignItems.START, JustifyContent.CENTER,
-                    Padding.MEDIUM, Margin.NONE,
+                    Padding.XSMALL, Margin.NONE,
                     Gap.XSMALL
             );
 
@@ -318,7 +285,7 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
             HorizontalLayout layoutContent = new HorizontalLayout();
             layoutContent.addClassNames(Width.FULL,
                     AlignItems.START, JustifyContent.CENTER,
-                    Padding.LARGE, Margin.NONE,
+                    Padding.XSMALL, Margin.NONE,
                     Gap.XSMALL
             );
 
@@ -327,7 +294,7 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
         }
 
         if (!strAlbumTitle.equalsIgnoreCase(STR_ALL_ALBUMS)) {
-            this.add(loadPageFooter(sqlAlbumsAll + " " + sqlAlbumsGroupBy, arrColumnsAlbums));
+            this.add(loadPageFooter(sqlAlbumsAll + " " + sqlAlbumsGroupBy + " " + sqlAlbumsOrderBy, arrColumnsAlbums));
         }
         this.add(genericView.loadFooter(isMobile));
         logVisitorToDb();
@@ -340,9 +307,9 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
         layoutPageFooter.add(moreAlbums);
         layoutPageFooter.add(loadMoreAlbumsHorizontally(sqlRead + " LIMIT 8 ", arrColumnNames, 2));
 
-        H3 moreAlbumsCategories = new H3("Album Categories");
-        layoutPageFooter.add(moreAlbumsCategories);
-        layoutPageFooter.add(loadFiltersHeader(sqlAlbumsCategoriesAll + sqlAlbumsCategoriesGroupBy, arrColumnsAlbumsCategories));
+        //  H3 moreAlbumsCategories = new H3("Album Categories");
+        // layoutPageFooter.add(moreAlbumsCategories);
+        //layoutPageFooter.add(loadFiltersHeader(sqlAlbumsCategoriesAll + sqlAlbumsCategoriesGroupBy, arrColumnsAlbumsCategories));
 
         return layoutPageFooter;
     }
@@ -410,17 +377,17 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
 
     }
 
-    private VerticalLayout loadHeader(String strHeader, String strSubHeader, String strSection) {
+    private VerticalLayout loadHeader(String strHeader, String strSubHeader, String strSectionCaption, String strSection) {
 
         this.strHeader = strHeader;
 
         VerticalLayout headerContainer = new VerticalLayout();
         if (isMobile) {
             headerContainer.addClassNames(
-                    AlignItems.CENTER, JustifyContent.BETWEEN,
+                    AlignItems.START, JustifyContent.BETWEEN,
                     Overflow.HIDDEN,// Width.FULL,
                     Margin.NONE,
-                    Padding.NONE,
+                    Padding.SMALL,
                     Gap.SMALL,
                     // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
                     //   Background.CONTRAST_5,
@@ -428,11 +395,11 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
             );
         } else {
             headerContainer.addClassNames(
-                    AlignItems.CENTER, JustifyContent.BETWEEN,
+                    AlignItems.START, JustifyContent.BETWEEN,
                     Overflow.HIDDEN, //Width.FULL,
                     Margin.NONE,
-                    Padding.NONE,
-                    Gap.SMALL,
+                    Padding.MEDIUM,
+                    Gap.MEDIUM,
                     // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
                     //   Background.CONTRAST_5,
                     BorderRadius.LARGE
@@ -440,24 +407,6 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
         }
         headerContainer.addClassName("header-layout");
 
-        VerticalLayout headerContainerMaster = new VerticalLayout();
-        if (isMobile) {
-            headerContainerMaster.addClassNames(
-                    AlignItems.CENTER, JustifyContent.BETWEEN,
-                    Overflow.HIDDEN, Width.FULL,
-                    Margin.NONE,
-                    Padding.NONE
-                    //                  Background.CONTRAST_5
-            );
-        } else {
-            headerContainerMaster.addClassNames(
-                    AlignItems.CENTER, JustifyContent.BETWEEN,
-                    Overflow.HIDDEN, Width.FULL,
-                    Margin.NONE,
-                    Padding.NONE
-//                    Background.CONTRAST_5
-            );
-        }
 
         H1 header = new H1(strHeader);
 
@@ -466,30 +415,35 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
                 AlignItems.CENTER, JustifyContent.START,
                 Margin.Bottom.NONE, Margin.Top.NONE, FontSize.SMALL, TextColor.SECONDARY);
 
-        HorizontalLayout layoutHeaderHorizontal = new HorizontalLayout();
-        if (isMobile) {
-            layoutHeaderHorizontal.addClassNames(
-                    AlignItems.CENTER, JustifyContent.BETWEEN,
-                    Overflow.HIDDEN, Width.FULL,
-                    Margin.NONE,
-                    Padding.NONE,
-                    Gap.XSMALL
-                    // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
-            );
-        } else {
-            layoutHeaderHorizontal.addClassNames(
-                    AlignItems.CENTER, JustifyContent.BETWEEN,
-                    Overflow.HIDDEN, Width.FULL,
-                    Margin.NONE,
-                    Padding.SMALL,
-                    Gap.XSMALL
-                    // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
-            );
-        }
-//        layoutHeaderHorizontal.addClassName("header-layout-panel");
 
-        headerContainerMaster.add(layoutHeaderHorizontal);
-        headerContainer.add(header, subheader, headerContainerMaster);
+        H2 headerSection = new H2(strSection);
+        headerSection.addClassNames(
+                FontSize.XLARGE
+        );
+        if (strSection.isEmpty()) {
+            headerSection.setVisible(false);
+        }
+
+        Div headerSectionCaption = new Div(strSectionCaption);
+        headerSectionCaption.addClassNames(
+                AlignItems.CENTER, JustifyContent.START,
+                Margin.NONE, Margin.Top.NONE,
+                FontSize.SMALL, TextColor.SECONDARY);
+        if (strSectionCaption.isEmpty()) {
+            headerSectionCaption.setVisible(false);
+        }
+
+
+        Div divLine = new Div();
+        divLine.addClassNames(Border.BOTTOM, Width.FULL);
+
+        Div divLine2 = new Div();
+        divLine2.addClassNames(Border.BOTTOM, Width.FULL);
+
+        headerContainer.add(header, subheader, divLine);
+
+        headerContainer.add(loadFiltersHeader(sqlAlbumsCategoriesAll + sqlAlbumsCategoriesGroupBy, arrColumnsAlbumsCategories, "Albums"));
+        headerContainer.add(headerSection, headerSectionCaption, divLine2);
 
         return headerContainer;
     }
@@ -535,7 +489,7 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
     }
 
     private void showDialogWithCarousel(String sqlCarousel, String sqlReadAlbumPhotosOrderBy, String[] arrColumnsCarousel, String strAlbum, String strAlbumUsername) {
-
+/*
         String[] arrAlbumNames = new String[]{"user_id", "id", "title", "description", "city_name", "country"};
         String sqlReadAlbums = "SELECT distinct a.title , a.description, a.user_id, d.city_name, d.country " +
                 " FROM  destination d RIGHT JOIN photo_album a  ON (d.id = a.destination_id )  LEFT JOIN photo_album_photo pap ON (pap.photo_album_id = a.id AND a.user_id = pap.user_id), dbuser usr " +
@@ -554,9 +508,9 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
                 BorderRadius.NONE);
         dlgCarousel.setCloseOnOutsideClick(true);
         dlgCarousel.setCloseOnEsc(true);
-        dlgCarousel = genericView.showCarouselDialog(sqlCarousel, sqlReadAlbumPhotosOrderBy, arrColumnsCarousel, strAlbum, "a.title",
+        dlgCarousel = genericView.showCarouselDialog(true, sqlCarousel, sqlReadAlbumPhotosOrderBy, arrColumnsCarousel, strAlbum, "a.title",
                 sqlReadAlbums, arrAlbumNames);
-        dlgCarousel.open();
+        dlgCarousel.open();*/
     }
 
 
@@ -564,6 +518,7 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
         strPath = DIR_PHOTOS_SERVER + dirChar;
 
         Div divGallery = new Div();
+        divGallery.addClassName("layout-albums");
 
         List<Record> lstRecords = getRecordsFromDb(sqlRead, arrColumnNames);
         for (int r = 0; r < lstRecords.size(); r++) {
@@ -602,24 +557,62 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
     }
 
 
-    private Div loadAlbumImagesFromDb(String sqlRead, String[] arrColumnNames, boolean isEditable) {
-        strPath = DIR_PHOTOS_SERVER + dirChar;
+    private void loadAlbumImagesFromDb(String sqlRead, String[] arrColumnNames, boolean isEditable, String strPhotoView) {
+        //      strPath = DIR_PHOTOS_SERVER + dirChar;
+
+//        Div divGallery = new Div();
+//        divGallery.addClassName("gallery");
+//
+//        List<Record> lstRecords = getRecordsFromDb(sqlRead, arrColumnNames);
+//        for (int r = 0; r < lstRecords.size(); r++) {
+//
+//            Record rec = lstRecords.get(r);
+//            divGallery.add(getAlbumImagesFromDb(rec, isEditable));
+//        }
+
+        List<Record> lstRecords = getRecordsFromDb(sqlRead, arrColumnNames);
+
+        VerticalLayout viewBiggerPhotos = new VerticalLayout();
+        if (isMobile) {
+            viewBiggerPhotos.addClassNames(Width.FULL,
+                    AlignItems.CENTER, JustifyContent.CENTER,
+                    Gap.MEDIUM,
+                    Padding.MEDIUM, Margin.NONE);
+        } else {
+            viewBiggerPhotos.addClassNames(Width.FULL,
+                    AlignItems.CENTER, JustifyContent.CENTER,
+                    Gap.XLARGE,
+                    Padding.MEDIUM, Margin.NONE);
+        }
+        viewBiggerPhotos.setMaxWidth("1080px");
 
         Div divGallery = new Div();
         divGallery.addClassName("gallery");
-
-        List<Record> lstRecords = getRecordsFromDb(sqlRead, arrColumnNames);
         for (int r = 0; r < lstRecords.size(); r++) {
-
             Record rec = lstRecords.get(r);
+            String strId = rec.getColumnData("id");
+
+
+//            if (strPhotoView.equalsIgnoreCase(VIEW_PHOTO_GRID)) {
+            strPath = DIR_PHOTOS_SERVER + dirChar + subPathMedium;
             divGallery.add(getAlbumImagesFromDb(rec, isEditable));
+//            } else if (strPhotoView.equalsIgnoreCase(VIEW_BIGGER_PHOTOS)) {
+//                strPath = DIR_PHOTOS_SERVER + dirChar + subPathLarge;
+//                viewBiggerPhotos.add(getAlbumImagesFromDb(rec, isEditable));
+//            }
         }
 
-        return divGallery;
+
+//        if (strPhotoView.equalsIgnoreCase(VIEW_PHOTO_GRID)) {
+        verticalLayout.add(divGallery);
+//        } else if (strPhotoView.equalsIgnoreCase(VIEW_BIGGER_PHOTOS)) {
+//            verticalLayout.add(viewBiggerPhotos);
+//        }
+
+
     }
 
     private Scroller loadMoreAlbumsHorizontally(String sqlRead, String[] arrColumnNames, int intType) {
-
 
         strPath = DIR_PHOTOS_SERVER + dirChar + subPathThumbs;
 
@@ -630,7 +623,6 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
                 Gap.LARGE,
                 AlignItems.CENTER, JustifyContent.CENTER);
 
-
         Scroller scrMoreAlbums = new Scroller(Scroller.ScrollDirection.HORIZONTAL);
         scrMoreAlbums.addClassNames(Width.FULL, Height.FULL, Padding.LARGE, Margin.NONE);
 
@@ -639,98 +631,32 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
             Record rec = lstRecords.get(r);
             AlbumThumbViewCard albumThumb = new AlbumThumbViewCard(rec, strPath, isMobile, userId, sessionCreation, hostname, publicIp, recordService, intType);
             layoutGallery.add(albumThumb);
-
         }
         scrMoreAlbums.setContent(layoutGallery);
 
         return scrMoreAlbums;
     }
 
-    private VerticalLayout loadFiltersHeader(String sqlRead, String[] arrColumnNames) {
-        VerticalLayout filtersBar = new VerticalLayout();
-        if (isMobile) {
-            filtersBar.addClassNames(
-                    Overflow.HIDDEN,
-                    // Margin.LARGE, //.Left.MEDIUM, Margin.Right.MEDIUM,
-                    //  Padding.Left.MEDIUM, Padding.Left.MEDIUM,
-                    // Margin.Horizontal.SMALL,
-                    Margin.NONE, Padding.NONE,
-                    Gap.SMALL,
-                    AlignItems.CENTER, JustifyContent.CENTER,
-                    LumoUtility.FontSize.SMALL, LumoUtility.TextColor.SECONDARY,
-//                Background.CONTRAST_5,
-                    TextAlignment.CENTER
-            );
-        } else {
-            filtersBar.addClassNames(
-                    Overflow.HIDDEN,
-                    // Margin.LARGE, //.Left.MEDIUM, Margin.Right.MEDIUM,
-                    //  Padding.Left.MEDIUM, Padding.Left.MEDIUM,
-                    // Margin.Horizontal.SMALL,
-                    Margin.NONE, Padding.XSMALL,
-                    Gap.MEDIUM,
-                    AlignItems.CENTER, JustifyContent.CENTER,
-                    LumoUtility.FontSize.SMALL, LumoUtility.TextColor.SECONDARY,
-//                Background.CONTRAST_5,
-                    TextAlignment.CENTER
-            );
-        }
+    private Div loadFiltersHeader(String sqlRead, String[] arrColumnNames, String strCaptionsCount) {
+        Div filtersBar = new Div();
 
-        HorizontalLayout layoutFiltersType = new HorizontalLayout();
-        if (isMobile) {
-            layoutFiltersType.addClassNames(
-                    Overflow.HIDDEN,
-                    AlignItems.CENTER, JustifyContent.CENTER,
-                    Margin.NONE, Padding.XSMALL,
-                    Gap.SMALL,
-                    //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                    //  Background.CONTRAST_5,
-                    BorderRadius.NONE);
-        } else {
-            layoutFiltersType.addClassNames(
-                    Overflow.HIDDEN,
-                    AlignItems.CENTER, JustifyContent.CENTER,
-                    Margin.NONE, Padding.SMALL,
-                    Gap.LARGE,
-                    //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                    //  Background.CONTRAST_5,
-                    BorderRadius.LARGE);
-        }
-        layoutFiltersType.addClassName("top-tall-layout-filters");
+        filtersBar.addClassName("top-tall-layout-filters");
 
         List<Record> lstLearningCategoriesRecs = getRecordsFromDb(sqlRead, arrColumnNames);
 
-        //ArrayList<String> lstCategories = new ArrayList<>();
         for (int r = 0; r < lstLearningCategoriesRecs.size(); r++) {
-//            String captionCategory = lstLearningCategoriesRecs.get(r).getColumnData("cat_type");
-//            RouteParam routeCategory = new RouteParam("category", captionCategory);
-//            RouterLink linkPhotoCategory = new RouterLink(captionCategory, AlbumsView.class, new RouteParameters(routeCategory));
 
-            FilterTallCard filterTallCard = new FilterTallCard(lstLearningCategoriesRecs.get(r), strPath, isMobile, userId, sessionCreation, publicIp, "Albums",
+            FilterTallCard filterTallCard = new FilterTallCard(lstLearningCategoriesRecs.get(r), strPath, isMobile, userId, sessionCreation, publicIp, strCaptionsCount,
                     this);
-            layoutFiltersType.add(filterTallCard);
+            filterTallCard.addClassName("top-tall-filters");
+            filtersBar.add(filterTallCard);
         }
-
-
-//        StreamResource iconComments = new StreamResource("comments.svg",
-//                () -> getClass().getResourceAsStream("/icons/comments.svg"));
-//        SvgIcon svgComments = new SvgIcon(iconComments);
-//        Button btnSuggestLearning = new Button("Suggest a Learning");
-//        btnSuggestLearning.addClassName("btn-suggest");
-////        btnSuggestLearning.setIcon(svgComments);
-//        btnSuggestLearning.addClickListener(click -> {
-//
-//        });
-
-
-        filtersBar.add(layoutFiltersType);
 
         return filtersBar;
     }
 
 
     private GalleryImageViewCard getAlbumImagesFromDb(Record record, boolean isEditable) {
-        strPath = DIR_PHOTOS_SERVER + dirChar + subPathMedium;
 
         String strFileName = record.getColumnData("name_new");
         String strTitle = record.getColumnData("title");
@@ -752,8 +678,14 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
         String strImagePath = strPath + dirChar + strFileName;
         logger.info(" strImagePath " + strImagePath);
 
+        boolean isViewPortrait = false;
+        String strMetaOrientation = record.getColumnData("meta_orientation");
+        if (strPath.contains(subPathLarge) && strMetaOrientation.equalsIgnoreCase("8")) {
+            isViewPortrait = true;
+        }
+
         GalleryImageViewCard imageGalleryViewCard = new GalleryImageViewCard(record, strImagePath, isMobile, userId, strUsername, sessionCreation, hostname, publicIp, isEditable,
-                recordService, sqlReadAlbumPhotos, sqlReadAlbumPhotosOrderBy, arrColumnNamesAlbumPhotos);
+                recordService, 1, sqlReadAlbumPhotos, sqlReadAlbumPhotosOrderBy, arrColumnNamesAlbumPhotos);
         return imageGalleryViewCard;
 
     }
@@ -844,13 +776,6 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
         return recordService.findAll(sql, arrColumnNames, sqlParValue, sqlParType);
     }
 
-    public void configurePage(AppShellSettings settings) {
-
-        settings.addFavIcon("icon", "camera.png", "512x512");
-        settings.setPageTitle("photoact.net - Albums");
-        settings.addMetaTag("description", "Community website of photographers, sharing our photos, albums, learning sources and events.");
-
-    }
 
     private void logVisitorToDb() {
 
@@ -884,6 +809,7 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
         if (strUrlRequestToBeLogged == null || strUrlRequestToBeLogged.isEmpty() || strUrlRequestToBeLogged.equalsIgnoreCase("null")) {
             strUrlRequestToBeLogged = "NULL";
         } else {
+            strUrlRequestToBeLogged = strUrlRequestToBeLogged.replace("'", "");
             strUrlRequestToBeLogged = "'" + strUrlRequestToBeLogged + "'";
         }
 

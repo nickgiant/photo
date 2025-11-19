@@ -2,27 +2,27 @@ package com.photo.act.photo_act.controllers;
 
 import com.photo.act.photo_act.utils.XmlUrl;
 import com.photo.act.photo_act.utils.XmlUrlSet;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
 
-@Controller
+@RestController
 @RequestMapping(path = "/api")
 public class SitemapController {
-    private List<String> URLS = List.of("/", "/home", "/albums", "/photos", "/events", "/learnings", "/members", "/me");
+    private List<String> URLS = List.of("/", "/home", "/albums", "/photos", "/events", "/learnings", "/members", "/upload", "/me");
     private String DOMAIN = "https://photoact.net";
 
-    @GetMapping(value = "/api/sitemap.xml", produces = "application/xml")
-    public XmlUrlSet main() {
-        XmlUrlSet xmlUrlSet = new XmlUrlSet();
-        for (String eachLink : URLS) {
-            create(xmlUrlSet, eachLink, XmlUrl.Priority.HIGH);
-        }
-        return xmlUrlSet;
-    }
+//    @GetMapping(value = "/api/sitemap.xml", produces = "application/xml")
+//    public XmlUrlSet main() {
+//        XmlUrlSet xmlUrlSet = new XmlUrlSet();
+//        for (String eachLink : URLS) {
+//            create(xmlUrlSet, eachLink, XmlUrl.Priority.HIGH);
+//        }
+//        return xmlUrlSet;
+//    }
 
     @GetMapping(value = "/sitemap.xml", produces = "application/xml")
     public XmlUrlSet getSitemap() {

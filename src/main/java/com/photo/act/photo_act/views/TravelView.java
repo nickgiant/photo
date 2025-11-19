@@ -117,7 +117,7 @@ public class TravelView extends Composite<VerticalLayout> implements HasUrlParam
         layoutPageTop.setWidthFull();
 
         utilsDate = new UtilsDate();
-        genericView = new GenericView(recordService, 1);
+        genericView = new GenericView(recordService);
 
 //        creationsViewCard = new CreationsViewCard();
 

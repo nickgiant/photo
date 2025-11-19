@@ -3,7 +3,7 @@
 /*@import url('./views/clubs-view.css');*/
 @import url('./views/upload-view.css');
 @import url('./views/festivals-view.css');
-@import url('./views/header-filter-tabs.css');
+/*@import url('./views/header-filter-tabs.css');*/
 @import url('./views/learnings-view.css');
 @import url('./views/image-gallery-view.css');
 @import url('./views/stories-view.css');
@@ -24,7 +24,7 @@ html {
     --lumo-line-height-m: 1.8;
     --lumo-line-height-s: 1.5;
     --lumo-line-height-xs: 1.3;
-    --lumo-border-radius: calc(var(--lumo-size-m) / 2);
+    --lumo-border-radius: 8px);
     --lumo-size-xl: 3rem;
     --lumo-size-l: 2.5rem;
     --lumo-size-m: 2rem;

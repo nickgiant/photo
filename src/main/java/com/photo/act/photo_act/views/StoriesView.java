@@ -14,17 +14,12 @@ import com.vaadin.flow.component.HasStyle;
 import com.vaadin.flow.component.Html;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.checkbox.CheckboxGroup;
 import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.select.Select;
-import com.vaadin.flow.component.tabs.Tab;
-import com.vaadin.flow.component.tabs.TabVariant;
-import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.VaadinService;
@@ -32,7 +27,6 @@ import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import com.vaadin.flow.theme.lumo.LumoUtility.*;
-import jakarta.annotation.security.PermitAll;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -139,7 +133,7 @@ public class StoriesView extends Main implements HasUrlParameter<String>, Before
     private ArrayList<String> lstAlbums;
     private String strColorExternalweb = "#9fafd5";
     private String[] arrColumnNamesStoryPhotos = {"story_title", "story_visible_to", "description"
-            , "name_new", "title", "subtitle", "photo_type", "uploader", "creator", "visible_to", "city_name", "meta_date", "photo_date", "photo_time"
+            , "name_new", "title", "subtitle", "photo_type", "uploader", "creator", "visible_to", "city_name", "meta_date", "photo_date", "photo_time_shot"
             , "space_size", "space_size_medium", "space_size_thumb", "meta_camera_make", "meta_camera_model", "meta_lens_make", "meta_lens_model"
             , "meta_focal_length", "meta_focal_length_ff", "meta_iso", "meta_aperture", "meta_shutter_speed"
             , "location_by_user", "location_area", "location_country_code", "location_lat", "location_lon"
@@ -149,7 +143,7 @@ public class StoriesView extends Main implements HasUrlParameter<String>, Before
     };
     private String sqlReadStoryPhotos = "SELECT s.title AS story_title, s.user_id, s.story_visible_to, s.description, " +
             " pm.name_new, pm.title, pm.subtitle, pm.photo_type, pm.uploader, pm.creator, pm.visible_to,  " +
-            " DATE_FORMAT(pm.meta_date, '%W %D %M %Y %H:%i %p') AS meta_date, DATE_FORMAT(pm.meta_date, '%d-%m-%Y') AS photo_date, DATE_FORMAT(pm.meta_date, '%H:%i %p') AS photo_time " +
+            " DATE_FORMAT(pm.meta_date, '%W %D %M %Y %H:%i %p') AS meta_date, DATE_FORMAT(pm.meta_date, '%M %Y') AS photo_date, DATE_FORMAT(pm.meta_date, '%d/%m/%Y - %H:%i:%S') AS photo_time_shot " +
             " , pm.space_size, pm.space_size_medium, pm.space_size_thumb, pm.meta_camera_make, pm.meta_camera_model, pm.meta_lens_make, pm.meta_lens_model " +
             " , pm.meta_focal_length, pm.meta_focal_length_ff, pm.meta_iso, meta_aperture,  meta_shutter_speed " +
             " , pm.location_by_user, pm.location_area, pm.location_country_code, pm.location_lat, pm.location_lon " +
@@ -165,7 +159,7 @@ public class StoriesView extends Main implements HasUrlParameter<String>, Before
     public StoriesView(RecordService recordService) {
         this.recordService = recordService;
         utilsDate = new UtilsDate();
-        genericView = new GenericView(recordService, 1);
+        genericView = new GenericView(recordService);
 
         constructUI();
     }
@@ -327,7 +321,7 @@ public class StoriesView extends Main implements HasUrlParameter<String>, Before
 //            verticalLayout.getStyle().set("gap", "3rem");
         }
 
-        Html htmlTitle = new Html("<title>'photoact.net Network and Act around Photography'</title>");
+        Html htmlTitle = new Html("<title>'photoact.net Through Photography, We Connect and Act'</title>");
         Html htmlMeta = new Html("<meta name='description' content='Get the latest uploaded photos, organized to albums, from our community of photographers.'>");
         verticalLayout.add(htmlTitle, htmlMeta);
 
@@ -335,46 +329,38 @@ public class StoriesView extends Main implements HasUrlParameter<String>, Before
 
     }
 
-    private Div loadHeader(String strHeader, String strSubHeader, String strSection) {
+    private VerticalLayout loadHeader(String strHeader, String strSubHeader, String strSection) {
 
         this.strHeader = strHeader;
 
-        HorizontalLayout headerContainerMaster = new HorizontalLayout();
+        VerticalLayout headerContainer = new VerticalLayout();
         if (isMobile) {
-            headerContainerMaster.addClassNames(
-                    AlignItems.CENTER, JustifyContent.BETWEEN,
-                    Overflow.HIDDEN, Width.FULL,
+            headerContainer.addClassNames(
+                    AlignItems.START, JustifyContent.BETWEEN,
+                    Overflow.HIDDEN,// Width.FULL,
                     Margin.NONE,
-                    Padding.NONE,
-                    Gap.MEDIUM,
+                    Padding.SMALL,
+                    Gap.SMALL,
                     // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
                     //   Background.CONTRAST_5,
                     BorderRadius.NONE
             );
         } else {
-            headerContainerMaster.addClassNames(
-                    AlignItems.CENTER, JustifyContent.BETWEEN,
-                    Overflow.HIDDEN, Width.FULL,
+            headerContainer.addClassNames(
+                    AlignItems.START, JustifyContent.BETWEEN,
+                    Overflow.HIDDEN, //Width.FULL,
                     Margin.NONE,
                     Padding.MEDIUM,
-                    Gap.XLARGE,
+                    Gap.MEDIUM,
                     // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
                     //   Background.CONTRAST_5,
                     BorderRadius.LARGE
             );
         }
+        headerContainer.addClassName("header-layout");
 
-        VerticalLayout headerTextContainer = new VerticalLayout();
-        headerTextContainer.addClassNames(
-                AlignItems.CENTER, JustifyContent.START,
-                Margin.NONE, Padding.NONE,
-                Gap.XSMALL);
 
-        H2 header = new H2(strHeader);
-        header.addClassNames(
-                AlignItems.CENTER, JustifyContent.START,
-                Margin.Bottom.NONE, Margin.Top.NONE, FontSize.LARGE, FontWeight.BOLD, TextColor.SECONDARY);
-//        header.getStyle().set("font-family", "Times-New-Roman, serif");
+        H1 header = new H1(strHeader);
 
         Div subheader = new Div(strSubHeader);
         subheader.addClassNames(
@@ -382,209 +368,20 @@ public class StoriesView extends Main implements HasUrlParameter<String>, Before
                 Margin.Bottom.NONE, Margin.Top.NONE, FontSize.SMALL, TextColor.SECONDARY);
 
 
-        headerTextContainer.add(header, subheader);
-
-
-        Select<String> sortBy = new Select<>();
-        sortBy.setLabel("Sort by");
-        sortBy.setItems("Most Viewed", "Least Viewed", "Most Favourite", "Least Favourite", "Newest First", "Oldest First", "Most Liked", "Least Liked");
-        sortBy.setValue("Most Viewed");
-
-        Div headerContainerSecondary = new Div();
-        if (isMobile) {
-            headerContainerSecondary.addClassNames(
-                    AlignItems.CENTER, JustifyContent.EVENLY,
-                    Overflow.HIDDEN, Width.FULL,
-                    Margin.NONE,
-                    Padding.NONE,
-                    Gap.SMALL,
-                    // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
-                    //   Background.CONTRAST_5,
-                    BorderRadius.NONE
-            );
-        } else {
-            headerContainerSecondary.addClassNames(
-                    AlignItems.CENTER, JustifyContent.EVENLY,
-                    Overflow.HIDDEN, Width.FULL,
-                    Margin.NONE,
-                    Padding.NONE,
-                    Gap.SMALL,
-                    // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
-                    //   Background.CONTRAST_5,
-                    BorderRadius.LARGE
-            );
-        }
-
-        Div layoutFilters = new Div();
-        if (isMobile) {
-            layoutFilters.addClassNames(
-                    Overflow.HIDDEN, Width.FULL,
-                    AlignItems.CENTER, JustifyContent.CENTER,
-                    Margin.NONE,
-                    Padding.SMALL,
-                    Gap.SMALL,
-                    Width.FULL,
-                    //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                    //  Background.CONTRAST_5,
-                    BorderRadius.NONE);
-        } else {
-            layoutFilters.addClassNames(
-                    Overflow.HIDDEN, Width.FULL,
-                    AlignItems.CENTER, JustifyContent.CENTER,
-                    Margin.NONE,
-                    Padding.MEDIUM,
-                    Gap.SMALL,
-                    Width.FULL,
-                    //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                    //  Background.CONTRAST_5,
-                    BorderRadius.LARGE);
-        }
-        layoutFilters.addClassName("header-layout-filters");
-
-        layoutFilters.add(loadFiltersCategories(sqlStoriesCategoriesRead, arrColStoriesCategories));
-
-//        RouteParam routeMember = new RouteParam("member", strMember);
-//
-//        RouteParam routeAlbumAll = new RouteParam("title", STR_ALL_ALBUMS);
-//        RouteParameters routeParamsAll = new RouteParameters(routeAlbumAll, routeMember);
-//        RouterLink linkPhotoAlbumAll = new RouterLink("All Albums", AlbumsView.class, routeParamsAll);
-//        layoutFilters.add(linkPhotoAlbumAll);
-
-
-        List<Record> recAlbums = getRecordsFromDb(sqlStoriesAll, arrColumnsStories);
-
-        lstAlbums.clear();
-        for (int r = 0; r < recAlbums.size(); r++) {
-            lstAlbums.add(recAlbums.get(r).getColumnData("title"));
-        }
-//
-//        for (int c = 0; c < lstAlbums.size(); c++) {
-//            String captionAlbum = lstAlbums.get(c);
-//            RouteParam routeParamAlbum = new RouteParam("title", captionAlbum);
-//
-//            RouterLink linkPhotoAlbum = new RouterLink(captionAlbum, AlbumsView.class, new RouteParameters(routeParamAlbum, routeMember));
-//            layoutFilters.add(linkPhotoAlbum);
-//        }
-
-        CheckboxGroup<String> checkboxGroupSubject = new CheckboxGroup<>();
-        checkboxGroupSubject.setTooltipText("Subject");
-//        checkboxGroupSubject.setLabel("Subject");
-        checkboxGroupSubject.setItems("Photography", "Street Photography", "Landscape", "Cityscape");
-        //   "Friday", "Saturday", "Sunday");
-        // checkboxGroup.addThemeVariants(CheckboxGroupVariant.LUMO_VERTICAL);
-//        Div lblFilterSubject = new Div("Subject");
-
-//        layoutFilters.add(checkboxGroupSubject);
-
-//        CheckboxGroup<String> checkboxGroupFormat = new CheckboxGroup<>();
-//        checkboxGroupFormat.setTooltipText("Format");
-////        checkboxGroupFormat.setLabel("Format");
-//        checkboxGroupFormat.setItems("Book", "Youtube");
-////        Div lblFilterFormat = new Div("Format");
-//        layoutFilters.add(checkboxGroupFormat);
-
-//        VerticalLayout layoutHeaderParameters = new VerticalLayout();
-//        if (isMobile) {
-//            layoutHeaderParameters.addClassNames(
-//                    AlignItems.CENTER, JustifyContent.EVENLY,
-//                    Overflow.HIDDEN, Width.FULL,
-//                    Margin.SMALL,
-//                    Padding.NONE,
-//                    Gap.XSMALL,
-//                    // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
-//                    //   Background.CONTRAST_5,
-//                    BorderRadius.NONE
-//            );
-//        } else {
-//            layoutHeaderParameters.addClassNames(
-//                    AlignItems.CENTER, JustifyContent.EVENLY,
-//                    Overflow.HIDDEN, Width.FULL,
-//                    Margin.SMALL,
-//                    Padding.NONE,
-//                    Gap.XSMALL,
-//                    // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
-////                       Background.CONTRAST_5,
-//                    BorderRadius.LARGE
-//            );
-//        }
-
-//        Select<String> cmbView = new Select<>();
-//        cmbView.setLabel("View");
-//
-//        cmbView.setItems("Micro View", "Ordinary - No MetaData", "Ordinary - MetaData Bottom", "Ordinary - MetaData Right",
-//                "Wide - No MetaData", "Wide - MetaData Bottom","Wide - MetaData Right");
-//        cmbView.setValue("Ordinary - No MetaData");
-
-        Tab tabFilterLocation = new Tab(VaadinIcon.LOCATION_ARROW_CIRCLE_O.create(), new Span("Location"));
-        Tab tabFilterKeyword = new Tab(VaadinIcon.KEYBOARD_O.create(), new Span("Keyword"));
-        Tab tabFilterUser = new Tab(VaadinIcon.USER.create(), new Span("User"));
-
-        // Set the icon on top
-        for (Tab tab : new Tab[]{tabFilterLocation, tabFilterKeyword, tabFilterUser}) {
-            tab.addThemeVariants(TabVariant.LUMO_ICON_ON_TOP);
-//            tab.addClassNames(
-////                    Width.FULL,
-//                    AlignItems.CENTER, JustifyContent.END,
-//                    IconSize.LARGE, //FontSize.MEDIUM,
-//                    TextColor.SECONDARY,
-////                    BorderColor.CONTRAST_20,
-//                    Padding.MEDIUM, Margin.NONE,
-//                    Gap.MEDIUM
-//            );
-//            FontSize.MEDIUM, TextColor.SECONDARY, IconSize.SMALL, //BorderRadius.LARGE,
-//                    Width.FULL, Padding.XSMALL, Margin.NONE,
-//                    BorderColor.CONTRAST_20, Border.ALL);
-        }
-
-        Tabs tabsFilterBased = new Tabs(tabFilterLocation, tabFilterKeyword, tabFilterUser);
-//        tabsViewInfo.addThemeVariants(  TabsVariant.LUMO_SMALL,
-//                TabsVariant.LUMO_EQUAL_WIDTH_TABS);
-        tabsFilterBased.addClassNames(
-                Width.FULL,
-                AlignItems.CENTER, JustifyContent.END,
-                Padding.LARGE, Margin.NONE,
-//                BorderRadius.LARGE,
-                Border.ALL,
-                BorderColor.CONTRAST_5
-//                Gap.XSMALL
-        );
-        tabsFilterBased.addClassName("header-view-type");
-
-        Tabs tabsViewInfo = new Tabs(tabFilterLocation, tabFilterKeyword, tabFilterUser);
-//        tabsViewInfo.addThemeVariants(  TabsVariant.LUMO_SMALL,
-//                TabsVariant.LUMO_EQUAL_WIDTH_TABS);
-        tabsViewInfo.addClassNames(
-                Width.FULL,
-                AlignItems.CENTER, JustifyContent.END,
-                Padding.LARGE, Margin.NONE,
-//                BorderRadius.LARGE,
-                Border.ALL,
-                BorderColor.CONTRAST_5
-//                Gap.XSMALL
-        );
-        tabsViewInfo.addClassName("header-view-type");
-
-        headerContainerMaster.add(headerTextContainer); //,tabsViewInfo);
-//        layoutHeaderParameters.add(headerContainerMaster);
-
-        H3 divSection = new H3(strSection);
-        divSection.addClassNames(
+        H3 headerSection = new H3(strSection);
+        headerSection.addClassNames(
                 AlignItems.CENTER, JustifyContent.CENTER,
-                Margin.Bottom.MEDIUM, Margin.Top.MEDIUM);
+                Margin.Bottom.MEDIUM, Margin.Top.MEDIUM,
+                Padding.NONE
+        );
 
 
-//        headerContainerMaster.add(headerTextContainer);
-        //       headerContainerSecondary.add(layoutFilters);
-//        layoutHeaderParameters.add( headerContainerSecondary, divSection);
+        Div divLine = new Div();
+        divLine.addClassNames(Border.BOTTOM, Width.FULL);
 
-        // HeaderFilterTabs headerFilterTabs = new HeaderFilterTabs(recordService, isMobile);
-        // VerticalLayout layoutHeaderParameters = headerFilterTabs.getHeader(strHeader, strSubHeader, strSection, headerContainerSecondary);
+        headerContainer.add(header, subheader, divLine, headerSection);
 
-//        headerContainerMaster.add(headerTextContainer, cmbView);
-//        headerContainerSecondary.add(layoutFilters, sortBy);
-//        layoutHeaderParameters.add(headerContainerMaster,headerContainerSecondary);
-
-        return layoutFilters;
+        return headerContainer;
     }
 
     private void loadMemberOfStoriesFromDb(String sqlRead, String[] arrColumnNames, boolean isEditable) {

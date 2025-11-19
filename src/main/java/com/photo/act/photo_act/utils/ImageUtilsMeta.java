@@ -1,5 +1,10 @@
 package com.photo.act.photo_act.utils;
 
+import com.drew.imaging.ImageMetadataReader;
+import com.drew.lang.GeoLocation;
+import com.drew.metadata.Metadata;
+import com.drew.metadata.exif.ExifSubIFDDirectory;
+import com.drew.metadata.exif.GpsDirectory;
 import org.apache.commons.imaging.Imaging;
 import org.apache.commons.imaging.ImagingException;
 import org.apache.commons.imaging.common.GenericImageMetadata;
@@ -162,9 +167,15 @@ public class ImageUtilsMeta {
     }
 
 
-    public StringBuilder getMetadataInfo(final File file) throws ImagingException, IOException {
+    public StringBuilder getMetadataInfo(final File file) {
         // get all metadata stored in EXIF format (ie. from JPEG or TIFF).
-        final ImageMetadata metadata = Imaging.getMetadata(file);
+        ImageMetadata metadata = null;
+        try {
+            metadata = Imaging.getMetadata(file);
+        } catch (IOException ioe) {
+
+            logger.error(ioe.getMessage());
+        }
         StringBuilder metadataInfo = new StringBuilder();
 
         if (metadata instanceof JpegImageMetadata) {
@@ -237,8 +248,6 @@ public class ImageUtilsMeta {
             lstInfo.add(getTagValue(jpegMetadata, TiffTagConstants.TIFF_TAG_ORIENTATION));
             lstInfo.add(getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_EXPOSURE_MODE));
             lstInfo.add(getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_EXPOSURE_PROGRAM));
-
-
 
 
 //
@@ -374,6 +383,7 @@ public class ImageUtilsMeta {
         } else {
 
         }
+
         return metadataInfo;
     }
 
@@ -391,7 +401,7 @@ public class ImageUtilsMeta {
     private String getTagValue(final JpegImageMetadata jpegMetadata, final TagInfo tagInfo) {
         final TiffField field = jpegMetadata.findExifValueWithExactMatch(tagInfo);
         if (field == null) {
-            return " null "; //tagInfo.name;
+            return "null"; //tagInfo.name;
         } else {
             return field.getValueDescription(); //tagInfo.name;
         }
@@ -410,6 +420,54 @@ public class ImageUtilsMeta {
             throw new IllegalStateException("Unable to parse the metadata of image file " + resource.getFilename(), ex);
         }
         return metadata;
+    }
+
+    public String[] getPhotoGPSMeta(String strPhotoFullPath) {
+
+        String[] photoGpsMeta = new String[3];
+
+        Metadata metadata = null;
+        try {
+            // Replace this with the path to your photo file
+            File photoFile = new File(strPhotoFullPath);
+
+            logger.info("get GPS info from: " + strPhotoFullPath);
+
+            // Read metadata from the image
+            metadata = ImageMetadataReader.readMetadata(photoFile);
+
+
+            // Get the GPS directory, if available
+            GpsDirectory gpsDir = metadata.getFirstDirectoryOfType(GpsDirectory.class);
+
+            if (gpsDir != null) {
+                GeoLocation geoLocation = gpsDir.getGeoLocation();
+
+                if (geoLocation != null) {
+                    photoGpsMeta[0] = geoLocation.getLatitude() + "";
+                    photoGpsMeta[1] = geoLocation.getLongitude() + "";
+                    logger.info("Latitude: " + geoLocation.getLatitude());
+                    logger.info("Longitude: " + geoLocation.getLongitude());
+                } else {
+                    logger.error("GPS data not found in this photo.");
+                }
+            } else {
+                logger.error("No GPS EXIF metadata found.");
+            }
+
+            // Optional: you can also extract date/time taken
+            ExifSubIFDDirectory exifDir = metadata.getFirstDirectoryOfType(ExifSubIFDDirectory.class);
+            if (exifDir != null && exifDir.getDateOriginal() != null) {
+                photoGpsMeta[2] = exifDir.getDateOriginal() + "";
+                logger.error("Date Taken: " + exifDir.getDateOriginal());
+            }
+
+        } catch (Exception ioe) {
+
+            logger.error(ioe.getMessage());
+        }
+
+        return photoGpsMeta;
     }
 
     public static void getJpegImageMetadata(JpegImageMetadata jpegImageMetadata) {

@@ -1,89 +1,100 @@
 package com.photo.act.photo_act.config;
 
-import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.views.LoginView;
-import com.vaadin.flow.spring.security.VaadinWebSecurity;
+import com.vaadin.flow.spring.security.VaadinAwareSecurityContextHolderStrategyConfiguration;
+import com.vaadin.flow.spring.security.VaadinSecurityConfigurer;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
-import org.springframework.security.provisioning.UserDetailsManager;
+import org.springframework.security.provisioning.JdbcUserDetailsManager;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.stereotype.Service;
 
-import java.util.List;
+import javax.sql.DataSource;
 
 @EnableWebSecurity
 @Configuration
-public class SecurityConfiguration extends VaadinWebSecurity {
+@Service
+@Import(VaadinAwareSecurityContextHolderStrategyConfiguration.class)
+public class SecurityConfiguration {
 
+
+    @Autowired
     private RecordService recordService;
 
-    public SecurityConfiguration(RecordService recordService) {
-        this.recordService = recordService;
-    }
+//    public SecurityConfiguration(RecordService recordService) {
+//        this.recordService = recordService;
+//    }
 
-    @Override
-    protected void configure(HttpSecurity http) throws Exception {
+    @Bean
+    public UserDetailsService userDetailsService(DataSource dataSource) {
+        JdbcUserDetailsManager userDetailsManager = new JdbcUserDetailsManager(dataSource);
 
+        // Optionally customize queries if your table names/columns differ
+        userDetailsManager.setUsersByUsernameQuery("SELECT username, password, active FROM dbuser WHERE username = ? ");
+        userDetailsManager.setAuthoritiesByUsernameQuery("SELECT username, ur.role FROM dbuser usr, dbuser_rights ur WHERE usr.user_rights_id = ur.id " +
+                " AND username = ? AND active = 1 ");
 
-        http.authorizeHttpRequests((auth) -> auth
-
-                        //                .requestMatchers("/").hasRole("USER")
-                        //                .requestMatchers("/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/**").anonymous()
-                //  .anyRequest().anonymous()
-        );
-
-        super.configure(http);
-
-        //http.requiresChannel();
-        setLoginView(http, LoginView.class, "/home");
-
+        return userDetailsManager;
     }
 
 
     @Bean
-    public UserDetailsManager userDetailsManager() {
+    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
-        String[] arrCols = {"userId", "username", "password", "user_rights_id", "role"};
-        String strSql = " SELECT u.userId , u.username, u.password, u.user_rights_id, r.role " +
-                " FROM dbuser u, dbuser_rights r " +
-                " WHERE 1=1 " +
-                " AND u.user_rights_id = r.id ";
-        List<Record> lstUsers = recordService.findAll(strSql, arrCols);
+        // Configure Vaadin's security using VaadinSecurityConfigurer
+        http.with(VaadinSecurityConfigurer.vaadin(), configurer -> {
+            configurer.loginView(LoginView.class);
+        });
 
-        InMemoryUserDetailsManager inMemoryUserDetailsManager = new InMemoryUserDetailsManager();
-
-        for (int r = 0; r < lstUsers.size(); r++) {
-            UserDetails userDetails = User.builder()
-                    .username(lstUsers.get(r).getColumnData("username"))
-                    .password(lstUsers.get(r).getColumnData("password")) // encode the password
-                    .roles(lstUsers.get(r).getColumnData("role"))
-                    .build();
-            inMemoryUserDetailsManager.createUser(userDetails);
-
-            //     System.out.println(lstUsers.get(r).getColumnData("username") + " " + lstUsers.get(r).getColumnData("password") + "  " + passwordEncoder().encode(lstUsers.get(r).getColumnData("password")));
-        }
-
-//        UserDetails user = User.builder()
-//                .username("user")
-//                .password(passwordEncoder().encode("123")) // encode the password
-//                .roles("USER")
-//                .build();
-//        UserDetails admin = User.builder()
-//                .username("admin")
-//                .password(passwordEncoder().encode("123")) // encode the password
-//                .roles("USER", "ADMIN")
-//                .build();
-
-
-        return inMemoryUserDetailsManager;
+        return http.build();
     }
+
+//
+//    @Bean
+//    public UserDetailsManager userDetailsManager() {
+//
+//        String[] arrCols = {"userId", "username", "password", "user_rights_id", "role"};
+//        String strSql = " SELECT u.userId , u.username, u.password, u.user_rights_id, r.role " +
+//                " FROM dbuser u, dbuser_rights r " +
+//                " WHERE 1=1 " +
+//                " AND u.user_rights_id = r.id ";
+//        List<Record> lstUsers = recordService.findAll(strSql, arrCols);
+//
+//        InMemoryUserDetailsManager inMemoryUserDetailsManager = new InMemoryUserDetailsManager();
+//
+//        for (int r = 0; r < lstUsers.size(); r++) {
+//            UserDetails userDetails = User.builder()
+//                    .username(lstUsers.get(r).getColumnData("username"))
+//                    .password(lstUsers.get(r).getColumnData("password")) // encode the password
+//                    .roles(lstUsers.get(r).getColumnData("role"))
+//                    .build();
+//            inMemoryUserDetailsManager.createUser(userDetails);
+//
+//            //     System.out.println(lstUsers.get(r).getColumnData("username") + " " + lstUsers.get(r).getColumnData("password") + "  " + passwordEncoder().encode(lstUsers.get(r).getColumnData("password")));
+//        }
+//
+//        return inMemoryUserDetailsManager;
+//    }
+
+
+/* chatgpt
+    @Bean
+    public UserDetailsService userDetailsService(DataSource dataSource) {
+        JdbcUserDetailsManager manager = new JdbcUserDetailsManager(dataSource);
+        // You can customize queries if needed, e.g.:
+        // manager.setUsersByUsernameQuery("select username, password, enabled from my_users where username=?");
+        // manager.setAuthoritiesByUsernameQuery("select username, authority from my_roles where username=?");
+        return manager;
+    }*/
+
 
     // Create a new Password Encoder
     @Bean
