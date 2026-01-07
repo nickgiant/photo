@@ -3,7 +3,6 @@ package com.photo.act.photo_act.views.components;
 //https://codepen.io/broskibro/pen/VwKRmKQ
 
 import com.photo.act.photo_act.db.RecordService;
-import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Html;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
@@ -25,7 +24,7 @@ public class HeaderFilterTabs extends Div {
 
     }
 
-    public VerticalLayout getHeader(String strHeader, String strSubHeader, String strSection, Component layoutFilters) {
+    public VerticalLayout getHeader(String strHeader, String strSubHeader, String strSection) {
 
 
         Div tabHeader = new Div();
@@ -162,7 +161,11 @@ public class HeaderFilterTabs extends Div {
                 "  <div class=\"panel\" id=\"one-panel\">\n" +
 //                "    <div class=\"panel-title\">" + strFirstTab + "</div>\n" +
 //                "  <p>Without CSS, every web page would be drab plain text and images that flowed straight down the page. With CSS, you can add color and background images and change the layout of your page — your web pages can feel like works of art!</p>\n" +
-                layoutFilters.getElement() +
+
+
+//                layoutFilters.getElement() +
+
+
                 "  </div>\n" +
                 "  <div class=\"panel\" id=\"two-panel\">\n" +
 //                "    <div class=\"panel-title\">Take-Away Skills</div>\n" +
@@ -179,7 +182,7 @@ public class HeaderFilterTabs extends Div {
         Html html2 = new Html(strHtmlTabs2);
         tabHeader.add(html2);
 
-        layoutHeaderParameters.add(header, subheader, layoutFilters, headerSection);
+        layoutHeaderParameters.add(header, subheader, headerSection);
 
 
         return layoutHeaderParameters;

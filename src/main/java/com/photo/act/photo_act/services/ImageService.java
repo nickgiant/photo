@@ -5,6 +5,7 @@ package com.photo.act.photo_act.services;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.utils.ImageUtilsMeta;
+import com.photo.act.photo_act.views.components.GenericView;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import org.slf4j.Logger;
@@ -21,7 +22,8 @@ import java.util.List;
 import java.util.UUID;
 
 import static com.photo.act.photo_act.views.GalleryView.DIR_PHOTOS_SERVER;
-import static com.photo.act.photo_act.views.GalleryView.subPathUpload;
+import static com.photo.act.photo_act.views.HomeView.subPathUpload;
+import static com.photo.act.photo_act.views.MainLayout.PROP_PHOTOS;
 
 
 @Service
@@ -112,6 +114,7 @@ public class ImageService {
 
     public boolean updatePhotoMeta(RecordService recordService, int intUserId) {
 
+        GenericView genericView = new GenericView(recordService);
 
         ArrayList<String> lstQueryUpdate = new ArrayList<String>();
 
@@ -119,12 +122,12 @@ public class ImageService {
         String[] arrColumns = {"name_new"};
         List<Record> lstPhotoFilenames = recordService.findAll(sqlReadPhotos, arrColumns);
 
-        Notification notificationStart = Notification.show(
-                lstPhotoFilenames.size() + " Photos for User:" + intUserId,
-                5000,
-                Notification.Position.MIDDLE
-        );
-        notificationStart.addThemeVariants(NotificationVariant.LUMO_CONTRAST);
+//        Notification notificationStart = Notification.show(
+//                lstPhotoFilenames.size() + " Photos for User:" + intUserId,
+//                5000,
+//                Notification.Position.MIDDLE
+//        );
+//        notificationStart.addThemeVariants(NotificationVariant.LUMO_CONTRAST);
 
         int intRecsUpdated = 0;
         for (int l = 0; l < lstPhotoFilenames.size(); l++) {
@@ -132,6 +135,8 @@ public class ImageService {
 
 
             ArrayList<String> lstPhotoMetaData = new ArrayList<>();
+
+            DIR_PHOTOS_SERVER = genericView.getAppProps(PROP_PHOTOS);
             String strPathUpload = DIR_PHOTOS_SERVER + dirChar + subPathUpload;
             String outputUploadFileName = strPathUpload + dirChar + strNewFileName;
 
@@ -149,11 +154,13 @@ public class ImageService {
 
 
             StringBuilder strImageMetaInfo = new StringBuilder();
+            String[] arrPhotoGpsMeta = new String[3];
             try {
                 //  logger.info(" A for photo "+outputUploadFileName+" get meta info to html "+imgFile.getAbsolutePath());
                 strImageMetaInfo.append(imageUtilsMeta.getMetadataInfo(imgFile));
                 //   logger.info(" B for photo "+outputUploadFileName+" get meta info to list "+imgFile.getAbsolutePath());
                 lstPhotoMetaData = imageUtilsMeta.getListImageInfo();
+                arrPhotoGpsMeta = imageUtilsMeta.getPhotoGPSMeta(outputUploadFileName);
             } catch (Exception e) {
                 String errorMessage = "Scan failed: " + e.getMessage();
                 Notification notification = Notification.show(
@@ -164,78 +171,28 @@ public class ImageService {
                 notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
             }
 
-            String strPhotoDateTime = lstPhotoMetaData.get(0);
-            String strPhotoCameraMake = lstPhotoMetaData.get(1);
-            String strPhotoCameraModel = lstPhotoMetaData.get(2);
-            String strPhotoLensMake = lstPhotoMetaData.get(3);
-            String strPhotoLensModel = lstPhotoMetaData.get(4);
-            String strFocalLength = lstPhotoMetaData.get(5);
-            double dblPhotoFocalLength = 0;
-            String strFl;
-            try {
-                if (strFocalLength.indexOf("(") == -1 && strFocalLength.indexOf(")") == -1) {
-                    strFl = strFocalLength;
-                } else {
-                    strFl = strFocalLength.substring(strFocalLength.indexOf("(") + 1, strFocalLength.indexOf(")"));
-                }
-                dblPhotoFocalLength = Double.parseDouble(strFl);
-            } catch (Exception e) {
-                logger.error(e.getMessage());
+            if (lstPhotoMetaData != null) {
 
-
-                String errorMessage = "strFocalLength: " + strFocalLength + "  " + e.getMessage();
-                Notification notification = Notification.show(
-                        errorMessage,
-                        5000,
-                        Notification.Position.MIDDLE
-                );
-                notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
-            }
-
-            // double dblPhotoFocalLengthFF = Double.parseDouble(lstPhotoMetaData.get(6));
-            String strFocalLengthFF = lstPhotoMetaData.get(6);
-            double dblPhotoFocalLengthFF = 0;
-            String strFlFF;
-            try {
-                if (strFocalLengthFF.indexOf("(") == -1 && strFocalLengthFF.indexOf(")") == -1) {
-                    strFlFF = strFocalLengthFF;
-                } else {
-                    strFlFF = strFocalLengthFF.substring(strFocalLengthFF.indexOf("(") + 1, strFocalLengthFF.indexOf(")"));
-                }
-                dblPhotoFocalLengthFF = Double.parseDouble(strFlFF);
-            } catch (Exception e) {
-                logger.error(e.getMessage());
-
-
-                String errorMessage = "strFocalLengthFF: " + strFocalLengthFF + "  " + e.getMessage();
-                Notification notification = Notification.show(
-                        errorMessage,
-                        5000,
-                        Notification.Position.MIDDLE
-                );
-                notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
-            }
-
-
-            int intPhotoISO = Integer.parseInt(lstPhotoMetaData.get(7));
-
-            String strPhotoShutterSpeed = lstPhotoMetaData.get(8);
-
-            double dblPhotoShutterSpeed = 0;
-            if (!strPhotoShutterSpeed.equalsIgnoreCase("null")) {
-                String strSS = "";
+                String strPhotoDateTime = lstPhotoMetaData.get(0);
+                String strPhotoCameraMake = lstPhotoMetaData.get(1);
+                String strPhotoCameraModel = lstPhotoMetaData.get(2);
+                String strPhotoLensMake = lstPhotoMetaData.get(3);
+                String strPhotoLensModel = lstPhotoMetaData.get(4);
+                String strFocalLength = lstPhotoMetaData.get(5);
+                double dblPhotoFocalLength = 0;
+                String strFl;
                 try {
-                    if (strPhotoShutterSpeed.indexOf("(") == -1 && strPhotoShutterSpeed.indexOf(")") == -1) {
-                        strSS = strPhotoShutterSpeed; // is integer
+                    if (strFocalLength.indexOf("(") == -1 && strFocalLength.indexOf(")") == -1) {
+                        strFl = strFocalLength;
                     } else {
-                        strSS = strPhotoShutterSpeed.substring(strPhotoShutterSpeed.indexOf("(") + 1, strPhotoShutterSpeed.indexOf(")"));
+                        strFl = strFocalLength.substring(strFocalLength.indexOf("(") + 1, strFocalLength.indexOf(")"));
                     }
-                    dblPhotoShutterSpeed = Double.parseDouble(strSS);
+                    dblPhotoFocalLength = Double.parseDouble(strFl);
                 } catch (Exception e) {
                     logger.error(e.getMessage());
 
 
-                    String errorMessage = "strPhotoShutterSpeed: " + strPhotoShutterSpeed + "  " + e.getMessage();
+                    String errorMessage = "strFocalLength: " + strFocalLength + "  " + e.getMessage();
                     Notification notification = Notification.show(
                             errorMessage,
                             5000,
@@ -244,35 +201,65 @@ public class ImageService {
                     notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
                 }
 
-            } else {
+                // double dblPhotoFocalLengthFF = Double.parseDouble(lstPhotoMetaData.get(6));
+                String strFocalLengthFF = lstPhotoMetaData.get(6);
+                double dblPhotoFocalLengthFF = 0;
+                if (strFocalLengthFF != null && !strFocalLengthFF.equalsIgnoreCase("null")) {
+                    String strFlFF;
+                    try {
+                        if (strFocalLengthFF.indexOf("(") == -1 && strFocalLengthFF.indexOf(")") == -1) {
+                            strFlFF = strFocalLengthFF;
+                        } else {
+                            strFlFF = strFocalLengthFF.substring(strFocalLengthFF.indexOf("(") + 1, strFocalLengthFF.indexOf(")"));
+                        }
+                        dblPhotoFocalLengthFF = Double.parseDouble(strFlFF);
+                    } catch (Exception e) {
+                        logger.error(e.getMessage());
 
-                String errorMessage = "strPhotoShutterSpeed: " + strPhotoShutterSpeed;
-                Notification notification = Notification.show(
-                        errorMessage,
-                        5000,
-                        Notification.Position.MIDDLE
-                );
-                notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
-            }
+                    /*
+                        String errorMessage = "strFocalLengthFF: " + strFocalLengthFF + "  " + e.getMessage();
+                        Notification notification = Notification.show(
+                                errorMessage,
+                                5000,
+                                Notification.Position.MIDDLE
+                        );
+                        notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+
+                     */
+                    }
+                }
 
 
-            double dblPhotoAperture = 0;
-            String strPhotoAperture = lstPhotoMetaData.get(9);
-            if (!strPhotoAperture.equalsIgnoreCase("null")) {
-                String strAperture = "";
-                try {
-                    if ((strPhotoAperture.indexOf("(") == -1) && (strPhotoAperture.indexOf(")") == -1)) {
-                        strAperture = strPhotoAperture; // integer
-                    } else {
-                        strAperture = strPhotoAperture.substring(strPhotoAperture.indexOf("(") + 1, strPhotoAperture.indexOf(")"));
+                int intPhotoISO = Integer.parseInt(lstPhotoMetaData.get(7));
+
+                String strPhotoShutterSpeed = lstPhotoMetaData.get(8);
+
+                double dblPhotoShutterSpeed = 0;
+                if (!strPhotoShutterSpeed.equalsIgnoreCase("null")) {
+                    String strSS = "";
+                    try {
+                        if (strPhotoShutterSpeed.indexOf("(") == -1 && strPhotoShutterSpeed.indexOf(")") == -1) {
+                            strSS = strPhotoShutterSpeed; // is integer
+                        } else {
+                            strSS = strPhotoShutterSpeed.substring(strPhotoShutterSpeed.indexOf("(") + 1, strPhotoShutterSpeed.indexOf(")"));
+                        }
+                        dblPhotoShutterSpeed = Double.parseDouble(strSS);
+                    } catch (Exception e) {
+                        logger.error(e.getMessage());
+
+
+                        String errorMessage = "strPhotoShutterSpeed: " + strPhotoShutterSpeed + "  " + e.getMessage();
+                        Notification notification = Notification.show(
+                                errorMessage,
+                                5000,
+                                Notification.Position.MIDDLE
+                        );
+                        notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
                     }
 
-                    dblPhotoAperture = Double.parseDouble(strAperture);
-                } catch (Exception e) {
-                    logger.error(e.getMessage());
+                } else {
 
-
-                    String errorMessage = "strPhotoAperture: " + strPhotoAperture + "  " + e.getMessage();
+                    String errorMessage = "strPhotoShutterSpeed: " + strPhotoShutterSpeed;
                     Notification notification = Notification.show(
                             errorMessage,
                             5000,
@@ -280,83 +267,106 @@ public class ImageService {
                     );
                     notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
                 }
-            } else {
-                String errorMessage = "strPhotoAperture: " + strPhotoAperture;
-                Notification notification = Notification.show(
-                        errorMessage,
-                        5000,
-                        Notification.Position.MIDDLE
-                );
-                notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
-            }
-
-            String strMeteringMode = lstPhotoMetaData.get(10);
-            if (strMeteringMode == null || strMeteringMode.isEmpty() || strMeteringMode.equalsIgnoreCase("null")) {
-                strMeteringMode = "";
-            }
-
-            int intImageLength = 0;
-            String strImageLength = lstPhotoMetaData.get(11);
-            if (strImageLength == null || strImageLength.isEmpty() || strImageLength.equalsIgnoreCase("null")) {
-                intImageLength = 0;
-            } else {
-                intImageLength = Integer.parseInt(strImageLength);
-            }
-
-            int intImageWidth = 0;
-            String strImageWidth = lstPhotoMetaData.get(12);
-            if (strImageWidth == null || strImageWidth.isEmpty() || strImageWidth.equalsIgnoreCase("null")) {
-                intImageWidth = 0;
-            } else {
-                intImageWidth = Integer.parseInt(strImageWidth);
-            }
-
-            String strOrientation = lstPhotoMetaData.get(13);
-
-            if (strPhotoLensMake.isEmpty()) {
-                strPhotoLensMake = "''";
-            }
 
 
-            String updateSQL = "UPDATE photo_meta SET " +
+                double dblPhotoAperture = 0;
+                String strPhotoAperture = lstPhotoMetaData.get(9);
+                if (!strPhotoAperture.equalsIgnoreCase("null")) {
+                    String strAperture = "";
+                    try {
+                        if ((strPhotoAperture.indexOf("(") == -1) && (strPhotoAperture.indexOf(")") == -1)) {
+                            strAperture = strPhotoAperture; // integer
+                        } else {
+                            strAperture = strPhotoAperture.substring(strPhotoAperture.indexOf("(") + 1, strPhotoAperture.indexOf(")"));
+                        }
+
+                        dblPhotoAperture = Double.parseDouble(strAperture);
+                    } catch (Exception e) {
+                        logger.error(e.getMessage());
+
+
+                        String errorMessage = "strPhotoAperture: " + strPhotoAperture + "  " + e.getMessage();
+                        Notification notification = Notification.show(
+                                errorMessage,
+                                5000,
+                                Notification.Position.MIDDLE
+                        );
+                        notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+                    }
+                } else {
+                    String errorMessage = "strPhotoAperture: " + strPhotoAperture;
+                    Notification notification = Notification.show(
+                            errorMessage,
+                            5000,
+                            Notification.Position.MIDDLE
+                    );
+                    notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+                }
+
+                String strMeteringMode = lstPhotoMetaData.get(10);
+                if (strMeteringMode == null || strMeteringMode.isEmpty() || strMeteringMode.equalsIgnoreCase("null")) {
+                    strMeteringMode = "";
+                }
+
+                int intImageLength = 0;
+                String strImageLength = lstPhotoMetaData.get(11);
+                if (strImageLength == null || strImageLength.isEmpty() || strImageLength.equalsIgnoreCase("null")) {
+                    intImageLength = 0;
+                } else {
+                    intImageLength = Integer.parseInt(strImageLength);
+                }
+
+                int intImageWidth = 0;
+                String strImageWidth = lstPhotoMetaData.get(12);
+                if (strImageWidth == null || strImageWidth.isEmpty() || strImageWidth.equalsIgnoreCase("null")) {
+                    intImageWidth = 0;
+                } else {
+                    intImageWidth = Integer.parseInt(strImageWidth);
+                }
+
+                String strOrientation = lstPhotoMetaData.get(13);
+
+                if (strPhotoLensMake.isEmpty()) {
+                    strPhotoLensMake = "''";
+                }
+
+                String strLat = arrPhotoGpsMeta[0] != null ? " '" + Double.parseDouble(arrPhotoGpsMeta[0]) + "' " : " NULL ";
+                String strLon = arrPhotoGpsMeta[1] != null ? " '" + Double.parseDouble(arrPhotoGpsMeta[1]) + "' " : " NULL ";
+
+
+                String updateSQL = "UPDATE photo_meta SET " +
 //                    " space_size = '" + photoSpaceSize + "', " +
 //                    " space_size_medium = '" + photoSpaceSizeMedium + "', " +
 //                    " space_size_thumb = '" + photoSpaceSizeThumb + "', " +
 //                    " meta_all = ? , " +
-                    " meta_date = DATE_FORMAT(" + strPhotoDateTime + ", '%Y:%m:%d %H:%i:%s')," +
-                    " meta_camera_make = " + strPhotoCameraMake + ", " +
-                    " meta_camera_model = " + strPhotoCameraModel + ", " +
-                    " meta_lens_make = " + strPhotoLensMake + ", " +
-                    " meta_lens_model = " + strPhotoLensModel + ", " +
-                    " meta_focal_length = '" + dblPhotoFocalLength + "', " +
-                    " meta_focal_length_ff = '" + dblPhotoFocalLengthFF + "', " +
-                    " meta_iso = '" + intPhotoISO + "' " +
-                    " , meta_shutter_speed = '" + dblPhotoShutterSpeed + "' " +
-                    " , meta_aperture = '" + dblPhotoAperture + "' " +
-                    " , meta_metering_mode = '" + strMeteringMode + "' " +
-                    " , meta_i_length = '" + intImageLength + "' " +
-                    " , meta_i_width = '" + intImageWidth + "' " +
-                    " , meta_orientation = '" + strOrientation + "' " +
+                        " meta_date = DATE_FORMAT(" + strPhotoDateTime + ", '%Y:%m:%d %H:%i:%s')," +
+                        " meta_camera_make = " + strPhotoCameraMake + ", " +
+                        " meta_camera_model = " + strPhotoCameraModel + ", " +
+                        " meta_lens_make = " + strPhotoLensMake + ", " +
+                        " meta_lens_model = " + strPhotoLensModel + ", " +
+                        " meta_focal_length = '" + dblPhotoFocalLength + "', " +
+                        " meta_focal_length_ff = '" + dblPhotoFocalLengthFF + "', " +
+                        " meta_iso = '" + intPhotoISO + "' " +
+                        " , meta_shutter_speed = '" + dblPhotoShutterSpeed + "' " +
+                        " , meta_aperture = '" + dblPhotoAperture + "' " +
+                        " , meta_metering_mode = '" + strMeteringMode + "' " +
+                        " , meta_i_height = '" + intImageLength + "' " +
+                        " , meta_i_length = '" + intImageLength + "' " +
+                        " , meta_i_width = '" + intImageWidth + "' " +
+                        " , meta_orientation = '" + strOrientation + "' "
+                        + " , location_lat = " + strLat
+                        + " , location_lon = " + strLon
 
-                    " WHERE name_new LIKE '" + strNewFileName + "' AND uploaderId = " + intUserId + " ORDER BY id ASC ";
+                        + " WHERE name_new LIKE '" + strNewFileName + "' AND uploaderId = " + intUserId + " ORDER BY id ASC ";
 
-            logger.info("  updateSQL SQL:   " + updateSQL);
-
-
-            lstQueryUpdate.add(updateSQL);
-
-
-            intRecsUpdated = intRecsUpdated + recordService.insertOneRecordWithQuery(updateSQL, null, null);
+                logger.info("  updateSQL SQL:   " + updateSQL);
 
 
-        }
+                lstQueryUpdate.add(updateSQL);
 
-        Notification notificationC = Notification.show(
-                intRecsUpdated + "Recs Updated",
-                8000,
-                Notification.Position.TOP_START
-        );
-        notificationC.addThemeVariants(NotificationVariant.LUMO_CONTRAST);
+
+                intRecsUpdated = intRecsUpdated + recordService.insertOneRecordWithQuery(updateSQL, null, null);
+
 
 //        ArrayList<Object[]> listInsertValues = new ArrayList<>();
 //        String[] imageInfo = {strImageMetaInfo.toString()};
@@ -374,14 +384,33 @@ public class ImageService {
 //            listInsertTypes.add(arrType);
 //        }
 //
-        Notification notificationLast = Notification.show(
-                "  Last " + lstQueryUpdate.size() + "  =  " + lstPhotoFilenames.size(),
-                5000,
-                Notification.Position.MIDDLE
-        );
-        notificationLast.addThemeVariants(NotificationVariant.LUMO_PRIMARY);
+//            Notification notificationLast = Notification.show(
+//                    "  Last " + lstQueryUpdate.size() + "  =  " + lstPhotoFilenames.size(),
+//                    5000,
+//                    Notification.Position.MIDDLE
+//            );
+//            notificationLast.addThemeVariants(NotificationVariant.LUMO_PRIMARY);
+            }
 
-        return true;
+        }
+        if (intRecsUpdated > 0) {
+            Notification notificationC = Notification.show(
+                    "Data of " + intRecsUpdated + " Photos Updated !",
+                    8000,
+                    Notification.Position.TOP_CENTER
+            );
+            notificationC.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+            return true;
+        } else {
+            Notification notificationC = Notification.show(
+                    intRecsUpdated + "Photo data Update Failed !",
+                    8000,
+                    Notification.Position.TOP_CENTER
+            );
+            notificationC.addThemeVariants(NotificationVariant.LUMO_ERROR);
+            return false;
+        }
+
 //
 //
 

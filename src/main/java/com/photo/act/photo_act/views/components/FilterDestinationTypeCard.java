@@ -22,9 +22,9 @@ import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-public class FilterTallCard extends RouterLink {
+public class FilterDestinationTypeCard extends RouterLink {
 
-    private static final Logger logger = LoggerFactory.getLogger(FilterTallCard.class);
+    private static final Logger logger = LoggerFactory.getLogger(FilterDestinationTypeCard.class);
     //private final RecordService recordService;
     //    private RecordService recordService;
     private boolean isMobile;
@@ -41,27 +41,26 @@ public class FilterTallCard extends RouterLink {
     private String sqlReadAlbumPhotosOrderBy;
     private String[] arrColumnsCarousel;
 
-    public FilterTallCard(Record record, String strImagePath, boolean isMobile, int userId, long sessionCreation,
-                          String publicIp, String strCaptionCounts, Component component) {
+    public FilterDestinationTypeCard(Record record, String[] columnNames, String nameUrlVariable, String strImagePath, boolean isMobile, int userId, long sessionCreation,
+                                     String publicIp, String strCaptionCounts, Component component) {
 
         this.isMobile = isMobile;
         this.hostname = hostname;
         this.publicIp = publicIp;
         this.sessionCreation = sessionCreation;
 
-
         if (record == null) {
             logger.error("record is null");
         }
 
-        String strCatTitle = record.getColumnData("cat_title");
-        String strCatType = record.getColumnData("cat_type");
+        String strDestinationCatTitle = record.getColumnData(columnNames[1]); //"dest_cat_title");
+//        String strCatType = record.getColumnData("cat_type");
         String strAlbumUsername = record.getColumnData("username");
 
-        String strCatDescription = record.getColumnData("cat_description_min");
-        String strCatTypeDescription = record.getColumnData("cat_type_description_min");
+//        String strCatDescription = record.getColumnData("cat_description_min");
+//        String strCatTypeDescription = record.getColumnData("cat_type_description_min");
 
-        String strCatTypeCount = record.getColumnData("cat_count");
+        String strDestinationCatCount = record.getColumnData(columnNames[2]); //"dest_cat_count");
 
 //        String strAlbumTitle = record.getColumnData("album_title");
 
@@ -73,7 +72,7 @@ public class FilterTallCard extends RouterLink {
 //        RouterLink linkAlbum = new RouterLink(strAlbumTitle, AlbumsView.class, new RouteParameters(routeAlbum, routeUploader));
 
 //        String strImagePath = strPath + dirChar; // + strFileName;
-        logger.info(" strImagePath " + strImagePath);
+//        logger.info(" strImagePath " + strImagePath);
 
         VerticalLayout filterBar = new VerticalLayout();
         if (isMobile) {
@@ -108,23 +107,23 @@ public class FilterTallCard extends RouterLink {
         H3 header = new H3();
 
 //        header.getStyle().set("font-family", "Times-New-Roman, serif");
-        header.setText(strCatType);
-        if (strCatType.trim().isEmpty() || strCatType.equalsIgnoreCase("null")) {
+        header.setText(strDestinationCatTitle);
+        if (strDestinationCatTitle.trim().isEmpty() || strDestinationCatTitle.equalsIgnoreCase("null")) {
             header.setText("");
             header.setHeight("1px");
             header.setVisible(false);
         }
 
-        Div subtitle = new Div(strCatTypeCount + " " + strCaptionCounts);
+        Div divDescription = new Div(strDestinationCatCount + " " + strCaptionCounts);
 
         // H5 subtitle = new H5(strCatTypeCount + " " + strCaptionCounts);
 
         // subtitle.addClassName("bottom-line");
 
-        filterBar.add(header, subtitle);
+        filterBar.add(header, divDescription);
 
-        String captionCategory = record.getColumnData("cat_type");
-        RouteParam routeCategory = new RouteParam("category", captionCategory);
+        String captionCategory = record.getColumnData(columnNames[1]);
+        RouteParam routeCategory = new RouteParam(nameUrlVariable, captionCategory);
 
 
         this.add(filterBar);

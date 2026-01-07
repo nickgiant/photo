@@ -59,13 +59,13 @@ public class AlbumThumbViewCard extends RouterLink {
 
         this.addClassNames(AlignItems.CENTER, JustifyContent.BETWEEN, TextAlignment.CENTER);
 
-        genericView = new GenericView(recordService, userId);
+        genericView = new GenericView(recordService);
 
         if (record == null) {
             logger.error("record is null");
         }
 
-        String strTitle = record.getColumnData("title");
+        String strAlbumTitle = record.getColumnData("album_title");
         String strDescription = record.getColumnData("description");
         String strAlbumUsername = record.getColumnData("username");
 
@@ -85,7 +85,7 @@ public class AlbumThumbViewCard extends RouterLink {
         logger.info(" strImagePath " + strImagePath);
 
 
-        Div divAlbumTitle = new Div(strTitle);
+        Div divAlbumTitle = new Div(strAlbumTitle);
         divAlbumTitle.addClassNames(Padding.SMALL, Width.FULL, FontWeight.BOLD, TextColor.SECONDARY, TextAlignment.CENTER, FontSize.MEDIUM);
         // Div divAlbumSubTitle = new Div(strDescription);
         Div divUser = new Div(strAlbumName + " " + strAlbumSurname);
@@ -173,8 +173,8 @@ public class AlbumThumbViewCard extends RouterLink {
                 Padding.MEDIUM, Margin.NONE
         );
 //        header.getStyle().set("font-family", "Times-New-Roman, serif");
-        header.setText(strTitle);
-        if (strTitle.trim().isEmpty() || strTitle.equalsIgnoreCase("null")) {
+        header.setText(strAlbumTitle);
+        if (strAlbumTitle.trim().isEmpty() || strAlbumTitle.equalsIgnoreCase("null")) {
             header.setText("");
             header.setHeight("1px");
             header.setVisible(false);
@@ -450,7 +450,7 @@ public class AlbumThumbViewCard extends RouterLink {
 
         //   layoutPhotosInfo.add(layoutRateAll, layoutViewCountAll, layoutLocationsCountAll, detailsMember);
 
-        RouteParam routeAlbum = new RouteParam("title", strTitle);
+        RouteParam routeAlbum = new RouteParam("title", strAlbumTitle);
         RouteParam routeMember = new RouteParam("member", strAlbumUserName);
 
         VerticalLayout layoutAll = new VerticalLayout();

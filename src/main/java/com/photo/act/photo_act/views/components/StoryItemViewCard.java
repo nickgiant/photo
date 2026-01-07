@@ -55,7 +55,7 @@ public class StoryItemViewCard extends Div {
 
         this.addClassName("gallery-view-card");
 
-        genericView = new GenericView(recordService, userId);
+        genericView = new GenericView(recordService);
 
 
         if (record == null) {
@@ -69,7 +69,7 @@ public class StoryItemViewCard extends Div {
         String strUploader = record.getColumnData("uploader");
         String strDateTime = record.getColumnData("meta_date");
         String strPhotoDate = record.getColumnData("photo_date");
-        String strPhotoTime = record.getColumnData("photo_time");
+        String strPhotoTime = record.getColumnData("photo_time_shot");
         String strCreator = record.getColumnData("creator");
         String strVisibleTo = record.getColumnData("visible_to");
 

@@ -1,12 +1,11 @@
 package com.photo.act.photo_act.views.components;
 
+import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.services.EmailSendService;
 import com.photo.act.photo_act.services.WeatherService;
 import com.photo.act.photo_act.utils.ImageUtilsMeta;
 import com.photo.act.photo_act.utils.UtilsDate;
-import com.vaadin.flow.component.Html;
-import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
@@ -16,10 +15,13 @@ import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.select.Select;
+import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.upload.Upload;
 import com.vaadin.flow.dom.Style;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.VaadinSession;
+import com.vaadin.flow.server.streams.UploadHandler;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import org.apache.commons.io.FileUtils;
 import org.imgscalr.Scalr;
@@ -34,12 +36,13 @@ import java.io.*;
 import java.net.URL;
 import java.nio.file.FileSystems;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
-import static com.photo.act.photo_act.views.GalleryView.*;
+import static com.photo.act.photo_act.views.GalleryView.DIR_PHOTOS_SERVER;
+import static com.photo.act.photo_act.views.HomeView.*;
 import static com.photo.act.photo_act.views.MainLayout.*;
-import static com.photo.act.photo_act.views.MeView.subPathLarge;
-import static com.photo.act.photo_act.views.MeView.subPathSmall;
+
 
 public class UploadImageCard extends VerticalLayout {
 
@@ -50,6 +53,16 @@ public class UploadImageCard extends VerticalLayout {
     private String mimeType;
     private RecordService recordService;
 
+    private String[] arrDestinationNames = {"id", "city_name", "prefecture", "country"};
+    private String sqlReadDestination = "SELECT distinct city_name, id, prefecture, country " +
+            " FROM  destination d " +
+            " ORDER BY country ASC, city_name ASC ";
+
+
+    private String[] arrSubjectNames = {"id", "subject_name", "subject_description", "subject_type"};
+    private String sqlReadSubject = "SELECT distinct subject_name, id,  subject_description, subject_type " +
+            " FROM  subject s " +
+            " ORDER BY subject_name ASC ";
 
     private static final Logger logger = LoggerFactory.getLogger(UploadImageCard.class);
     private UtilsDate utilsDate;
@@ -81,7 +94,7 @@ public class UploadImageCard extends VerticalLayout {
         this.sessionId = Long.toString(sessionCreation);
 
         weatherService = new WeatherService("metric");
-        genericView = new GenericView(recordService, 1);
+        genericView = new GenericView(recordService);
         utilsDate = new UtilsDate();
 
         this.sessionDateTime = utilsDate.calcDateTimeFromLong(sessionCreation, "UTC");
@@ -92,54 +105,85 @@ public class UploadImageCard extends VerticalLayout {
 
         DIR_PHOTOS_SERVER = genericView.getAppProps(PROP_PHOTOS);
 
+        this.addClassName("image-gallery-view");
+        this.addClassName("background");
+
         VerticalLayout layout = new VerticalLayout();
         layout.addClassNames(LumoUtility.Width.FULL, LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER,
                 LumoUtility.BorderRadius.MEDIUM, LumoUtility.BorderColor.CONTRAST_5);
 
-//        MemoryBuffer buffer = new MemoryBuffer();
-//        Upload upload = new Upload(buffer);
 
-//        MultiFileBuffer multiFileBuffer = new MultiFileBuffer();
-//        Upload upload = new Upload(multiFileBuffer);
+        VerticalLayout photoToAddLayout;
 
-        Upload upload = new Upload(this::receiveUpload);
-        upload.addClassNames(LumoUtility.Width.FULL, LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER,
-                LumoUtility.BorderRadius.SMALL, LumoUtility.BorderColor.CONTRAST_5);
+        List<File> outputFiles = new ArrayList<>();
 
-        upload.setMaxFiles(3);
 
-        int maxFileSizeInBytes = 18 * 1024 * 1024; // 18MB
-        upload.setMaxFileSize(maxFileSizeInBytes);
+        // UploadHandler uploadHandler = UploadHandler.toTempFile((uploadMetadata, file) -> outputFiles.add(file));
 
-        Div output = new Div(new Text("(no image file uploaded yet)"));
+        //getElement().setAttribute("target", uploadHandler);
+
+        // FileFactory fileFactory = (metadata) -> outputFiles.stream().findAny().get();// new File(strPathUpload, strNewFileName);
+        // FileUploadHandler fileHandler = UploadHandler.toFile(successHandler, fileFactory);
+        Div output = new Div();
+        output.addClassName("gallery-upload");
         output.getStyle().setAlignItems(Style.AlignItems.CENTER);
         output.getStyle().setJustifyContent(Style.JustifyContent.CENTER);
-        layout.add(upload, output);
 
-        upload.setAcceptedFileTypes("image/jpeg", "image/png");//, "image/gif");
+        UploadHandler uploadHandler = UploadHandler.toTempFile((uploadMetadata, file) -> {
+                    outputFiles.add(file);
+
+                    logger.info("File saved to: " + outputFiles.size() + " - " + file.getAbsolutePath());
+                    output.add(getPhotoForUploadPanel(file));
+                })
+                .whenStart(() -> {
+                    // logger.info("File saved to: " + outputFiles.size() + " - " + file.getAbsolutePath());
+                })
+                .onProgress((transferredBytes, totalBytes) -> {
+                    double percentage = (double) transferredBytes / totalBytes * 100;
+//                    if (percentage == 50) {
+                    //  logger.info("Upload progress:" + percentage);
+                    //                   }
+                })
+                .whenComplete((success) -> {
+                    if (success) {
+                        logger.info("Upload completed successfully");
+                    } else {
+                        logger.info("Upload failed");
+                    }
+                });
+
+        Upload upload = new Upload(uploadHandler);
+
+        // Upload upload = new Upload(this::receiveUpload);
+        upload.setMinHeight("160px");
+        upload.addClassNames(LumoUtility.Width.FULL, LumoUtility.Height.FULL, LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER,
+                LumoUtility.BorderRadius.SMALL, LumoUtility.BorderColor.CONTRAST_5);
+
+        int intMemberMonthsCount = genericView.getAuthMemberMonthCount();
+        Div divMaxFileNSize = new Div();
+        if (intMemberMonthsCount >= 8) {
+            divMaxFileNSize.setText("(Member for >= 8 months) Max Photo size 9MB, Max Photos 6");
+            upload.setMaxFiles(6);
+            int maxFileSizeInBytes = 9 * 1024 * 1024; // 35MB
+            upload.setMaxFileSize(maxFileSizeInBytes);
+        } else {
+            divMaxFileNSize.setText("(Member for < 8 months) Max Photo size 8MB, Max Photos 3");
+            upload.setMaxFiles(3);
+            int maxFileSizeInBytes = 8 * 1024 * 1024; // 15MB
+            upload.setMaxFileSize(maxFileSizeInBytes);
+        }
+
+        layout.add(divMaxFileNSize, upload, output);
+
+        upload.setAcceptedFileTypes("image/jpeg"); //, "image/png");//, "image/gif");
 
 
-        upload.addSucceededListener(event -> {
-            output.removeAll();
+//        upload.addSucceededListener(event -> {
 
-            Image image = new Image();
-//            output.add(new Text("Uploaded: "+originalFileName+" to "+ file.getAbsolutePath()+ " Type: "+mimeType+" Size: "+file.length()));
-
-            StreamResource streamResource = new StreamResource(this.originalFileName, this::loadFile);
-            image.setSrc(streamResource);
-
-            image.setMaxWidth("68%");
-            image.setHeight("auto");
-            image.getStyle().setAlignItems(Style.AlignItems.CENTER);
-            image.getStyle().setJustifyContent(Style.JustifyContent.CENTER);
+/*            Image image = new Image();
 
             VerticalLayout layoutImageInfo = new VerticalLayout();
             layoutImageInfo.setWidthFull();
-            layoutImageInfo.setSpacing(true);
-            layoutImageInfo.setMargin(false);
-            layoutImageInfo.setPadding(false);
-
-            ArrayList<String> lstPhotoMetaData = new ArrayList<>();
 
             String strPathUpload = DIR_PHOTOS_SERVER + dirChar + subPathUpload;
 
@@ -147,22 +191,45 @@ public class UploadImageCard extends VerticalLayout {
             String strUUID = uuid.toString();
             String strNewFileName = intUserId + "_" + strUserName + "_" + strUUID + ".jpg";
 
-            Button btnSave = new Button("Upload Photo");
-
             InputStream isUpload = loadFile(file.getAbsolutePath());
             OutputStream outUpload = null;
             String outputUploadFileName = strPathUpload + dirChar + strNewFileName;
             File outputUploadFile = new File(outputUploadFileName);
 
-            try {
+//          output.add(new Text("Uploaded: "+originalFileName+" to "+ file.getAbsolutePath()+ " Type: "+mimeType+" Size: "+file.length()));
 
+            image.setMaxWidth("68%");
+            image.setMaxHeight("1000px");
+            image.setHeight("auto");
+            image.getStyle().setAlignItems(Style.AlignItems.CENTER);
+            image.getStyle().setJustifyContent(Style.JustifyContent.CENTER);
+
+            try {
                 outUpload = new FileOutputStream(outputUploadFile);
                 StreamUtils.copy(isUpload, outUpload);
                 logger.info(" upload Photo Success to: " + this.originalFileName + " ---> " + strNewFileName + " size: " + getFileSizeAsString(outputUploadFile));
-            } catch (Exception e) {
+                final StreamResource imageResource = new StreamResource("streamResource", () -> {
+                    try {
+//                        ImageUtilsMeta imageUtilsMeta = new ImageUtilsMeta();
+//                        imageUtilsMeta.printPhotoMetadataValue(file);
+
+                        return new FileInputStream(outputUploadFile);
+                    } catch (final FileNotFoundException e) {
+                        // logErrorInDb(e,hostname,"CreationsViewCard StreamResource",userId,strUserName,file.getAbsolutePath());
+                        logger.error("FileNotFoundException  " + e.getMessage());
+                    }
+                    return null;
+                });
+
+                image.setSrc(imageResource);
+                image.setAlt(file.getName());
+                photoToAddLayout.add(image);
+                photoToAddLayout.add(layoutSelections);
+                photoToAddLayout.add(btnSave);*/
+
+/*            } catch (Exception e) {
 
                 String errorMessage = "Upload failed: " + e.getMessage();
-
                 Notification notification = Notification.show(
                         errorMessage,
                         5000,
@@ -175,99 +242,7 @@ public class UploadImageCard extends VerticalLayout {
 
                 logger.error(" upload " + e.getMessage());
 //                throw new RuntimeException(e);
-            }
-
-            ImageUtilsMeta imageUtilsMeta = new ImageUtilsMeta();
-            File imgFile = new File(outputUploadFileName);
-            logger.info("for photo " + outputUploadFileName + " get meta info");
-            StringBuilder strImageMetaInfo = new StringBuilder();
-            try {
-                //  logger.info(" A for photo "+outputUploadFileName+" get meta info to html "+imgFile.getAbsolutePath());
-                strImageMetaInfo.append(imageUtilsMeta.getMetadataInfo(imgFile));
-                //   logger.info(" B for photo "+outputUploadFileName+" get meta info to list "+imgFile.getAbsolutePath());
-                lstPhotoMetaData = imageUtilsMeta.getListImageInfo();
-                if (lstPhotoMetaData != null && lstPhotoMetaData.size() > 0) {
-                    Html imageInfo = new Html(strImageMetaInfo.toString());
-                    layoutImageInfo.add(imageInfo);
-                    btnSave.setVisible(true);
-                } else {
-
-                    btnSave.setVisible(true);
-
-//                    Notification notification = Notification.show(
-//                            "Photo contains no metadata.",
-//                            5000,
-//                            Notification.Position.MIDDLE
-//                    );
-//                    notification.addThemeVariants(NotificationVariant.LUMO_WARNING);
-                }
-            } catch (Exception e) {
-
-                btnSave.setVisible(false);
-
-                String errorMessage = "Upload failed: " + e.getMessage();
-                Notification notification = Notification.show(
-                        errorMessage,
-                        5000,
-                        Notification.Position.MIDDLE
-                );
-                notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
-
-                emailSendService.sendSimpleMail(strMailboxSend, "nickgiant@yahoo.com", "getUploadImageCard  strImage Meta Info  " + errorMessage + "  -  " + publicIp, " " + publicIp + " " + hostname + "  -  " + errorMessage);
-
-                logErrorInDb(e, "getUploadImageCard  strImage Meta Info " + e.getMessage(), this.file.getAbsolutePath(), intUserId, strUserName);
-
-                logger.error(" strImage Meta Info " + e.getMessage());
-//                throw new RuntimeException(e);
-            }
-
-
-            VerticalLayout photoToAddLayout = new VerticalLayout();
-            photoToAddLayout.addClassNames(LumoUtility.Width.FULL, LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER,
-//                    LumoUtility.Background.CONTRAST_5,
-                    LumoUtility.Padding.XLARGE,
-                    LumoUtility.BorderRadius.LARGE,
-                    LumoUtility.Background.CONTRAST_5);
-
-
-            upload.clearFileList();
-            photoToAddLayout.add(image);
-            photoToAddLayout.add(btnSave);
-//            photoToAddLayout.add(layoutLocation, btnSave);
-            output.add(photoToAddLayout);
-
-
-
-
-            ArrayList<String> finalLstPhotoMetaData = lstPhotoMetaData;
-
-            btnSave.addClickListener(clickevent -> {
-                if (confirmedUploadPhoto(strNewFileName, finalLstPhotoMetaData, publicIp, hostname, strImageMetaInfo)) {
-                    photoToAddLayout.removeAll();
-                    upload.clearFileList();
-                    output.remove(photoToAddLayout);
-
-
-                    double dblSize = Double.parseDouble(event.getContentLength() + "");
-                    String strFilesize = getFileSizeMB(dblSize) + "";
-
-                    if (strFilesize.length() > 7) {
-                        strFilesize = strFilesize.substring(0, 5) + " MB";  //String.format("%.2f", dblSize);
-                    }
-
-                    String message = "Photo Uploaded ! (" + strFilesize + ")";
-                    Notification notification = Notification.show(message, 6000, Notification.Position.MIDDLE);
-                    notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-
-                    logger.info("to sent mail for hostname:"+hostname);
-                    if(hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_LENOVO_WIN) || hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_LENOVO) || hostname.equalsIgnoreCase(HOSTNAME_LAPTOP))
-                    {}else {
-//                        emailSendService.sendSimpleMail(strMailboxSend, "nickgiant@yahoo.com", "Photo Uploaded", "From IP: " + publicIp + " username: " + strUserName + " (" + strFilesize + ")");
-                        logger.info("mail sent");
-                    }
-
-                }
-            });
+            }*/
 
 
 //            photoToAddLayout.add(image, layoutImageInfo);
@@ -308,10 +283,7 @@ public class UploadImageCard extends VerticalLayout {
 //            layoutLocation.add(layoutLocationSearch,locationResultLayout);
 
 
-
-        });
-
-        upload.addFailedListener(event -> {
+        /*upload.addFailedListener(event -> {
 //            Notification.show("Upload failed: addFailedListener: " + event.getReason()+ " getContentLength: "+event.getContentLength());
             String errorMessage = "Upload failed: " + event.getReason();
 
@@ -322,16 +294,13 @@ public class UploadImageCard extends VerticalLayout {
             );
             notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
 
-
             String strMessage = "Upload failed: " + event.getReason();
             output.removeAll();
             output.add(new Text(strMessage));
 
             emailSendService.sendSimpleMail(strMailboxSend, "nickgiant@yahoo.com", strMessage + "  -  " + publicIp, " " + publicIp + " " + hostname + "  -  " + strMessage);
             logErrorInDb(null, "addFailedListener " + event.getReason(), this.file.getAbsolutePath(), intUserId, strUserName);
-
-
-        });
+        });*/
 
         upload.addFileRejectedListener(event -> {
             String errorMessage = event.getErrorMessage();
@@ -343,7 +312,7 @@ public class UploadImageCard extends VerticalLayout {
             );
             notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
 
-            emailSendService.sendSimpleMail(strMailboxSend, "nickgiant@yahoo.com", errorMessage + "  -  " + publicIp, " " + publicIp + " " + hostname + "  -  " + errorMessage);
+            // emailSendService.sendSimpleMail(strMailboxSend, "nickgiant@yahoo.com", errorMessage + "  -  " + publicIp, " " + publicIp + " " + hostname + "  -  " + errorMessage);
             logErrorInDb(null, "addFileRejectedListener " + event.getErrorMessage(), this.file.getAbsolutePath(), intUserId, strUserName);
         });
 
@@ -470,6 +439,23 @@ public class UploadImageCard extends VerticalLayout {
         return null;
     }
 
+//    private StreamResource getPhoto(File file) {
+//        final StreamResource imageResource = new StreamResource("streamResource", () -> {
+//            try {
+
+    /// /                        ImageUtilsMeta imageUtilsMeta = new ImageUtilsMeta();
+    /// /                        imageUtilsMeta.printPhotoMetadataValue(file);
+//
+//                return new FileInputStream(file);
+//            } catch (final FileNotFoundException e) {
+//                // logErrorInDb(e,hostname,"CreationsViewCard StreamResource",userId,strUserName,file.getAbsolutePath());
+//                logger.error("FileNotFoundException  " + e.getMessage());
+//            }
+//            return null;
+//        });
+//
+//        return imageResource;
+//    }
     private void logErrorInDb(Exception e, String function, String info, int intUserId, String strUsername) {
 
 //        Notification.show(" logErrorInDb  .  " + function + "  .  " + info);
@@ -487,9 +473,10 @@ public class UploadImageCard extends VerticalLayout {
 //                lstInfo.add(getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_SHUTTER_SPEED_VALUE)); // shutter speed
 //                lstInfo.add(getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_APERTURE_VALUE)); // aperture
 
-    private boolean confirmedUploadPhoto(String strNewFileName, ArrayList<String> lstPhotoMetaData, String publicIp, String hostname,
-                                         StringBuilder strImageMetaInfo) {
-
+    private boolean confirmedUploadPhoto(String orgFileName, String strNewFileName, ArrayList<String> lstPhotoMetaData, String[] arrPhotoGpsMeta, String publicIp, String hostname,
+                                         StringBuilder strImageMetaInfo,
+                                         String strSubTitle, String strDestination, String strSubject, String strPersonalNotes
+    ) {
 
         String strPathUpload = DIR_PHOTOS_SERVER + dirChar + subPathUpload;
         String outputUploadFileName = strPathUpload + dirChar + strNewFileName;
@@ -500,11 +487,9 @@ public class UploadImageCard extends VerticalLayout {
         File directoryShow = new File(strPathShow);
         File fileShow = new File(outputShowFileName);
 
-
         try {
 
             FileUtils.copyFileToDirectory(fileUploaded, directoryShow);
-
 
             int intSize = 140;
             String strSubPath = subPathThumbs;
@@ -564,7 +549,7 @@ public class UploadImageCard extends VerticalLayout {
             logger.info(" before insert:  0 " + lstPhotoMetaData.get(0) + " 1 " + lstPhotoMetaData.get(1) + " 2 " + lstPhotoMetaData.get(2) + " 3 " + lstPhotoMetaData.get(3)
                     + " 4 " + lstPhotoMetaData.get(4) + " 5 " + lstPhotoMetaData.get(5) + " 6 " + lstPhotoMetaData.get(6) + " 7 " + lstPhotoMetaData.get(7)
                     + " 8 " + lstPhotoMetaData.get(8) + " 9 " + lstPhotoMetaData.get(9) + " 10MeteringMode " + lstPhotoMetaData.get(10)
-                    + " 11Length " + lstPhotoMetaData.get(11) + " 12Width " + lstPhotoMetaData.get(12)+ "  .........");
+                    + " 11Length " + lstPhotoMetaData.get(11) + " 12Width " + lstPhotoMetaData.get(12) + "  .........");
 
             try {
                 Double.parseDouble(lstPhotoMetaData.get(5));
@@ -622,16 +607,16 @@ public class UploadImageCard extends VerticalLayout {
 
 
             String strMeteringMode = lstPhotoMetaData.get(10);
-            if (strMeteringMode!=null && !strMeteringMode.isEmpty() && !strMeteringMode.trim().equalsIgnoreCase("null")) {
-                    //double dblF = Double.parseDouble(strAperture);
-            }else{
+            if (strMeteringMode != null && !strMeteringMode.isEmpty() && !strMeteringMode.trim().equalsIgnoreCase("null")) {
+                //double dblF = Double.parseDouble(strAperture);
+            } else {
                 strMeteringMode = "";
             }
 
             int intLength = 0;
             String strILength = lstPhotoMetaData.get(11);
-            if (strILength!= null && !strILength.isEmpty() && !strILength.trim().equalsIgnoreCase("null")) {
-                try{
+            if (strILength != null && !strILength.isEmpty() && !strILength.trim().equalsIgnoreCase("null")) {
+                try {
                     intLength = Integer.parseInt(strILength);
                 } catch (Exception e) {
                     logger.error(e.getMessage());
@@ -640,8 +625,8 @@ public class UploadImageCard extends VerticalLayout {
 
             int intWidth = 0;
             String strIWidth = lstPhotoMetaData.get(12);
-            if (strIWidth!= null && !strIWidth.isEmpty() && !strIWidth.trim().equalsIgnoreCase("null")) {
-                try{
+            if (strIWidth != null && !strIWidth.isEmpty() && !strIWidth.trim().equalsIgnoreCase("null")) {
+                try {
                     intWidth = Integer.parseInt(strIWidth);
                 } catch (Exception e) {
                     logger.error(e.getMessage());
@@ -652,11 +637,13 @@ public class UploadImageCard extends VerticalLayout {
             String strOrientation = lstPhotoMetaData.get(13);
 
 
-            if (insertPhotoToDb(publicIp, sessionDateTime, strNewFileName, hostname, fileShow.length(), fileLarge.length(),
+            if (insertPhotoToDb(publicIp, sessionDateTime, orgFileName, strNewFileName, hostname, fileShow.length(), fileLarge.length(),
                     fileMedium.length(), fileSmall.length(), fileThumbs.length(), strImageMetaInfo.toString(), lstPhotoMetaData.get(0), lstPhotoMetaData.get(1),
                     lstPhotoMetaData.get(2), lstPhotoMetaData.get(3), lstPhotoMetaData.get(4), Double.parseDouble(lstPhotoMetaData.get(5)),
                     Double.parseDouble(lstPhotoMetaData.get(6)), intIso,
-                    dblPhotoShutterSpeed, dblPhotoAperture, strMeteringMode,intLength, intWidth ,strOrientation)) {
+                    dblPhotoShutterSpeed, dblPhotoAperture, strMeteringMode, intLength, intWidth, strOrientation, arrPhotoGpsMeta,
+                    strSubTitle, strDestination, strSubject, strPersonalNotes
+            )) {
 
 
                 return true;
@@ -691,13 +678,237 @@ public class UploadImageCard extends VerticalLayout {
 
     }
 
-    private boolean insertPhotoToDb(String publicIp, String sessionDateTime, String strNewFileName, String hostname, long photoSpaceSize, long photoSpaceSizeLarge,
+    private VerticalLayout getPhotoForUploadPanel(File uploadedFile) {
+
+
+        Image image = new Image();
+        image.setMaxWidth("68%");
+        image.setMaxHeight("1000px");
+        image.setHeight("auto");
+        image.getStyle().setAlignItems(Style.AlignItems.CENTER);
+        image.getStyle().setJustifyContent(Style.JustifyContent.CENTER);
+
+        final StreamResource imageResource = new StreamResource("streamResource", () -> {
+            try {
+//                        ImageUtilsMeta imageUtilsMeta = new ImageUtilsMeta();
+//                        imageUtilsMeta.printPhotoMetadataValue(file);
+
+                return new FileInputStream(uploadedFile);
+            } catch (final FileNotFoundException e) {
+                // logErrorInDb(e,hostname,"CreationsViewCard StreamResource",userId,strUserName,file.getAbsolutePath());
+                logger.error("FileNotFoundException  " + e.getMessage());
+            }
+            return null;
+        });
+
+        UUID uuid = UUID.randomUUID();
+        String strUUID = uuid.toString();
+        String strNewFileName = intUserId + "_" + strUserName + "_" + strUUID + ".jpg";
+        String strPathUpload = DIR_PHOTOS_SERVER + dirChar + subPathUpload;
+        String outputUploadFileName = strPathUpload + dirChar + strNewFileName;
+        File outputUploadFile = new File(outputUploadFileName);
+
+        VerticalLayout photoToAddLayout = new VerticalLayout();
+        photoToAddLayout.addClassNames(LumoUtility.Width.FULL, LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER,
+//                    LumoUtility.Background.CONTRAST_5,
+                LumoUtility.Padding.XLARGE,
+                LumoUtility.BorderRadius.LARGE,
+                LumoUtility.Background.CONTRAST_5);
+
+
+        image.setSrc(imageResource);
+        image.setAlt(uploadedFile.getName());
+        photoToAddLayout.add(image);
+
+        HorizontalLayout layoutSelections = new HorizontalLayout();
+        layoutSelections.addClassNames(LumoUtility.Gap.SMALL, LumoUtility.Padding.MEDIUM, LumoUtility.AlignItems.CENTER);
+
+        TextArea txtSubtitle = new TextArea("Short Description", "What differentiates this photo from the rest?");
+        txtSubtitle.setMinWidth("300px");
+        txtSubtitle.setMinRows(5);
+        txtSubtitle.setMaxLength(120);
+
+        Select<String> cmbDestination = new Select<>();
+        cmbDestination.setLabel("Location");
+        cmbDestination.setHelperText("Select a location. Avoid to select, when there are identifiable humans.");
+        Select<String> cmbSubject = new Select<>();
+        cmbSubject.setLabel("Main Subject");
+        cmbSubject.setHelperText("Select a subject when is the main object and location can be anywhere.");
+
+        List<Record> lstDestinationRecs = getRecordsFromDb(sqlReadDestination, arrDestinationNames);
+        ArrayList<String> lstDestinations = new ArrayList<>();
+        ArrayList<String> lstDestinationsId = new ArrayList<>();
+        for (int r = 0; r < lstDestinationRecs.size(); r++) {
+            String strDestination = "";
+
+            strDestination = lstDestinationRecs.get(r).getColumnData("city_name") + " (" + lstDestinationRecs.get(r).getColumnData("country") + ")";
+            // strDestination = lstDestinationRecs.get(r).getColumnData("city_name");
+            lstDestinations.add(strDestination);
+            lstDestinationsId.add(lstDestinationRecs.get(r).getColumnData("Id"));
+        }
+        cmbDestination.setItems(lstDestinations);
+
+        List<Record> lstSubjectRecs = getRecordsFromDb(sqlReadSubject, arrSubjectNames);
+        ArrayList<String> lstSubjects = new ArrayList<>();
+        ArrayList<String> lstSubjectsId = new ArrayList<>();
+        for (int r = 0; r < lstSubjectRecs.size(); r++) {
+            String strSubject = "";
+
+            strSubject = lstSubjectRecs.get(r).getColumnData("subject_name");
+            lstSubjects.add(strSubject);
+            lstSubjectsId.add(lstSubjectRecs.get(r).getColumnData("Id"));
+        }
+        cmbSubject.setItems(lstSubjects);
+
+        TextArea txtPersonalNotes = new TextArea("Notes");
+        txtPersonalNotes.setHelperText("Notes only visible to you");
+        txtPersonalNotes.setMinWidth("300px");
+        txtPersonalNotes.setMinRows(3);
+        txtPersonalNotes.setMaxLength(120);
+
+        layoutSelections.add(txtSubtitle, cmbDestination, cmbSubject, txtPersonalNotes);
+
+
+        Button btnSave = new Button("Upload Photo");
+        btnSave.addClickListener(clickevent -> {
+
+            //InputStream isUpload = outputFiles.get(ff).getAbsolutePath(); //loadFile(file.getAbsolutePath());
+            OutputStream outUpload = null;
+
+            try {
+                FileInputStream fileInputStream = new FileInputStream(uploadedFile);
+                outUpload = new FileOutputStream(outputUploadFile);
+                StreamUtils.copy(fileInputStream, outUpload);
+                logger.info(" upload Photo Success to: " + this.originalFileName + " ---> " + strNewFileName + " size: " + getFileSizeAsString(outputUploadFile));
+            } catch (Exception e) {
+
+                String errorMessage = "Upload failed: " + e.getMessage();
+
+                Notification notification = Notification.show(
+                        errorMessage,
+                        5000,
+                        Notification.Position.MIDDLE
+                );
+                notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+
+                emailSendService.sendSimpleMail(strMailboxSend, "nickgiant@yahoo.com", "getUploadImageCard to upload  " + errorMessage + "  -  " + publicIp, " " + publicIp + " " + hostname + "  -  " + errorMessage);
+                logErrorInDb(e, "getUploadImageCard to upload", this.file.getAbsolutePath(), intUserId, strUserName);
+
+                logger.error(" upload " + e.getMessage());
+            }
+
+            ArrayList<String> lstPhotoMetaData = new ArrayList<>();
+            ImageUtilsMeta imageUtilsMeta = new ImageUtilsMeta();
+            String[] arrPhotoGpsMeta = new String[3];
+
+            File imgFile = new File(outputUploadFileName);
+            logger.info("for photo " + outputUploadFileName + " get meta info");
+            StringBuilder strImageMetaInfo = new StringBuilder();
+            try {
+                //  logger.info(" A for photo "+outputUploadFileName+" get meta info to html "+imgFile.getAbsolutePath());
+                strImageMetaInfo.append(imageUtilsMeta.getMetadataInfo(imgFile));
+                //   logger.info(" B for photo "+outputUploadFileName+" get meta info to list "+imgFile.getAbsolutePath());
+                lstPhotoMetaData = imageUtilsMeta.getListImageInfo();
+                arrPhotoGpsMeta = imageUtilsMeta.getPhotoGPSMeta(outputUploadFileName);
+
+                //  if (lstPhotoMetaData != null && lstPhotoMetaData.size() > 0) {
+                //  Html imageInfo = new Html(strImageMetaInfo.toString());
+                // layoutImageInfo.add(imageInfo);
+//                btnSave.setVisible(true);
+                //   } else {
+
+//                btnSave.setVisible(true);
+
+//                    Notification notification = Notification.show(
+//                            "Photo contains no metadata.",
+//                            5000,
+//                            Notification.Position.MIDDLE
+//                    );
+//                    notification.addThemeVariants(NotificationVariant.LUMO_WARNING);
+                //  }
+            } catch (Exception e) {
+
+                String errorMessage = "Upload failed: " + e.getMessage();
+                Notification notificationErr = Notification.show(
+                        errorMessage,
+                        5000,
+                        Notification.Position.MIDDLE
+                );
+                notificationErr.addThemeVariants(NotificationVariant.LUMO_ERROR);
+
+                emailSendService.sendSimpleMail(strMailboxSend, "nickgiant@yahoo.com", "getUploadImageCard  strImage Meta Info  " + errorMessage + "  -  " + publicIp, " " + publicIp + " " + hostname + "  -  " + errorMessage);
+
+                logErrorInDb(e, "getUploadImageCard  strImage Meta Info " + e.getMessage(), this.file.getAbsolutePath(), intUserId, strUserName);
+
+                logger.error(" strImage Meta Info " + e.getMessage());
+            }
+
+            String strOrgFileName = this.originalFileName;
+            // strOrgFileName = strOrgFileName.replaceAll("([\\^\\$\\*\\?\\(\\)\\|\\{\\}\\[\\]\\\\])", "");
+
+            String strDestinationId = "";
+            String strDestination = cmbDestination.getValue();
+            for (int i = 0; i < lstDestinations.size(); i++) {
+                if (lstDestinations.get(i).equalsIgnoreCase(strDestination)) {
+                    strDestinationId = lstDestinationsId.get(i);
+                }
+            }
+
+            String strSubjectId = "";
+            String strSubject = cmbSubject.getValue();
+            for (int i = 0; i < lstSubjects.size(); i++) {
+                if (lstSubjects.get(i).equalsIgnoreCase(strSubject)) {
+                    strSubjectId = lstSubjectsId.get(i);
+                }
+            }
+
+
+            if (confirmedUploadPhoto(strOrgFileName, strNewFileName, lstPhotoMetaData, arrPhotoGpsMeta, publicIp, hostname, strImageMetaInfo,
+                    txtSubtitle.getValue().trim(), strDestinationId, strSubjectId, txtPersonalNotes.getValue().trim())) {
+
+                //double dblSize = Double.parseDouble(event.getContentLength() + "");
+                // String strFilesize = getFileSizeMB(dblSize) + "";
+
+                // if (strFilesize.length() > 7) {
+                //    strFilesize = strFilesize.substring(0, 5) + " MB";  //String.format("%.2f", dblSize);
+                //}
+
+                String messageUp = "Upload Finished!";
+                Notification notificationUp = Notification.show(messageUp, 6000, Notification.Position.MIDDLE);
+                notificationUp.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+
+                logger.info("to sent mail for hostname:" + hostname);
+                if (hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_LENOVO_WIN) || hostname.equalsIgnoreCase(HOSTNAME_LAPTOP_LENOVO) || hostname.equalsIgnoreCase(HOSTNAME_LAPTOP)) {
+                } else {
+//                        emailSendService.sendSimpleMail(strMailboxSend, "nickgiant@yahoo.com", "Photo Uploaded", "From IP: " + publicIp + " username: " + strUserName + " (" + strFilesize + ")");
+                    logger.info("mail sent");
+                }
+
+                photoToAddLayout.removeAll();
+                //                         upload.clearFileList();
+            }
+        });
+
+
+        photoToAddLayout.add(layoutSelections);
+        photoToAddLayout.add(btnSave);
+        return photoToAddLayout;
+
+    }
+
+    public List<Record> getRecordsFromDb(String sql, String[] arrColumnNames) {
+        logger.info(" photo  getRecordsFromDb:   " + sql);
+        return recordService.findAll(sql, arrColumnNames);
+    }
+
+    private boolean insertPhotoToDb(String publicIp, String sessionDateTime, String orgFileName, String strNewFileName, String hostname, long photoSpaceSize, long photoSpaceSizeLarge,
                                     long photoSpaceSizeMedium, long photoSpaceSizeSmall, long photoSpaceSizeThumb,
                                     String strImageMetaInfo, String strPhotoDateTime, String strPhotoCameraMake,
                                     String strPhotoCameraModel, String strPhotoLensMake, String strPhotoLensModel, double dblPhotoFocalLength, double dblPhotoFocalLengthFF,
                                     int intPhotoISO,
-                                    double dblPhotoShutterSpeed, double dblPhotoAperture, String strMeteringMode, int imageLength, int imageWidth, String strOrientation)
-                                     {
+                                    double dblPhotoShutterSpeed, double dblPhotoAperture, String strMeteringMode, int imageLength, int imageWidth, String strOrientation,
+                                    String[] arrPhotoGpsMeta,
+                                    String strSubtitle, String strDestination, String strSubject, String strPersonalNotes) {
 
         // String publicIpAddress = VaadinSession.getCurrent().getBrowser().getAddress();
         String browser = VaadinSession.getCurrent().getBrowser().getBrowserApplication();
@@ -744,8 +955,11 @@ public class UploadImageCard extends VerticalLayout {
             strPhotoLensMake = " null ";
         }
 
+        String strLat = arrPhotoGpsMeta[0] != null ? " '" + Double.parseDouble(arrPhotoGpsMeta[0]) + "' " : " NULL ";
+        String strLon = arrPhotoGpsMeta[1] != null ? " '" + Double.parseDouble(arrPhotoGpsMeta[1]) + "' " : " NULL ";
 
-        String insertSQL = "INSERT INTO photo_meta SET id = 0,  date_fromapp = now(), uploaderId = " + intUserId + ", uploader = '" + strUserName + "', name_new = '" + strNewFileName + "', hostname = '" + hostname + "', " +
+
+        String insertSQL = "INSERT INTO photo_meta SET id = 0,  date_fromapp = now(), uploaderId = " + intUserId + ", uploader = '" + strUserName + "', name_org = '" + orgFileName + "', name_new = '" + strNewFileName + "', hostname = '" + hostname + "', " +
                 " space_size = '" + photoSpaceSize + "', " +
                 " space_size_large = '" + photoSpaceSizeLarge + "', " +
                 " space_size_medium = '" + photoSpaceSizeMedium + "', " +
@@ -763,11 +977,13 @@ public class UploadImageCard extends VerticalLayout {
                 " meta_iso = '" + intPhotoISO + "' " +
                 " , meta_shutter_speed = '" + dblPhotoShutterSpeed + "' " +
                 " , meta_aperture = '" + dblPhotoAperture + "' "
-                +" , meta_metering_mode = '" + strMeteringMode + "' "
-                +" , meta_i_length = '" + imageLength + "' "
-                +" , meta_i_width = '" + imageWidth + "' "
-                +" , meta_orientation = '" + strOrientation + "' "
-                ;
+                + " , meta_metering_mode = '" + strMeteringMode + "' "
+                + " , meta_i_height = '" + imageLength + "' "
+                + " , meta_i_length = '" + imageLength + "' "
+                + " , meta_i_width = '" + imageWidth + "' "
+                + " , meta_orientation = '" + strOrientation + "' "
+                + " , location_lat = " + strLat
+                + " , location_lon = " + strLon;
 
 
         logger.info("  insert SQL:   " + insertSQL);
@@ -777,6 +993,45 @@ public class UploadImageCard extends VerticalLayout {
 
         recordService.setGlobalInfo(hostname, intUserId, strUserName, publicIp, sessionId);
         if (recordService.massRecordInsert(lstQueryInsert, listInsertValues, listInsertTypes) == 1) {
+
+            if (!strDestination.isEmpty()) {
+                String strUpdateDest = "UPDATE photo_meta SET " +
+                        " destination_id = '" + strDestination + "' " +
+                        " WHERE name_new = '" + strNewFileName + "'";
+                recordService.insertOneRecordWithQuery(strUpdateDest, null, null);
+            }
+            if (!strSubject.isEmpty()) {
+                String strUpdateSubj = "UPDATE photo_meta SET " +
+                        " subject_id = '" + strSubject + "' " +
+                        " WHERE name_new = '" + strNewFileName + "'";
+                recordService.insertOneRecordWithQuery(strUpdateSubj, null, null);
+            }
+
+
+            Object[] fieldValue = {strSubtitle, strPersonalNotes};
+            String[] fieldType = {"java.lang.String", "java.lang.String"};
+
+            String strUpdateSubj = "UPDATE photo_meta SET " +
+                    " subtitle = ? , notes = ? " +
+                    " WHERE name_new = '" + strNewFileName + "'";
+            int ret = recordService.insertOneRecordWithQuery(strUpdateSubj, fieldValue, fieldType);
+
+
+            Object[] fieldValueCount = {strUserName, intUserId};
+            String[] fieldTypeCount = {"java.lang.String", "java.lang.Integer"};
+
+            String strUpdateCount = "UPDATE dbuser_extra AS d " +
+                    " JOIN ( " +
+                    "    SELECT uploaderId, COUNT(*) AS photo_count " +
+                    "    FROM photo_meta " +
+                    "    WHERE visible_to = 'ALL' " +
+                    "    GROUP BY uploaderId " +
+                    " ) AS p ON d.user_id = p.uploaderId " +
+                    " SET d.username = ? , d.count_photos = p.photo_count " +
+                    " WHERE d.user_id = ? ";
+            int retCount = recordService.insertOneRecordWithQuery(strUpdateCount, fieldValueCount, fieldTypeCount);
+
+
             return true;
         } else {
             logErrorInDb(null, "UploadImageCard insertPhotoToDb.", insertSQL, intUserId, strUserName);

@@ -9,7 +9,6 @@ import com.photo.act.photo_act.views.components.HeaderFilterTabs;
 import com.photo.act.photo_act.views.components.StoryItemViewCard;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.HasStyle;
-import com.vaadin.flow.component.Html;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.checkbox.CheckboxGroup;
 import com.vaadin.flow.component.html.*;
@@ -102,7 +101,7 @@ public class StoryView extends Main implements HasUrlParameter<String>, BeforeEn
             " FROM  photo_meta pm LEFT JOIN destination d ON pm.destination_Id = d.id " +
             " ORDER BY city_name ASC ";
 
-    private String[] arrColumnNamesGallery = {"name_new", "title", "subtitle", "photo_type", "uploader", "creator", "visible_to", "city_name", "meta_date", "photo_date", "photo_time"
+    private String[] arrColumnNamesGallery = {"name_new", "title", "subtitle", "photo_type", "uploader", "creator", "visible_to", "city_name", "meta_date", "photo_date", "photo_time_shot"
             , "space_size", "space_size_medium", "space_size_thumb", "meta_camera_make", "meta_camera_model", "meta_lens_make", "meta_lens_model"
             , "meta_focal_length", "meta_focal_length_ff", "meta_iso", "meta_aperture", "meta_shutter_speed"
             , "location_by_user", "location_area", "location_country_code", "location_lat", "location_lon"
@@ -112,7 +111,7 @@ public class StoryView extends Main implements HasUrlParameter<String>, BeforeEn
     };
 
     private String sqlReadGallery = "SELECT pm.name_new, pm.title, pm.subtitle, pm.photo_type, pm.uploader, pm.creator, pm.visible_to, d.city_name, d.country, " +
-            " DATE_FORMAT(pm.meta_date, '%W %D %M %Y %H:%i %p') AS meta_date, DATE_FORMAT(pm.meta_date, '%d-%m-%Y') AS photo_date, DATE_FORMAT(pm.meta_date, '%H:%i %p') AS photo_time, " +
+            " DATE_FORMAT(pm.meta_date, '%W %D %M %Y %H:%i %p') AS meta_date, DATE_FORMAT(pm.meta_date, '%M %Y') AS photo_date, DATE_FORMAT(pm.meta_date, '%d/%m/%Y - %H:%i:%S') AS photo_time_shot, " +
             " pm.space_size, pm.space_size_medium, pm.space_size_thumb, pm.meta_camera_make, pm.meta_camera_model, pm.meta_lens_make, pm.meta_lens_model, " +
             " pm.meta_focal_length, pm.meta_focal_length_ff, pm.meta_iso, meta_aperture,  meta_shutter_speed " +
             " , pm.location_by_user, pm.location_area, pm.location_country_code, pm.location_lat, pm.location_lon " +
@@ -133,7 +132,7 @@ public class StoryView extends Main implements HasUrlParameter<String>, BeforeEn
     public StoryView(RecordService recordService) {
         this.recordService = recordService;
         utilsDate = new UtilsDate();
-        genericView = new GenericView(recordService, 1);
+        genericView = new GenericView(recordService);
 
         constructUI();
     }
@@ -269,10 +268,10 @@ public class StoryView extends Main implements HasUrlParameter<String>, BeforeEn
                     Gap.LARGE,
                     AlignItems.CENTER, JustifyContent.CENTER
             );
-
-            Html htmlTitle = new Html("<title>'photoact.net Network and Act around Photography'</title>");
-            Html htmlMeta = new Html("<meta name='description' content='Get the latest uploaded photos from our community of photographers.'>");
-            verticalLayout.add(htmlTitle, htmlMeta);
+//
+//            Html htmlTitle = new Html("<title>'photoact.net Network and Act around Photography'</title>");
+//            Html htmlMeta = new Html("<meta name='description' content='Get the latest uploaded photos from our community of photographers.'>");
+//            verticalLayout.add(htmlTitle, htmlMeta);
         }
     }
 
@@ -533,7 +532,7 @@ public class StoryView extends Main implements HasUrlParameter<String>, BeforeEn
 //        layoutHeaderParameters.add( headerContainerSecondary, divSection);
 
         HeaderFilterTabs headerFilterTabs = new HeaderFilterTabs(recordService, isMobile);
-        VerticalLayout layoutHeaderParameters = headerFilterTabs.getHeader(strHeader, strSubHeader, strSection, headerContainer);
+        VerticalLayout layoutHeaderParameters = headerFilterTabs.getHeader(strHeader, strSubHeader, strSection);
 
 //        headerContainerMaster.add(headerTextContainer, cmbView);
 //        headerContainerSecondary.add(layoutFilters, sortBy);

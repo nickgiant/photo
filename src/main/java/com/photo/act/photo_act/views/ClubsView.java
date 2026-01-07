@@ -5,19 +5,15 @@ import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.photo.act.photo_act.views.components.GenericView;
-import com.photo.act.photo_act.views.components.HeaderFilterTabs;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.HasStyle;
-import com.vaadin.flow.component.Html;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.checkbox.CheckboxGroup;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.VaadinService;
@@ -119,7 +115,7 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
 
     public ClubsView(RecordService recordService) {
         this.recordService = recordService;
-        genericView = new GenericView(recordService, 1);
+        genericView = new GenericView(recordService);
         utilsDate = new UtilsDate();
 
 
@@ -223,9 +219,9 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
             verticalLayout.getStyle().set("gap", "3rem");
         }
 
-        Html htmlTitle = new Html("<title>'photoact.net Network and Act around Photography'</title>");
-        Html htmlMeta = new Html("<meta name='description' content='Get the latest uploaded photos from our community of photographers.'>");
-        verticalLayout.add(htmlTitle, htmlMeta);
+//        Html htmlTitle = new Html("<title>'photoact.net Network and Act around Photography'</title>");
+//        Html htmlMeta = new Html("<meta name='description' content='Get the latest uploaded photos from our community of photographers.'>");
+//        verticalLayout.add(htmlTitle, htmlMeta);
 
         this.add(verticalLayout);
     }
@@ -234,182 +230,55 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
 
         this.strHeader = strHeader;
 
-        HorizontalLayout headerContainerMaster = new HorizontalLayout();
+        VerticalLayout headerContainer = new VerticalLayout();
         if (isMobile) {
-            headerContainerMaster.addClassNames(
-                    AlignItems.CENTER, JustifyContent.EVENLY,
-                    Overflow.HIDDEN, Width.FULL,
+            headerContainer.addClassNames(
+                    AlignItems.START, JustifyContent.BETWEEN,
+                    Overflow.HIDDEN,// Width.FULL,
                     Margin.NONE,
-                    Padding.NONE,
-                    Gap.MEDIUM,
+                    Padding.SMALL,
+                    Gap.SMALL,
                     // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
                     //   Background.CONTRAST_5,
                     BorderRadius.NONE
             );
         } else {
-            headerContainerMaster.addClassNames(
-                    AlignItems.CENTER, JustifyContent.EVENLY,
-                    Overflow.HIDDEN, Width.FULL,
+            headerContainer.addClassNames(
+                    AlignItems.START, JustifyContent.BETWEEN,
+                    Overflow.HIDDEN, //Width.FULL,
                     Margin.NONE,
-                    Padding.NONE,
+                    Padding.MEDIUM,
                     Gap.MEDIUM,
                     // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
                     //   Background.CONTRAST_5,
                     BorderRadius.LARGE
             );
         }
+        headerContainer.addClassName("header-layout");
 
-        VerticalLayout headerTextContainer = new VerticalLayout();
-        headerTextContainer.addClassNames(
-                Margin.NONE, Padding.NONE,
-                Gap.XSMALL);
 
-        H2 header = new H2(strHeader);
-        header.addClassNames(
-                AlignItems.CENTER, JustifyContent.START,
-                Margin.Bottom.NONE, Margin.Top.NONE, FontSize.LARGE, FontWeight.BOLD, TextColor.SECONDARY);
-//        header.getStyle().set("font-family", "Times-New-Roman, serif");
+        H1 header = new H1(strHeader);
 
         Div subheader = new Div(strSubHeader);
         subheader.addClassNames(
                 AlignItems.CENTER, JustifyContent.START,
                 Margin.Bottom.NONE, Margin.Top.NONE, FontSize.SMALL, TextColor.SECONDARY);
 
-        H3 divSection = new H3(strSection);
-        divSection.addClassNames(
+
+        H3 headerSection = new H3(strSection);
+        headerSection.addClassNames(
                 AlignItems.CENTER, JustifyContent.CENTER,
-                Margin.Bottom.MEDIUM, Margin.Top.MEDIUM);
-
-        headerTextContainer.add(header, subheader, divSection);
-
-        Select<String> sortBy = new Select<>();
-        sortBy.setLabel("Sort by");
-        sortBy.setItems("Most Viewed", "Least Viewed", "Most Favourite", "Least Favourite", "Newest First", "Oldest First", "Most Liked", "Least Liked");
-        sortBy.setValue("Most Viewed");
-
-        Div headerContainerSecondary = new Div();
-        if (isMobile) {
-            headerContainerSecondary.addClassNames(
-                    AlignItems.CENTER, JustifyContent.EVENLY,
-                    Overflow.HIDDEN, Width.FULL,
-                    Margin.NONE,
-                    Padding.NONE,
-                    Gap.SMALL,
-                    // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
-                    //   Background.CONTRAST_5,
-                    BorderRadius.NONE
-            );
-        } else {
-            headerContainerSecondary.addClassNames(
-                    AlignItems.CENTER, JustifyContent.EVENLY,
-                    Overflow.HIDDEN, Width.FULL,
-                    Margin.NONE,
-                    Padding.NONE,
-                    Gap.SMALL,
-                    // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
-                    //   Background.CONTRAST_5,
-                    BorderRadius.LARGE
-            );
-        }
+                Margin.Bottom.MEDIUM, Margin.Top.MEDIUM,
+                Padding.NONE
+        );
 
 
-        VerticalLayout layoutFilters = new VerticalLayout();
-        if (isMobile) {
-            layoutFilters.addClassNames(
-                    Overflow.HIDDEN, Width.FULL,
-                    AlignItems.CENTER, JustifyContent.EVENLY,
-                    Margin.NONE,
-                    Padding.NONE,
-                    Gap.SMALL,
-                    Width.FULL,
-                    //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                    //  Background.CONTRAST_5,
-                    BorderRadius.NONE);
-        } else {
-            layoutFilters.addClassNames(
-                    Overflow.HIDDEN, Width.FULL,
-                    AlignItems.CENTER, JustifyContent.EVENLY,
-                    Margin.NONE,
-                    Padding.NONE,
-                    Gap.SMALL,
-                    Width.FULL,
-                    //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                    //  Background.CONTRAST_5,
-                    BorderRadius.LARGE);
-        }
+        Div divLine = new Div();
+        divLine.addClassNames(Border.BOTTOM, Width.FULL);
 
-        CheckboxGroup<String> checkboxGroupSubject = new CheckboxGroup<>();
-        checkboxGroupSubject.setTooltipText("Subject");
-//        checkboxGroupSubject.setLabel("Subject");
-        checkboxGroupSubject.setItems("Photography", "Street Photography", "Landscape", "Cityscape");
-        //   "Friday", "Saturday", "Sunday");
-        // checkboxGroup.addThemeVariants(CheckboxGroupVariant.LUMO_VERTICAL);
-//        Div lblFilterSubject = new Div("Subject");
+        headerContainer.add(header, subheader, divLine, headerSection);
 
-        layoutFilters.add(checkboxGroupSubject);
-
-
-//        CheckboxGroup<String> checkboxGroupFormat = new CheckboxGroup<>();
-//        checkboxGroupFormat.setTooltipText("Format");
-////        checkboxGroupFormat.setLabel("Format");
-//        checkboxGroupFormat.setItems("Book", "Youtube");
-////        Div lblFilterFormat = new Div("Format");
-//        layoutFilters.add(checkboxGroupFormat);
-
-
-        CheckboxGroup<String> checkboxGroupLocation = new CheckboxGroup<>();
-        checkboxGroupLocation.setTooltipText("Location");
-//         checkboxGroupLocation.setLabel("Location");
-        checkboxGroupLocation.setItems("Hungary", "UK", "Greece");//, "Thursday",
-
-        layoutFilters.add(checkboxGroupLocation);
-
-
-//        VerticalLayout layoutHeaderParameters = new VerticalLayout();
-//        if (isMobile) {
-//            layoutHeaderParameters.addClassNames(
-//                    AlignItems.CENTER, JustifyContent.EVENLY,
-//                    Overflow.HIDDEN, Width.FULL,
-//                    Margin.SMALL,
-//                    Padding.NONE,
-//                    Gap.XSMALL,
-//                    // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
-//                    //   Background.CONTRAST_5,
-//                    BorderRadius.NONE
-//            );
-//        } else {
-//            layoutHeaderParameters.addClassNames(
-//                    AlignItems.CENTER, JustifyContent.EVENLY,
-//                    Overflow.HIDDEN, Width.FULL,
-//                    Margin.SMALL,
-//                    Padding.NONE,
-//                    Gap.XSMALL,
-//                    // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
-////                       Background.CONTRAST_5,
-//                    BorderRadius.LARGE
-//            );
-//        }
-
-
-        Select<String> cmbView = new Select<>();
-        cmbView.setLabel("View");
-
-        cmbView.setItems("Micro View", "Ordinary - No MetaData", "Ordinary - MetaData Bottom", "Ordinary - MetaData Right",
-                "Wide - No MetaData", "Wide - MetaData Bottom", "Wide - MetaData Right");
-        cmbView.setValue("Ordinary - No MetaData");
-
-//        headerContainerMaster.add(headerTextContainer);
-        headerContainerSecondary.add(layoutFilters);
-//        layoutHeaderParameters.add( headerContainerSecondary, divSection);
-
-        HeaderFilterTabs headerFilterTabs = new HeaderFilterTabs(recordService, isMobile);
-        VerticalLayout layoutHeaderParameters = headerFilterTabs.getHeader(strHeader, strSubHeader, strSection, headerContainerSecondary);
-
-//        headerContainerMaster.add(headerTextContainer, cmbView);
-//        headerContainerSecondary.add(layoutFilters, sortBy);
-//        layoutHeaderParameters.add(headerContainerMaster,headerContainerSecondary);
-
-        return layoutHeaderParameters;
+        return headerContainer;
     }
 
     private void loadClubs(String sqlRead, String[] arrColumnNames) {

@@ -1,6 +1,7 @@
 package com.photo.act.photo_act.views;
 
 import com.photo.act.photo_act.db.RecordService;
+import com.photo.act.photo_act.services.EmailSendService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.photo.act.photo_act.views.components.DialogRegistration;
@@ -18,7 +19,10 @@ import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.login.LoginForm;
 import com.vaadin.flow.component.login.LoginI18n;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.router.*;
+import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.router.BeforeEnterObserver;
+import com.vaadin.flow.router.HasDynamicTitle;
+import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
@@ -26,6 +30,8 @@ import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.provisioning.UserDetailsManager;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -33,7 +39,9 @@ import java.util.Locale;
 
 import static com.photo.act.photo_act.views.MainLayout.*;
 
-@Route("login")
+// https://vaadin.com/docs/latest/building-apps/security/add-login/flow
+
+@Route(value = "login", autoLayout = false)
 @AnonymousAllowed
 public class LoginView extends VerticalLayout implements BeforeEnterObserver, HasComponents, HasDynamicTitle, HasStyle {
 
@@ -62,18 +70,22 @@ public class LoginView extends VerticalLayout implements BeforeEnterObserver, Ha
     private String strOS;
     private String strBrowser;
     private GenericView genericView;
+    private final LoginForm login;
+    @Autowired
+    UserDetailsManager userDetailsManager;
+    private EmailSendService emailSendService;
 
-    public LoginView(RecordService recordService) {
+    public LoginView(RecordService recordService, EmailSendService emailSendService) {
         this.recordService = recordService;
-
+        this.emailSendService = emailSendService;
         utilsDate = new UtilsDate();
-        genericView = new GenericView(recordService, 1);
+        genericView = new GenericView(recordService);
 
         constructUI();
 //        setAlignItems(Alignment.CENTER);
 //        setJustifyContentMode(JustifyContentMode.CENTER);
 
-        var login = new LoginForm();
+        login = new LoginForm();
         login.setAction("login");
         login.setForgotPasswordButtonVisible(false);
 //        login.addLoginListener(l -> UI.getCurrent().navigate("/home"));
@@ -85,17 +97,25 @@ public class LoginView extends VerticalLayout implements BeforeEnterObserver, Ha
         i18n.getForm().setTitle("Login");
 
         LoginI18n.ErrorMessage i18nErrorMessage = i18n.getErrorMessage();
-        i18nErrorMessage.setTitle("Väärä käyttäjätunnus tai salasana");
-        i18nErrorMessage.setMessage(
-                "Tarkista että käyttäjätunnus ja salasana ovat oikein ja yritä uudestaan.");
+        i18nErrorMessage.setTitle("Wrong credentials");
+        i18nErrorMessage.setMessage("Wrong credentials. Please retype username and password.");
         i18n.setErrorMessage(i18nErrorMessage);
         //i18n.setErrorMessage("Wrong credentials");
 //        i18n.getForm().setUsername("Email");
 //        i18n.getErrorMessage().setUsername("Email is required");
-        login.setI18n(i18n);
+        // login.setError(true);
+//        login.setI18n(i18n);
+//        login.addLoginListener(event -> {
+//
+//
+//            InMemoryUserDetailsManager inMemoryUserDetailsManager = new InMemoryUserDetailsManager();
+//            inMemoryUserDetailsManager.userExists(event.getUsername());
+//
+//
+//        });
 
         H1 titlePage = new H1(APP_NAME);
-        Span subTitle = new Span("[ Network and Act around Photography ]");
+        Span subTitle = new Span("[ Through Photography, We Connect and Act ]");
 
         Header siteHeader = new Header(titlePage, subTitle);
         siteHeader.addClassNames(LumoUtility.Width.FULL);
@@ -127,11 +147,20 @@ public class LoginView extends VerticalLayout implements BeforeEnterObserver, Ha
         return strHeader;
     }
 
+
     @Override
-    public void beforeEnter(@OptionalParameter BeforeEnterEvent event) {
+    public void beforeEnter(BeforeEnterEvent event) {
 
         getUserClientInfo();
 
+        if (event.getLocation()
+                .getQueryParameters()
+                .getParameters()
+                .containsKey("error")) {
+            login.setError(true);
+
+
+        }
     }
 
     private void constructUI() {
@@ -149,7 +178,7 @@ public class LoginView extends VerticalLayout implements BeforeEnterObserver, Ha
 
         DIR_PHOTOS_SERVER = genericView.getAppProps(PROP_PHOTOS);
 
-        Html htmlTitle = new Html("<title>'photoact.net Network and Act around Photography'</title>");
+        Html htmlTitle = new Html("<title>'photoact.net Through Photography, We Connect and Act'</title>");
         Html htmlMeta = new Html("<meta name='description' content='Get the latest updates from our community of photographers.'>");
         this.add(htmlTitle, htmlMeta);
 
@@ -159,7 +188,7 @@ public class LoginView extends VerticalLayout implements BeforeEnterObserver, Ha
 
     private void displayRegisterDialog() {
         DialogRegistration dialogRegister = new DialogRegistration(isMobile, "", sessionCreation, hostname, publicIp, recordService,
-                section, "register-from-login-view");
+                section, "register-from-login-view", emailSendService);
         dialogRegister.open();
     }
 

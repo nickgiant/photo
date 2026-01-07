@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheConfig;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.stereotype.Service;
@@ -74,6 +75,14 @@ public class CacheService {
         return null;
     }
 
+    @CacheEvict(value = "photos", allEntries = true)
+    public void evictAllPhotos() {
+    }
+
+    @CacheEvict(value = "photos", key = "#id")
+    public void evictPhotoId(String id) {
+
+    }
 
     public List<Record> getRecordsFromDb(String sql, String[] arrColumnNames) {
 

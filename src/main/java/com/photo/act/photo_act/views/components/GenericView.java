@@ -1,6 +1,9 @@
 package com.photo.act.photo_act.views.components;
 
 import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
+import com.github.prominence.openweathermap.api.exception.NoDataFoundException;
+import com.github.prominence.openweathermap.api.model.forecast.WeatherForecast;
+import com.github.prominence.openweathermap.api.model.weather.Weather;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.services.WeatherImageService;
@@ -17,14 +20,19 @@ import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.Scroller;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
+import com.vaadin.flow.component.radiobutton.RadioGroupVariant;
 import com.vaadin.flow.component.select.Select;
+import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.dom.Style;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
+import com.vaadin.flow.server.streams.DownloadHandler;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,8 +53,9 @@ import java.util.List;
 import java.util.Locale;
 
 import static com.photo.act.photo_act.views.AlbumsView.subPathThumbs;
+import static com.photo.act.photo_act.views.HomeView.subPathLarge;
 import static com.photo.act.photo_act.views.MainLayout.*;
-import static com.photo.act.photo_act.views.MeView.subPathLarge;
+
 
 public class GenericView {
 
@@ -78,7 +87,6 @@ public class GenericView {
             " FROM  photo_meta pm LEFT JOIN destination d ON pm.destination_Id = d.id " +
             " ORDER BY city_name ASC ";
 
-    private int userId;
     private UtilsDate utilsDate;
     private String strOS;
     private String strBrowser;
@@ -89,17 +97,17 @@ public class GenericView {
     private List<Record> recProps;
 
     private VerticalLayout layoutMeta;
-
+    private String strMemberId;
+    private Dialog dlgCarousel;
     private Div divCarousel;
     private Scroller scroller;
     //private VerticalLayout layoutMap;
 
 
-    public GenericView(RecordService recordService, int userId) {
+    public GenericView(RecordService recordService) {
         this.recordService = recordService;
-        this.userId = userId;
-        utilsDate = new UtilsDate();
 
+        utilsDate = new UtilsDate();
 
         getUserClientInfo();
 
@@ -114,6 +122,92 @@ public class GenericView {
         if (!(authentication instanceof AnonymousAuthenticationToken)) {
             String currentUserName = authentication.getName();
             return currentUserName;
+        } else {
+            return null;
+        }
+    }
+
+    public String checkIfAuthMemberId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (!(authentication instanceof AnonymousAuthenticationToken)) {
+            String currentUserName = authentication.getName();
+
+
+            String[] arrColumnNames = {"userId", "username", "avatar_path", "name", "surname"};
+            String sqlMember = "SELECT " +
+                    "   usr.userId,  usr.username,  " +
+                    "  usr.avatar_path, name, surname, short_bio, url_insta, url_fb, url_flickr, url_yt, email, resident, resident_country " +
+                    //     "--  , pa.inc, pm.title, pm.id, pm.name_new, pm.title, pm.subtitle, pm.space_size, pm.location_by_user\\n\" +\n" +
+                    " FROM dbuser usr " +
+                    " WHERE username = '" + currentUserName + "' ";
+
+            List<Record> lstRecords = getRecordsFromDb(sqlMember, arrColumnNames);
+            Record rec = lstRecords.get(0);
+
+            strMemberId = rec.getColumnData("userId");
+
+
+            return strMemberId;
+        } else {
+            return null;
+        }
+    }
+
+    public int getAuthMemberMonthCount() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        int intMonths = 0;
+        if (!(authentication instanceof AnonymousAuthenticationToken)) {
+            String currentUserName = authentication.getName();
+
+
+            String[] arrColumnNames = {"userId", "username", "member_for_months", "avatar_path", "name", "surname"};
+            String sqlMember = "SELECT " +
+                    "   usr.userId,  usr.username " +
+                    " , TIMESTAMPDIFF(MONTH, date_joined, NOW()) AS member_for_months " +
+                    " , usr.avatar_path, name, surname, short_bio, url_insta, url_fb, url_flickr, url_yt, email, resident, resident_country " +
+                    //     "--  , pa.inc, pm.title, pm.id, pm.name_new, pm.title, pm.subtitle, pm.space_size, pm.location_by_user\\n\" +\n" +
+                    " FROM dbuser usr " +
+                    " WHERE username = '" + currentUserName + "' ";
+
+            List<Record> lstRecords = getRecordsFromDb(sqlMember, arrColumnNames);
+            Record rec = lstRecords.get(0);
+
+            try {
+
+                intMonths = Integer.parseInt(rec.getColumnData("member_for_months"));
+            } catch (Exception e) {
+                logger.error("Month count error: " + e.getMessage());
+            }
+
+
+            return intMonths;
+        } else {
+            return 0;
+        }
+    }
+
+    public String getAuthAvatarPath() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (!(authentication instanceof AnonymousAuthenticationToken)) {
+            String currentUserName = authentication.getName();
+
+
+            String[] arrColumnNames = {"userId", "username", "avatar_path", "name", "surname"};
+            String sqlMember = "SELECT " +
+                    "   usr.userId,  usr.username,  " +
+                    "  usr.avatar_path, name, surname, short_bio, url_insta, url_fb, url_flickr, url_yt, email, resident, resident_country " +
+                    //     "--  , pa.inc, pm.title, pm.id, pm.name_new, pm.title, pm.subtitle, pm.space_size, pm.location_by_user\\n\" +\n" +
+                    " FROM dbuser usr " +
+                    " WHERE username = '" + currentUserName + "' ";
+
+            List<Record> lstRecords = getRecordsFromDb(sqlMember, arrColumnNames);
+            Record rec = lstRecords.get(0);
+
+            String strAvatarPath = rec.getColumnData("avatar_path");
+
+            return strAvatarPath;
         } else {
             return null;
         }
@@ -135,7 +229,7 @@ public class GenericView {
 
         String strName = rec.getColumnData("name");
         String strSurname = rec.getColumnData("surname");
-//        String strUsername = rec.getColumnData("username");
+//      String strUsername = rec.getColumnData("username");
         String strMemberFor = rec.getColumnData("member_for");
         String strAvatarPath = rec.getColumnData("avatar_path");
 
@@ -177,8 +271,6 @@ public class GenericView {
         layoutWeather.addClassNames(
                 LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER
         );
-//        layoutWeather.addClassName("lazy-card-overview-min-space");
-        //layoutWeather.addClassName("lazy-card-overview-border-solid");
 
         WeatherService weatherService = new WeatherService("metric");
 
@@ -337,8 +429,364 @@ public class GenericView {
             layout.setPadding(false);
             return layout;
         }
-
     }
+
+    public String[] getLocationCoordinates(String destination, String country) {
+        WeatherService weatherService = new WeatherService("metric");
+        String[] locations = weatherService.lookUpLocation(destination, "", country);
+        return locations;
+    }
+
+    public VerticalLayout getWeatherApiCurrent(String destination, String country) {
+
+        WeatherImageService weatherImage = new WeatherImageService();
+        WeatherService weatherService = new WeatherService("metric");
+
+        HorizontalLayout layoutWeather = new HorizontalLayout();
+        layoutWeather.getStyle().setColor("#8b94a0");
+        layoutWeather.addClassNames(
+                LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER
+        );
+
+        Anchor apiLink = new Anchor();
+        apiLink.getStyle().setColor("#8b94a0");
+        apiLink.setClassName("lazy-api-link");
+        apiLink.setHref(weatherService.getUrlReference());
+        apiLink.setTarget("_blank");
+        apiLink.setText("Weather data by: " + weatherService.getTitleReference());
+
+        VerticalLayout layout = new VerticalLayout();
+        layout.setMargin(false);
+        layout.setSpacing(false);
+        layout.setPadding(false);
+        layout.addClassNames(LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER);
+
+        layout.add(layoutWeather, apiLink);
+
+        try {
+            Weather weatherCurrent = weatherService.getApiCurrent(destination, country); //getCurrentWeatherDataMetric(locations);
+
+
+//        layoutWeather.addClassName("lazy-card-overview-min-space");
+            //layoutWeather.addClassName("lazy-card-overview-border-solid");
+
+//        WeatherService weatherService = new WeatherService("metric");
+
+//        String[] locations = weatherService.lookUpLocation(destination, "", country);
+//        if (locations != null) {
+//            for (int i = 0; i < locations.length; i++) {
+//                logger.info("locations  " + locations[i]);
+//            }
+//            String[] currentWeatherData = weatherService.getCurrentWeatherDataMetric(locations);
+            //String[][] dailyForecast =weatherService.getDailyForecastMetric(locations);
+
+//        layoutWeather.getStyle().setAlignItems(Style.AlignItems.CENTER);
+//        layoutWeather.getStyle().setJustifyContent(Style.JustifyContent.SPACE_AROUND);
+
+            VerticalLayout layoutLeft = new VerticalLayout();
+            layoutLeft.setMargin(false);
+            layoutLeft.setSpacing(false);
+            layoutLeft.setPadding(false);
+
+
+            Image imageWeather = new Image();
+            imageWeather.getStyle().setOpacity("62%");
+
+//            StreamResource iconWeather = new StreamResource(currentWeatherData[5],
+//                    () -> getClass().getResourceAsStream(weatherImage.weatherImage(currentWeatherData)));
+            String imgPath = weatherImage.getImageApiWeather(weatherCurrent);
+            imageWeather.setSrc(DownloadHandler.forClassResource(getClass(), imgPath));
+
+            imageWeather.setWidth("80px");
+            imageWeather.setHeight("auto");
+            imageWeather.setAlt(weatherCurrent.getWeatherState().getDescription());
+
+            VerticalLayout layoutRight = new VerticalLayout();
+            layoutRight.setMinWidth("200px");
+            layoutRight.setMargin(false);
+            layoutRight.setSpacing(false);
+            layoutRight.setPadding(false);
+
+            layoutLeft.add(imageWeather);
+            layoutLeft.setSizeFull();
+            Div hTemp = new Div(weatherCurrent.getTemperature().getValue() + " " + weatherCurrent.getTemperature().getUnit());
+            hTemp.addClassName("lazy-card-overview-font-big");
+            hTemp.getStyle().setFontSize("26px");
+            hTemp.getStyle().setFontWeight(Style.FontWeight.BOLDER);
+            layoutLeft.add(hTemp);
+
+            Div hConditionName = new Div(weatherCurrent.getWeatherState().getWeatherConditionEnum().getName());
+            hConditionName.addClassName("lazy-card-overview-font-big");
+            hConditionName.getStyle().setFontSize("16px");
+            hConditionName.getStyle().setFontWeight(Style.FontWeight.BOLD);
+//        Div hConditionDescr = new Div(weatherCurrent.getWeatherState().getWeatherConditionEnum().getDescription());
+//        hConditionDescr.addClassName("lazy-card-overview-font-big");
+//        hConditionDescr.getStyle().setFontSize("14px");
+
+            layoutLeft.add(hConditionName);
+
+//        Div divTime = new Div(currentWeatherData[14]);
+//        divTime.getStyle().setFontWeight(Style.FontWeight.BOLDER);
+
+//        Div divSunRise = new Div(currentWeatherData[12]);
+//        divSunRise.getStyle().setFontWeight(Style.FontWeight.BOLD);
+//
+//        Div divSunset = new Div(currentWeatherData[13]);
+//        divSunset.getStyle().setFontWeight(Style.FontWeight.BOLD);
+
+//        String strIconSize = "35px";
+
+//        Image imageSunrise = new Image();
+//        StreamResource iconSunrise = new StreamResource("Sunrise",
+//                () -> getClass().getResourceAsStream("/icons/sunrise.png"));
+//        imageSunrise.setSrc(iconSunrise);
+//        imageSunrise.setAlt("Sunrise");
+////        imageSunrise.setClassName("lazy-card-travel-weather-icons");
+//        imageSunrise.getStyle().setWidth(strIconSize);
+//        imageSunrise.getStyle().setHeight(strIconSize);
+//
+//        Image imageSet = new Image();
+//        StreamResource iconSunset = new StreamResource("Sunset",
+//                () -> getClass().getResourceAsStream("/icons/sunset.png"));
+//        imageSet.setSrc(iconSunset);
+//        imageSet.setAlt("Sunset");
+////        imageSet.setClassName("lazy-card-travel-weather-icons");
+//        imageSet.getStyle().setWidth(strIconSize);
+//        imageSet.getStyle().setHeight(strIconSize);
+//
+
+//        Div divTime = new Div(weatherCurrent.getCalculationTime().getDayOfWeek() + "");
+//        divTime.getStyle().setFontSize("11px");
+
+//        Div divToday = new Div("Today");
+//        layoutRight.add(new HorizontalLayout(divTime));
+//        layoutRight.add(new HorizontalLayout(new Div("Sunrise: "), divSunRise));
+//        layoutRight.add(new HorizontalLayout(new Div("Sunset: "), divSunset));
+            // layoutRight.add(new HorizontalLayout(new Div("Sunset: "), divSunset));
+
+
+            Div divL = new Div(weatherCurrent.getTemperature().getMinTemperature() + "" + weatherCurrent.getTemperature().getUnit());
+            divL.getStyle().setFontWeight(Style.FontWeight.BOLDER);
+
+            Div divH = new Div(weatherCurrent.getTemperature().getMaxTemperature() + "" + weatherCurrent.getTemperature().getUnit());
+            divH.getStyle().setFontWeight(Style.FontWeight.BOLDER);
+
+
+            Div divFeelsLike = new Div(weatherCurrent.getTemperature().getFeelsLike() + " " + weatherCurrent.getTemperature().getUnit());
+            divFeelsLike.getStyle().setFontWeight(Style.FontWeight.BOLDER);
+
+            Div divHumidity = new Div(weatherCurrent.getHumidity().getValue() + " " + weatherCurrent.getHumidity().getUnit());
+            divHumidity.getStyle().setFontWeight(Style.FontWeight.BOLDER);
+
+            Div divWindSpeed = new Div(weatherCurrent.getWind().getSpeed() + "m/s");
+            divWindSpeed.getStyle().setFontWeight(Style.FontWeight.BOLDER);
+
+            Div divWindDegrees = new Div(weatherCurrent.getWind().getDegrees() + "d");
+            divWindDegrees.getStyle().setFontWeight(Style.FontWeight.BOLDER);
+//        Div divWindUnit = new Div("m/s");
+
+            Div divClouds = new Div(weatherCurrent.getClouds().getValue() + " " + weatherCurrent.getClouds().getUnit());
+            divClouds.getStyle().setFontWeight(Style.FontWeight.BOLDER);
+
+            Div divRain = new Div();
+            String strRain = "";
+
+
+//                Div divVisibility = new Div(weatherForecast.get);
+//                divVisibility.getStyle().setFontWeight(Style.FontWeight.BOLDER);
+
+
+//            layoutRight.add(new HorizontalLayout(new Div("L: "), divL, new Div("H: "), divH));
+
+            layoutRight.add(new HorizontalLayout(new Div("Feels like: "), divFeelsLike));
+            layoutRight.add(new HorizontalLayout(new Div("L:"), divL, new Div("H:"), divH));
+            layoutRight.add(new HorizontalLayout(new Div("Clouds: "), divClouds));
+
+            if (weatherCurrent.getRain() != null) {
+                divRain.setText(weatherCurrent.getRain().getOneHourLevel() + " " + weatherCurrent.getRain().getUnit() + " (in 1h)");
+                divRain.getStyle().setFontWeight(Style.FontWeight.BOLDER);
+                layoutRight.add(new HorizontalLayout(new Div("Rain: "), divRain));
+            }
+
+            layoutRight.add(new HorizontalLayout(new Div("Humidity: "), divHumidity));
+            layoutRight.add(new HorizontalLayout(new Div("Wind: "), divWindSpeed, new Div("  "), divWindDegrees));
+
+            layoutWeather.add(layoutLeft, layoutRight);
+
+        } catch (NoDataFoundException e) {
+            layout.removeAll();
+            layout.setVisible(false);
+        }
+
+        layout.setMargin(false);
+        layout.setSpacing(false);
+        layout.setPadding(false);
+
+        return layout;
+    }
+
+    public VerticalLayout getWeatherApiForecast(String destination, String country, int countOfTimeStamps) {
+
+        WeatherService weatherServiceForecast = new WeatherService("metric");
+
+        List<WeatherForecast> weatherForecasts = weatherServiceForecast.getApiForecast(destination, country, countOfTimeStamps); //getCurrentWeatherDataMetric(locations);
+
+        VerticalLayout layout = new VerticalLayout();
+        layout.setMargin(false);
+        layout.setSpacing(false);
+        layout.setPadding(false);
+        layout.addClassNames(LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER);
+
+        for (int f = 0; f < weatherForecasts.size(); f++) {
+
+            HorizontalLayout layoutWeather = new HorizontalLayout();
+            layoutWeather.getStyle().setColor("#8b94a0");
+            layoutWeather.addClassNames(
+                    LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER
+            );
+
+            logger.info(f + " -> " + weatherForecasts.get(f).getForecastTime().getDayOfWeek() + " - " + weatherForecasts.get(f).getForecastTime().getMonth() + "  //  " + weatherForecasts.get(f).getForecastTime().getHour() + ":" + weatherForecasts.get(f).getForecastTime().getMinute());
+
+            WeatherForecast weatherForecast = weatherForecasts.get(f);
+
+            VerticalLayout layoutLeft = new VerticalLayout();
+            layoutLeft.setMargin(false);
+            layoutLeft.setSpacing(false);
+            layoutLeft.setPadding(false);
+
+            WeatherImageService weatherImage = new WeatherImageService();
+
+            Image imageWeather = new Image();
+            imageWeather.getStyle().setOpacity("62%");
+
+            String imgPath = weatherImage.getImageApiForecast(weatherForecast);
+            imageWeather.setSrc(DownloadHandler.forClassResource(getClass(), imgPath));
+
+            imageWeather.setMaxWidth("80px");
+            imageWeather.setAlt(weatherForecast.getWeatherState().getWeatherConditionEnum().getName());
+
+            VerticalLayout layoutRight = new VerticalLayout();
+            layoutRight.setMinWidth("180px");
+            layoutRight.setMargin(false);
+            layoutRight.setSpacing(false);
+            layoutRight.setPadding(false);
+
+            layoutLeft.add(imageWeather);
+            layoutLeft.setSizeFull();
+            Div hTemp = new Div(weatherForecast.getTemperature().getValue() + " " + weatherForecast.getTemperature().getUnit());
+            hTemp.addClassName("lazy-card-overview-font-big");
+            hTemp.getStyle().setFontSize("26px");
+            hTemp.getStyle().setFontWeight(Style.FontWeight.BOLDER);
+            layoutLeft.add(hTemp);
+
+            Div hConditionName = new Div(weatherForecast.getWeatherState().getWeatherConditionEnum().getName());
+            hConditionName.addClassName("lazy-card-overview-font-big");
+            hConditionName.getStyle().setFontSize("16px");
+            hConditionName.getStyle().setFontWeight(Style.FontWeight.BOLD);
+//            Div hConditionDescr = new Div(weatherForecast.getWeatherState().getWeatherConditionEnum().getDescription());
+//            hConditionDescr.addClassName("lazy-card-overview-font-big");
+//            hConditionDescr.getStyle().setFontSize("14px");
+
+            layoutLeft.add(hConditionName); //, hConditionDescr);
+
+            Div divTime = new Div(weatherForecast.getForecastTime().getDayOfWeek() + " / " + weatherForecast.getForecastTime().getHour());
+            divTime.getStyle().setFontWeight(Style.FontWeight.BOLDER);
+
+            String strIconSize = "35px";
+
+//                Image imageSunrise = new Image();
+//                StreamResource iconSunrise = new StreamResource("Sunrise",
+//                        () -> getClass().getResourceAsStream("/icons/sunrise.png"));
+//                imageSunrise.setSrc(iconSunrise);
+//                imageSunrise.setAlt("Sunrise");
+////        imageSunrise.setClassName("lazy-card-travel-weather-icons");
+//                imageSunrise.getStyle().setWidth(strIconSize);
+//                imageSunrise.getStyle().setHeight(strIconSize);
+//
+//                Image imageSet = new Image();
+//                StreamResource iconSunset = new StreamResource("Sunset",
+//                        () -> getClass().getResourceAsStream("/icons/sunset.png"));
+//                imageSet.setSrc(iconSunset);
+//                imageSet.setAlt("Sunset");
+////        imageSet.setClassName("lazy-card-travel-weather-icons");
+//                imageSet.getStyle().setWidth(strIconSize);
+//                imageSet.getStyle().setHeight(strIconSize);
+
+
+            Div divToday = new Div(weatherForecasts.get(f).getDayTime().toString());
+            divToday.getStyle().setFontSize("11px");
+            Div divNow = new Div(weatherForecasts.get(f).getForecastTime().getDayOfWeek() + " Hour: " + weatherForecasts.get(f).getForecastTime().getHour());
+            divNow.getStyle().setFontSize("11px");
+            layoutRight.add(new HorizontalLayout(divToday, divNow));
+//                layoutRight.add(new HorizontalLayout(new Div("Sunrise: "), divSunRise));
+//                layoutRight.add(new HorizontalLayout(new Div("Sunset: "), divSunset));
+            // layoutRight.add(new HorizontalLayout(new Div("Sunset: "), divSunset));
+
+
+//            Div divL = new Div(weatherForecast.getTemperature().getMinTemperature() + "" + weatherForecast.getTemperature().getUnit());
+//            divL.getStyle().setFontWeight(Style.FontWeight.BOLDER);
+//
+//            Div divH = new Div(weatherForecast.getTemperature().getMaxTemperature() + "" + weatherForecast.getTemperature().getUnit());
+//            divH.getStyle().setFontWeight(Style.FontWeight.BOLDER);
+
+
+            Div divFeelsLike = new Div(weatherForecast.getTemperature().getFeelsLike() + weatherForecast.getTemperature().getUnit());
+            divFeelsLike.getStyle().setFontWeight(Style.FontWeight.BOLDER);
+
+            Div divHumidity = new Div(weatherForecast.getHumidity().getValue() + " " + weatherForecast.getHumidity().getUnit());
+            divHumidity.getStyle().setFontWeight(Style.FontWeight.BOLDER);
+
+            Div divWindSpeed = new Div(weatherForecast.getWind().getSpeed() + "m/s");
+            divWindSpeed.getStyle().setFontWeight(Style.FontWeight.BOLDER);
+
+            Div divWindDegrees = new Div(weatherForecast.getWind().getDegrees() + "d");
+            divWindDegrees.getStyle().setFontWeight(Style.FontWeight.BOLDER);
+
+            Div divClouds = new Div(weatherForecast.getClouds().getValue() + " " + weatherForecast.getClouds().getUnit());
+            divClouds.getStyle().setFontWeight(Style.FontWeight.BOLDER);
+
+            Div divRain = new Div();
+            String strRain = "";
+
+
+//                Div divVisibility = new Div(weatherForecast.get);
+//                divVisibility.getStyle().setFontWeight(Style.FontWeight.BOLDER);
+
+
+//            layoutRight.add(new HorizontalLayout(new Div("L: "), divL, new Div("H: "), divH));
+
+            layoutRight.add(new HorizontalLayout(new Div("Feels like: "), divFeelsLike));
+            layoutRight.add(new HorizontalLayout(new Div("Clouds: "), divClouds));
+
+            if (weatherForecast.getRain() != null) {
+                divRain.setText(weatherForecast.getRain().getThreeHourLevel() + " " + weatherForecast.getRain().getUnit() + " (in 3h)");
+                divRain.getStyle().setFontWeight(Style.FontWeight.BOLDER);
+                layoutRight.add(new HorizontalLayout(new Div("Rain: "), divRain));
+            }
+
+            layoutRight.add(new HorizontalLayout(new Div("Humidity: "), divHumidity));
+            layoutRight.add(new HorizontalLayout(new Div("Wind: "), divWindSpeed, new Div("  "), divWindDegrees));
+
+            layoutWeather.add(layoutLeft, layoutRight);
+
+            layout.setMargin(false);
+            layout.setSpacing(false);
+            layout.setPadding(false);
+
+            layout.add(layoutWeather);
+        }
+
+        Anchor apiLink = new Anchor();
+        apiLink.getStyle().setColor("#8b94a0");
+        apiLink.setClassName("lazy-api-link");
+        apiLink.setHref(weatherServiceForecast.getUrlReference());
+        apiLink.setTarget("_blank");
+        apiLink.setText("Weather data by: " + weatherServiceForecast.getTitleReference());
+
+        layout.add(apiLink);
+        return layout;
+    }
+
 
     public Image getAvatarImage(String strAvatarPath, String altDescr, String width, String height) {
 
@@ -346,81 +794,33 @@ public class GenericView {
         Path path = Paths.get(strAvatarFullPath);
         File file = path.toFile();
 
-        final StreamResource imageResource = new StreamResource("streamResource", () -> {
-            try {
-                logger.info("GenericView strAvatarFullPath:" + file.getAbsolutePath());
-                return new FileInputStream(file);
-            } catch (final FileNotFoundException e) {
-                logErrorInDb(e, "GenericView StreamResource FileNotFoundException", hostname, userId, "", publicIp, sessionCreation, file.getAbsolutePath());
-                // logErrorInDb(e,hostname,"CreationsViewCard StreamResource",userId,strUserName,file.getAbsolutePath());
-                logger.error("GenericView FileNotFoundException  " + e.getMessage() + "  " + file.getAbsolutePath());
-            }
-            return null;
-        });
-
         Image image = new Image();
         image.setWidth(width);
         image.setHeight(height);
         image.addClassNames(LumoUtility.BorderRadius.FULL);
         image.setAlt(altDescr);
-        image.setSrc(imageResource);
+        image.setSrc(DownloadHandler.forFile(file));
 
         return image;
     }
 
-    public Dialog showCarouselDialog(String sqlRead, String sqlReadOrderBy, String[] arrColumnNames, String strSelection, String filterColumn,
-                                     String sqlReadSelection, String[] arrColumnNamesSelection) {
+    public Dialog showCarouselDialog(int isType, String sqlRead, String sqlReadOrderBy, String[] arrColumnNames, String strSelection, String filterColumn,
+                                     String sqlReadSelection, String[] arrColumnNamesSelection, String strPhotoId, String strAlbumUsername, boolean isOnlyRating) {
 
-        Dialog dlgCarousel = new Dialog();
-        dlgCarousel.setDraggable(false);
+        dlgCarousel = new Dialog();
+        dlgCarousel.setDraggable(true);
         dlgCarousel.setResizable(true);
-        dlgCarousel.setWidthFull();
         dlgCarousel.setHeightFull();
         dlgCarousel.addClassNames(LumoUtility.Overflow.HIDDEN,
-                LumoUtility.Margin.NONE, LumoUtility.Padding.SMALL,
+                LumoUtility.Margin.NONE, LumoUtility.Padding.XSMALL,
                 LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER,
                 LumoUtility.BorderRadius.NONE);
         dlgCarousel.setCloseOnOutsideClick(true);
         dlgCarousel.setCloseOnEsc(true);
 
-        HorizontalLayout layoutTitle = new HorizontalLayout();
-
+        /*HorizontalLayout layoutTitle = new HorizontalLayout();
         layoutTitle.addClassNames(LumoUtility.Width.FULL, LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.BETWEEN);
         Div divTitle = new Div("-");
-
-
-        List<Record> lstDestinationRecs = getRecordsFromDb(sqlReadSelection, arrColumnNamesSelection);
-        ArrayList<String> lstDestinations = new ArrayList<>();
-        for (int r = 0; r < lstDestinationRecs.size(); r++) {
-            String strDestination = lstDestinationRecs.get(r).getColumnData("title");
-            if (strDestination == null || strDestination.trim().isEmpty() || strDestination.trim().equalsIgnoreCase("null")) {
-            } else {
-                lstDestinations.add(strDestination);
-            }
-
-        }
-
-        HorizontalLayout layoutAlbumController = new HorizontalLayout();
-        layoutAlbumController.addClassNames(LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.EVENLY);
-        Select<String> cmbAlbum = new Select<>();
-        cmbAlbum.setMinWidth("330px");
-
-        Button btnLeft = new Button();
-        btnLeft.setIcon(FontAwesome.Solid.ARROW_LEFT_LONG.create());
-        Button btnRight = new Button();
-        btnRight.setIcon(FontAwesome.Solid.ARROW_RIGHT_LONG.create());
-        layoutAlbumController.add(cmbAlbum);
-
-        cmbAlbum.setItems(lstDestinations);
-
-        if (cmbAlbum.getValue() == null || cmbAlbum.getValue().equalsIgnoreCase("null") || cmbAlbum.getValue().isEmpty()) {
-            cmbAlbum.setValue(strSelection);
-        }
-
-        cmbAlbum.addValueChangeListener(event -> {
-            HorizontalLayout layoutLocationThumbs = selectLocation(event.getValue(), sqlRead, sqlReadOrderBy, filterColumn);
-            scroller.setContent(layoutLocationThumbs);
-        });
 
         Button btnClose = new Button();
         btnClose.setIcon(VaadinIcon.CLOSE.create());
@@ -428,106 +828,228 @@ public class GenericView {
             dlgCarousel.close();
         });
 
-        layoutTitle.add(divTitle, layoutAlbumController, btnClose);
+        layoutTitle.add(divTitle, btnClose);
 
         dlgCarousel.add(layoutTitle);
-        dlgCarousel.add(loadCarouselWithThumbnails(sqlRead, sqlReadOrderBy, arrColumnNames, strSelection, filterColumn,
-                sqlReadSelection, arrColumnNamesSelection));
+         */
+        dlgCarousel.add(loadCarouselWithThumbnails(isType, sqlRead, sqlReadOrderBy, arrColumnNames, strSelection, filterColumn,
+                sqlReadSelection, arrColumnNamesSelection, strPhotoId, strAlbumUsername, isOnlyRating));
         return dlgCarousel;
     }
 
-    public VerticalLayout loadCarouselWithThumbnails(String sqlRead, String sqlReadOrderBy, String[] arrColumnNames, String strSelection, String filterColumn,
-                                                     String sqlReadSelection, String[] arrColumnNamesSelection) {
+    public VerticalLayout loadCarouselWithThumbnails(int isType, String sqlRead, String sqlReadOrderBy, String[] arrColumnNames, String strSelection,
+                                                     String filterColumn, String sqlReadSelection, String[] arrColumnNamesSelection, String strPhotoId,
+                                                     String strAlbumUsername, boolean isOnlyRating) {
         String sqlReadPhotos = "";
+
         if (strSelection.isEmpty()) {
-            sqlReadPhotos = sqlRead + " " + sqlReadOrderBy;
+            if (isType == 2 || isType == 3) {
+                sqlReadPhotos = sqlRead;
+            } else {
+                sqlReadPhotos = sqlRead + " " + sqlReadOrderBy;
+            }
         } else {
-            sqlReadPhotos = sqlRead + " AND " + filterColumn + " LIKE '" + strSelection + "' " + sqlReadOrderBy;
+            if (isType == 2 || isType == 3) {
+
+                sqlReadPhotos = sqlRead + " AND " + filterColumn + " LIKE '" + strSelection + "' ";
+            } else if (isType == 1) {
+
+                sqlReadPhotos = sqlRead + " AND " + filterColumn + " LIKE '" + strSelection + "' ";
+            }
         }
 
         arrColumnsGallery = arrColumnNames;
-//
-//        sqlReadDestination = sqlReadSelection;
-//        arrDestinationNames = arrColumnNamesSelection;
 
         VerticalLayout layoutPhotoInfo = new VerticalLayout();
 
         divCarousel = new Div();
-        divCarousel.addClassNames(LumoUtility.Overflow.HIDDEN,
-                LumoUtility.Width.FULL, LumoUtility.Height.AUTO,
+        divCarousel.addClassNames(LumoUtility.Overflow.SCROLL,
+                LumoUtility.Width.FULL, LumoUtility.Height.FULL, // <--
                 LumoUtility.Margin.NONE, LumoUtility.Padding.XSMALL,
                 LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER,
                 LumoUtility.BorderRadius.LARGE);
 
-
         VerticalLayout layoutAll = new VerticalLayout();
         layoutAll.addClassNames(LumoUtility.Overflow.HIDDEN,
-                LumoUtility.Width.FULL, //LumoUtility.Height.FULL,
+                LumoUtility.Width.FULL, LumoUtility.Height.FULL,
                 LumoUtility.Margin.NONE, LumoUtility.Padding.NONE,
                 LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER,
                 LumoUtility.BorderRadius.NONE);
 
         scroller = new Scroller();
 
-        Image imageLarge = fetchPhotosLarge(sqlReadPhotos, arrColumnsGallery).get(0);
-        imageLarge.addClassNames(LumoUtility.Width.FULL, LumoUtility.Height.FULL);
-        imageLarge.addClassName("image-to-show");
         List<Record> lstImageFiles = getRecordsFromDb(sqlRead, arrColumnNames);
-        Record record = lstImageFiles.get(0);
+        Record record = null;
+        for (int r = 0; r < lstImageFiles.size(); r++) {
+            String strPhotoIdDb = lstImageFiles.get(r).getColumnData("id");
+            if (strPhotoIdDb.equalsIgnoreCase(strPhotoId)) {
+                record = lstImageFiles.get(r);
+            }
+        }
+
+        String strMetaOrientation = record.getColumnData("meta_orientation");
+        Image imageLarge = fetchPhotosLarge(sqlReadPhotos, arrColumnsGallery, strPhotoId);
+        imageLarge.addClassNames(LumoUtility.Width.FULL, LumoUtility.Height.FULL);
+        if (strMetaOrientation.equalsIgnoreCase("8")) {
+            imageLarge.getStyle().set("rotate", "-90deg");
+        } else if (strMetaOrientation.equalsIgnoreCase("6")) {
+            imageLarge.getStyle().set("rotate", "90deg");
+        }
+        imageLarge.getStyle().set("object-fit", "contain");
+        imageLarge.addClassName("image-to-show");
+
 
         layoutMeta = new VerticalLayout();
-        layoutMeta.addClassNames(LumoUtility.Height.FULL,
-                LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER
-                // LumoUtility.Background.CONTRAST_5
+        layoutMeta.addClassNames(
+                LumoUtility.Height.FULL, LumoUtility.Width.FULL,
+                LumoUtility.AlignItems.START, LumoUtility.JustifyContent.CENTER,
+                LumoUtility.Padding.NONE, LumoUtility.Margin.NONE,
+                LumoUtility.Gap.XSMALL
         );
 
-        layoutMeta.add(fetchPhotoMetaInfoOnCarousel(record));
+        final Record finalRec = record;
+        HorizontalLayout layoutTabSelect = new HorizontalLayout();
+        layoutTabSelect.addClassName("thin-tab-select");
+        RadioButtonGroup<String> btnGroupSelect = new RadioButtonGroup<>();
+        btnGroupSelect.setItems("Meta Data", "Rate");
+        btnGroupSelect.addValueChangeListener(event -> {
+            if (event.getSource().getValue().contains("Meta")) {
+                layoutMeta.removeAll();
+                layoutMeta.add(fetchPhotoMetaInfoOnCarousel(finalRec));
+                layoutMeta.add(fetchPhotoCreatorOnCarousel(finalRec));
+            } else {
+                layoutMeta.removeAll();
+                layoutMeta.add(loadPanelRate(strPhotoId));
+//                layoutMeta.add(fetchPhotoCreatorOnCarousel(finalRec));
+            }
+        });
+        layoutTabSelect.add(btnGroupSelect);
+        btnGroupSelect.setValue("Meta Data");
+
         imageLarge.getStyle().setOpacity("1");
         divCarousel.add(imageLarge);
 
         layoutPhotoInfo.addClassNames(LumoUtility.Overflow.HIDDEN,
-                LumoUtility.Height.FULL, LumoUtility.Width.FULL,  //must be comment
+                LumoUtility.Height.FULL,// LumoUtility.Width.FULL,  //must be comment, look bellow -> setWidth
                 LumoUtility.Margin.NONE, LumoUtility.Padding.NONE,
                 LumoUtility.BorderRadius.LARGE,
-//                LumoUtility.Background.CONTRAST_5,
-                LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER);
-        layoutPhotoInfo.setWidth("260px");
+                LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.START);
+        layoutPhotoInfo.setWidth("420px");
 
-        scroller.setScrollDirection(Scroller.ScrollDirection.HORIZONTAL);
-        scroller.addClassNames(
-                LumoUtility.Width.FULL,
-                LumoUtility.Margin.NONE, LumoUtility.Padding.SMALL,
-                LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER
-        );
+        HorizontalLayout horizontalLayout = new HorizontalLayout();
+        horizontalLayout.addClassNames(LumoUtility.Width.FULL,
+                LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.BETWEEN,
+                LumoUtility.Margin.NONE, LumoUtility.Padding.NONE);
 
-        HorizontalLayout layoutThumbs = fetchThumbs(sqlReadPhotos, arrColumnsGallery);
-        scroller.setContent(layoutThumbs);
+        Button btnClose = new Button();
+        btnClose.setIcon(VaadinIcon.CLOSE.create());
+        btnClose.addClickListener(event -> {
+            dlgCarousel.close();
+        });
+
+        horizontalLayout.add(layoutTabSelect, btnClose);
+        layoutPhotoInfo.add(horizontalLayout, layoutMeta);
 
         HorizontalLayout layoutThumbsFull = new HorizontalLayout();
         layoutThumbsFull.addClassNames(LumoUtility.Width.FULL,
                 LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER,
-                LumoUtility.Margin.NONE, LumoUtility.Padding.XSMALL,
+                LumoUtility.Margin.NONE, LumoUtility.Padding.NONE,
                 LumoUtility.Background.CONTRAST_5,
                 LumoUtility.BorderRadius.SMALL
         );
 
-        Button btnThumbsLeft = new Button();
-        btnThumbsLeft.setIcon(FontAwesome.Solid.ARROW_LEFT.create());
+        if (!isOnlyRating) {
 
-        Button btnThumbsRight = new Button();
-        btnThumbsRight.setIcon(FontAwesome.Solid.ARROW_RIGHT.create());
-        // btnThumbsLeft, scroller, btnThumbsRight);
-        layoutThumbsFull.add(scroller);
+            List<Record> lstDestinationRecs = getRecordsFromDb(sqlReadSelection, arrColumnNamesSelection);
+            ArrayList<String> lstDestinations = new ArrayList<>();
+            for (int r = 0; r < lstDestinationRecs.size(); r++) {
+                String strDestination = "";
+                if (isType == 1) {
+                    strDestination = lstDestinationRecs.get(r).getColumnData("title");
+                } else if (isType == 2) {
+                    strDestination = lstDestinationRecs.get(r).getColumnData("city_name");
+                } else if (isType == 3) {
+                    strDestination = lstDestinationRecs.get(r).getColumnData("subject_name");
+                }
+                if (strDestination.trim().isEmpty() || strDestination.trim().equalsIgnoreCase("null")) {
+                } else {
+                    lstDestinations.add(strDestination);
+                }
+            }
 
-        layoutPhotoInfo.add(layoutMeta);
+            HorizontalLayout layoutAlbumController = new HorizontalLayout();
+            layoutAlbumController.addClassNames(LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.EVENLY,
+                    LumoUtility.Margin.NONE, LumoUtility.Padding.NONE
+            );
+            Select<String> cmbAlbum = new Select<>();
+            cmbAlbum.setWidthFull();
+
+            Button btnLeft = new Button();
+            btnLeft.setIcon(FontAwesome.Solid.ARROW_LEFT_LONG.create());
+            Button btnRight = new Button();
+            btnRight.setIcon(FontAwesome.Solid.ARROW_RIGHT_LONG.create());
+            layoutAlbumController.add(cmbAlbum);
+
+            cmbAlbum.setItems(lstDestinations);
+
+            if (cmbAlbum.getValue() == null || cmbAlbum.getValue().equalsIgnoreCase("null") || cmbAlbum.getValue().isEmpty()) {
+                cmbAlbum.setValue(strSelection);
+            }
+
+            cmbAlbum.addValueChangeListener(event -> {
+                HorizontalLayout layoutLocationThumbs = selectLocation(event.getValue(), sqlRead, sqlReadOrderBy, filterColumn);
+                scroller.setContent(layoutLocationThumbs);
+            });
+
+            VerticalLayout layoutTitle = new VerticalLayout();
+            layoutTitle.addClassNames(LumoUtility.Width.FULL,
+                    LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER,
+                    LumoUtility.Margin.NONE, LumoUtility.Padding.SMALL,
+                    LumoUtility.Gap.XSMALL,
+                    LumoUtility.BorderRadius.MEDIUM
+            );
+            Div divTitle = new Div();
+            divTitle.addClassNames(LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER,
+                    LumoUtility.Margin.NONE, LumoUtility.Padding.NONE);
+            if (isType == 1) {
+                divTitle.setText("Albums of " + strAlbumUsername);
+            } else if (isType == 2) {
+                divTitle.setText("Location");
+            } else if (isType == 3) {
+                divTitle.setText("Subject");
+            }
+            layoutTitle.add(divTitle, cmbAlbum);
+
+
+            layoutPhotoInfo.add(layoutTitle);
+
+            scroller.setScrollDirection(Scroller.ScrollDirection.HORIZONTAL);
+            scroller.addClassNames(
+                    LumoUtility.Width.FULL,
+                    LumoUtility.Margin.NONE, LumoUtility.Padding.XSMALL,
+                    LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER
+            );
+
+            HorizontalLayout layoutThumbs = fetchThumbs(sqlReadPhotos, arrColumnsGallery);
+            scroller.setContent(layoutThumbs);
+
+
+            Button btnThumbsLeft = new Button();
+            btnThumbsLeft.setIcon(FontAwesome.Solid.ARROW_LEFT.create());
+
+            Button btnThumbsRight = new Button();
+            btnThumbsRight.setIcon(FontAwesome.Solid.ARROW_RIGHT.create());
+            layoutThumbsFull.add(scroller);
+        }
 
         HorizontalLayout layoutCarouselAndInfo = new HorizontalLayout();
-        layoutCarouselAndInfo.addClassNames(LumoUtility.Overflow.SCROLL,
-                LumoUtility.Width.FULL,  //LumoUtility.Height.FULL,
-                LumoUtility.Margin.NONE, LumoUtility.Padding.MEDIUM,
+        layoutCarouselAndInfo.addClassNames(LumoUtility.Overflow.HIDDEN,
+                LumoUtility.Width.FULL, LumoUtility.Height.FULL,
+                LumoUtility.Margin.NONE, LumoUtility.Padding.XSMALL,
                 LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER,
                 LumoUtility.Background.CONTRAST_5, LumoUtility.BorderRadius.LARGE
         );
+
         layoutCarouselAndInfo.add(divCarousel, layoutPhotoInfo);
 
         List<Record> lstRecord = getRecordsFromDb(sqlReadPhotos, arrColumnsGallery);
@@ -543,15 +1065,24 @@ public class GenericView {
 //        layoutMap.add(fetchMapOnCarousel(strCityName, strCountry));
 //        layoutMap.getStyle().setOpacity("1");
 
-        if (strCityName == null || strCityName.isEmpty() || strCityName.equalsIgnoreCase("null")) {
-            layoutCarouselAndInfo.setHeight("580px");
+        if (strSelection == null || strSelection.isEmpty() || strSelection.equalsIgnoreCase("null")) {
+//            layoutCarouselAndInfo.setHeight("600px");
         } else {
-            layoutCarouselAndInfo.setHeight("570px");
+//            layoutCarouselAndInfo.setHeight("600px");
         }
 
         VerticalLayout layoutPhotosView = new VerticalLayout();
-        layoutPhotosView.addClassNames(LumoUtility.Width.FULL, LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER);
+        layoutPhotosView.addClassNames(
+                LumoUtility.Width.FULL, LumoUtility.Height.FULL,
+                LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.BETWEEN,
+                LumoUtility.Margin.NONE, LumoUtility.Padding.NONE);
         layoutPhotosView.add(layoutCarouselAndInfo, layoutThumbsFull);
+
+
+        UI.getCurrent().getPage().retrieveExtendedClientDetails(details -> {
+            int intHeight = details.getWindowInnerHeight();
+            logger.warn("intHeight: " + intHeight);
+        });
 
         layoutAll.add(layoutPhotosView);
 
@@ -569,13 +1100,18 @@ public class GenericView {
         return lstImage;
     }
 
-    private ArrayList<Image> fetchPhotosLarge(String sqlRead, String[] arrColumnNames) {
+    private Image fetchPhotosLarge(String sqlRead, String[] arrColumnNames, String strPhotoId) {
 
-        ArrayList<Image> lstImage = new ArrayList<>();
+        Image lstImage = new Image();
         List<Record> lstRecords = getRecordsFromDb(sqlRead, arrColumnNames);
         for (int r = 0; r < lstRecords.size(); r++) {
             Record record = lstRecords.get(r);
-            lstImage.add(getImageLarge(record));
+            String strPhotoIdDb = lstRecords.get(r).getColumnData("id");
+            if (strPhotoId == null) {
+                lstImage = getImageLarge(record);
+            } else if (strPhotoIdDb.equalsIgnoreCase(strPhotoId)) {
+                lstImage = getImageLarge(record);
+            }
         }
         return lstImage;
     }
@@ -583,13 +1119,14 @@ public class GenericView {
     private VerticalLayout fetchPhotoMetaInfoOnCarousel(Record record) {
 
         VerticalLayout layoutPhotoInfo = new VerticalLayout();
-        layoutPhotoInfo.addClassNames(LumoUtility.Overflow.HIDDEN,
-                LumoUtility.Width.FULL, LumoUtility.Height.FULL,
+        layoutPhotoInfo.addClassNames(LumoUtility.Overflow.SCROLL,
+                LumoUtility.Width.FULL, //LumoUtility.Height.FULL,
                 LumoUtility.Padding.NONE, LumoUtility.Margin.NONE,
                 LumoUtility.Gap.XSMALL,
                 LumoUtility.BorderRadius.LARGE,
                 LumoUtility.AlignItems.START, LumoUtility.JustifyContent.START);
-        layoutPhotoInfo.addClassName("image-meta-to-show");
+//        layoutPhotoInfo.addClassName("image-meta-to-show");
+        layoutPhotoInfo.addClassName("image-to-show");
 
         String strMetaCameraModel = record.getColumnData("meta_camera_model");
         String strMetaLensModel = record.getColumnData("meta_lens_model");
@@ -599,6 +1136,9 @@ public class GenericView {
         String strMetaIso = record.getColumnData("meta_iso");
         String strMetaAperture = record.getColumnData("meta_aperture");
         String strMetaShutterSpeed = record.getColumnData("meta_shutter_speed");
+        String strMetaDate = record.getColumnData("meta_date");
+        String strMetaPhotoDate = record.getColumnData("photo_date");
+        String strMetaPhotoTime = record.getColumnData("photo_time");
 
 
         VerticalLayout layoutPhotoCameraMeta = new VerticalLayout();
@@ -607,16 +1147,18 @@ public class GenericView {
                 LumoUtility.Overflow.HIDDEN,
                 LumoUtility.AlignItems.START, LumoUtility.JustifyContent.START,
                 LumoUtility.Margin.NONE,
-                LumoUtility.Padding.MEDIUM,
+                LumoUtility.Padding.XSMALL,
                 LumoUtility.Gap.XSMALL,
                 LumoUtility.BorderRadius.NONE
         );
         Div divMetaCameraTitle = new Div("Camera");
         divMetaCameraTitle.addClassNames(LumoUtility.TextColor.TERTIARY, LumoUtility.Padding.Vertical.NONE, LumoUtility.FontSize.XSMALL);
         Div divMetaCamera = new Div(strMetaCameraModel);
+        divMetaCamera.addClassNames(LumoUtility.TextColor.SECONDARY, LumoUtility.FontSize.MEDIUM);
         Div divMetaLensTitle = new Div("Lens");
         divMetaLensTitle.addClassNames(LumoUtility.TextColor.TERTIARY, LumoUtility.Padding.Vertical.NONE, LumoUtility.FontSize.XSMALL);
         Div divMetaLens = new Div(strMetaLensModel);
+        divMetaLens.addClassNames(LumoUtility.TextColor.SECONDARY, LumoUtility.FontSize.MEDIUM);
         layoutPhotoCameraMeta.add(divMetaCameraTitle, divMetaCamera, divMetaLensTitle, divMetaLens);
 
         VerticalLayout layoutPhotoMeta = new VerticalLayout();
@@ -625,13 +1167,14 @@ public class GenericView {
                 LumoUtility.Overflow.HIDDEN,
                 LumoUtility.AlignItems.START, LumoUtility.JustifyContent.START,
                 LumoUtility.Margin.NONE,
-                LumoUtility.Padding.MEDIUM,
+                LumoUtility.Padding.XSMALL,
                 LumoUtility.Gap.XSMALL,
                 LumoUtility.BorderRadius.NONE
         );
         Div divFocalTitle = new Div("Focal Length");
         divFocalTitle.addClassNames(LumoUtility.TextColor.TERTIARY, LumoUtility.Padding.Vertical.NONE, LumoUtility.FontSize.XSMALL);
         Div divMetaFocalLength = new Div(strMetaFocalLength + " mm");
+        divMetaFocalLength.addClassNames(LumoUtility.TextColor.SECONDARY, LumoUtility.FontSize.MEDIUM);
         if (strMetaFocalLength.equalsIgnoreCase("null")) {
             divFocalTitle.setVisible(false);
             divMetaFocalLength.setVisible(false);
@@ -640,37 +1183,232 @@ public class GenericView {
         Div divFocalFFTitle = new Div("Focal Length (Full Frame)");
         divFocalFFTitle.addClassNames(LumoUtility.TextColor.TERTIARY, LumoUtility.Padding.Vertical.NONE, LumoUtility.FontSize.XSMALL);
         Div divMetaFocalLengthFF = new Div(strMetaFocalLengthFF + " mm");
+        divMetaFocalLengthFF.addClassNames(LumoUtility.TextColor.SECONDARY, LumoUtility.FontSize.MEDIUM);
         if (strMetaFocalLength.equalsIgnoreCase(strMetaFocalLengthFF) || strMetaFocalLengthFF.equalsIgnoreCase("null")) {
             divFocalFFTitle.setVisible(false);
             divMetaFocalLengthFF.setVisible(false);
         }
 
-        Div divApertureTitle = new Div("Aperture");
+        Span divApertureTitle = new Span("   Aperture ");
         divApertureTitle.addClassNames(LumoUtility.TextColor.TERTIARY, LumoUtility.Padding.Vertical.NONE, LumoUtility.FontSize.XSMALL);
-        Div divMetaAperture = new Div(strMetaAperture);
+        Span divMetaAperture = new Span(strMetaAperture);
+        divMetaAperture.addClassNames(LumoUtility.TextColor.SECONDARY, LumoUtility.FontSize.MEDIUM,
+                LumoUtility.Margin.NONE, LumoUtility.Padding.XSMALL, LumoUtility.Gap.MEDIUM);
+        divMetaAperture.add(divApertureTitle);
         if (strMetaAperture.equalsIgnoreCase("null")) {
             divApertureTitle.setVisible(false);
             divMetaAperture.setVisible(false);
         }
 
-        Div divSSTitle = new Div("Shutter Speed");
+        Span divSSTitle = new Span("  Shutter Speed ");
         divSSTitle.addClassNames(LumoUtility.TextColor.TERTIARY, LumoUtility.Padding.Vertical.NONE, LumoUtility.FontSize.XSMALL);
-        Div divMetaSS = new Div(strMetaShutterSpeed + " sec");
+        Span divMetaSS = new Span(strMetaShutterSpeed + " sec");
+        divMetaSS.addClassNames(LumoUtility.TextColor.SECONDARY, LumoUtility.FontSize.MEDIUM,
+                LumoUtility.Margin.NONE, LumoUtility.Padding.XSMALL, LumoUtility.Gap.MEDIUM);
+        divMetaSS.add(divSSTitle);
         if (strMetaShutterSpeed.equalsIgnoreCase("null")) {
             divSSTitle.setVisible(false);
             divMetaSS.setVisible(false);
         }
 
-        Div divIsoTitle = new Div("ISO");
+        Span divIsoTitle = new Span("  ISO ");
         divIsoTitle.addClassNames(LumoUtility.TextColor.TERTIARY, LumoUtility.Padding.Vertical.NONE, LumoUtility.FontSize.XSMALL);
-        Div divMetaIso = new Div(strMetaIso);
+        Span divMetaIso = new Span(strMetaIso);
+        divMetaIso.addClassNames(LumoUtility.TextColor.SECONDARY, LumoUtility.FontSize.MEDIUM,
+                LumoUtility.Margin.NONE, LumoUtility.Padding.XSMALL, LumoUtility.Gap.MEDIUM);
+        divMetaIso.add(divIsoTitle);
 
-        layoutPhotoMeta.add(divFocalTitle, divMetaFocalLength, divFocalFFTitle, divMetaFocalLengthFF, divApertureTitle, divMetaAperture,
-                divSSTitle, divMetaSS, divIsoTitle, divMetaIso);
+        Div divDateTimeTitle = new Div("Date/Time");
+        divDateTimeTitle.addClassNames(LumoUtility.TextColor.TERTIARY, LumoUtility.Padding.Vertical.NONE, LumoUtility.FontSize.XSMALL);
+        Div divMetaPhotoDate = new Div(strMetaPhotoDate + "  " + strMetaPhotoTime);
+        divMetaPhotoDate.addClassNames(LumoUtility.TextColor.SECONDARY, LumoUtility.FontSize.MEDIUM);
+
+
+        layoutPhotoMeta.add(divFocalTitle, divMetaFocalLength, divFocalFFTitle, divMetaFocalLengthFF, divMetaAperture,
+                divMetaSS, divMetaIso, divDateTimeTitle, divMetaPhotoDate);
 
         layoutPhotoInfo.add(layoutPhotoCameraMeta, layoutPhotoMeta);
         layoutPhotoInfo.getStyle().setOpacity("1");
         return layoutPhotoInfo;
+    }
+
+    private VerticalLayout fetchPhotoCreatorOnCarousel(Record record) {
+
+        VerticalLayout layoutCreatorInfo = new VerticalLayout();
+        layoutCreatorInfo.addClassNames(
+                LumoUtility.Width.FULL, LumoUtility.Height.FULL,
+                LumoUtility.Padding.NONE, LumoUtility.Margin.NONE,
+                LumoUtility.Gap.XSMALL,
+                LumoUtility.BorderRadius.LARGE,
+                LumoUtility.AlignItems.START, LumoUtility.JustifyContent.START);
+        layoutCreatorInfo.addClassNames("member-profile-design");
+        layoutCreatorInfo.addClassName("image-to-show");
+        layoutCreatorInfo.setMaxHeight("160px");
+//        layoutCreatorInfo.getStyle().setOpacity("1");
+
+        String strCreatorId = record.getColumnData("uploaderId");
+        String strUsername = record.getColumnData("username");
+        String strName = record.getColumnData("name");
+        String strSurname = record.getColumnData("surname");
+        String strShortBio = record.getColumnData("short_bio");
+        String strMemberSince = record.getColumnData("member_since");
+        String strAvatarPath = record.getColumnData("avatar_path");
+        String strResident = record.getColumnData("resident");
+        String strResidentCountry = record.getColumnData("resident_country");
+
+        String strCountPhotos = record.getColumnData("count_photos");
+        String strCountAlbums = record.getColumnData("count_albums");
+
+        Div divImgAvatar = new Div();
+        divImgAvatar.addClassNames(LumoUtility.Padding.NONE, LumoUtility.Margin.NONE);
+
+        String strAvatarSize = "50px";
+        Image imageAvatar = getAvatarImage(strAvatarPath, strUsername, strAvatarSize, strAvatarSize);
+        divImgAvatar.add(imageAvatar);
+        Div divBioTitle = new Div("Short Bio");
+        Div divBio = new Div();
+        divBio.addClassNames(LumoUtility.FontWeight.BOLD);
+//            divBio.setVisible(false);
+        if (strShortBio != null && !strShortBio.equalsIgnoreCase("null") && !strShortBio.isEmpty()) {
+            divBio.setVisible(true);
+            divBio.setText(strShortBio);
+        } else {
+//                divBio.setVisible(false);
+        }
+
+        HorizontalLayout horizontalLayout = new HorizontalLayout();
+
+        layoutCreatorInfo.getStyle().setOpacity("1");
+
+
+        H4 objMember = new H4(strUsername);
+        objMember.addClassNames(LumoUtility.TextColor.SECONDARY, LumoUtility.FontWeight.NORMAL, LumoUtility.FontSize.SMALL,
+                LumoUtility.Margin.NONE, LumoUtility.Padding.NONE,
+                LumoUtility.Gap.XSMALL);
+
+        H4 objName = new H4(strName + " " + strSurname);
+        objName.addClassNames(LumoUtility.TextColor.SECONDARY, LumoUtility.FontWeight.BOLD, LumoUtility.FontSize.SMALL,
+                LumoUtility.Margin.NONE, LumoUtility.Padding.NONE,
+                LumoUtility.Gap.XSMALL);
+        Div divMemberSinceTitle = new Div("Member since");
+        divMemberSinceTitle.addClassNames(LumoUtility.TextColor.SECONDARY, LumoUtility.FontWeight.EXTRALIGHT, LumoUtility.FontSize.XSMALL,
+                LumoUtility.Margin.NONE, LumoUtility.Padding.XSMALL,
+                LumoUtility.Gap.XSMALL);
+        Div divMemberSince = new Div(strMemberSince);
+        divMemberSince.addClassNames(LumoUtility.TextColor.SECONDARY, LumoUtility.FontWeight.EXTRALIGHT, LumoUtility.FontSize.XXSMALL);
+        divMemberSinceTitle.add(divMemberSince);
+
+
+        Icon iconPhoto = VaadinIcon.PICTURE.create();
+        Icon iconAlbum = FontAwesome.Solid.PHOTO_FILM.create();
+        Span spPhotos = new Span(" Photos");
+        spPhotos.addClassNames(LumoUtility.TextColor.TERTIARY, LumoUtility.FontSize.SMALL);
+        Span divPhotos = new Span(strCountPhotos);
+        divPhotos.add(spPhotos);
+        divPhotos.addClassNames(LumoUtility.TextColor.SECONDARY);
+        Span spAlbums = new Span(" Albums");
+        spAlbums.addClassNames(LumoUtility.TextColor.TERTIARY, LumoUtility.FontSize.SMALL);
+        Span divAlbums = new Span(strCountAlbums);
+        divAlbums.addClassNames(LumoUtility.TextColor.SECONDARY);
+        divAlbums.add(spAlbums);
+
+        HorizontalLayout layoutCounts = new HorizontalLayout();
+        layoutCounts.addClassNames(LumoUtility.Width.FULL, LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.EVENLY,
+                LumoUtility.Padding.SMALL, LumoUtility.Margin.NONE,
+                LumoUtility.Gap.XSMALL,
+                LumoUtility.BorderRadius.LARGE, LumoUtility.Background.CONTRAST_5,
+                LumoUtility.TextColor.SECONDARY, LumoUtility.FontSize.MEDIUM);
+        layoutCounts.add(iconPhoto, divPhotos, iconAlbum, divAlbums);
+
+        VerticalLayout layoutMemberCard = new VerticalLayout();
+//            layoutMemberCard.getStyle().setMaxWidth("300px");
+//            layoutMemberCard.getStyle().set("border", "lightgrey 1px solid");
+        layoutMemberCard.addClassNames(LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER);
+        layoutMemberCard.setMaxWidth("60px");
+        layoutMemberCard.add(divImgAvatar);
+
+        Div divResidentCaption = new Div("Resident");
+        Div divResident = new Div(strResident);
+        divResident.addClassNames(LumoUtility.FontWeight.BOLD);
+
+        VerticalLayout layoutAdditional = new VerticalLayout();
+        layoutAdditional.addClassNames(LumoUtility.Width.FULL, LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER,
+                LumoUtility.Margin.NONE, LumoUtility.Padding.XSMALL,
+                LumoUtility.Gap.XSMALL);
+        layoutAdditional.add(objMember, objName, divMemberSinceTitle); //, divBioTitle, divBio);//, divResidentCaption, divResident);
+
+        horizontalLayout.add(layoutMemberCard, layoutAdditional);
+
+        layoutCreatorInfo.add(horizontalLayout, layoutCounts);
+
+        return layoutCreatorInfo;
+    }
+
+    private VerticalLayout loadPanelRate(String strPhotoId) {
+
+        // https://uiverse.io/jack0237/nice-sloth-46
+        // https://uiverse.io/michaelgomeh/slimy-lion-96
+
+
+//        VerticalLayout layoutAll = new VerticalLayout();
+        //layoutAll.addClassName("image-gallery-view");
+
+        VerticalLayout verticalLayout = new VerticalLayout();
+        verticalLayout.addClassNames(LumoUtility.Width.FULL, LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER);
+        verticalLayout.addClassName("rating-content");
+        //verticalLayout.addClassNames(LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER, LumoUtility.Padding.LARGE, LumoUtility.Gap.MEDIUM);
+
+        Paragraph paragraph = new Paragraph();
+//        paragraph.setText("Select the number to rate the photo.");
+//        paragraph.addClassName("rating-text");
+
+
+        String[] str7 = {"7 World Class", "Flawless technique, powerful storytelling, exceptional artistry."};
+        String[] str6 = {"6 Exceptional Professional", "Strong vision, refined execution, consistently striking impact."};
+        String[] str5 = {"5 Advanced Skilled", "Confident composition, controlled lighting, expressive style throughout."};
+        String[] str4 = {"4 Solid Intermediate", "Good fundamentals, developing creativity, occasionally strong moments."};
+        String[] str3 = {"3 Emerging Amateur", "Improving skills with clearer intent and consistency."};
+        String[] str2 = {"2 Novice Beginner", "Noticeable issues but increasing understanding and experimentation."};
+        String[] str1 = {"1 Basic Snapshot", "Simple image lacking technique, intention, coherence."};
+        RadioButtonGroup<String[]> radioButtonGroup = new RadioButtonGroup<>();
+        radioButtonGroup.addClassNames(LumoUtility.Width.FULL);
+        radioButtonGroup.setRenderer(new ComponentRenderer<>(strings -> {
+            HorizontalLayout row = new HorizontalLayout();
+            row.setAlignItems(FlexComponent.Alignment.CENTER);
+
+            H4 title = new H4(strings[0]);
+//            title.getStyle()
+//                    .set("color", "var(--lumo-contrast-80pct)")
+//                    .set("font-size", "14px");
+            Span description = new Span(strings[1]);
+//            description.getStyle()
+//                    .set("color", "var(--lumo-contrast-50pct)")
+//                    .set("font-size", "11px");
+
+            VerticalLayout column = new VerticalLayout(title, description);
+            column.addClassNames(LumoUtility.Margin.NONE, LumoUtility.Padding.XSMALL,
+                    LumoUtility.Gap.XSMALL);
+
+            row.add(column);
+            // row.getStyle().set("line-height", "var(--lumo-line-height-m)");
+            row.setWidthFull();
+            return row;
+        }));
+
+        radioButtonGroup.addThemeVariants(RadioGroupVariant.LUMO_VERTICAL);
+        radioButtonGroup.addClassName("rating-options");
+        radioButtonGroup.setItems(str7, str6, str5, str4, str3, str2, str1);
+
+
+        Button btnRate = new Button("Submit");
+        btnRate.addClassName("btn-rate");
+        //SvgIcon svgStar = new SvgIcon(DownloadHandler.forClassResource(GenericView.class, "/icons/star-empty-icon.svg"));
+        //btnRate.setIcon(svgStar);
+        btnRate.addClickListener(event -> {
+
+        });
+        verticalLayout.add(radioButtonGroup, btnRate);
+        return verticalLayout;
     }
 
     private VerticalLayout fetchMapOnCarousel(String strCity, String strCountry) {
@@ -707,36 +1445,62 @@ public class GenericView {
         }
 
         HorizontalLayout layoutThumbs = fetchThumbs(sqlReadWithLocation, arrColumnsGallery);
-        Image imageLarge = fetchPhotosLarge(sqlReadWithLocation, arrColumnsGallery).get(0);
-        divCarousel.removeAll();
-        divCarousel.add(imageLarge);
-
-        List<Record> lstRecord = getRecordsFromDb(sqlReadWithLocation, arrColumnsGallery);
-        Record recDestination = lstRecord.get(0);
-        String strCityName = recDestination.getColumnData("album_destination_name_map");
-        String strCountry = recDestination.getColumnData("album_destination_country_map");
-
-        return layoutThumbs;
-    }
-
-    private void selectThumb(List<Record> lstImageFiles, String sqlReadWithLocation, int intImage) {
-
-        Record record = lstImageFiles.get(intImage);
-
-        Image imageLarge = fetchPhotosLarge(sqlReadWithLocation, arrColumnsGallery).get(intImage);
+        Image imageLarge = fetchPhotosLarge(sqlReadWithLocation, arrColumnsGallery, null);
         imageLarge.addClassNames(LumoUtility.Width.FULL, LumoUtility.Height.FULL);
+        imageLarge.getStyle().set("object-fit", "contain");
+
+        imageLarge.addClassName("image-to-show");
+        imageLarge.getStyle().setOpacity("1");
+        divCarousel.add(imageLarge);
 
         Component imgPrevious = divCarousel.getComponentAt(0);
         imgPrevious.addClassName("image-to-hide");
         imgPrevious.getStyle().setOpacity("0");
         divCarousel.remove(imgPrevious);
 
+
+        List<Record> lstRecord = getRecordsFromDb(sqlReadWithLocation, arrColumnsGallery);
+        if (!lstRecord.isEmpty()) {
+            Record recDestination = lstRecord.get(0);
+            String strCityName = recDestination.getColumnData("album_destination_name_map");
+            String strCountry = recDestination.getColumnData("album_destination_country_map");
+        }
+
+        return layoutThumbs;
+    }
+
+    private void selectThumb(List<Record> lstImageFiles, String sqlReadWithLocation, String strPhotoId) {
+
+
+        Record record = null;
+        for (int r = 0; r < lstImageFiles.size(); r++) {
+
+            String strPhotoIdDb = lstImageFiles.get(r).getColumnData("id");
+            if (strPhotoIdDb.equalsIgnoreCase(strPhotoId)) {
+                record = lstImageFiles.get(r);
+            }
+        }
+
+
+        Image imageLarge = fetchPhotosLarge(sqlReadWithLocation, arrColumnsGallery, strPhotoId);
+        imageLarge.addClassNames(LumoUtility.Width.FULL, LumoUtility.Height.FULL);
+        imageLarge.getStyle().set("object-fit", "contain");
+
+
         imageLarge.addClassName("image-to-show");
         imageLarge.getStyle().setOpacity("1");
         divCarousel.add(imageLarge);
 
+        Component imgPrevious = divCarousel.getComponentAt(0);
+        imgPrevious.addClassName("image-to-hide");
+        imgPrevious.getStyle().setOpacity("0");
+        divCarousel.remove(imgPrevious);
+
+
         layoutMeta.removeAll();
         layoutMeta.add(fetchPhotoMetaInfoOnCarousel(record));
+        layoutMeta.add(fetchPhotoCreatorOnCarousel(record));
+
     }
 
     private HorizontalLayout fetchThumbs(String sqlRead, String[] arrColumnNames) {
@@ -745,31 +1509,31 @@ public class GenericView {
         List<Record> lstImageFiles = getRecordsFromDb(sqlRead, arrColumnNames);
 
         HorizontalLayout layoutThumbs = new HorizontalLayout();
-        layoutThumbs.addClassNames(LumoUtility.Overflow.HIDDEN,
+        layoutThumbs.addClassNames(//LumoUtility.Overflow.HIDDEN,
                 //  don't   LumoUtility.Width.FULL, //LumoUtility.Height.FULL,
                 LumoUtility.Display.INLINE_FLEX,
                 LumoUtility.Margin.NONE, LumoUtility.Padding.NONE,
                 LumoUtility.Gap.XSMALL,
-
                 LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER);
-        layoutThumbs.setHeight("100px");
+        layoutThumbs.setHeight("82px");
 
         for (int t = 0; t < lstImageThumbs.size(); t++) {
             Div divBtnPhoto = new Div();
             divBtnPhoto.addClassNames(LumoUtility.Overflow.HIDDEN,
                     LumoUtility.Width.FULL, LumoUtility.Height.AUTO,
-                    LumoUtility.Margin.NONE, LumoUtility.Padding.SMALL,
+                    LumoUtility.Margin.NONE, LumoUtility.Padding.XSMALL,
                     LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER,
-                    LumoUtility.BorderRadius.MEDIUM
+                    LumoUtility.BorderRadius.SMALL
             );
 
             Image imageThumb = lstImageThumbs.get(t);
             imageThumb.addClassNames(
                     LumoUtility.Width.FULL, LumoUtility.Height.FULL,
-                    LumoUtility.Margin.NONE, LumoUtility.Padding.XSMALL,
-                    LumoUtility.BorderRadius.MEDIUM);
+                    LumoUtility.Margin.NONE, LumoUtility.Padding.NONE,
+                    LumoUtility.BorderRadius.SMALL
+            );
 
-            imageThumb.setWidth("90px");
+            imageThumb.setMaxWidth("80px");
             imageThumb.setHeight("Auto");
 
             divBtnPhoto.add(imageThumb);
@@ -778,7 +1542,7 @@ public class GenericView {
 
             final int tFinal = t;
             divBtnPhoto.addClickListener(click -> {
-                selectThumb(lstImageFiles, sqlRead, tFinal);
+                selectThumb(lstImageFiles, sqlRead, lstImageFiles.get(tFinal).getColumnData("id"));
             });
             layoutThumbs.add(divBtnPhoto);
         }
@@ -872,6 +1636,61 @@ public class GenericView {
         return mapsFrame;
     }
 
+    public boolean checkIfMemberValueExists(String strField, String strValue) {
+
+
+        String sqlCheckEmail = "SELECT " + strField + " FROM dbuser WHERE " + strField + " = ? ";
+        String[] arrColEmail = {strField};
+        Object[] objEmail = {strValue};
+        String[] arrTypeEmail = {"java.lang.String"};
+
+        List<Record> lstEmail = recordService.findAll(sqlCheckEmail, arrColEmail, objEmail, arrTypeEmail);
+
+        logger.info(!lstEmail.isEmpty() + "  " + strValue);
+        return !lstEmail.isEmpty();
+
+    }
+
+    public String checkIfCodeExistsOrAppliedForMember(String strValue, String userId) {
+
+
+        String sqlCheckEmail = "SELECT avail_code, until_date, CURRENT_TIMESTAMP() FROM avail_code WHERE avail_code = ? AND until_date >= CURRENT_TIMESTAMP();";
+        String[] arrColEmail = {"avail_code"};
+        Object[] objEmail = {strValue};
+        String[] arrTypeEmail = {"java.lang.String"};
+
+        List<Record> lstEmail = recordService.findAll(sqlCheckEmail, arrColEmail, objEmail, arrTypeEmail);
+
+        String strApplied = "Code is OK!";
+
+        // 0 is a user not created
+        if (userId.equalsIgnoreCase("0")) {
+            if (lstEmail.size() == 1) {
+                logger.info("OKKKKKKKK  " + strApplied);
+                return strApplied;
+            } else {
+                logger.info("code not found");
+                return "Code not found!";
+            }
+        } else {
+
+
+            logger.info(!lstEmail.isEmpty() + "  " + strValue);
+
+            String sqlCheckUserCode = "SELECT code, date_entered FROM dbuser_code WHERE code = ? and user_Id";
+            String[] arrColUserCode = {"code"};
+            Object[] objUserCode = {strValue};
+            String[] arrUserCodeType = {"java.lang.String"};
+
+            List<Record> lstUserCode = recordService.findAll(sqlCheckUserCode, arrColUserCode, objUserCode, arrUserCodeType);
+
+            if (lstUserCode.isEmpty()) {
+                return "Code can be Applied!";
+            } else {
+                return "Has been applied in the past. You cannot use it again!";
+            }
+        }
+    }
 
     public void logVisitorToDb(String section, String logText) {
 
@@ -899,10 +1718,10 @@ public class GenericView {
 
 //        int[] availWidth = calcTotalAvailableWidth();
 
-
         if (strUrlRequestToBeLogged == null || strUrlRequestToBeLogged.isEmpty() || strUrlRequestToBeLogged.equalsIgnoreCase("null")) {
             strUrlRequestToBeLogged = "NULL";
         } else {
+            strUrlRequestToBeLogged = strUrlRequestToBeLogged.replace("'", "");
             strUrlRequestToBeLogged = "'" + strUrlRequestToBeLogged + "'";
         }
 
@@ -957,7 +1776,7 @@ public class GenericView {
         }
 
         String strImagePath = strPathIn + dirChar + strFileName;
-        logger.info(" strImagePath " + strImagePath);
+        //   logger.info(" strImagePath " + strImagePath);
 //        Image image1 = new Image("https://images.unsplash.com/photo-1536048810607-3dc7f86981cb?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80", "img2");
         //GalleryImageViewCard imageGalleryViewCard = new GalleryImageViewCard(record,strImagePath,isMobile,userId, strUsername, sessionCreation,hostname,publicIp, isEditable, linkUploader, lstRouterLinks, recordService);
         Image image = new Image();
@@ -1096,8 +1915,8 @@ public class GenericView {
 
     }
 
-    public void logErrorInDb(Exception e, String function, String hostname, int userId, String strUsername, String publicIp, long sessionCreation, String info) {
-        recordService.logErrorInDb(e, hostname, function, userId, strUsername, publicIp, Long.toString(sessionCreation), info);
+    public void logErrorInDb(Exception e, String function, String hostname, String strMemberId, String strUsername, String publicIp, long sessionCreation, String info) {
+        recordService.logErrorInDb(e, hostname, function, Integer.parseInt(strMemberId), strUsername, publicIp, Long.toString(sessionCreation), info);
     }
 
     public List<Record> getRecordsFromDb(String sql, String[] arrColumnNames) {
@@ -1138,7 +1957,7 @@ public class GenericView {
         //divLogo.getStyle().setColor("#d64f00");
 
 
-        Span divPhotoActMoto = new Span("[ Network and Act around Photography ]");
+        Span divPhotoActMoto = new Span("[ Through Photography, We Connect and Act ]");
 //        divPhotoActMoto.addClassNames(LumoUtility.FontSize.MEDIUM, LumoUtility.FontWeight.SEMIBOLD,
 //                LumoUtility.Padding.NONE, LumoUtility.Margin.MEDIUM);
 

@@ -2,6 +2,17 @@ package com.photo.act.photo_act.services;
 
 //  https://github.com/khanhpham2134/WeatherApp/blob/main/WeatherApp/src/main/java/fi/tuni/prog3/weatherapp/WeatherData.java
 
+import com.github.prominence.openweathermap.api.conf.TimeoutSettings;
+import com.github.prominence.openweathermap.api.enums.UnitSystem;
+import com.github.prominence.openweathermap.api.exception.NoDataFoundException;
+import com.github.prominence.openweathermap.api.model.forecast.Forecast;
+import com.github.prominence.openweathermap.api.model.forecast.WeatherForecast;
+import com.github.prominence.openweathermap.api.model.weather.Weather;
+import com.github.prominence.openweathermap.api.request.RequestSettings;
+import com.github.prominence.openweathermap.api.request.forecast.free.FiveDayThreeHourStepForecastRequestCustomizer;
+import com.github.prominence.openweathermap.api.request.forecast.free.FiveDayThreeHourStepForecastRequester;
+import com.github.prominence.openweathermap.api.request.weather.CurrentWeatherRequester;
+import com.github.prominence.openweathermap.api.request.weather.single.SingleLocationCurrentWeatherRequester;
 import com.google.gson.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +26,7 @@ import java.net.URL;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
 
@@ -405,7 +417,10 @@ public class WeatherService {
             double maxTemp = main.get("temp_max").getAsDouble();
 
             JsonElement visibilityObj = jsonResponse.get("visibility");//.getAsJsonObject("visibility");
-            String visibility = visibilityObj.getAsString(); //main.get("visibility").getAsString();
+            String visibility = "";
+            if (visibilityObj != null) {
+                visibility = visibilityObj.getAsString(); //main.get("visibility").getAsString();
+            }
 
             // Rounding the temperature values to the nearest integer
             String temperatureString = Math.round(temperature) + (UNIT.equals("metric") ? "°C" : "°F");
@@ -442,6 +457,42 @@ public class WeatherService {
             // In case of error, return null
             return null;
         }
+    }
+
+
+    public Weather getApiCurrent(String strCity, String strCountryCode) throws NoDataFoundException {
+
+        TimeoutSettings timeout = new TimeoutSettings(2000, 2000);
+        RequestSettings requestSt = new RequestSettings(API_KEY, timeout);
+        requestSt.setUnitSystem(UnitSystem.METRIC);
+//        requestSt.putRequestParameter();
+
+        SingleLocationCurrentWeatherRequester currentRequest = new CurrentWeatherRequester(requestSt).single();
+
+        // FiveDayThreeHourStepForecastRequestCustomizer fiveDayRequest = new FiveDayThreeHourStepForecastRequester(requestSt).byCityName(strCity, "", strCountryCode);
+//        Forecast forecast = fiveDayRequest.count(countOfTimeStamps).retrieve().asJava();
+        Weather weatherCurrent = currentRequest.byCityName(strCity, strCountryCode).retrieve().asJava();
+
+
+        return weatherCurrent;
+    }
+
+    public List<WeatherForecast> getApiForecast(String strCity, String strCountryCode, int countOfTimeStamps) {
+
+        TimeoutSettings timeout = new TimeoutSettings(2000, 2000);
+        RequestSettings requestSt = new RequestSettings(API_KEY, timeout);
+        requestSt.setUnitSystem(UnitSystem.METRIC);
+//        requestSt.putRequestParameter();
+
+//        SingleLocationCurrentWeatherRequester currentRequest = new CurrentWeatherRequester(requestSt).single();
+
+        FiveDayThreeHourStepForecastRequestCustomizer fiveDayRequest = new FiveDayThreeHourStepForecastRequester(requestSt).byCityName(strCity, strCountryCode);
+        Forecast forecast = fiveDayRequest.count(countOfTimeStamps).retrieve().asJava();
+
+        List<WeatherForecast> weatherForecasts = forecast.getWeatherForecasts();
+
+
+        return weatherForecasts;
     }
 
     /**

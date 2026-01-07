@@ -44,7 +44,7 @@ public class StoryViewCard extends VerticalLayout {
         this.isMobile = isMobile;
 
 
-        genericView = new GenericView(recordService, userId);
+        genericView = new GenericView(recordService);
 
         this.addClassNames(AlignItems.CENTER, JustifyContent.BETWEEN, TextAlignment.CENTER);
         this.addClassName("story-list-card");
