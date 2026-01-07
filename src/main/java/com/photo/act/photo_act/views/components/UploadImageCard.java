@@ -112,7 +112,6 @@ public class UploadImageCard extends VerticalLayout {
         layout.addClassNames(LumoUtility.Width.FULL, LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER,
                 LumoUtility.BorderRadius.MEDIUM, LumoUtility.BorderColor.CONTRAST_5);
 
-        Div divMaxFileNSize = new Div("Max files:3,  Max file size: 8MB,  Accepted files: Jpeg");
 
         VerticalLayout photoToAddLayout;
 
@@ -160,10 +159,19 @@ public class UploadImageCard extends VerticalLayout {
         upload.addClassNames(LumoUtility.Width.FULL, LumoUtility.Height.FULL, LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER,
                 LumoUtility.BorderRadius.SMALL, LumoUtility.BorderColor.CONTRAST_5);
 
-        upload.setMaxFiles(3);
-
-        int maxFileSizeInBytes = 15 * 1024 * 1024; // 15MB
-        upload.setMaxFileSize(maxFileSizeInBytes);
+        int intMemberMonthsCount = genericView.getAuthMemberMonthCount();
+        Div divMaxFileNSize = new Div();
+        if (intMemberMonthsCount >= 8) {
+            divMaxFileNSize.setText("(Member for >= 8 months) Max Photo size 9MB, Max Photos 6");
+            upload.setMaxFiles(6);
+            int maxFileSizeInBytes = 9 * 1024 * 1024; // 35MB
+            upload.setMaxFileSize(maxFileSizeInBytes);
+        } else {
+            divMaxFileNSize.setText("(Member for < 8 months) Max Photo size 8MB, Max Photos 3");
+            upload.setMaxFiles(3);
+            int maxFileSizeInBytes = 8 * 1024 * 1024; // 15MB
+            upload.setMaxFileSize(maxFileSizeInBytes);
+        }
 
         layout.add(divMaxFileNSize, upload, output);
 
@@ -467,7 +475,7 @@ public class UploadImageCard extends VerticalLayout {
 
     private boolean confirmedUploadPhoto(String orgFileName, String strNewFileName, ArrayList<String> lstPhotoMetaData, String[] arrPhotoGpsMeta, String publicIp, String hostname,
                                          StringBuilder strImageMetaInfo,
-                                         String strSubTitle, String strDestination, String strSubject
+                                         String strSubTitle, String strDestination, String strSubject, String strPersonalNotes
     ) {
 
         String strPathUpload = DIR_PHOTOS_SERVER + dirChar + subPathUpload;
@@ -634,7 +642,7 @@ public class UploadImageCard extends VerticalLayout {
                     lstPhotoMetaData.get(2), lstPhotoMetaData.get(3), lstPhotoMetaData.get(4), Double.parseDouble(lstPhotoMetaData.get(5)),
                     Double.parseDouble(lstPhotoMetaData.get(6)), intIso,
                     dblPhotoShutterSpeed, dblPhotoAperture, strMeteringMode, intLength, intWidth, strOrientation, arrPhotoGpsMeta,
-                    strSubTitle, strDestination, strSubject
+                    strSubTitle, strDestination, strSubject, strPersonalNotes
             )) {
 
 
@@ -752,8 +760,13 @@ public class UploadImageCard extends VerticalLayout {
         }
         cmbSubject.setItems(lstSubjects);
 
+        TextArea txtPersonalNotes = new TextArea("Notes");
+        txtPersonalNotes.setHelperText("Notes only visible to you");
+        txtPersonalNotes.setMinWidth("300px");
+        txtPersonalNotes.setMinRows(3);
+        txtPersonalNotes.setMaxLength(120);
 
-        layoutSelections.add(txtSubtitle, cmbDestination, cmbSubject);
+        layoutSelections.add(txtSubtitle, cmbDestination, cmbSubject, txtPersonalNotes);
 
 
         Button btnSave = new Button("Upload Photo");
@@ -787,6 +800,7 @@ public class UploadImageCard extends VerticalLayout {
             ArrayList<String> lstPhotoMetaData = new ArrayList<>();
             ImageUtilsMeta imageUtilsMeta = new ImageUtilsMeta();
             String[] arrPhotoGpsMeta = new String[3];
+
             File imgFile = new File(outputUploadFileName);
             logger.info("for photo " + outputUploadFileName + " get meta info");
             StringBuilder strImageMetaInfo = new StringBuilder();
@@ -796,6 +810,7 @@ public class UploadImageCard extends VerticalLayout {
                 //   logger.info(" B for photo "+outputUploadFileName+" get meta info to list "+imgFile.getAbsolutePath());
                 lstPhotoMetaData = imageUtilsMeta.getListImageInfo();
                 arrPhotoGpsMeta = imageUtilsMeta.getPhotoGPSMeta(outputUploadFileName);
+
                 //  if (lstPhotoMetaData != null && lstPhotoMetaData.size() > 0) {
                 //  Html imageInfo = new Html(strImageMetaInfo.toString());
                 // layoutImageInfo.add(imageInfo);
@@ -849,7 +864,7 @@ public class UploadImageCard extends VerticalLayout {
 
 
             if (confirmedUploadPhoto(strOrgFileName, strNewFileName, lstPhotoMetaData, arrPhotoGpsMeta, publicIp, hostname, strImageMetaInfo,
-                    txtSubtitle.getValue().trim(), strDestinationId, strSubjectId)) {
+                    txtSubtitle.getValue().trim(), strDestinationId, strSubjectId, txtPersonalNotes.getValue().trim())) {
 
                 //double dblSize = Double.parseDouble(event.getContentLength() + "");
                 // String strFilesize = getFileSizeMB(dblSize) + "";
@@ -893,7 +908,7 @@ public class UploadImageCard extends VerticalLayout {
                                     int intPhotoISO,
                                     double dblPhotoShutterSpeed, double dblPhotoAperture, String strMeteringMode, int imageLength, int imageWidth, String strOrientation,
                                     String[] arrPhotoGpsMeta,
-                                    String strSubtitle, String strDestination, String strSubject) {
+                                    String strSubtitle, String strDestination, String strSubject, String strPersonalNotes) {
 
         // String publicIpAddress = VaadinSession.getCurrent().getBrowser().getAddress();
         String browser = VaadinSession.getCurrent().getBrowser().getBrowserApplication();
@@ -963,6 +978,7 @@ public class UploadImageCard extends VerticalLayout {
                 " , meta_shutter_speed = '" + dblPhotoShutterSpeed + "' " +
                 " , meta_aperture = '" + dblPhotoAperture + "' "
                 + " , meta_metering_mode = '" + strMeteringMode + "' "
+                + " , meta_i_height = '" + imageLength + "' "
                 + " , meta_i_length = '" + imageLength + "' "
                 + " , meta_i_width = '" + imageWidth + "' "
                 + " , meta_orientation = '" + strOrientation + "' "
@@ -992,11 +1008,11 @@ public class UploadImageCard extends VerticalLayout {
             }
 
 
-            Object[] fieldValue = {strSubtitle};
-            String[] fieldType = {"java.lang.String"};
+            Object[] fieldValue = {strSubtitle, strPersonalNotes};
+            String[] fieldType = {"java.lang.String", "java.lang.String"};
 
             String strUpdateSubj = "UPDATE photo_meta SET " +
-                    " subtitle = ? " +
+                    " subtitle = ? , notes = ? " +
                     " WHERE name_new = '" + strNewFileName + "'";
             int ret = recordService.insertOneRecordWithQuery(strUpdateSubj, fieldValue, fieldType);
 

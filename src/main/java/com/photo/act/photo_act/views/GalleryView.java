@@ -6,20 +6,24 @@ import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.services.CacheService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
-import com.photo.act.photo_act.views.components.FilterDestinationCard;
-import com.photo.act.photo_act.views.components.FilterDestinationTypeCard;
-import com.photo.act.photo_act.views.components.GalleryImageViewCard;
-import com.photo.act.photo_act.views.components.GenericView;
-import com.vaadin.flow.component.HasComponents;
-import com.vaadin.flow.component.HasStyle;
-import com.vaadin.flow.component.UI;
+import com.photo.act.photo_act.views.components.*;
+import com.photo.act.photo_act.views.components.Layout;
+import com.vaadin.flow.component.*;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.checkbox.CheckboxGroup;
+import com.vaadin.flow.component.checkbox.CheckboxGroupVariant;
+import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.*;
+import com.vaadin.flow.component.html.Section;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.popover.Popover;
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
+import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.VaadinService;
@@ -42,7 +46,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import static com.photo.act.photo_act.views.HomeView.subPathLarge;
 import static com.photo.act.photo_act.views.HomeView.subPathMedium;
 import static com.photo.act.photo_act.views.MainLayout.*;
 
@@ -52,6 +55,7 @@ import static com.photo.act.photo_act.views.MainLayout.*;
 @Route(value = "photos") //":category?")
 @RouteAlias(value = "photos/location/:destination?", layout = MainLayout.class)
 @RouteAlias(value = "photos/location-type/:destination-type?", layout = MainLayout.class)
+@RouteAlias(value = "photos/month-uploaded/:month-uploaded?", layout = MainLayout.class)
 @RouteAlias(value = "photos/member/:member?/location/:destination?", layout = MainLayout.class)
 @RouteAlias(value = "photo/:photo-id?", layout = MainLayout.class)
 
@@ -76,15 +80,14 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
     private String strMember;
     private String strDestination;
     private String strDestinationType;
+    private String strUploadedMonth;
     private String strPhotoId;
     private RecordService recordService;
     private String strHeader;
 
-
     private String strUrlRequestToBeLogged;
 
     private String dirChar = FileSystems.getDefault().getSeparator();
-
 
     public static String DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
     private String publicIp;
@@ -92,7 +95,6 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
     private String hostname;
     private String hostAddress;
     private String canonicalHostname;
-
 
     private int userId;
     private String strUsername;
@@ -113,6 +115,21 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
             "  `id`, `title`, `description` " +
             " FROM photo_genre ";
 
+    private String[] arrUploadedPeriodCatNames = {"photo_up_month_id", "photo_up_date", "photo_up_count"};
+    private String sqlUploadedPeriodCat =
+            " SELECT  DATE_FORMAT(pm.meta_date, '%W %D %M %Y %H:%i %p') AS meta_date, DATE_FORMAT(pm.date_inserted, '%M') AS photo_up_month " +
+                    " , DATE_FORMAT(pm.date_inserted, '%Y%m') AS photo_up_month_id, DATE_FORMAT(pm.date_inserted, '%M %Y') AS photo_up_date, count(pm.id) AS photo_up_count " +
+                    " , pm.meta_i_height, pm.meta_i_length, pm.meta_i_width " +
+                    " , usr.username, usr.surname, usr.name, usr.resident, usr.resident_country, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined, DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since, usr.avatar_path " +
+                    " , usr.short_bio " +
+                    " , ux.count_photos, ux.count_albums " +
+                    " FROM dbuser usr, dbuser_extra ux, photo_meta pm" +
+                    " WHERE pm.uploaderId = usr.userId AND pm.visible_to = 'ALL' " +
+                    " AND usr.userId = ux.user_id ";
+    private String sqlUploadedPeriodCatGroupby =
+            " GROUP BY photo_up_month_id " +
+                    " ORDER BY photo_up_month_id DESC " +
+                    " LIMIT 6 ";
 
     private String[] arrDestinationCatNames = {"id", "dest_cat_title", "dest_cat_count"};
     private String sqlReadDestinationCat = " SELECT  dc.id, dc.dest_cat_title, COUNT(d.category_id) AS dest_cat_count " +
@@ -146,25 +163,16 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
     @Autowired
     private CacheService cacheService;
 
-    private String[] arrColumnNamesGallery = {"id", "name_new", "title", "subtitle", "photo_type", "uploader", "creator", "visible_to", "meta_date", "photo_date", "photo_time", "photo_time_shot"
+    private String[] arrColumnNamesGallery = {"id", "name_new", "title", "subtitle", "notes", "photo_type", "uploader", "creator", "visible_to", "meta_date", "photo_date", "photo_time", "photo_time_shot"
             , "space_size", "space_size_medium", "space_size_thumb", "meta_camera_make", "meta_camera_model", "meta_lens_make", "meta_lens_model"
-            , "meta_focal_length", "meta_focal_length_ff", "meta_iso", "meta_aperture", "meta_shutter_speed", "meta_orientation"
+            , "meta_focal_length", "meta_focal_length_ff", "meta_iso", "meta_aperture", "meta_shutter_speed", "meta_orientation", "meta_i_height", "meta_i_length", "meta_i_width"
             , "location_by_user", "location_area", "location_country_code", "location_lat", "location_lon"
             , "city_name"
             , "subject_name", "subject_description", "subject_type"
             , "date_inserted"
             , "username", "surname", "name", "resident", "resident_country", "date_joined", "member_since", "avatar_path", "short_bio", "count_photos", "count_albums"
     };
-/*    private String sqlReadGallery = "SELECT pm.id, pm.name_new, pm.title, pm.subtitle, pm.photo_type, pm.uploader, pm.creator, pm.visible_to, d.city_name, d.country, " +
-            " DATE_FORMAT(pm.meta_date, '%W %D %M %Y %H:%i %p') AS meta_date, DATE_FORMAT(pm.meta_date, '%M %Y') AS photo_date, DATE_FORMAT(pm.meta_date, '%H:%i') AS photo_time , DATE_FORMAT(pm.meta_date, '%d/%m/%Y - %H:%i:%S') AS photo_time_shot, " +
-            " pm.space_size, pm.space_size_medium, pm.space_size_thumb, pm.meta_camera_make, pm.meta_camera_model, pm.meta_lens_make, pm.meta_lens_model, " +
-            " pm.meta_focal_length, pm.meta_focal_length_ff, pm.meta_iso, meta_aperture,  meta_shutter_speed, meta_orientation " +
-            " , pm.location_by_user, pm.location_area, pm.location_country_code, pm.location_lat, pm.location_lon " +
-            " , usr.username, usr.surname, usr.name, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined, usr.avatar_path " +
-            " , subject_name, subject_description, subject_type " +
-            //, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description, DATE_FORMAT(f.dateInsert , '%D %M %Y') AS formatedDateUpdated  " +
-            " FROM dbuser usr, subject s RIGHT JOIN photo_meta pm ON pm.subject_id = s.id  LEFT JOIN destination d ON pm.destination_id = d.id " +
-            " WHERE pm.uploaderId = usr.userId ";*/
+
 
     private int intPage = 1;
     private int intRecsOnPage = 20;
@@ -172,8 +180,8 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
 
 
     private String sqlReadGalleryDestinations =
-            " SELECT pm.id, pm.name_new, pm.title, pm.subtitle, pm.photo_type, pm.uploader, pm.creator, pm.visible_to,  DATE_FORMAT(pm.meta_date, '%W %D %M %Y %H:%i %p') AS meta_date, DATE_FORMAT(pm.meta_date, '%M %Y') AS photo_date, DATE_FORMAT(pm.meta_date, '%H:%i') AS photo_time " +
-                    " , DATE_FORMAT(pm.meta_date, '%d/%m/%Y - %H:%i:%S') AS photo_time_shot,  pm.space_size, pm.space_size_medium, pm.space_size_thumb, pm.meta_camera_make, pm.meta_camera_model, pm.meta_lens_make, pm.meta_lens_model,  pm.meta_focal_length, pm.meta_focal_length_ff, pm.meta_iso, meta_aperture,  meta_shutter_speed, meta_orientation  , pm.location_by_user, pm.location_area, pm.location_country_code, pm.location_lat, pm.location_lon " +
+            " SELECT pm.id, pm.name_new, pm.title, pm.subtitle, pm.notes, pm.photo_type, pm.uploader, pm.creator, pm.visible_to,  DATE_FORMAT(pm.meta_date, '%W %D %M %Y %H:%i %p') AS meta_date, DATE_FORMAT(pm.meta_date, '%M %Y') AS photo_date, DATE_FORMAT(pm.meta_date, '%H:%i') AS photo_time " +
+                    " , DATE_FORMAT(pm.meta_date, '%d/%m/%Y - %H:%i:%S') AS photo_time_shot,  pm.space_size, pm.space_size_medium, pm.space_size_thumb, pm.meta_camera_make, pm.meta_camera_model, pm.meta_lens_make, pm.meta_lens_model,  pm.meta_focal_length, pm.meta_focal_length_ff, pm.meta_iso, meta_aperture,  meta_shutter_speed, meta_orientation ,  pm.meta_i_height, pm.meta_i_length, pm.meta_i_width , pm.location_by_user, pm.location_area, pm.location_country_code, pm.location_lat, pm.location_lon " +
                     " , d.city_name, d.prefecture, d.country " +
                     " , usr.username, usr.surname, usr.name, usr.resident, usr.resident_country, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined, DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since, usr.avatar_path " +
                     " , usr.short_bio " +
@@ -185,8 +193,8 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
     private String sqlReadGallery1OrderBy = " ORDER BY pm.date_inserted DESC  ";
 
     private String sqlReadGallerySubjects =
-            " SELECT pm.id, pm.name_new, pm.title, pm.subtitle, pm.photo_type, pm.uploader, pm.creator, pm.visible_to,  DATE_FORMAT(pm.meta_date, '%W %D %M %Y %H:%i %p') AS meta_date, DATE_FORMAT(pm.meta_date, '%M %Y') AS photo_date, DATE_FORMAT(pm.meta_date, '%H:%i') AS photo_time " +
-                    " , DATE_FORMAT(pm.meta_date, '%d/%m/%Y - %H:%i:%S') AS photo_time_shot,  pm.space_size, pm.space_size_medium, pm.space_size_thumb, pm.meta_camera_make, pm.meta_camera_model, pm.meta_lens_make, pm.meta_lens_model,  pm.meta_focal_length, pm.meta_focal_length_ff, pm.meta_iso, meta_aperture,  meta_shutter_speed, meta_orientation  , pm.location_by_user, pm.location_area, pm.location_country_code, pm.location_lat, pm.location_lon " +
+            " SELECT pm.id, pm.name_new, pm.title, pm.subtitle, pm.notes, pm.photo_type, pm.uploader, pm.creator, pm.visible_to,  DATE_FORMAT(pm.meta_date, '%W %D %M %Y %H:%i %p') AS meta_date, DATE_FORMAT(pm.meta_date, '%M %Y') AS photo_date, DATE_FORMAT(pm.meta_date, '%H:%i') AS photo_time " +
+                    " , DATE_FORMAT(pm.meta_date, '%d/%m/%Y - %H:%i:%S') AS photo_time_shot,  pm.space_size, pm.space_size_medium, pm.space_size_thumb, pm.meta_camera_make, pm.meta_camera_model, pm.meta_lens_make, pm.meta_lens_model,  pm.meta_focal_length, pm.meta_focal_length_ff, pm.meta_iso, meta_aperture,  meta_shutter_speed, meta_orientation,  pm.meta_i_height, pm.meta_i_length, pm.meta_i_width , pm.location_by_user, pm.location_area, pm.location_country_code, pm.location_lat, pm.location_lon " +
                     " , usr.username, usr.surname, usr.name, usr.resident, usr.resident_country, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined,  DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since, usr.avatar_path " +
                     " , usr.short_bio  " +
                     " , ux.count_photos, ux.count_albums " +
@@ -218,6 +226,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
     private String sqlOrderBy = " ORDER BY pm.date_inserted DESC";
     private String strDefOrderBy = arrOrderByItems[0];
 
+    private Section sidebar;
 
     public GalleryView(RecordService recordService) {
         this.recordService = recordService;
@@ -225,6 +234,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         genericView = new GenericView(recordService);
 
         constructUI();
+
     }
 
 
@@ -238,6 +248,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         strMember = event.getRouteParameters().get("member").orElse(STR_ALL_MEMBERS);
         strDestination = event.getRouteParameters().get("destination").orElse(STR_ALL_DESTINATIONS);
         strDestinationType = event.getRouteParameters().get("destination-type").orElse(STR_ALL_DESTINATION_TYPES);
+        strUploadedMonth = event.getRouteParameters().get("month-uploaded").orElse(STR_ALL_MONTHS);
         strPhotoId = event.getRouteParameters().get("photo-id").orElse("");
 
         getUserClientInfo();
@@ -260,23 +271,33 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         intPage = 1;
         VerticalLayout layoutHeaderParameters = null;
         verticalLayout.removeAll();
+        Div divContent = new Div();
+        divContent.addClassNames(Display.FLEX, Height.FULL, Overflow.HIDDEN);
+        divContent.add(createSidebar(),verticalLayout);
+        closeSidebar();
 
-        logger.info("---  " + strMember + " " + strDestination + " " + strDestinationType);
+        Div divGallery = new Div();
+        divGallery.addClassName("gallery");
+
+        logger.info("---  " + strMember + " " + strDestination + " " + strDestinationType + "  " + strUploadedMonth);
         if (!strPhotoId.isEmpty()) {
-
-            filter("", VIEW_ONE_PHOTO);
+            filter(divGallery, "", VIEW_ONE_PHOTO);
 
             layoutHeaderParameters = loadHeader("Photos", "Uploaded by our members", "", "");
             //   layoutHeaderParameters.add(loadFiltersHeader(sqlReadDestinationCat + sqlReadDestinationCatGroupby, arrDestinationCatNames, "Locations"));
             // String sqlOrderBy = " ORDER BY pm.date_inserted DESC, pm.title ASC, meta_date DESC ";
 
-            filter("", VIEW_PHOTO_GRID);
+            filter(divGallery, "", VIEW_PHOTO_GRID);
+        } else if (!strUploadedMonth.isEmpty() && !strUploadedMonth.equalsIgnoreCase(STR_ALL_MONTHS)) {
+            layoutHeaderParameters = loadHeader("Photos", "Uploaded by our members", "Month Uploaded", strUploadedMonth);
+            String sqlWhereSubClause = " AND  DATE_FORMAT(pm.date_inserted, '%M %Y') LIKE '" + strUploadedMonth + "'  ";
+            filter(divGallery, sqlWhereSubClause, VIEW_PHOTO_GRID);
         } else if (strMember.equalsIgnoreCase(STR_ALL_MEMBERS) && strDestination.equalsIgnoreCase(STR_ALL_DESTINATIONS) && strDestinationType.equalsIgnoreCase(STR_ALL_DESTINATION_TYPES)) {
             layoutHeaderParameters = loadHeader("Photos", "Uploaded by our members", "", "");
             //   layoutHeaderParameters.add(loadFiltersHeader(sqlReadDestinationCat + sqlReadDestinationCatGroupby, arrDestinationCatNames, "Locations"));
             // String sqlOrderBy = " ORDER BY pm.date_inserted DESC, pm.title ASC, meta_date DESC ";
 
-            filter("", VIEW_PHOTO_GRID);
+            filter(divGallery, "", VIEW_PHOTO_GRID);
         } else if (strMember.equalsIgnoreCase(STR_ALL_MEMBERS) && strDestination.equalsIgnoreCase(STR_ALL_DESTINATIONS) && !strDestinationType.equalsIgnoreCase(STR_ALL_DESTINATION_TYPES)) {
             layoutHeaderParameters = loadHeader("Photos", "Uploaded by our members", "Location type", strDestinationType);
             //   layoutHeaderParameters.add(loadFiltersHeader(sqlReadDestinationCat + sqlReadDestinationCatGroupby, arrDestinationCatNames, "Locations"));
@@ -286,19 +307,18 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
 
             layoutHeaderParameters.add(loadDestinationCards(sqlWhereSubClause, arrDestinationNames, "city_name"));
 
-//            filter("", VIEW_PHOTO_GRID);
         } else if (strMember.equalsIgnoreCase(STR_ALL_MEMBERS) && !strDestination.equalsIgnoreCase(STR_ALL_DESTINATIONS) && !strDestination.isEmpty()) {
             layoutHeaderParameters = loadHeader("Photos", "Uploaded by our members", "Location", strDestination);
 
             layoutHeaderParameters.add(loadWeather(strDestination, ""));
 
             String sqlWhereSubClause = " AND d.city_name LIKE '" + strDestination + "'  ";
-            filter(sqlWhereSubClause, VIEW_PHOTO_GRID);
+            filter(divGallery, sqlWhereSubClause, VIEW_PHOTO_GRID);
         } else if (!strMember.equalsIgnoreCase(STR_ALL_MEMBERS)) {
             layoutHeaderParameters = loadHeader("Photos", "Uploaded by our members", "", "");
             layoutHeaderParameters.add(loadWeather(strDestination, ""));
 
-            filter("", VIEW_PHOTO_GRID);
+            filter(divGallery, "", VIEW_PHOTO_GRID);
         } else {
 
             layoutHeaderParameters = loadHeader("Photos", "Uploaded by our members", "", "");
@@ -310,7 +330,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
             layoutFiltersSubject.addClassNames(Width.FULL, Height.FULL);
             verticalLayout.add(layoutFiltersSubject);
 
-            filter("", VIEW_PHOTO_GRID);
+            filter(divGallery, "", VIEW_PHOTO_GRID);
         }
 
 
@@ -320,26 +340,25 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         this.add(layoutHeaderParameters);
 
 
-        verticalLayout.add(layoutRecControl);
         if (isMobile) {
             VerticalLayout layoutMobileContent = new VerticalLayout();
             layoutMobileContent.addClassNames(Width.FULL,
-                    AlignItems.START, JustifyContent.CENTER,
+                    AlignItems.START, JustifyContent.BETWEEN,
                     Padding.MEDIUM, Margin.NONE,
                     Gap.XSMALL
             );
 
-            layoutMobileContent.add(verticalLayout);
+            layoutMobileContent.add(divContent);
             this.add(layoutMobileContent);
         } else {
-            HorizontalLayout layoutContent = new HorizontalLayout();
+            VerticalLayout layoutContent = new VerticalLayout();
             layoutContent.addClassNames(Width.FULL,
                     AlignItems.START, JustifyContent.CENTER,
                     Padding.LARGE, Margin.NONE,
                     Gap.XSMALL
             );
 
-            layoutContent.add(verticalLayout);
+            layoutContent.add(divContent);
             this.add(layoutContent);
         }
 
@@ -405,6 +424,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
 
 
         layoutRecControl = new HorizontalLayout();
+        layoutRecControl.addClassName("actions");
         layoutRecControl.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER);
 
     }
@@ -427,7 +447,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
             );
         } else {
             headerContainer.addClassNames(
-                    AlignItems.START, JustifyContent.BETWEEN,
+                    AlignItems.STRETCH, JustifyContent.BETWEEN,
                     Overflow.HIDDEN, Width.FULL,
                     Margin.NONE,
                     Padding.MEDIUM,
@@ -470,7 +490,8 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         divLine.addClassNames(Border.BOTTOM, Width.FULL);
 
         VerticalLayout layoutHeader = new VerticalLayout();
-        layoutHeader.addClassNames(AlignItems.START, JustifyContent.EVENLY,
+        layoutHeader.addClassNames(Width.FULL,
+                AlignItems.START, JustifyContent.EVENLY,
                 Padding.NONE, Margin.NONE, Gap.XSMALL);
         layoutHeader.add(header, subheader);
 
@@ -479,31 +500,33 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         btnLastUploaded.setIcon(FontAwesome.Solid.CALENDAR_DAY.create());
 
         HorizontalLayout layoutTabViewPhotos = new HorizontalLayout();
-        layoutTabViewPhotos.addClassName("header-tab-filters");
+
+        layoutTabViewPhotos.addClassName("tab-select");
         RadioButtonGroup<String> btnGroupShowPhotos = new RadioButtonGroup<>();
 //        btnGroupShowPhotos.setItems(btnLastUploaded);
-        btnGroupShowPhotos.setItems("Last Uploaded", "By Location Type");
+        btnGroupShowPhotos.setItems("Month Uploaded", "Location Type");
         layoutTabViewPhotos.add(btnGroupShowPhotos);
         btnGroupShowPhotos.addValueChangeListener(e -> {
             if (e.getValue() == null) {
 
             } else if (e.getValue().contains("Uploaded")) {
                 filtersContainer.removeAll();
-                e.getSource().getUI().ifPresent(ui ->
-                        ui.navigate(GalleryView.class)
-                );
-//                filter("", VIEW_PHOTO_GRID);
+                filtersContainer.add(loadFiltersHeader(sqlUploadedPeriodCat + sqlUploadedPeriodCatGroupby, arrUploadedPeriodCatNames, "month-uploaded", "Photos"));
+//                e.getSource().getUI().ifPresent(ui ->
+//                        ui.navigate(GalleryView.class)
+//                );
+
             } else if (e.getValue().contains("Location")) {
                 filtersContainer.removeAll();
 
-                filtersContainer.add(loadFiltersHeader(sqlReadDestinationCat + sqlReadDestinationCatGroupby, arrDestinationCatNames, "Locations"));
+                filtersContainer.add(loadFiltersHeader(sqlReadDestinationCat + sqlReadDestinationCatGroupby, arrDestinationCatNames, "destination-type", "Locations"));
 
             } else if (e.getValue().contains("Object")) {
                 filtersContainer.removeAll();
-                filtersContainer.add(loadFiltersHeader(sqlReadDestinationCat + sqlReadDestinationCatGroupby, arrDestinationCatNames, "Objects"));
+                filtersContainer.add(loadFiltersHeader(sqlReadDestinationCat + sqlReadDestinationCatGroupby, arrDestinationCatNames, "destination-type", "Objects"));
             } else if (e.getValue().contains("Date")) {
                 filtersContainer.removeAll();
-                filtersContainer.add(loadFiltersHeader(sqlReadDestinationCat + sqlReadDestinationCatGroupby, arrDestinationCatNames, "Objects"));
+                filtersContainer.add(loadFiltersHeader(sqlReadDestinationCat + sqlReadDestinationCatGroupby, arrDestinationCatNames, "destination-type", "Objects"));
             }
         });
         btnGroupShowPhotos.setValue("By Genre");
@@ -518,314 +541,47 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         headerContainer.add(headerNTabsLayout);
 
 
+        HorizontalLayout layoutTabRecordsView = new HorizontalLayout();
+        layoutTabRecordsView.addClassName("thin-tab-select");
+        RadioButtonGroup<String> btnGroupSelect = new RadioButtonGroup<>();
+        btnGroupSelect.setItems("Meta Data", "Rate");
+        btnGroupSelect.addValueChangeListener(event -> {
+            if (event.getSource().getValue().contains("Meta")) {
+
+            } else {
+
+            }
+
+        });
+        layoutTabRecordsView.add(btnGroupSelect);
+        btnGroupSelect.setValue("Meta Data");
+
         headerContainer.add(filtersContainer);
         headerContainer.add(headerSection, headerSectionCaption, divLine);
+       // headerContainer.add(createToolbar());
 
         return headerContainer;
     }
 
-
-//    private VerticalLayout loadHeader(String strHeader, String strSubHeader, String strSection) {
-//
-//        this.strHeader = strHeader;
-//
-//        HorizontalLayout headerContainerMaster = new HorizontalLayout();
-//        headerContainerMaster.setId("header-master");
-//        if (isMobile) {
-//            headerContainerMaster.addClassNames(
-//                    AlignItems.CENTER, JustifyContent.START,
-//                    Overflow.HIDDEN, Width.FULL,
-//                    Margin.NONE,
-//                    Padding.SMALL,
-//                    Gap.XSMALL,
-//                    // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
-//                    //   Background.CONTRAST_5,
-//                    BorderRadius.NONE
-//            );
-//        } else {
-//            headerContainerMaster.addClassNames(
-//                    AlignItems.CENTER, JustifyContent.START,
-//                    Overflow.HIDDEN, Width.FULL,
-//                    Margin.NONE,
-//                    Padding.MEDIUM,
-//                    Gap.SMALL,
-//                    // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
-//                    //   Background.CONTRAST_5,
-//                    BorderRadius.LARGE
-//            );
-//        }
-//
-//
-//        Div headerContainer = new Div();
-//        if (isMobile) {
-//            headerContainer.addClassNames(
-//                    AlignItems.START, JustifyContent.CENTER,
-//                    Overflow.HIDDEN, Width.FULL,
-//                    Margin.NONE,
-//                    Padding.NONE,
-//                    Gap.SMALL,
-//                    // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
-//                    //   Background.CONTRAST_5,
-//                    BorderRadius.NONE
-//            );
-//        } else {
-//            headerContainer.addClassNames(
-//                    AlignItems.START, JustifyContent.CENTER,
-//                    Overflow.HIDDEN, Width.FULL,
-//                    Margin.NONE,
-//                    Padding.NONE,
-//                    Gap.SMALL,
-//                    // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
-//                    //   Background.CONTRAST_5,
-//                    BorderRadius.NONE
-//            );
-//        }
-//
-//        VerticalLayout layoutFiltersAll = new VerticalLayout();
-//        layoutFiltersAll.addClassNames(
-//                AlignItems.CENTER, JustifyContent.CENTER,
-//                Margin.NONE, Padding.MEDIUM,
-//                LumoUtility.FontSize.SMALL, LumoUtility.TextColor.SECONDARY,
-////                Background.CONTRAST_5,
-//                TextAlignment.CENTER
-//        );
-//
-//        Div layoutFilters = new Div();
-//        if (isMobile) {
-//            layoutFilters.addClassNames(
-//                    Overflow.HIDDEN,
-//                    AlignItems.CENTER, JustifyContent.CENTER,
-//                    Margin.NONE,
-//                    Padding.XSMALL,
-//                    Gap.SMALL,
-//                    Width.FULL,
-//                    //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-//                    //  Background.CONTRAST_5,
-//                    BorderRadius.NONE);
-//        } else {
-//            layoutFilters.addClassNames(
-//                    Overflow.HIDDEN,
-//                    AlignItems.CENTER, JustifyContent.AROUND,
-//                    Margin.NONE,
-//                    Padding.LARGE,
-//                    Gap.SMALL,
-//                    Width.FULL,
-//                    //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-//                    //  Background.CONTRAST_5,
-//                    BorderRadius.LARGE);
-//        }
-//        layoutFilters.addClassName("header-layout-filters");
-//
-//
-//        Div divFiltersTitle = new Div("Filter by Location");
-//        layoutFiltersAll.add(divFiltersTitle, layoutFilters);
-//
-//        List<Record> lstDestinationRecs = getRecordsFromDb(sqlReadDestination, arrDestinationNames);
-//
-//        ArrayList<String> lstDestinations = new ArrayList<>();
-//        for (int r = 0; r < lstDestinationRecs.size(); r++) {
-//            String strDestination = lstDestinationRecs.get(r).getColumnData("city_name");
-//            if (strDestination == null || strDestination.trim().isEmpty() || strDestination.trim().equalsIgnoreCase("null")) {
-//            } else {
-//                lstDestinations.add(strDestination);
-//            }
-//
-//        }
-//
-//        RouteParam routeMember = new RouteParam("member", strMember);
-//
-//        RouteParam routeDestinationAll = new RouteParam("destination", STR_ALL_DESTINATIONS);
-////        RouteParameters routeParamsAll = new RouteParameters(routeDestinationAll, routeMember);
-////        RouterLink linkPhotoDestinationAll = new RouterLink("All Locations", GalleryView.class, routeParamsAll);
-////        layoutFilters.add(linkPhotoDestinationAll);
-//
-//        for (int c = 0; c < lstDestinations.size(); c++) {
-//            String captionDestination = lstDestinations.get(c);
-//            RouteParam routeParamDestination = new RouteParam("destination", captionDestination);
-//
-//            RouterLink linkPhotoCategory = new RouterLink(captionDestination, GalleryView.class, new RouteParameters(routeParamDestination, routeMember));
-//            layoutFilters.add(linkPhotoCategory);
-//        }
-//
-////        CheckboxGroup<String> checkboxGroupSubject = new CheckboxGroup<>();
-////        checkboxGroupSubject.setTooltipText("Subject");
-////        checkboxGroupSubject.setItems("Photography", "Street Photography", "Landscape", "Cityscape");
-//        //   "Friday", "Saturday", "Sunday");
-//        // checkboxGroup.addThemeVariants(CheckboxGroupVariant.LUMO_VERTICAL);
-////        Div lblFilterSubject = new Div("Subject");
-//
-////        layoutFilters.add(checkboxGroupSubject);
-//
-////        CheckboxGroup<String> checkboxGroupFormat = new CheckboxGroup<>();
-////        checkboxGroupFormat.setTooltipText("Format");
-//////        checkboxGroupFormat.setLabel("Format");
-////        checkboxGroupFormat.setItems("Book", "Youtube");
-//////        Div lblFilterFormat = new Div("Format");
-////        layoutFilters.add(checkboxGroupFormat);
-//
-////        VerticalLayout layoutHeaderParameters = new VerticalLayout();
-////        if (isMobile) {
-////            layoutHeaderParameters.addClassNames(
-////                    AlignItems.CENTER, JustifyContent.EVENLY,
-////                    Overflow.HIDDEN, Width.FULL,
-////                    Margin.SMALL,
-////                    Padding.NONE,
-////                    Gap.XSMALL,
-////                    // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
-////                    //   Background.CONTRAST_5,
-////                    BorderRadius.NONE
-////            );
-////        } else {
-////            layoutHeaderParameters.addClassNames(
-////                    AlignItems.CENTER, JustifyContent.EVENLY,
-////                    Overflow.HIDDEN, Width.FULL,
-////                    Margin.SMALL,
-////                    Padding.NONE,
-////                    Gap.XSMALL,
-////                    // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
-//////                       Background.CONTRAST_5,
-////                    BorderRadius.LARGE
-////            );
-////        }
-//
-//        Select<String> cmbView = new Select<>();
-//        cmbView.setLabel("View");
-//        cmbView.setItems("Micro View", "Ordinary - No MetaData", "Ordinary - MetaData Bottom", "Ordinary - MetaData Right",
-//                "Wide - No MetaData", "Wide - MetaData Bottom", "Wide - MetaData Right");
-//        cmbView.setValue("Ordinary - No MetaData");
-//
-//
-//        Tab tabFilterLocation = new Tab(VaadinIcon.LOCATION_ARROW_CIRCLE_O.create(), new Span("Location"));
-//        Tab tabFilterKeyword = new Tab(VaadinIcon.KEYBOARD_O.create(), new Span("Keyword"));
-//        Tab tabFilterUser = new Tab(VaadinIcon.USER.create(), new Span("User"));
-//
-//        // Set the icon on top
-//        for (Tab tab : new Tab[]{tabFilterLocation, tabFilterKeyword, tabFilterUser}) {
-//            tab.addThemeVariants(TabVariant.LUMO_ICON_ON_TOP);
-////            tab.addClassNames(
-//////                    Width.FULL,
-////                    AlignItems.CENTER, JustifyContent.END,
-////                    IconSize.LARGE, //FontSize.MEDIUM,
-////                    TextColor.SECONDARY,
-//////                    BorderColor.CONTRAST_20,
-////                    Padding.MEDIUM, Margin.NONE,
-////                    Gap.MEDIUM
-////            );
-////            FontSize.MEDIUM, TextColor.SECONDARY, IconSize.SMALL, //BorderRadius.LARGE,
-////                    Width.FULL, Padding.XSMALL, Margin.NONE,
-////                    BorderColor.CONTRAST_20, Border.ALL);
-//        }
-//
-////        Tabs tabsFilterBased = new Tabs(tabFilterLocation, tabFilterKeyword, tabFilterUser);
-//////        tabsViewInfo.addThemeVariants(  TabsVariant.LUMO_SMALL,
-//////                TabsVariant.LUMO_EQUAL_WIDTH_TABS);
-////        tabsFilterBased.addClassNames(
-////                AlignItems.CENTER, JustifyContent.END,
-////                Padding.LARGE, Margin.NONE,
-//////                BorderRadius.LARGE,
-////                Border.ALL,
-////                BorderColor.CONTRAST_5
-//////                Gap.XSMALL
-////        );
-////        tabsFilterBased.addClassName("header-view-type");
-//
-////        Tabs tabsViewInfo = new Tabs(tabFilterLocation, tabFilterKeyword, tabFilterUser);
-//////        tabsViewInfo.addThemeVariants(  TabsVariant.LUMO_SMALL,
-//////                TabsVariant.LUMO_EQUAL_WIDTH_TABS);
-////        tabsViewInfo.addClassNames(
-////
-////                AlignItems.CENTER, JustifyContent.END,
-////                Padding.LARGE, Margin.NONE,
-//////                BorderRadius.LARGE,
-////                Border.ALL,
-////                BorderColor.CONTRAST_5
-//////                Gap.XSMALL
-////        );
-////        tabsViewInfo.addClassName("header-view-type");
-//
-////        headerContainerMaster.add(headerTextContainer); //,tabsViewInfo);
-////        layoutHeaderParameters.add(headerContainerMaster);
-//
-////        H3 divSection = new H3(strSection);
-////        divSection.addClassNames(
-////                AlignItems.CENTER, JustifyContent.CENTER,
-////                Margin.Bottom.MEDIUM, Margin.Top.MEDIUM);
-//
-//        VerticalLayout layoutViewNOrder = new VerticalLayout();
-//        layoutViewNOrder.addClassNames(
-//                AlignItems.START, JustifyContent.AROUND,
-//                Margin.NONE, Padding.MEDIUM,
-//                Gap.MEDIUM
-//        );
-//        layoutViewNOrder.add(cmbCount, cmbSortBy);
-//        layoutViewNOrder.setMaxWidth("200px");
-//
-////        headerContainerMaster.add(headerTextContainer);
-//        headerContainer.add(layoutFiltersAll);
-//        headerContainerMaster.add(headerContainer, layoutViewNOrder);
-//        headerContainerMaster.setMaxWidth("1160px");
-////        layoutHeaderParameters.add( headerContainerSecondary, divSection);
-//
-//        HeaderFilterTabs headerFilterTabs = new HeaderFilterTabs(recordService, isMobile);
-//        VerticalLayout layoutHeaderParameters = headerFilterTabs.getHeader(strHeader, strSubHeader, strSection, headerContainerMaster);
-//
-
-    /// /        headerContainerMaster.add(headerTextContainer, cmbView);
-    /// /        headerContainerSecondary.add(layoutFilters, sortBy);
-//        // layoutHeaderParameters.add(headerContainerMaster);
-//
-//        return layoutHeaderParameters;
-//    }
-    private HorizontalLayout getFooterControls(String sqlWhereAnd, String sqlOrderBy) {
+    private HorizontalLayout getFooterControls(Div divGallery, String sqlWhereAnd, String sqlOrderBy) {
 
         // recsHolder.removeAll();
         layoutRecControl.removeAll();
 
-        Div divInfo = new Div("Page ");
-        Button btnPrevious = new Button("Previous");
-        btnPrevious.setIcon(FontAwesome.Solid.ARROW_LEFT.create());
-        Button btnNext = new Button("Next");
-        btnNext.setIcon(FontAwesome.Solid.ARROW_RIGHT.create());
-        btnNext.setIconAfterText(true);
+        Button btnLoadMore = new Button("Load More");
+        btnLoadMore.setIcon(FontAwesome.Solid.ARROW_DOWN.create());
+        btnLoadMore.setIconAfterText(true);
 
-        btnPrevious.addClickListener(event -> {
-            int intResultsCount = 0;
-            if (intPage > 1) {
-                intPage--;
-                divInfo.setText("Page " + intPage);
-
-                intResultsCount = filter(null, VIEW_PHOTO_GRID);
-
-            }
-
-            if (intPage <= 1) {
-                event.getSource().setVisible(false);
-            } else {
-                event.getSource().setVisible(true);
-            }
-
-            if (intResultsCount > 0) {
-                btnNext.setVisible(true);
-            } else {
-                btnNext.setVisible(false);
-            }
-        });
-
-        btnNext.addClickListener(event -> {
+        btnLoadMore.addClickListener(event -> {
             int intResultsCount = 0;
             if (intPage > 0) {
                 intPage++;
-                divInfo.setText("Page " + intPage);
+                //               divInfo.setText("Page " + intPage);
 
-                intResultsCount = filter(null, VIEW_PHOTO_GRID);
+                intResultsCount = filter(divGallery, sqlWhereAnd, VIEW_PHOTO_GRID);
 
             }
 
-            if (intPage > 1) {
-                btnPrevious.setVisible(true);
-            } else {
-                btnPrevious.setVisible(false);
-            }
 
             if (intResultsCount > 0) {
                 event.getSource().setVisible(true);
@@ -834,18 +590,12 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
             }
         });
 
-        divInfo.setText("Page " + intPage);
-//        recsHolder.add(filterPage(sqlWhereAnd, null));
-        if (intPage > 1) {
-            btnPrevious.setVisible(true);
-        } else {
-            btnPrevious.setVisible(false);
-        }
 
-        layoutRecControl.add(btnPrevious, divInfo, btnNext);
+        layoutRecControl.add(btnLoadMore);
 
         return layoutRecControl;
     }
+
 
     //   private Div filterPage(String sqlWhereAnd, String sqlOrderBy) {
 //        intRecsOnPage = Integer.parseInt(cmbCount.getValue());
@@ -912,14 +662,14 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         return headerContainer;
     }
 
-    private Div loadFiltersHeader(String sqlRead, String[] arrColumnNames, String strCaptionsCount) {
+    private Div loadFiltersHeader(String sqlRead, String[] arrColumnNames, String nameUrlVariable, String strCaptionsCount) {
         Div filtersPanel = new Div();
         filtersPanel.addClassName("top-tall-layout-filters");
 
         List<Record> lstLearningCategoriesRecs = getRecordsFromDb(sqlRead, arrColumnNames);
 
         for (int r = 0; r < lstLearningCategoriesRecs.size(); r++) {
-            FilterDestinationTypeCard filterDestinationTypeCard = new FilterDestinationTypeCard(lstLearningCategoriesRecs.get(r), strPath, isMobile, userId, sessionCreation, publicIp,
+            FilterDestinationTypeCard filterDestinationTypeCard = new FilterDestinationTypeCard(lstLearningCategoriesRecs.get(r), arrColumnNames, nameUrlVariable, strPath, isMobile, userId, sessionCreation, publicIp,
                     strCaptionsCount, this);
             filterDestinationTypeCard.addClassName("top-tall-filters");
             filtersPanel.add(filterDestinationTypeCard);
@@ -929,7 +679,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
     }
 
 
-    private int filter(String sqlWhereSubClause, String strPhotoView) {
+    private int filter(Div divGallery, String sqlWhereSubClause, String strPhotoView) {
         int intResultsCount = 0;
 
 //        String strWhere1SubClause = "";
@@ -993,6 +743,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
 //            sqlOrderBy = arrOrderByItemsSql[intSelected];
 //        }
 
+
         if (strPhotoView.equalsIgnoreCase(VIEW_ONE_PHOTO)) {
             showDialogWithCarousel("", sqlWhereSubClause, strPhotoId, false);
             return 1;
@@ -1001,19 +752,17 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
             String sqlWhereMember = "";
             if (!strMember.isEmpty() && !strMember.equalsIgnoreCase(STR_ALL_MEMBERS)) {
                 sqlWhereMember = " AND usr.username LIKE '" + strMember + "' ";
-
             }
 
+            String sqlOrderNLimit;
+            if (intRecsOnPage == intPage * intRecsOnPage) {
+                sqlOrderNLimit = sqlReadGallery1OrderBy + " LIMIT " + (intRecsOnPage);
+            } else {
+                sqlOrderNLimit = sqlReadGallery1OrderBy + " LIMIT " + (intRecsOnPage) + " OFFSET " + (intPage * intRecsOnPage);
+            }
 
             String sqlReadPage;
-            if (intRecsOnPage == intPage * intRecsOnPage) {
-                sqlReadPage = sqlReadGalleryDestinations + " " + sqlWhereSubClause + sqlWhereMember + " " + sqlReadGallery1OrderBy + " LIMIT " + (intRecsOnPage) + " ";
-//                    ") UNION (" + sqlReadGallery2 + " " + strWhere2SubClause + sqlWhereMember + " " + sqlReadGallery2OrderBy + " LIMIT " + (intRecsOnPage / 2) + " " + " )";
-            } else {
-                sqlReadPage = sqlReadGalleryDestinations + " " + sqlWhereSubClause + sqlWhereMember + " " + sqlReadGallery1OrderBy + " LIMIT " + (intRecsOnPage) + " OFFSET " + (intPage * intRecsOnPage);
-                // ") UNION (" + sqlReadGallery2 + " " + strWhere2SubClause + sqlWhereMember + " " + sqlReadGallery2OrderBy + " LIMIT " + (intRecsOnPage / 2) + " OFFSET " + (intPage * intRecsOnPage) + ") ";
-            }
-
+            sqlReadPage = sqlReadGalleryDestinations + " " + sqlWhereSubClause + sqlWhereMember + " " + sqlOrderNLimit; //+ sqlReadGallery1OrderBy + " LIMIT " + (intRecsOnPage) + " ";
 
             List<Record> lstRecords = cacheService.getAllPhotos(sqlReadPage, arrColumnNamesGallery, "id"); //getRecordsFromDb(sqlRead, arrColumnsLearning);
             intResultsCount = lstRecords.size();
@@ -1035,28 +784,35 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
             }
             viewBiggerPhotos.setMaxWidth("1080px");
 
-            Div divGallery = new Div();
-            divGallery.addClassName("gallery");
-            for (int r = 0; r < lstRecords.size(); r++) {
-                Record rec = lstRecords.get(r);
-                String strId = rec.getColumnData("id");
-
-                Record record = cacheService.getPhotoById(strId);
-
-                if (strPhotoView.equalsIgnoreCase(VIEW_PHOTO_GRID)) {
-                    String strPath = DIR_PHOTOS_SERVER + dirChar + subPathMedium;
-                    divGallery.add(getImageFromDb(record, strPath, isEditable));
-                } else if (strPhotoView.equalsIgnoreCase(VIEW_BIGGER_PHOTOS)) {
-                    String strPath = DIR_PHOTOS_SERVER + dirChar + subPathLarge;
-                    viewBiggerPhotos.add(getImageFromDb(record, strPath, isEditable));
-                }
-            }
-
-            verticalLayout.removeAll();
+            verticalLayout.remove(layoutRecControl);
             if (strPhotoView.equalsIgnoreCase(VIEW_PHOTO_GRID)) {
-                verticalLayout.add(divGallery);
-            } else if (strPhotoView.equalsIgnoreCase(VIEW_BIGGER_PHOTOS)) {
-                verticalLayout.add(viewBiggerPhotos);
+
+
+                if (divGallery.getComponentCount() > 0) {
+                    for (int r = 0; r < lstRecords.size(); r++) {
+                        Record rec = lstRecords.get(r);
+                        String strId = rec.getColumnData("id");
+
+                        Record record = cacheService.getPhotoById(strId);
+
+                        String strPath = DIR_PHOTOS_SERVER + dirChar + subPathMedium;
+                        divGallery.add(getImageFromDb(record, strPath, isEditable));
+                    }
+
+                } else {
+                    for (int r = 0; r < lstRecords.size(); r++) {
+                        Record rec = lstRecords.get(r);
+                        String strId = rec.getColumnData("id");
+
+                        Record record = cacheService.getPhotoById(strId);
+
+                        String strPath = DIR_PHOTOS_SERVER + dirChar + subPathMedium;
+                        divGallery.add(getImageFromDb(record, strPath, isEditable));
+                    }
+                    verticalLayout.add(divGallery);
+                }
+                layoutRecControl = getFooterControls(divGallery, sqlWhereSubClause, sqlOrderNLimit);
+                verticalLayout.add(layoutRecControl);
             }
 
             //  verticalLayout.add(getFooterControls("", ""));
@@ -1082,6 +838,183 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
 //        return divGallery;
 //    }
 
+    public Component createToolbar() {
+        TextField search = new TextField();
+        search.addClassNames(Flex.GROW, MinWidth.NONE);
+        search.setAriaLabel("Search");
+        search.setPlaceholder("Search...");
+        search.setPrefixComponent(VaadinIcon.SEARCH.create());
+
+        MultiSelectComboBox<String> brands = new MultiSelectComboBox<>();
+        brands.addClassNames(Display.HIDDEN, Display.Breakpoint.Large.INLINE_FLEX, MinWidth.NONE);
+        brands.setAriaLabel("Brands");
+        brands.setItems("LuxeLiving", "DecoHaven", "CasaCharm", "HomelyCraft", "ArtisanHaus");
+        brands.setPlaceholder("Brands");
+
+        Button price = new Button("Price", VaadinIcon.ARROW_CIRCLE_DOWN.create());
+        price.addClassNames(Display.HIDDEN, Display.Breakpoint.Large.INLINE_BLOCK);
+        price.setIconAfterText(true);
+
+//        PriceRangeField priceRangeField = new PriceRangeField("Price");
+//        priceRangeField.addClassNames(Margin.SMALL, Padding.Top.XSMALL);
+//        priceRangeField.setWidth(16, Unit.REM);
+//
+//        Popover priceDialog = new Popover(priceRangeField);
+//        priceDialog.setTarget(price);
+
+        // TODO: a11y improvements, opened/closed states
+        Button filters = new Button("Filters", VaadinIcon.FILTER.create());
+        filters.addClickListener(e -> toggleSidebar());
+
+        RadioButtonGroup<String> mode = new RadioButtonGroup<>();
+        mode.setAriaLabel("View mode");
+        mode.setItems("Grid", "List");
+        mode.setRenderer(new ComponentRenderer<>(this::renderIconWithAriaLabel));
+        mode.setValue("Grid");
+        setRadioButtonGroupTheme(mode, RadioButtonTheme.TOGGLE);
+
+        Layout toolbar = new Layout(search, brands, price,  filters, mode);
+        toolbar.addClassNames(Border.BOTTOM, Padding.Horizontal.LARGE, Padding.Vertical.SMALL);
+        toolbar.setAlignItems(Layout.AlignItems.CENTER);
+        toolbar.setGap(Layout.Gap.MEDIUM);
+        return toolbar;
+    }
+
+    private Section createSidebar() {
+        H2 title = new H2("Filters");
+        title.addClassNames(FontSize.MEDIUM);
+
+        Button close = new Button(VaadinIcon.CLOSE.create(), e -> closeSidebar());
+        close.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        close.setAriaLabel("Close sidebar");
+        close.setTooltipText("Close sidebar");
+
+        Layout header = new Layout(title, close);
+        header.addClassNames(Padding.End.MEDIUM, Padding.Start.LARGE, Padding.Vertical.SMALL);
+        header.setAlignItems(Layout.AlignItems.CENTER);
+        header.setJustifyContent(Layout.JustifyContent.BETWEEN);
+
+        CheckboxGroup<String> brands = new CheckboxGroup<>("Brands");
+        brands.setItems("LuxeLiving", "DecoHaven", "CasaCharm", "HomelyCraft", "ArtisanHaus");
+        brands.addThemeVariants(CheckboxGroupVariant.LUMO_VERTICAL);
+        setRenderer(brands);
+
+       // PriceRangeField priceRangeField = new PriceRangeField("Price");
+
+        CheckboxGroup<String> rating = new CheckboxGroup<>("Rating");
+        rating.addThemeVariants(CheckboxGroupVariant.LUMO_VERTICAL);
+        rating.setItems("1 star", "2 stars", "3 stars", "4 stars", "5 stars");
+        rating.setRenderer(new ComponentRenderer<>(item -> {
+            String count = Integer.toString((100));
+
+            Badge badge = new Badge(count);
+            badge.addThemeVariants(BadgeVariant.CONTRAST, BadgeVariant.SMALL, BadgeVariant.PILL);
+
+            int stars = Integer.parseInt(item.split(" ")[0]);
+
+            Span span = new Span(getStars(stars), badge);
+            span.addClassNames(AlignItems.CENTER, Display.FLEX, Gap.SMALL);
+            span.getElement().setAttribute("aria-hidden", "true");
+
+            Span screenReader = new Span(item + ", " + count + " items");
+            screenReader.addClassNames(Accessibility.SCREEN_READER_ONLY);
+
+            return new Span(span, screenReader);
+        }));
+
+        CheckboxGroup<String> availability = new CheckboxGroup<>("Availability");
+        availability.addThemeVariants(CheckboxGroupVariant.LUMO_VERTICAL);
+        availability.setItems("In stock", "Out of stock");
+        setRenderer(availability);
+
+        Layout form = new Layout(brands, rating, availability);
+        form.addClassNames(Padding.Horizontal.LARGE);
+        form.setFlexDirection(Layout.FlexDirection.COLUMN);
+
+        this.sidebar = new Section(header, form);
+        this.sidebar.addClassNames(BackdropBlur.SMALL, Background.TINT_90, Border.RIGHT, Display.FLEX,
+                FlexDirection.COLUMN, Position.ABSOLUTE, Position.Breakpoint.Large.STATIC, Position.Bottom.NONE,
+                Position.Top.NONE, Transition.ALL, ZIndex.XSMALL);
+        this.sidebar.setWidth(20, Unit.REM);
+        return this.sidebar;
+    }
+
+    private void setRenderer(CheckboxGroup<String> checkboxGroup) {
+        checkboxGroup.setRenderer(new ComponentRenderer<>(item -> {
+            Badge badge = new Badge(Integer.toString(100));
+            badge.addThemeVariants(BadgeVariant.CONTRAST, BadgeVariant.SMALL, BadgeVariant.PILL);
+
+            Span span = new Span(new Text(item), badge);
+            span.addClassNames(AlignItems.CENTER, Display.FLEX, Gap.SMALL);
+            return span;
+        }));
+    }
+
+    private Text getStars(int stars) {
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < 5; i++) {
+            if (i < stars) {
+                builder.append("★");
+            } else {
+                builder.append("☆");
+            }
+        }
+        return new Text(builder.toString());
+    }
+
+    private void toggleSidebar() {
+        if (this.sidebar.isEnabled()) {
+            closeSidebar();
+        } else {
+            openSidebar();
+        }
+    }
+
+    private void openSidebar() {
+        this.sidebar.setEnabled(true);
+        this.sidebar.addClassNames(Border.RIGHT);
+        // Desktop
+        this.sidebar.getStyle().remove("margin-inline-start");
+        // Mobile
+        this.sidebar.addClassNames(Position.Start.NONE);
+        this.sidebar.removeClassName(Position.Minus.Start.FULL);
+    }
+
+    private void closeSidebar() {
+        this.sidebar.setEnabled(false);
+        this.sidebar.removeClassName(Border.RIGHT);
+        // Desktop
+        this.sidebar.getStyle().set("margin-inline-start", "-20rem");
+        // Mobile
+        this.sidebar.addClassNames(Position.Minus.Start.FULL);
+        this.sidebar.removeClassName(Position.Start.NONE);
+    }
+
+    private Component renderIconWithAriaLabel(String item) {
+        Component icon = item.equals("Grid") ?
+                VaadinIcon.GRID.create() :
+                VaadinIcon.LIST.create();
+        icon.getElement().setAttribute("aria-label", item);
+        return icon;
+    }
+
+    private Button createIconButton(VaadinIcon symbol, String label) {
+        Button button = new Button(symbol.create());
+        button.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_TERTIARY);
+        button.setAriaLabel(label);
+        button.setTooltipText(label);
+        return button;
+    }
+
+    private void setRadioButtonGroupTheme(RadioButtonGroup<String> group, String... themeNames) {
+        group.addThemeNames(themeNames);
+        group.getChildren().forEach(component -> {
+            for (String themeName : themeNames) {
+                component.getElement().getThemeList().add(themeName);
+            }
+        });
+    }
+
     private GalleryImageViewCard getImageFromDb(Record record, String strPath, boolean isEditable) {
 
 
@@ -1100,11 +1033,13 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         String sqlReadGallery = "";
         if (!strCity.isEmpty()) {
             isType = 2;
-
             sqlReadGallery = sqlReadGalleryDestinations;
         } else if (!strSubject.isEmpty()) {
             isType = 3;
             sqlReadGallery = sqlReadGallerySubjects;
+        } else {
+
+            sqlReadGallery = sqlReadGalleryDestinations;
         }
 //
 //        RouteParam routeUploaderAll = new RouteParam("member", STR_ALL_MEMBERS);

@@ -350,6 +350,7 @@ public class ImageService {
                         " , meta_shutter_speed = '" + dblPhotoShutterSpeed + "' " +
                         " , meta_aperture = '" + dblPhotoAperture + "' " +
                         " , meta_metering_mode = '" + strMeteringMode + "' " +
+                        " , meta_i_height = '" + intImageLength + "' " +
                         " , meta_i_length = '" + intImageLength + "' " +
                         " , meta_i_width = '" + intImageWidth + "' " +
                         " , meta_orientation = '" + strOrientation + "' "

@@ -1,10 +1,13 @@
 package com.photo.act.photo_act.utils;
 
 import com.drew.imaging.ImageMetadataReader;
+import com.drew.imaging.ImageProcessingException;
 import com.drew.lang.GeoLocation;
 import com.drew.metadata.Metadata;
+import com.drew.metadata.MetadataException;
 import com.drew.metadata.exif.ExifSubIFDDirectory;
 import com.drew.metadata.exif.GpsDirectory;
+import com.drew.metadata.jpeg.JpegDirectory;
 import org.apache.commons.imaging.Imaging;
 import org.apache.commons.imaging.ImagingException;
 import org.apache.commons.imaging.common.GenericImageMetadata;
@@ -24,6 +27,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
 import org.springframework.util.StringUtils;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -169,17 +174,59 @@ public class ImageUtilsMeta {
 
     public StringBuilder getMetadataInfo(final File file) {
         // get all metadata stored in EXIF format (ie. from JPEG or TIFF).
-        ImageMetadata metadata = null;
+        ImageMetadata imageMetadata = null;
+        Metadata metadata = null;
+        String strWidth = "0";
+        String strHeight = "0";
         try {
-            metadata = Imaging.getMetadata(file);
+            imageMetadata = Imaging.getMetadata(file);
+
+
+            // Read metadata from the image
+            metadata = ImageMetadataReader.readMetadata(file);
+
+            // Try EXIF first (common for photos)
+            ExifSubIFDDirectory exifDir =
+                    metadata.getFirstDirectoryOfType(ExifSubIFDDirectory.class);
+
+            if (exifDir != null) {
+                Integer width = exifDir.getInteger(ExifSubIFDDirectory.TAG_EXIF_IMAGE_WIDTH);
+                Integer height = exifDir.getInteger(ExifSubIFDDirectory.TAG_EXIF_IMAGE_HEIGHT);
+
+                if (width != null && height != null) {
+                    // width and height available
+                    BufferedImage image = ImageIO.read(file);
+
+                    strWidth = image.getWidth() + "";
+
+                    strHeight = image.getHeight() + "";
+                }
+            }
+
+            // Fallback for JPEGs
+            JpegDirectory jpegDir =
+                    metadata.getFirstDirectoryOfType(JpegDirectory.class);
+
+            if (jpegDir != null) {
+                int width = jpegDir.getImageWidth();
+                strWidth = width + "";
+                int height = jpegDir.getImageHeight();
+                strHeight = height + "";
+            }
+
+
         } catch (IOException ioe) {
 
             logger.error(ioe.getMessage());
+        } catch (ImageProcessingException e) {
+            throw new RuntimeException(e);
+        } catch (MetadataException e) {
+            throw new RuntimeException(e);
         }
         StringBuilder metadataInfo = new StringBuilder();
 
-        if (metadata instanceof JpegImageMetadata) {
-            final JpegImageMetadata jpegMetadata = (JpegImageMetadata) metadata;
+        if (imageMetadata instanceof JpegImageMetadata) {
+            final JpegImageMetadata jpegMetadata = (JpegImageMetadata) imageMetadata;
 
             // Jpeg EXIF metadata is stored in a TIFF-based directory structure
             // and is identified with TIFF tags.
@@ -243,8 +290,10 @@ public class ImageUtilsMeta {
             }
 
             lstInfo.add(getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_METERING_MODE));
-            lstInfo.add(getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_EXIF_IMAGE_LENGTH));
-            lstInfo.add(getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_EXIF_IMAGE_WIDTH));
+            lstInfo.add(strHeight);
+            lstInfo.add(strWidth);
+            // lstInfo.add(getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_EXIF_IMAGE_LENGTH));
+            // lstInfo.add(getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_EXIF_IMAGE_WIDTH));
             lstInfo.add(getTagValue(jpegMetadata, TiffTagConstants.TIFF_TAG_ORIENTATION));
             lstInfo.add(getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_EXPOSURE_MODE));
             lstInfo.add(getTagValue(jpegMetadata, ExifTagConstants.EXIF_TAG_EXPOSURE_PROGRAM));
@@ -420,6 +469,51 @@ public class ImageUtilsMeta {
             throw new IllegalStateException("Unable to parse the metadata of image file " + resource.getFilename(), ex);
         }
         return metadata;
+    }
+
+    public String[] getPhotoWidthHeight(String strPhotoPath) {
+        String[] photoWidthHeightMeta = new String[2];
+        Metadata metadata = null;
+        try {
+            // Replace this with the path to your photo file
+            File photoFile = new File(strPhotoPath);
+            // Read metadata from the image
+            metadata = ImageMetadataReader.readMetadata(photoFile);
+
+// Try EXIF first (common for photos)
+            ExifSubIFDDirectory exifDir =
+                    metadata.getFirstDirectoryOfType(ExifSubIFDDirectory.class);
+
+            if (exifDir != null) {
+                Integer width = exifDir.getInteger(ExifSubIFDDirectory.TAG_EXIF_IMAGE_WIDTH);
+                Integer height = exifDir.getInteger(ExifSubIFDDirectory.TAG_EXIF_IMAGE_HEIGHT);
+
+                if (width != null && height != null) {
+                    // width and height available
+                    BufferedImage image = ImageIO.read(photoFile);
+
+                    photoWidthHeightMeta[0] = image.getWidth() + "";
+
+                    photoWidthHeightMeta[1] = image.getHeight() + "";
+                }
+            }
+
+// Fallback for JPEGs
+            JpegDirectory jpegDir =
+                    metadata.getFirstDirectoryOfType(JpegDirectory.class);
+
+            if (jpegDir != null) {
+                int width = jpegDir.getImageWidth();
+                photoWidthHeightMeta[0] = width + "";
+                int height = jpegDir.getImageHeight();
+                photoWidthHeightMeta[1] = height + "";
+            }
+
+        } catch (Exception ioe) {
+
+            logger.error(ioe.getMessage());
+        }
+        return photoWidthHeightMeta;
     }
 
     public String[] getPhotoGPSMeta(String strPhotoFullPath) {

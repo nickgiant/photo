@@ -154,6 +154,39 @@ public class GenericView {
         }
     }
 
+    public int getAuthMemberMonthCount() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        int intMonths = 0;
+        if (!(authentication instanceof AnonymousAuthenticationToken)) {
+            String currentUserName = authentication.getName();
+
+
+            String[] arrColumnNames = {"userId", "username", "member_for_months", "avatar_path", "name", "surname"};
+            String sqlMember = "SELECT " +
+                    "   usr.userId,  usr.username " +
+                    " , TIMESTAMPDIFF(MONTH, date_joined, NOW()) AS member_for_months " +
+                    " , usr.avatar_path, name, surname, short_bio, url_insta, url_fb, url_flickr, url_yt, email, resident, resident_country " +
+                    //     "--  , pa.inc, pm.title, pm.id, pm.name_new, pm.title, pm.subtitle, pm.space_size, pm.location_by_user\\n\" +\n" +
+                    " FROM dbuser usr " +
+                    " WHERE username = '" + currentUserName + "' ";
+
+            List<Record> lstRecords = getRecordsFromDb(sqlMember, arrColumnNames);
+            Record rec = lstRecords.get(0);
+
+            try {
+
+                intMonths = Integer.parseInt(rec.getColumnData("member_for_months"));
+            } catch (Exception e) {
+                logger.error("Month count error: " + e.getMessage());
+            }
+
+
+            return intMonths;
+        } else {
+            return 0;
+        }
+    }
+
     public String getAuthAvatarPath() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
@@ -196,7 +229,7 @@ public class GenericView {
 
         String strName = rec.getColumnData("name");
         String strSurname = rec.getColumnData("surname");
-//        String strUsername = rec.getColumnData("username");
+//      String strUsername = rec.getColumnData("username");
         String strMemberFor = rec.getColumnData("member_for");
         String strAvatarPath = rec.getColumnData("avatar_path");
 
@@ -238,8 +271,6 @@ public class GenericView {
         layoutWeather.addClassNames(
                 LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER
         );
-//        layoutWeather.addClassName("lazy-card-overview-min-space");
-        //layoutWeather.addClassName("lazy-card-overview-border-solid");
 
         WeatherService weatherService = new WeatherService("metric");
 
@@ -398,7 +429,6 @@ public class GenericView {
             layout.setPadding(false);
             return layout;
         }
-
     }
 
     public String[] getLocationCoordinates(String destination, String country) {
@@ -408,7 +438,6 @@ public class GenericView {
     }
 
     public VerticalLayout getWeatherApiCurrent(String destination, String country) {
-
 
         WeatherImageService weatherImage = new WeatherImageService();
         WeatherService weatherService = new WeatherService("metric");
@@ -468,8 +497,6 @@ public class GenericView {
             String imgPath = weatherImage.getImageApiWeather(weatherCurrent);
             imageWeather.setSrc(DownloadHandler.forClassResource(getClass(), imgPath));
 
-
-//        imageWeather.setSrc(weatherCurrent.getWeatherState().getWeatherIconUrl());
             imageWeather.setWidth("80px");
             imageWeather.setHeight("auto");
             imageWeather.setAlt(weatherCurrent.getWeatherState().getDescription());
@@ -586,28 +613,19 @@ public class GenericView {
 
             layoutWeather.add(layoutLeft, layoutRight);
 
-
-//        Div divVisibility = new Div(currentWeatherData[17]);
-//        divVisibility.getStyle().setFontWeight(Style.FontWeight.BOLDER);
-
         } catch (NoDataFoundException e) {
             layout.removeAll();
             layout.setVisible(false);
         }
-
 
         layout.setMargin(false);
         layout.setSpacing(false);
         layout.setPadding(false);
 
         return layout;
-
     }
 
     public VerticalLayout getWeatherApiForecast(String destination, String country, int countOfTimeStamps) {
-
-//        layoutWeather.addClassName("lazy-card-overview-min-space");
-        //layoutWeather.addClassName("lazy-card-overview-border-solid");
 
         WeatherService weatherServiceForecast = new WeatherService("metric");
 
@@ -628,11 +646,7 @@ public class GenericView {
             );
 
             logger.info(f + " -> " + weatherForecasts.get(f).getForecastTime().getDayOfWeek() + " - " + weatherForecasts.get(f).getForecastTime().getMonth() + "  //  " + weatherForecasts.get(f).getForecastTime().getHour() + ":" + weatherForecasts.get(f).getForecastTime().getMinute());
-            // String[] locations = weatherServiceForecast.lookUpLocation(destination, "", country);
-//            if (locations != null) {
-//                for (int i = 0; i < locations.length; i++) {
-//                    logger.info("locations  " + locations[i]);
-//                }
+
             WeatherForecast weatherForecast = weatherForecasts.get(f);
 
             VerticalLayout layoutLeft = new VerticalLayout();
@@ -644,9 +658,6 @@ public class GenericView {
 
             Image imageWeather = new Image();
             imageWeather.getStyle().setOpacity("62%");
-
-//                StreamResource iconWeather = new StreamResource(weatherForecast.getWeatherState().getIconId(),
-//                        () -> getClass().getResourceAsStream(weatherImage.weatherImage(currentWeatherData)));
 
             String imgPath = weatherImage.getImageApiForecast(weatherForecast);
             imageWeather.setSrc(DownloadHandler.forClassResource(getClass(), imgPath));
@@ -678,15 +689,8 @@ public class GenericView {
 
             layoutLeft.add(hConditionName); //, hConditionDescr);
 
-
             Div divTime = new Div(weatherForecast.getForecastTime().getDayOfWeek() + " / " + weatherForecast.getForecastTime().getHour());
             divTime.getStyle().setFontWeight(Style.FontWeight.BOLDER);
-
-//                Div divSunRise = new Div(currentWeatherData[12]);
-//                divSunRise.getStyle().setFontWeight(Style.FontWeight.BOLD);
-//
-//                Div divSunset = new Div(currentWeatherData[13]);
-//                divSunset.getStyle().setFontWeight(Style.FontWeight.BOLD);
 
             String strIconSize = "35px";
 
@@ -772,7 +776,6 @@ public class GenericView {
             layout.add(layoutWeather);
         }
 
-
         Anchor apiLink = new Anchor();
         apiLink.getStyle().setColor("#8b94a0");
         apiLink.setClassName("lazy-api-link");
@@ -781,7 +784,6 @@ public class GenericView {
         apiLink.setText("Weather data by: " + weatherServiceForecast.getTitleReference());
 
         layout.add(apiLink);
-
         return layout;
     }
 
@@ -876,10 +878,6 @@ public class GenericView {
 
         scroller = new Scroller();
 
-        Image imageLarge = fetchPhotosLarge(sqlReadPhotos, arrColumnsGallery, strPhotoId);
-        imageLarge.addClassNames(LumoUtility.Width.FULL, LumoUtility.Height.FULL);
-        imageLarge.getStyle().set("object-fit", "contain");
-        imageLarge.addClassName("image-to-show");
         List<Record> lstImageFiles = getRecordsFromDb(sqlRead, arrColumnNames);
         Record record = null;
         for (int r = 0; r < lstImageFiles.size(); r++) {
@@ -888,6 +886,18 @@ public class GenericView {
                 record = lstImageFiles.get(r);
             }
         }
+
+        String strMetaOrientation = record.getColumnData("meta_orientation");
+        Image imageLarge = fetchPhotosLarge(sqlReadPhotos, arrColumnsGallery, strPhotoId);
+        imageLarge.addClassNames(LumoUtility.Width.FULL, LumoUtility.Height.FULL);
+        if (strMetaOrientation.equalsIgnoreCase("8")) {
+            imageLarge.getStyle().set("rotate", "-90deg");
+        } else if (strMetaOrientation.equalsIgnoreCase("6")) {
+            imageLarge.getStyle().set("rotate", "90deg");
+        }
+        imageLarge.getStyle().set("object-fit", "contain");
+        imageLarge.addClassName("image-to-show");
+
 
         layoutMeta = new VerticalLayout();
         layoutMeta.addClassNames(
@@ -912,7 +922,6 @@ public class GenericView {
                 layoutMeta.add(loadPanelRate(strPhotoId));
 //                layoutMeta.add(fetchPhotoCreatorOnCarousel(finalRec));
             }
-
         });
         layoutTabSelect.add(btnGroupSelect);
         btnGroupSelect.setValue("Meta Data");
@@ -1500,7 +1509,7 @@ public class GenericView {
         List<Record> lstImageFiles = getRecordsFromDb(sqlRead, arrColumnNames);
 
         HorizontalLayout layoutThumbs = new HorizontalLayout();
-        layoutThumbs.addClassNames(LumoUtility.Overflow.HIDDEN,
+        layoutThumbs.addClassNames(//LumoUtility.Overflow.HIDDEN,
                 //  don't   LumoUtility.Width.FULL, //LumoUtility.Height.FULL,
                 LumoUtility.Display.INLINE_FLEX,
                 LumoUtility.Margin.NONE, LumoUtility.Padding.NONE,

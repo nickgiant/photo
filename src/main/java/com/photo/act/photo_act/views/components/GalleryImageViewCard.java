@@ -116,6 +116,7 @@ public class GalleryImageViewCard extends Div {
         String strFileName = record.getColumnData("name_new");
         String strTitle = record.getColumnData("title");
         String strSubTitle = record.getColumnData("subtitle");
+        String strPersonalNotes = record.getColumnData("notes");
         String strPhotoType = record.getColumnData("photo_type");
         String strUploader = record.getColumnData("uploader");
         String strDateTime = record.getColumnData("meta_date");
@@ -136,7 +137,11 @@ public class GalleryImageViewCard extends Div {
         String strMetaIso = record.getColumnData("meta_iso");
         String strMetaSS = record.getColumnData("meta_shutter_speed");
         String strMetaAperture = record.getColumnData("meta_aperture");
+
         String strMetaOrientation = record.getColumnData("meta_orientation");
+        String strMetaLength = record.getColumnData("meta_i_length");
+        String strMetaWidth = record.getColumnData("meta_i_width");
+        String strMetaHeight = record.getColumnData("meta_i_height");
 
         String strPhotoUserName = record.getColumnData("username");
         String strPhotoNameUser = record.getColumnData("name");
@@ -205,17 +210,43 @@ public class GalleryImageViewCard extends Div {
         image.addClassNames(Width.FULL, Height.FULL,
                 Padding.NONE, Margin.NONE);
         image.setSrc(imageResource);
-        image.getStyle().set("object-fit", "contain");
+        int intW = 1;
+        int intH = 1;
+        try {
+            intW = Integer.parseInt(strMetaLength);
+            intH = Integer.parseInt(strMetaHeight);
+        } catch (NumberFormatException e) {
+
+            logger.error(e.getMessage());
+        }
+
+
+        int ratio = intW / intH;
+
+        if (ratio < 0.8) {
+            divImage.addClassName("tall");
+
+        } else if (ratio > 1.5) {
+            divImage.addClassName("wide");
+        }
+
         if (strMetaOrientation.equalsIgnoreCase("8")) {
             image.getStyle().set("rotate", "-90deg");
             if (isEditable) {
-                image.getStyle().set("scale", "0.66");
+                // image.getStyle().set("scale", "0.66");
+            }
+        } else if (strMetaOrientation.equalsIgnoreCase("6")) {
+            image.getStyle().set("rotate", "90deg");
+            if (isEditable) {
+                //image.getStyle().set("scale", "0.66");
             }
         } else {
+            divImage.addClassName("wide");
             if (isEditable) {
-                image.getStyle().set("scale", "0.85");
+                // image.getStyle().set("scale", "0.85");
             }
         }
+
         divImage.add(image);
 
 
@@ -584,9 +615,9 @@ public class GalleryImageViewCard extends Div {
             // user himself
             this.add(divImage, layoutInfoPanel, divPhotoInfo);
             if (isMobile) {
-                divPhotoInfo.add(getEditPanel(strPhotoId, strAvailableAlbumsMemberId, strUserRights, strSubTitle, strCityId, strSubjectId));
+                divPhotoInfo.add(getEditPanel(strPhotoId, strAvailableAlbumsMemberId, strUserRights, strSubTitle, strCityId, strSubjectId, strPersonalNotes));
             } else {
-                divPhotoInfo.add(getEditPanel(strPhotoId, strAvailableAlbumsMemberId, strUserRights, strSubTitle, strCityId, strSubjectId));
+                divPhotoInfo.add(getEditPanel(strPhotoId, strAvailableAlbumsMemberId, strUserRights, strSubTitle, strCityId, strSubjectId, strPersonalNotes));
             }
             // this.addClassNames(JustifyContent.EVENLY);
 
@@ -778,7 +809,8 @@ public class GalleryImageViewCard extends Div {
         dlgCarousel.open();
     }
 
-    private VerticalLayout getEditPanel(String strPhotoId, String strAvailableAlbumsMemberId, String strUserRights, String strSubTitle, String strCityIdDb, String strSubjectIdDb) {
+    private VerticalLayout getEditPanel(String strPhotoId, String strAvailableAlbumsMemberId, String strUserRights, String strSubTitle, String strCityIdDb, String strSubjectIdDb,
+                                        String strPersonalNotes) {
 
         logger.info(" end destination_Id:" + strCityIdDb + " subject_id:" + strSubjectIdDb);
 
@@ -847,8 +879,15 @@ public class GalleryImageViewCard extends Div {
         TextArea txtSubtitle = new TextArea("Short Description", "What differentiates this photo from the rest?");
         txtSubtitle.setWidthFull();
         txtSubtitle.setValue(strSubTitle);
-        txtSubtitle.setMinRows(5);
+        txtSubtitle.setMinRows(4);
         txtSubtitle.setMaxLength(120);
+
+        TextArea txtPersonalNotes = new TextArea("Notes");
+        txtPersonalNotes.setHelperText("Notes only visible to you");
+        txtPersonalNotes.setWidthFull();
+        txtPersonalNotes.setValue(strPersonalNotes);
+        txtPersonalNotes.setMinRows(2);
+        txtPersonalNotes.setMaxLength(120);
 
         Button btnAlbums = new Button("Add Photo to Albums ...");
         btnAlbums.setIcon(FontAwesome.Solid.PHOTO_FILM.create());
@@ -898,11 +937,12 @@ public class GalleryImageViewCard extends Div {
             }
 
             String strTxtSubtitle = txtSubtitle.getValue().trim();
-            Object[] fieldValue = {strTxtSubtitle};
-            String[] fieldType = {"java.lang.String"};
+            String strTxtPersonalNotes = txtPersonalNotes.getValue().trim();
+            Object[] fieldValue = {strTxtSubtitle, strTxtPersonalNotes};
+            String[] fieldType = {"java.lang.String", "java.lang.String"};
 
             String strUpdateSubj = "UPDATE photo_meta SET " +
-                    " subtitle = ? " +
+                    " subtitle = ?, notes = ? " +
                     " WHERE id = '" + strPhotoId + "'";
             int ret = recordService.insertOneRecordWithQuery(strUpdateSubj, fieldValue, fieldType);
 
@@ -911,7 +951,6 @@ public class GalleryImageViewCard extends Div {
                 Notification notification = Notification.show(message, 4000, Notification.Position.MIDDLE);
                 notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
             }
-
         });
 
         HorizontalLayout layoutUserActions = new HorizontalLayout();
@@ -938,7 +977,7 @@ public class GalleryImageViewCard extends Div {
 
         layoutUserActions.add(btnSave);//, btnMoreAction, btnComment, btnMoreInfo);
 
-        layoutEdit.add(txtSubtitle, cmbDestination, cmbSubject, btnAlbums, layoutUserActions);
+        layoutEdit.add(txtSubtitle, cmbDestination, cmbSubject, txtPersonalNotes, btnAlbums, layoutUserActions);
 
         return layoutEdit;
 

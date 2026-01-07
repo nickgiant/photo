@@ -41,7 +41,7 @@ public class FilterDestinationTypeCard extends RouterLink {
     private String sqlReadAlbumPhotosOrderBy;
     private String[] arrColumnsCarousel;
 
-    public FilterDestinationTypeCard(Record record, String strImagePath, boolean isMobile, int userId, long sessionCreation,
+    public FilterDestinationTypeCard(Record record, String[] columnNames, String nameUrlVariable, String strImagePath, boolean isMobile, int userId, long sessionCreation,
                                      String publicIp, String strCaptionCounts, Component component) {
 
         this.isMobile = isMobile;
@@ -53,14 +53,14 @@ public class FilterDestinationTypeCard extends RouterLink {
             logger.error("record is null");
         }
 
-        String strDestinationCatTitle = record.getColumnData("dest_cat_title");
+        String strDestinationCatTitle = record.getColumnData(columnNames[1]); //"dest_cat_title");
 //        String strCatType = record.getColumnData("cat_type");
         String strAlbumUsername = record.getColumnData("username");
 
 //        String strCatDescription = record.getColumnData("cat_description_min");
 //        String strCatTypeDescription = record.getColumnData("cat_type_description_min");
 
-        String strDestinationCatCount = record.getColumnData("dest_cat_count");
+        String strDestinationCatCount = record.getColumnData(columnNames[2]); //"dest_cat_count");
 
 //        String strAlbumTitle = record.getColumnData("album_title");
 
@@ -122,8 +122,8 @@ public class FilterDestinationTypeCard extends RouterLink {
 
         filterBar.add(header, divDescription);
 
-        String captionCategory = record.getColumnData("dest_cat_title");
-        RouteParam routeCategory = new RouteParam("destination-type", captionCategory);
+        String captionCategory = record.getColumnData(columnNames[1]);
+        RouteParam routeCategory = new RouteParam(nameUrlVariable, captionCategory);
 
 
         this.add(filterBar);
