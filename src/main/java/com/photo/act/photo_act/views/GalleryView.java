@@ -1062,6 +1062,64 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         return imageGalleryViewCard;
     }
 
+    /**
+     * Creates a fully responsive gallery Div containing photo cards.
+     * Uses CSS Grid with auto-fill and minmax for responsive layout.
+     * Each photo card is created using getImageFromDb.
+     *
+     * @param lstRecords List of Record objects from database
+     * @param isEditable Whether the photos should be editable
+     * @return Div containing responsive gallery of photo cards
+     */
+    public Div getGallery(List<Record> lstRecords, boolean isEditable) {
+        Div divGallery = new Div();
+        divGallery.addClassName("gallery");
+        divGallery.addClassNames(Width.FULL, Padding.SMALL, Margin.NONE);
+
+        if (lstRecords == null || lstRecords.isEmpty()) {
+            logger.info("getGallery: No records to display");
+            return divGallery;
+        }
+
+        String strPath = DIR_PHOTOS_SERVER + dirChar + subPathMedium;
+
+        for (Record record : lstRecords) {
+            String strId = record.getColumnData("id");
+            if (strId != null && !strId.isEmpty()) {
+                Record fullRecord = cacheService.getPhotoById(strId);
+                if (fullRecord != null) {
+                    GalleryImageViewCard photoCard = getImageFromDb(fullRecord, strPath, isEditable);
+                    divGallery.add(photoCard);
+                }
+            }
+        }
+
+        logger.info("getGallery: Created gallery with " + lstRecords.size() + " photo cards");
+        return divGallery;
+    }
+
+    /**
+     * Creates a fully responsive gallery Div from SQL query.
+     * Uses CSS Grid with auto-fill and minmax for responsive layout.
+     *
+     * @param sqlQuery SQL query to fetch photos
+     * @param isEditable Whether the photos should be editable
+     * @return Div containing responsive gallery of photo cards
+     */
+    public Div getGallery(String sqlQuery, boolean isEditable) {
+        List<Record> lstRecords = cacheService.getAllPhotos(sqlQuery, arrColumnNamesGallery, "id");
+        return getGallery(lstRecords, isEditable);
+    }
+
+    /**
+     * Creates a fully responsive gallery Div with default non-editable mode.
+     *
+     * @param lstRecords List of Record objects from database
+     * @return Div containing responsive gallery of photo cards
+     */
+    public Div getGallery(List<Record> lstRecords) {
+        return getGallery(lstRecords, false);
+    }
 
     private Image getImageThumbFromDb(Record record, String strPathIn) {
         strPath = strPathIn;
