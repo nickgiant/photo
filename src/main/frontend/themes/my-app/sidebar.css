@@ -1,0 +1,458 @@
+/* ============================================================
+   Hoverable Sidebar Menu — Vaadin 24
+   White background, dark gray icons/text,
+   dark red glow on BOTH icon and text on hover,
+   logo always visible even when collapsed.
+   ============================================================ */
+
+
+/*.app-container {
+    display: flex;
+    width: 100%;
+    min-height: 100vh;
+    background: #f0f2f5;
+}*/
+
+/* =============  SIDEBAR  ============= */
+.sidebar {
+
+    position: relative;
+/*    top: 0;
+    left: 0;
+    z-index: 100;*/
+    width: 82px;
+    height: 100vh;
+    background: #ffffff;
+    border-right: 1px solid rgba(0, 0, 0, 0.06);
+    display: flex;
+    flex-direction: column;
+    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    box-shadow: 2px 0 20px rgba(0, 0, 0, 0.04);
+}
+
+.sidebar:hover,
+.sidebar.locked {
+    width: 290px;
+}
+
+/* ---------- Header ---------- */
+.sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 18px 9px 18px;
+    min-height: 70px;
+    flex-shrink: 0;
+        gap: 12px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+/*.logo-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    overflow: hidden;
+    min-width: 0;
+}*/
+
+.logo-icon {
+    min-width: 44px;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #8b1a1a 0%, #c0392b 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 1px 2px 6px var(--shadow-medium);
+}
+
+.logo-icon vaadin-icon {
+    color: #fff;
+    width: 22px !important;
+    height: 22px !important;
+}
+
+.brand-text {
+    color: #1a1a2e;
+    font-size: 1.15rem;
+    font-weight: 700;
+    white-space: nowrap;
+    opacity: 0.9;
+    transition: opacity 0.3s ease 0.1s;
+    letter-spacing: 0.2px;
+    text-shadow: 1px 2px 6px var(--shadow-medium);
+}
+
+.sidebar:hover .brand-text,
+.sidebar.locked .brand-text {
+    opacity: 1;
+}
+
+.lock-btn {
+    min-width: 32px;
+    width: 32px;
+    height: 32px;
+    background: #f5f5f7;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.25s ease, background 0.2s ease;
+    flex-shrink: 0;
+}
+
+.sidebar:hover .lock-btn,
+.sidebar.locked .lock-btn {
+    opacity: 1;
+}
+
+.lock-btn:hover {
+    background: #ebebed;
+}
+
+.lock-icon {
+    color: #999;
+    width: 16px !important;
+    height: 16px !important;
+}
+
+/* ---------- Nav Wrapper ---------- */
+.nav-wrapper {
+    align-items: start;
+    width: 100%;
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 7px 9px;
+    scrollbar-width: none;
+    gap: 1px;
+}
+
+.nav-wrapper::-webkit-scrollbar {
+    display: none;
+}
+
+.nav-section {
+    width: 100%;
+    margin-bottom: 4px;
+}
+
+.separator-line {
+    min-width: 20px;
+    height: 1px;
+    background: rgba(0, 0, 0, 0.08);
+    border-radius: 2px;
+    flex-shrink: 0;
+    transition: all 0.3s ease;
+}
+
+.sidebar:hover .separator-line,
+.sidebar.locked .separator-line {
+    opacity: 0;
+    min-width: 0;
+    width: 0;
+}
+
+
+
+/*
+.sidebar:hover .label-text,
+.sidebar.locked .label-text {
+    opacity: 1;
+}*/
+
+
+vaadin-side-nav::part(label) {
+
+    align-items: center;
+    padding: 8px 10px 2px 10px;
+    gap: 10px;
+    overflow: hidden;
+
+    color: #aaa;
+    font-size: 0.66rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.9px;
+    white-space: nowrap;
+    opacity: 0.5;
+    transition: opacity 0.3s ease 0.1s;
+
+}
+
+vaadin-side-nav-item::part(link){
+        width: 100%;
+    gap: 15px;
+}
+
+vaadin-side-nav-item[expanded]:hover{
+
+    border: 1px solid transparent;
+    background: transparent;
+    color: #8b1a1a;
+    transition: all 0.8s ease;
+}
+
+vaadin-side-nav-item{
+
+    width: 190px;
+    /*position: relative;*/
+    /*display: flex;*/
+    align-items: center;
+    gap: 4px;
+    padding: 0;
+    margin: 9px;
+
+    border-radius: 6px;
+    border: 1px solid transparent;
+    cursor: pointer;
+
+    overflow: visible;
+
+     text-transform: none;
+    font-size: 0.86rem;
+    font-weight: 650;
+    letter-spacing: 1px;
+
+    white-space: nowrap;
+    opacity: 1;
+    transition: opacity 0.25s ease 0.08s, color 0.3s ease, text-shadow 0.3s ease;
+    padding-left: 4px;
+    color: #5a5a6e;
+    transition: all 0.3s ease;
+}
+
+vaadin-side-nav-item:hover{
+
+    border: 1px solid #8b1a1a;
+    background: linear-gradient(135deg, rgba(139, 26, 26, 0.08), rgba(192, 57, 43, 0.05));
+    color: #8b1a1a;
+    text-shadow:
+/*        0 0 8px rgba(200, 50, 50, 0.50),*/
+        0 0 22px rgba(200, 50, 50, 0.25),
+        0 0 44px rgba(200, 50, 50, 0.10);
+
+    color: #9b1b1b;
+   filter:
+        drop-shadow(0 0 24px rgba(200, 50, 50, 0.15))
+         drop-shadow(0 0 12px rgba(200, 50, 50, 0.4));
+
+      /*  drop-shadow(0 0 5px rgba(200, 50, 50, 0.7))
+        drop-shadow(0 0 12px rgba(200, 50, 50, 0.4))*/
+
+    transition: all 0.2s ease;
+}
+
+vaadin-side-nav-item:active{
+    color: #8b1a1a;
+    text-shadow:
+     /*   0 0 8px rgba(200, 50, 50, 0.30),*/
+/*        0 0 22px rgba(200, 50, 50, 0.25),*/
+        0 0 44px rgba(200, 50, 50, 0.10);
+
+    color: #9b1b1b;
+    filter:
+        drop-shadow(0 0 5px rgba(200, 50, 50, 0.3))
+        /*drop-shadow(0 0 11px rgba(200, 50, 50, 0.4))*/
+        drop-shadow(0 0 20px rgba(200, 50, 50, 0.15));
+
+        scale: 0.98;
+
+}
+
+.menu-popover-content{
+  left-padding: 35px;
+  opacity: 0.86;
+
+    h4{
+        font-weight: 700;
+    }
+}
+
+/* --- Active state --- */
+/*
+.nav-link.active {
+    background: linear-gradient(135deg, rgba(139, 26, 26, 0.10), rgba(192, 57, 43, 0.07));
+    box-shadow:
+        0 0 18px 5px rgba(200, 50, 50, 0.10),
+        0 0 44px 14px rgba(200, 50, 50, 0.05);
+}
+
+.nav-link.active .nav-icon {
+    color: #9b1b1b;
+    filter:
+        drop-shadow(0 0 5px rgba(200, 50, 50, 0.7))
+        drop-shadow(0 0 12px rgba(200, 50, 50, 0.4))
+        drop-shadow(0 0 24px rgba(200, 50, 50, 0.15));
+}
+
+.nav-link.active .nav-label {
+    color: #8b1a1a;
+    text-shadow:
+        0 0 8px rgba(200, 50, 50, 0.50),
+        0 0 22px rgba(200, 50, 50, 0.25),
+        0 0 44px rgba(200, 50, 50, 0.10);
+}
+*/
+
+/* --- Tooltip --- */
+.nav-tooltip {
+    position: absolute;
+    left: calc(100% + 12px);
+    top: 50%;
+    transform: translateY(-50%) translateX(-6px);
+    background: #1e2235;
+    color: #fff;
+    font-size: 0.76rem;
+    font-weight: 500;
+    padding: 5px 13px;
+    border-radius: 8px;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    z-index: 200;
+}
+
+.nav-tooltip::before {
+    content: "";
+    position: absolute;
+    left: -5px;
+    top: 50%;
+    transform: translateY(-50%);
+    border: 5px solid transparent;
+    border-right-color: #1e2235;
+    border-left: none;
+}
+
+.sidebar:not(:hover):not(.locked) .nav-link:hover .nav-tooltip {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+}
+
+/* =============  PROFILE  ============= */
+.sidebar-profile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px 18px 18px;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+.avatar {
+    min-width: 42px;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #8b1a1a 0%, #b22222 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.avatar-icon {
+    color: #fff;
+    width: 20px !important;
+    height: 20px !important;
+}
+
+.profile-info {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity 0.3s ease 0.1s;
+}
+
+.sidebar:hover .profile-info,
+.sidebar.locked .profile-info {
+    opacity: 1;
+}
+
+.profile-name {
+    color: #1a1a2e;
+    font-size: 0.84rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.profile-email {
+    color: #999;
+    font-size: 0.7rem;
+    white-space: nowrap;
+}
+
+.logout-btn {
+    margin-left: auto;
+    min-width: 32px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.25s ease, background 0.2s ease;
+    flex-shrink: 0;
+}
+
+.sidebar:hover .logout-btn,
+.sidebar.locked .logout-btn {
+    opacity: 1;
+}
+
+.logout-btn:hover {
+    background: rgba(200, 50, 50, 0.08);
+}
+
+.logout-icon {
+    color: #999;
+    width: 18px !important;
+    height: 18px !important;
+    transition: color 0.2s ease;
+}
+
+.logout-btn:hover .logout-icon {
+    color: #c0392b;
+}
+
+/* =============  MAIN CONTENT  ============= */
+.main-content {
+    margin-left: 82px;
+    flex: 1;
+    min-height: 100vh;
+    padding: 44px 52px;
+    transition: margin-left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar.locked ~ .main-content {
+    margin-left: 264px;
+}
+
+.content-inner {
+    max-width: 800px;
+}
+
+@media (max-width: 768px) {
+    .sidebar {
+        width: 0;
+        border-right: none;
+    }
+    .sidebar:hover,
+    .sidebar.locked {
+        width: 264px;
+    }
+    .main-content {
+        margin-left: 0;
+    }
+}

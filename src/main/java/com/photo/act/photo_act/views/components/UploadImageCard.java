@@ -8,6 +8,7 @@ import com.photo.act.photo_act.utils.ImageUtilsMeta;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.notification.Notification;
@@ -19,18 +20,22 @@ import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.upload.Upload;
 import com.vaadin.flow.dom.Style;
-import com.vaadin.flow.server.StreamResource;
+
 import com.vaadin.flow.server.VaadinSession;
+import com.vaadin.flow.server.streams.DownloadHandler;
 import com.vaadin.flow.server.streams.UploadHandler;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+
+import net.coobird.thumbnailator.Thumbnails;
 import org.apache.commons.io.FileUtils;
-import org.imgscalr.Scalr;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StreamUtils;
 
 import javax.imageio.ImageIO;
+
+
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.URL;
@@ -52,6 +57,11 @@ public class UploadImageCard extends VerticalLayout {
     private String originalFileName;
     private String mimeType;
     private RecordService recordService;
+
+    private String[] arrGenreNames = {"id", "title"};
+    private String sqlReadGenre = "SELECT id,  title " +
+            " FROM  photo_genres " +
+            " ORDER BY title ASC ";
 
     private String[] arrDestinationNames = {"id", "city_name", "prefecture", "country"};
     private String sqlReadDestination = "SELECT distinct city_name, id, prefecture, country " +
@@ -75,9 +85,10 @@ public class UploadImageCard extends VerticalLayout {
     private String hostname;
     private String sessionId;
     private String sessionDateTime;
-    private WeatherService weatherService;
+//    private WeatherService weatherService;
 
     private EmailSendService emailSendService;
+    private boolean isTypeProfile = false;
 
     private String strMailboxSend = "info@photoact.net";
 
@@ -93,7 +104,7 @@ public class UploadImageCard extends VerticalLayout {
 
         this.sessionId = Long.toString(sessionCreation);
 
-        weatherService = new WeatherService("metric");
+//        weatherService = new WeatherService("metric");
         genericView = new GenericView(recordService);
         utilsDate = new UtilsDate();
 
@@ -161,15 +172,16 @@ public class UploadImageCard extends VerticalLayout {
 
         int intMemberMonthsCount = genericView.getAuthMemberMonthCount();
         Div divMaxFileNSize = new Div();
+        divMaxFileNSize.addClassNames(LumoUtility.TextColor.DISABLED);
         if (intMemberMonthsCount >= 8) {
-            divMaxFileNSize.setText("(Member for >= 8 months) Max Photo size 9MB, Max Photos 6");
-            upload.setMaxFiles(6);
-            int maxFileSizeInBytes = 9 * 1024 * 1024; // 35MB
+            divMaxFileNSize.setText("Max Photo size 9MB, Max Photos 7 per time");
+            upload.setMaxFiles(7);
+            int maxFileSizeInBytes = 9 * 1024 * 1024;
             upload.setMaxFileSize(maxFileSizeInBytes);
         } else {
-            divMaxFileNSize.setText("(Member for < 8 months) Max Photo size 8MB, Max Photos 3");
-            upload.setMaxFiles(3);
-            int maxFileSizeInBytes = 8 * 1024 * 1024; // 15MB
+            divMaxFileNSize.setText("Max Photo size 9MB, Max Photos 5 per time");
+            upload.setMaxFiles(5);
+            int maxFileSizeInBytes = 9 * 1024 * 1024;
             upload.setMaxFileSize(maxFileSizeInBytes);
         }
 
@@ -320,79 +332,6 @@ public class UploadImageCard extends VerticalLayout {
     }
 
 
-    private VerticalLayout showLocationLayout(String value) {
-        String[] location = null;
-        location = weatherService.lookUpLocation(value, "", "");
-
-        Div divSelectedLocation = new Div();
-        if (location != null && location.length != 0) {
-            divSelectedLocation.setText("Area: " + location[2] + " Country: " + location[3]);
-        }
-
-        VerticalLayout layoutWeather = new VerticalLayout();
-        layoutWeather.addClassNames(LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER);
-
-        Button btnSelectLocation = new Button("Show Weather");
-        String[] finalLocation = location;
-        btnSelectLocation.addClickListener(clickevent -> {
-
-            StringBuilder locationInfo = new StringBuilder();
-            locationInfo.append(value);
-            for (String s : finalLocation) {
-                locationInfo.append(", ").append(s);
-            }
-
-            Notification notification = Notification.show(locationInfo.toString(), 4000, Notification.Position.MIDDLE);
-            notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-
-            String[] currentWeatherData = weatherService.getCurrentWeather(Double.parseDouble(finalLocation[0]), Double.parseDouble(finalLocation[1]));
-
-            Div divTime = new Div(currentWeatherData[14]);
-            divTime.getStyle().setFontWeight(Style.FontWeight.BOLDER);
-
-            Div divSunRise = new Div(currentWeatherData[12]);
-            divSunRise.getStyle().setFontWeight(Style.FontWeight.BOLD);
-
-            Div divSunset = new Div(currentWeatherData[13]);
-            divSunset.getStyle().setFontWeight(Style.FontWeight.BOLD);
-
-            Div divFeelsLike = new Div(currentWeatherData[1]);
-            divFeelsLike.getStyle().setFontWeight(Style.FontWeight.BOLDER);
-
-            Div divHumidity = new Div(currentWeatherData[4]);
-            divHumidity.getStyle().setFontWeight(Style.FontWeight.BOLDER);
-
-            Div divWindSpeed = new Div(currentWeatherData[7]);
-            divWindSpeed.getStyle().setFontWeight(Style.FontWeight.BOLDER);
-
-            Div divClouds = new Div(currentWeatherData[15]);
-            divClouds.getStyle().setFontWeight(Style.FontWeight.BOLDER);
-
-
-            layoutWeather.removeAll();
-
-            layoutWeather.setMinWidth("180px");
-            layoutWeather.setMargin(false);
-            layoutWeather.setSpacing(false);
-            layoutWeather.setPadding(false);
-            layoutWeather.add(new HorizontalLayout(new Div("Sunrise: "), divSunRise));
-            layoutWeather.add(new HorizontalLayout(new Div("Sunset: "), divSunset));
-            layoutWeather.add(new HorizontalLayout(new Div("Feels like: "), divFeelsLike));
-            layoutWeather.add(new HorizontalLayout(new Div("Clouds: "), divClouds));
-            layoutWeather.add(new HorizontalLayout(new Div("Humidity: "), divHumidity));
-            layoutWeather.add(new HorizontalLayout(new Div("Wind speed: "), divWindSpeed));
-
-        });
-
-        VerticalLayout layout = new VerticalLayout(divSelectedLocation, btnSelectLocation, layoutWeather);
-        layout.setSpacing(false);
-        layout.setAlignItems(FlexComponent.Alignment.CENTER);
-        layout.getStyle().set("padding", "var(--lumo-space-m) var(--lumo-space-m) var(--lumo-space-xs)");
-
-        return layout;
-    }
-
-
     public InputStream loadFile(String fileName) {
         try {
             return new FileInputStream(fileName);
@@ -475,7 +414,7 @@ public class UploadImageCard extends VerticalLayout {
 
     private boolean confirmedUploadPhoto(String orgFileName, String strNewFileName, ArrayList<String> lstPhotoMetaData, String[] arrPhotoGpsMeta, String publicIp, String hostname,
                                          StringBuilder strImageMetaInfo,
-                                         String strSubTitle, String strDestination, String strSubject, String strPersonalNotes
+                                         String strSubTitle, String strGenre,  String strDestination, String strSubject, String strPersonalNotes, boolean isTypeProfile
     ) {
 
         String strPathUpload = DIR_PHOTOS_SERVER + dirChar + subPathUpload;
@@ -494,39 +433,79 @@ public class UploadImageCard extends VerticalLayout {
             int intSize = 140;
             String strSubPath = subPathThumbs;
             String strPathThumbs = DIR_PHOTOS_SERVER + dirChar + strSubPath;
-            String outputThumbsFileName = strPathThumbs + dirChar + strNewFileName;
+           String outputThumbsFileName = strPathThumbs + dirChar + strNewFileName;
             File fileThumbs = new File(outputThumbsFileName);
-            BufferedImage bImageT = ImageIO.read(fileShow);
-            BufferedImage bufferedThumb = Scalr.resize(bImageT, Scalr.Method.QUALITY, Scalr.Mode.AUTOMATIC, intSize, Scalr.OP_ANTIALIAS);   //  Imgscalr    https://www.baeldung.com/java-resize-image
-            ImageIO.write(bufferedThumb, "jpg", fileThumbs);
+//            BufferedImage bImageT = ImageIO.read(fileShow);
+//            BufferedImage bufferedThumb = Scalr.resize(bImageT, Scalr.Method.QUALITY, Scalr.Mode.AUTOMATIC, intSize, Scalr.OP_ANTIALIAS);   //  Imgscalr    https://www.baeldung.com/java-resize-image
+//            ImageIO.write(bufferedThumb, "jpg", fileThumbs);
+
+//            String outputThumbsDir = strPathThumbs + dirChar;
+//            File fileThumbsB = new File(outputThumbsDir);
+            Thumbnails.of(fileShow)
+                    .size(intSize, intSize)
+                    .useExifOrientation(true)
+//                    .rotate(90)
+//                    .watermark(Positions.BOTTOM_RIGHT, ImageIO.read(new File("watermark.png")), 0.5f)
+                    .outputQuality(0.6)
+                    .toFile(fileThumbs);
+
 
             intSize = 660;
             strSubPath = subPathSmall;
             String strPathSmall = DIR_PHOTOS_SERVER + dirChar + strSubPath;
             String outputSmallFileName = strPathSmall + dirChar + strNewFileName;
             File fileSmall = new File(outputSmallFileName);
-            BufferedImage bImageS = ImageIO.read(fileShow);
-            BufferedImage bufferedSmall = Scalr.resize(bImageS, Scalr.Method.QUALITY, Scalr.Mode.AUTOMATIC, intSize, Scalr.OP_ANTIALIAS);   //  Imgscalr    https://www.baeldung.com/java-resize-image
-            ImageIO.write(bufferedSmall, "jpg", fileSmall);
+//            BufferedImage bImageS = ImageIO.read(fileShow);
+//            BufferedImage bufferedSmall = Scalr.resize(bImageS, Scalr.Method.QUALITY, Scalr.Mode.AUTOMATIC, intSize, Scalr.OP_ANTIALIAS);   //  Imgscalr    https://www.baeldung.com/java-resize-image
+//            ImageIO.write(bufferedSmall, "jpg", fileSmall);
 
+//            String outputSmallDir = strPathSmall + dirChar;
+//            File fileThumbsC = new File(outputSmallDir);
+            Thumbnails.of(fileShow)
+                    .size(intSize, intSize)
+                    .useExifOrientation(true)
+//                    .rotate(90)
+//                    .watermark(Positions.BOTTOM_RIGHT, ImageIO.read(new File("watermark.png")), 0.5f)
+                    .outputQuality(0.7)
+                    .toFile(fileSmall);
 
             intSize = 1040;
             strSubPath = subPathMedium;
             String strPathMedium = DIR_PHOTOS_SERVER + dirChar + strSubPath;
             String outputMediumFileName = strPathMedium + dirChar + strNewFileName;
             File fileMedium = new File(outputMediumFileName);
-            BufferedImage bImageM = ImageIO.read(fileShow);
-            BufferedImage bufferedMedium = Scalr.resize(bImageM, Scalr.Method.QUALITY, Scalr.Mode.AUTOMATIC, intSize, Scalr.OP_ANTIALIAS);   //  Imgscalr    https://www.baeldung.com/java-resize-image
-            ImageIO.write(bufferedMedium, "jpg", fileMedium);
+//            BufferedImage bImageM = ImageIO.read(fileShow);
+//            BufferedImage bufferedMedium = Scalr.resize(bImageM, Scalr.Method.QUALITY, Scalr.Mode.AUTOMATIC, intSize, Scalr.OP_ANTIALIAS);   //  Imgscalr    https://www.baeldung.com/java-resize-image
+//            ImageIO.write(bufferedMedium, "jpg", fileMedium);
+
+//            String outputMediumDir = strPathMedium + dirChar;
+//            File fileThumbsD = new File(outputMediumDir);
+            Thumbnails.of(fileShow)
+                    .size(intSize, intSize)
+                    .useExifOrientation(true)
+//                    .rotate(90)
+//                    .watermark(Positions.BOTTOM_RIGHT, ImageIO.read(new File("watermark.png")), 0.5f)
+                    .outputQuality(0.7)
+                    .toFile(fileMedium);
 
             intSize = 1990;
             strSubPath = subPathLarge;
             String strPathLarge = DIR_PHOTOS_SERVER + dirChar + strSubPath;
             String outputLargeFileName = strPathLarge + dirChar + strNewFileName;
             File fileLarge = new File(outputLargeFileName);
-            BufferedImage bImageL = ImageIO.read(fileShow);
-            BufferedImage bufferedLarge = Scalr.resize(bImageL, Scalr.Method.QUALITY, Scalr.Mode.AUTOMATIC, intSize, Scalr.OP_ANTIALIAS);   //  Imgscalr    https://www.baeldung.com/java-resize-image
-            ImageIO.write(bufferedLarge, "jpg", fileLarge);
+//            BufferedImage bImageL = ImageIO.read(fileShow);
+//            BufferedImage bufferedLarge = Scalr.resize(bImageL, Scalr.Method.QUALITY, Scalr.Mode.AUTOMATIC, intSize, Scalr.OP_ANTIALIAS);   //  Imgscalr    https://www.baeldung.com/java-resize-image
+//            ImageIO.write(bufferedLarge, "jpg", fileLarge);
+
+//            String outputLargeDir = strPathLarge + dirChar;
+//            File fileThumbsE = new File(outputLargeDir);
+            Thumbnails.of(fileShow)
+                    .size(intSize, intSize)
+                    .useExifOrientation(true)
+//                    .rotate(90)
+//                    .watermark(Positions.BOTTOM_RIGHT, ImageIO.read(new File("watermark.png")), 0.5f)
+                    .outputQuality(0.8)
+                    .toFile(fileLarge);
 
             logger.info("path to compress from: " + fileShow.getAbsolutePath());
             logger.info("path to compress   to:   " + strPathLarge);
@@ -545,117 +524,135 @@ public class UploadImageCard extends VerticalLayout {
 //                notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
 //            }
 
+            if (lstPhotoMetaData==null || lstPhotoMetaData.isEmpty()) {
 
-            logger.info(" before insert:  0 " + lstPhotoMetaData.get(0) + " 1 " + lstPhotoMetaData.get(1) + " 2 " + lstPhotoMetaData.get(2) + " 3 " + lstPhotoMetaData.get(3)
-                    + " 4 " + lstPhotoMetaData.get(4) + " 5 " + lstPhotoMetaData.get(5) + " 6 " + lstPhotoMetaData.get(6) + " 7 " + lstPhotoMetaData.get(7)
-                    + " 8 " + lstPhotoMetaData.get(8) + " 9 " + lstPhotoMetaData.get(9) + " 10MeteringMode " + lstPhotoMetaData.get(10)
-                    + " 11Length " + lstPhotoMetaData.get(11) + " 12Width " + lstPhotoMetaData.get(12) + "  .........");
+                if (insertPhotoToDb(publicIp, sessionDateTime, orgFileName, strNewFileName, hostname, fileShow.length(), fileLarge.length(),
+                        fileMedium.length(), fileSmall.length(), fileThumbs.length(), strImageMetaInfo.toString(), "", "''",
+                        "''", "''", "''", 0,
+                        0, 0,
+                        0, 0, "''", 0, 0, "''", arrPhotoGpsMeta,
+                        strSubTitle, strGenre, strDestination, strSubject, strPersonalNotes, isTypeProfile
+                )) {
+                    return true;
+                } else {
+                    String errorMessage = "Upload failed!";
 
-            try {
-                Double.parseDouble(lstPhotoMetaData.get(5));
-            } catch (NumberFormatException e) {
-                lstPhotoMetaData.set(5, "0");
-            }
+                    Notification notification = Notification.show(
+                            errorMessage,
+                            5000,
+                            Notification.Position.MIDDLE
+                    );
+                    notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+                }
 
-            try {
-                Double.parseDouble(lstPhotoMetaData.get(6));
-            } catch (NumberFormatException e) {
-                lstPhotoMetaData.set(6, "0");
-            }
+            }else {
+                logger.info(" before insert:  0 " + lstPhotoMetaData.get(0) + " 1 " + lstPhotoMetaData.get(1) + " 2 " + lstPhotoMetaData.get(2) + " 3 " + lstPhotoMetaData.get(3)
+                        + " 4 " + lstPhotoMetaData.get(4) + " 5 " + lstPhotoMetaData.get(5) + " 6 " + lstPhotoMetaData.get(6) + " 7 " + lstPhotoMetaData.get(7)
+                        + " 8 " + lstPhotoMetaData.get(8) + " 9 " + lstPhotoMetaData.get(9) + " 10MeteringMode " + lstPhotoMetaData.get(10)
+                        + " 11Length " + lstPhotoMetaData.get(11) + " 12Width " + lstPhotoMetaData.get(12) + "  .........");
 
-            String strPhotoShutterSpeed = lstPhotoMetaData.get(8);
-            double dblPhotoShutterSpeed = 0;
-            if (!strPhotoShutterSpeed.trim().equalsIgnoreCase("null") && strPhotoShutterSpeed.trim().length() > 0) {
-                String strSS = "";
                 try {
+                    Double.parseDouble(lstPhotoMetaData.get(5));
+                } catch (NumberFormatException e) {
+                    lstPhotoMetaData.set(5, "0");
+                }
 
-                    if ((strPhotoShutterSpeed.indexOf("(") == -1) && (strPhotoShutterSpeed.indexOf(")") == -1)) {
-                        strSS = strPhotoShutterSpeed; // integer
-                    } else {
-                        strSS = strPhotoShutterSpeed.substring(strPhotoShutterSpeed.indexOf("(") + 1, strPhotoShutterSpeed.indexOf(")"));
+                try {
+                    Double.parseDouble(lstPhotoMetaData.get(6));
+                } catch (NumberFormatException e) {
+                    lstPhotoMetaData.set(6, "0");
+                }
+
+                String strPhotoShutterSpeed = lstPhotoMetaData.get(8);
+                double dblPhotoShutterSpeed = 0;
+                if (!strPhotoShutterSpeed.trim().equalsIgnoreCase("null") && strPhotoShutterSpeed.trim().length() > 0) {
+                    String strSS = "";
+                    try {
+
+                        if ((strPhotoShutterSpeed.indexOf("(") == -1) && (strPhotoShutterSpeed.indexOf(")") == -1)) {
+                            strSS = strPhotoShutterSpeed; // integer
+                        } else {
+                            strSS = strPhotoShutterSpeed.substring(strPhotoShutterSpeed.indexOf("(") + 1, strPhotoShutterSpeed.indexOf(")"));
+                        }
+
+                        dblPhotoShutterSpeed = Double.parseDouble(strSS);
+                    } catch (Exception e) {
+                        logger.error(e.getMessage());
+                        //      logErrorInDb(e, "insertPhotoToDb", e.getMessage(),intUserId,strUserName);
                     }
 
-                    dblPhotoShutterSpeed = Double.parseDouble(strSS);
-                } catch (Exception e) {
-                    logger.error(e.getMessage());
-                    //      logErrorInDb(e, "insertPhotoToDb", e.getMessage(),intUserId,strUserName);
                 }
 
-            }
-
-            double dblPhotoAperture = 0;
-            String strPhotoAperture = lstPhotoMetaData.get(9);
-            if (!strPhotoAperture.trim().equalsIgnoreCase("null") && strPhotoAperture.trim().length() > 0) {
-                String strAperture = "";
-                try {
-                    if ((strPhotoAperture.indexOf("(") == -1) && (strPhotoAperture.indexOf(")") == -1)) {
-                        strAperture = strPhotoAperture; // integer
-                    } else {
-                        strAperture = strPhotoAperture.substring(strPhotoAperture.indexOf("(") + 1, strPhotoAperture.indexOf(")"));
+                double dblPhotoAperture = 0;
+                String strPhotoAperture = lstPhotoMetaData.get(9);
+                if (!strPhotoAperture.trim().equalsIgnoreCase("null") && strPhotoAperture.trim().length() > 0) {
+                    String strAperture = "";
+                    try {
+                        if ((strPhotoAperture.indexOf("(") == -1) && (strPhotoAperture.indexOf(")") == -1)) {
+                            strAperture = strPhotoAperture; // integer
+                        } else {
+                            strAperture = strPhotoAperture.substring(strPhotoAperture.indexOf("(") + 1, strPhotoAperture.indexOf(")"));
+                        }
+                        dblPhotoAperture = Double.parseDouble(strAperture);
+                    } catch (Exception e) {
+                        logger.error(e.getMessage());
                     }
-                    dblPhotoAperture = Double.parseDouble(strAperture);
-                } catch (Exception e) {
-                    logger.error(e.getMessage());
                 }
-            }
 
-            int intIso = 0;
-            String strIso = lstPhotoMetaData.get(7);
-            if (strIso != null && !strIso.isEmpty() && !strIso.trim().equalsIgnoreCase(("null"))) {
-                intIso = Integer.parseInt(strIso);
-            }
-
-
-            String strMeteringMode = lstPhotoMetaData.get(10);
-            if (strMeteringMode != null && !strMeteringMode.isEmpty() && !strMeteringMode.trim().equalsIgnoreCase("null")) {
-                //double dblF = Double.parseDouble(strAperture);
-            } else {
-                strMeteringMode = "";
-            }
-
-            int intLength = 0;
-            String strILength = lstPhotoMetaData.get(11);
-            if (strILength != null && !strILength.isEmpty() && !strILength.trim().equalsIgnoreCase("null")) {
-                try {
-                    intLength = Integer.parseInt(strILength);
-                } catch (Exception e) {
-                    logger.error(e.getMessage());
+                int intIso = 0;
+                String strIso = lstPhotoMetaData.get(7);
+                if (strIso != null && !strIso.isEmpty() && !strIso.trim().equalsIgnoreCase(("null"))) {
+                    intIso = Integer.parseInt(strIso);
                 }
-            }
 
-            int intWidth = 0;
-            String strIWidth = lstPhotoMetaData.get(12);
-            if (strIWidth != null && !strIWidth.isEmpty() && !strIWidth.trim().equalsIgnoreCase("null")) {
-                try {
-                    intWidth = Integer.parseInt(strIWidth);
-                } catch (Exception e) {
-                    logger.error(e.getMessage());
+
+                String strMeteringMode = lstPhotoMetaData.get(10);
+                if (strMeteringMode != null && !strMeteringMode.isEmpty() && !strMeteringMode.trim().equalsIgnoreCase("null")) {
+                    //double dblF = Double.parseDouble(strAperture);
+                } else {
+                    strMeteringMode = "";
                 }
-            }
 
+                int intLength = 0;
+                String strILength = lstPhotoMetaData.get(11);
+                if (strILength != null && !strILength.isEmpty() && !strILength.trim().equalsIgnoreCase("null")) {
+                    try {
+                        intLength = Integer.parseInt(strILength);
+                    } catch (Exception e) {
+                        logger.error(e.getMessage());
+                    }
+                }
 
-            String strOrientation = lstPhotoMetaData.get(13);
+                int intWidth = 0;
+                String strIWidth = lstPhotoMetaData.get(12);
+                if (strIWidth != null && !strIWidth.isEmpty() && !strIWidth.trim().equalsIgnoreCase("null")) {
+                    try {
+                        intWidth = Integer.parseInt(strIWidth);
+                    } catch (Exception e) {
+                        logger.error(e.getMessage());
+                    }
+                }
 
+                String strOrientation = lstPhotoMetaData.get(13);
 
-            if (insertPhotoToDb(publicIp, sessionDateTime, orgFileName, strNewFileName, hostname, fileShow.length(), fileLarge.length(),
-                    fileMedium.length(), fileSmall.length(), fileThumbs.length(), strImageMetaInfo.toString(), lstPhotoMetaData.get(0), lstPhotoMetaData.get(1),
-                    lstPhotoMetaData.get(2), lstPhotoMetaData.get(3), lstPhotoMetaData.get(4), Double.parseDouble(lstPhotoMetaData.get(5)),
-                    Double.parseDouble(lstPhotoMetaData.get(6)), intIso,
-                    dblPhotoShutterSpeed, dblPhotoAperture, strMeteringMode, intLength, intWidth, strOrientation, arrPhotoGpsMeta,
-                    strSubTitle, strDestination, strSubject, strPersonalNotes
-            )) {
+                if (insertPhotoToDb(publicIp, sessionDateTime, orgFileName, strNewFileName, hostname, fileShow.length(), fileLarge.length(),
+                        fileMedium.length(), fileSmall.length(), fileThumbs.length(), strImageMetaInfo.toString(), lstPhotoMetaData.get(0), lstPhotoMetaData.get(1),
+                        lstPhotoMetaData.get(2), lstPhotoMetaData.get(3), lstPhotoMetaData.get(4), Double.parseDouble(lstPhotoMetaData.get(5)),
+                        Double.parseDouble(lstPhotoMetaData.get(6)), intIso,
+                        dblPhotoShutterSpeed, dblPhotoAperture, strMeteringMode, intLength, intWidth, strOrientation, arrPhotoGpsMeta,
+                        strSubTitle, strGenre, strDestination, strSubject, strPersonalNotes, isTypeProfile
+                )) {
+                    return true;
+                } else {
+                    String errorMessage = "Upload failed!";
 
-
-                return true;
-            } else {
-                String errorMessage = "Upload failed!";
-
-                Notification notification = Notification.show(
-                        errorMessage,
-                        5000,
-                        Notification.Position.MIDDLE
-                );
-                notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+                    Notification notification = Notification.show(
+                            errorMessage,
+                            5000,
+                            Notification.Position.MIDDLE
+                    );
+                    notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+                }
             }
 
 
@@ -688,18 +685,7 @@ public class UploadImageCard extends VerticalLayout {
         image.getStyle().setAlignItems(Style.AlignItems.CENTER);
         image.getStyle().setJustifyContent(Style.JustifyContent.CENTER);
 
-        final StreamResource imageResource = new StreamResource("streamResource", () -> {
-            try {
-//                        ImageUtilsMeta imageUtilsMeta = new ImageUtilsMeta();
-//                        imageUtilsMeta.printPhotoMetadataValue(file);
 
-                return new FileInputStream(uploadedFile);
-            } catch (final FileNotFoundException e) {
-                // logErrorInDb(e,hostname,"CreationsViewCard StreamResource",userId,strUserName,file.getAbsolutePath());
-                logger.error("FileNotFoundException  " + e.getMessage());
-            }
-            return null;
-        });
 
         UUID uuid = UUID.randomUUID();
         String strUUID = uuid.toString();
@@ -716,21 +702,28 @@ public class UploadImageCard extends VerticalLayout {
                 LumoUtility.Background.CONTRAST_5);
 
 
-        image.setSrc(imageResource);
+        image.setSrc(DownloadHandler.forFile(uploadedFile));
         image.setAlt(uploadedFile.getName());
         photoToAddLayout.add(image);
 
-        HorizontalLayout layoutSelections = new HorizontalLayout();
-        layoutSelections.addClassNames(LumoUtility.Gap.SMALL, LumoUtility.Padding.MEDIUM, LumoUtility.AlignItems.CENTER);
+        VerticalLayout layoutSelections = new VerticalLayout();
+        layoutSelections.addClassNames(
+
+                );
 
         TextArea txtSubtitle = new TextArea("Short Description", "What differentiates this photo from the rest?");
         txtSubtitle.setMinWidth("300px");
         txtSubtitle.setMinRows(5);
         txtSubtitle.setMaxLength(120);
 
+        Select<String> cmbGenre = new Select<>();
+        cmbGenre.setLabel("Genre");
+        cmbGenre.setHelperText("Select the Genre which describes best the photo.");
+
+
         Select<String> cmbDestination = new Select<>();
         cmbDestination.setLabel("Location");
-        cmbDestination.setHelperText("Select a location. Avoid to select, when there are identifiable humans.");
+        cmbDestination.setHelperText("Avoid to select, when there are identifiable humans.");
         Select<String> cmbSubject = new Select<>();
         cmbSubject.setLabel("Main Subject");
         cmbSubject.setHelperText("Select a subject when is the main object and location can be anywhere.");
@@ -748,6 +741,18 @@ public class UploadImageCard extends VerticalLayout {
         }
         cmbDestination.setItems(lstDestinations);
 
+        List<Record> lstGenreRecs = getRecordsFromDb(sqlReadGenre, arrGenreNames);
+        ArrayList<String> lstGenres = new ArrayList<>();
+        ArrayList<String> lstGenreId = new ArrayList<>();
+        for (int r = 0; r < lstGenreRecs.size(); r++) {
+            String strGenre = "";
+
+            strGenre = lstGenreRecs.get(r).getColumnData("title");
+            lstGenres.add(strGenre);
+            lstGenreId.add(lstGenreRecs.get(r).getColumnData("id"));
+        }
+        cmbGenre.setItems(lstGenres);
+
         List<Record> lstSubjectRecs = getRecordsFromDb(sqlReadSubject, arrSubjectNames);
         ArrayList<String> lstSubjects = new ArrayList<>();
         ArrayList<String> lstSubjectsId = new ArrayList<>();
@@ -760,14 +765,30 @@ public class UploadImageCard extends VerticalLayout {
         }
         cmbSubject.setItems(lstSubjects);
 
-        TextArea txtPersonalNotes = new TextArea("Notes");
-        txtPersonalNotes.setHelperText("Notes only visible to you");
+        TextArea txtPersonalNotes = new TextArea("Notes","Notes only visible to you");
         txtPersonalNotes.setMinWidth("300px");
         txtPersonalNotes.setMinRows(3);
         txtPersonalNotes.setMaxLength(120);
 
-        layoutSelections.add(txtSubtitle, cmbDestination, cmbSubject, txtPersonalNotes);
+        HorizontalLayout horLayoutB = new HorizontalLayout();
+        horLayoutB.add( cmbGenre, cmbDestination, cmbSubject);
 
+        Checkbox chkIsTypeProfile = new Checkbox("Is this photo for your Profile");
+        chkIsTypeProfile.addValueChangeListener(event->{
+            isTypeProfile = event.getValue();
+            if(isTypeProfile){
+                horLayoutB.setVisible(false);
+                txtSubtitle.setVisible(false);
+            }else {
+                horLayoutB.setVisible(true);
+                txtSubtitle.setVisible(true);
+            }
+        });
+
+        HorizontalLayout horLayoutA = new HorizontalLayout();
+        horLayoutA.add(txtPersonalNotes,chkIsTypeProfile);
+
+        layoutSelections.add(horLayoutA,horLayoutB,txtSubtitle);
 
         Button btnSave = new Button("Upload Photo");
         btnSave.addClickListener(clickevent -> {
@@ -846,6 +867,14 @@ public class UploadImageCard extends VerticalLayout {
             String strOrgFileName = this.originalFileName;
             // strOrgFileName = strOrgFileName.replaceAll("([\\^\\$\\*\\?\\(\\)\\|\\{\\}\\[\\]\\\\])", "");
 
+            String strGenreId = "";
+            String strGenre = cmbGenre.getValue();
+            for (int i = 0; i < lstGenres.size(); i++) {
+                if (lstGenres.get(i).equalsIgnoreCase(strGenre)) {
+                    strGenreId = lstGenreId.get(i);
+                }
+            }
+
             String strDestinationId = "";
             String strDestination = cmbDestination.getValue();
             for (int i = 0; i < lstDestinations.size(); i++) {
@@ -864,7 +893,7 @@ public class UploadImageCard extends VerticalLayout {
 
 
             if (confirmedUploadPhoto(strOrgFileName, strNewFileName, lstPhotoMetaData, arrPhotoGpsMeta, publicIp, hostname, strImageMetaInfo,
-                    txtSubtitle.getValue().trim(), strDestinationId, strSubjectId, txtPersonalNotes.getValue().trim())) {
+                    txtSubtitle.getValue().trim(), strGenreId, strDestinationId, strSubjectId, txtPersonalNotes.getValue().trim(), isTypeProfile)) {
 
                 //double dblSize = Double.parseDouble(event.getContentLength() + "");
                 // String strFilesize = getFileSizeMB(dblSize) + "";
@@ -908,7 +937,7 @@ public class UploadImageCard extends VerticalLayout {
                                     int intPhotoISO,
                                     double dblPhotoShutterSpeed, double dblPhotoAperture, String strMeteringMode, int imageLength, int imageWidth, String strOrientation,
                                     String[] arrPhotoGpsMeta,
-                                    String strSubtitle, String strDestination, String strSubject, String strPersonalNotes) {
+                                    String strSubtitle, String strGenre, String strDestination, String strSubject, String strPersonalNotes, boolean isTypeProfile) {
 
         // String publicIpAddress = VaadinSession.getCurrent().getBrowser().getAddress();
         String browser = VaadinSession.getCurrent().getBrowser().getBrowserApplication();
@@ -958,6 +987,14 @@ public class UploadImageCard extends VerticalLayout {
         String strLat = arrPhotoGpsMeta[0] != null ? " '" + Double.parseDouble(arrPhotoGpsMeta[0]) + "' " : " NULL ";
         String strLon = arrPhotoGpsMeta[1] != null ? " '" + Double.parseDouble(arrPhotoGpsMeta[1]) + "' " : " NULL ";
 
+        String strVisibleTo = " visible_to = 'ALL', ";
+        if(isTypeProfile) {
+            strVisibleTo = " visible_to = 'Profile', ";
+        }
+
+        if (strPhotoDateTime.isEmpty()){
+            strPhotoDateTime = "'2000/01/01 00:00:00'";
+        }
 
         String insertSQL = "INSERT INTO photo_meta SET id = 0,  date_fromapp = now(), uploaderId = " + intUserId + ", uploader = '" + strUserName + "', name_org = '" + orgFileName + "', name_new = '" + strNewFileName + "', hostname = '" + hostname + "', " +
                 " space_size = '" + photoSpaceSize + "', " +
@@ -965,6 +1002,7 @@ public class UploadImageCard extends VerticalLayout {
                 " space_size_medium = '" + photoSpaceSizeMedium + "', " +
                 " space_size_small = '" + photoSpaceSizeSmall + "', " +
                 " space_size_thumb = '" + photoSpaceSizeThumb + "', " +
+                strVisibleTo +
                 " meta_all = ? , " +
 //                " meta_date = DATE_FORMAT("+strPhotoDateTime+", '%Y:%m:%d %h:%i:%s')";
                 " meta_date = DATE_FORMAT(" + strPhotoDateTime + ", '%Y:%m:%d %H:%i:%s')," +
@@ -993,6 +1031,13 @@ public class UploadImageCard extends VerticalLayout {
 
         recordService.setGlobalInfo(hostname, intUserId, strUserName, publicIp, sessionId);
         if (recordService.massRecordInsert(lstQueryInsert, listInsertValues, listInsertTypes) == 1) {
+
+            if (!strGenre.isEmpty()) {
+                String strUpdateGenre = "UPDATE photo_meta SET " +
+                        " genre_id = '" + strGenre + "' " +
+                        " WHERE name_new = '" + strNewFileName + "'";
+                recordService.insertOneRecordWithQuery(strUpdateGenre, null, null);
+            }
 
             if (!strDestination.isEmpty()) {
                 String strUpdateDest = "UPDATE photo_meta SET " +

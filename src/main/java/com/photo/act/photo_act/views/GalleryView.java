@@ -4,6 +4,9 @@ import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.services.CacheService;
+import com.photo.act.photo_act.services.ShareMetricService;
+import com.photo.act.photo_act.services.ShareService;
+import com.photo.act.photo_act.services.WeatherService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.photo.act.photo_act.views.components.*;
@@ -11,24 +14,29 @@ import com.photo.act.photo_act.views.components.Layout;
 import com.vaadin.flow.component.*;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.card.Card;
+import com.vaadin.flow.component.card.CardVariant;
 import com.vaadin.flow.component.checkbox.CheckboxGroup;
 import com.vaadin.flow.component.checkbox.CheckboxGroupVariant;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.html.Section;
+import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.popover.Popover;
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.router.*;
-import com.vaadin.flow.server.StreamResource;
+
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
+import com.vaadin.flow.server.streams.DownloadHandler;
+import com.vaadin.flow.theme.lumo.LumoUtility;
 import com.vaadin.flow.theme.lumo.LumoUtility.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,9 +54,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import static com.photo.act.photo_act.utils.UtilsString.sanitizeLocation;
 import static com.photo.act.photo_act.views.HomeView.subPathMedium;
 import static com.photo.act.photo_act.views.MainLayout.*;
-
 
 @AnonymousAllowed
 
@@ -57,7 +65,7 @@ import static com.photo.act.photo_act.views.MainLayout.*;
 @RouteAlias(value = "photos/location-type/:destination-type?", layout = MainLayout.class)
 @RouteAlias(value = "photos/month-uploaded/:month-uploaded?", layout = MainLayout.class)
 @RouteAlias(value = "photos/member/:member?/location/:destination?", layout = MainLayout.class)
-@RouteAlias(value = "photo/:photo-id?", layout = MainLayout.class)
+
 
 
 //@Menu(order = 0, icon = "line-awesome/svg/th-list-solid.svg")
@@ -69,8 +77,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
 
     String sqlGalleryReadOrderBy;
     private VerticalLayout verticalLayout;
-    private String sessionid;
-    private long sessionCreation;
+
     private String sysUserName;
     private boolean isMobile;
     private String timeZoneId;
@@ -83,42 +90,40 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
     private String strUploadedMonth;
     private String strPhotoId;
     private RecordService recordService;
+    private ShareService shareService;
+    private ShareMetricService shareMetricService;
+    private WeatherService weatherService;
     private String strHeader;
+
+    private final List<PhotoItem> photos = new ArrayList<>();
+    private int currentIndex = 0;
+
+    // Lightbox widgets (reused across opens)
+    private Dialog lightbox;
+    private Image lightboxImage;
+    private Span lightboxCaption;
+    private Span lightboxCounter;
 
     private String strUrlRequestToBeLogged;
 
-    private String dirChar = FileSystems.getDefault().getSeparator();
 
-    public static String DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
-    private String publicIp;
-    private String strPath;
-    private String hostname;
-    private String hostAddress;
-    private String canonicalHostname;
 
     private int userId;
     private String strUsername;
 
     private String strColorExternalweb = "#9fafd5";
 
-    private String[] arrClubsColumnNames = {"org_name", "org_type", "org_type_parent", "city", "used_for", "country", "url", "url_local_events", "url_fb", "url_yt", "url_insta",
-            "url_flickr", "url_wikipedia"};
-    private String sqlShowClubsSelect = "SELECT id, org_name, org_type, org_type_parent , city , used_for , country , url , city, address, pc, country, map_x, map_y, url, " +
-            " url_local_events, url_fb, url_yt, url_insta, url_flickr, url_wikipedia, " +
-            " date_inserted, dateUpdated " +
-            " FROM organizations o ";
-    private String sqlShowClubsWhere = " WHERE o.org_type LIKE 'Club' ";
-    private String sqlShowClubsOrder = " ORDER BY o.city ASC, o.org_name ASC";
-
     private String[] arrPhotoGenreNames = {"id", "title", "description"};
     private String sqlReadPhotoGenre = "SELECT " +
             "  `id`, `title`, `description` " +
-            " FROM photo_genre ";
+            " FROM photo_genre " +
+            " ORDER BY title ";
 
     private String[] arrUploadedPeriodCatNames = {"photo_up_month_id", "photo_up_date", "photo_up_count"};
     private String sqlUploadedPeriodCat =
             " SELECT  DATE_FORMAT(pm.meta_date, '%W %D %M %Y %H:%i %p') AS meta_date, DATE_FORMAT(pm.date_inserted, '%M') AS photo_up_month " +
                     " , DATE_FORMAT(pm.date_inserted, '%Y%m') AS photo_up_month_id, DATE_FORMAT(pm.date_inserted, '%M %Y') AS photo_up_date, count(pm.id) AS photo_up_count " +
+                    " , getDateDiffFromNow(pm.date_inserted) AS date_inserted_diff_from_now " +
                     " , pm.meta_i_height, pm.meta_i_length, pm.meta_i_width " +
                     " , usr.username, usr.surname, usr.name, usr.resident, usr.resident_country, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined, DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since, usr.avatar_path " +
                     " , usr.short_bio " +
@@ -129,7 +134,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
     private String sqlUploadedPeriodCatGroupby =
             " GROUP BY photo_up_month_id " +
                     " ORDER BY photo_up_month_id DESC " +
-                    " LIMIT 6 ";
+                    " LIMIT 12 ";
 
     private String[] arrDestinationCatNames = {"id", "dest_cat_title", "dest_cat_count"};
     private String sqlReadDestinationCat = " SELECT  dc.id, dc.dest_cat_title, COUNT(d.category_id) AS dest_cat_count " +
@@ -148,7 +153,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
             " WHERE pm.destination_Id = d.id AND dc.id = d.category_id ";
     private String sqlReadDestinationGroupby =
             " GROUP BY d.id " +
-                    " ORDER BY city_name ASC, pm.category_selected ASC, pm.date_inserted DESC ";
+                    " ORDER BY city_name ASC, pm.date_inserted DESC ";
 
     private String[] arrDestinationAssignedNames = {"id", "city_name", "prefecture", "country"};
     private String sqlReadDestinationAssigned = "SELECT distinct city_name, d.id, prefecture, country " +
@@ -169,8 +174,9 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
             , "location_by_user", "location_area", "location_country_code", "location_lat", "location_lon"
             , "city_name"
             , "subject_name", "subject_description", "subject_type"
-            , "date_inserted"
-            , "username", "surname", "name", "resident", "resident_country", "date_joined", "member_since", "avatar_path", "short_bio", "count_photos", "count_albums"
+            , "date_inserted_diff_from_now"
+            , "username", "surname", "name", "resident", "resident_country", "date_joined", "member_since", "avatar_path", "short_bio"
+            , "count_photos", "count_albums"
     };
 
 
@@ -182,6 +188,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
     private String sqlReadGalleryDestinations =
             " SELECT pm.id, pm.name_new, pm.title, pm.subtitle, pm.notes, pm.photo_type, pm.uploader, pm.creator, pm.visible_to,  DATE_FORMAT(pm.meta_date, '%W %D %M %Y %H:%i %p') AS meta_date, DATE_FORMAT(pm.meta_date, '%M %Y') AS photo_date, DATE_FORMAT(pm.meta_date, '%H:%i') AS photo_time " +
                     " , DATE_FORMAT(pm.meta_date, '%d/%m/%Y - %H:%i:%S') AS photo_time_shot,  pm.space_size, pm.space_size_medium, pm.space_size_thumb, pm.meta_camera_make, pm.meta_camera_model, pm.meta_lens_make, pm.meta_lens_model,  pm.meta_focal_length, pm.meta_focal_length_ff, pm.meta_iso, meta_aperture,  meta_shutter_speed, meta_orientation ,  pm.meta_i_height, pm.meta_i_length, pm.meta_i_width , pm.location_by_user, pm.location_area, pm.location_country_code, pm.location_lat, pm.location_lon " +
+                    " , getDateDiffFromNow(pm.date_inserted) AS date_inserted_diff_from_now " +
                     " , d.city_name, d.prefecture, d.country " +
                     " , usr.username, usr.surname, usr.name, usr.resident, usr.resident_country, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined, DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since, usr.avatar_path " +
                     " , usr.short_bio " +
@@ -195,6 +202,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
     private String sqlReadGallerySubjects =
             " SELECT pm.id, pm.name_new, pm.title, pm.subtitle, pm.notes, pm.photo_type, pm.uploader, pm.creator, pm.visible_to,  DATE_FORMAT(pm.meta_date, '%W %D %M %Y %H:%i %p') AS meta_date, DATE_FORMAT(pm.meta_date, '%M %Y') AS photo_date, DATE_FORMAT(pm.meta_date, '%H:%i') AS photo_time " +
                     " , DATE_FORMAT(pm.meta_date, '%d/%m/%Y - %H:%i:%S') AS photo_time_shot,  pm.space_size, pm.space_size_medium, pm.space_size_thumb, pm.meta_camera_make, pm.meta_camera_model, pm.meta_lens_make, pm.meta_lens_model,  pm.meta_focal_length, pm.meta_focal_length_ff, pm.meta_iso, meta_aperture,  meta_shutter_speed, meta_orientation,  pm.meta_i_height, pm.meta_i_length, pm.meta_i_width , pm.location_by_user, pm.location_area, pm.location_country_code, pm.location_lat, pm.location_lon " +
+                    " , getDateDiffFromNow(pm.date_inserted) AS date_inserted_diff_from_now " +
                     " , usr.username, usr.surname, usr.name, usr.resident, usr.resident_country, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined,  DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since, usr.avatar_path " +
                     " , usr.short_bio  " +
                     " , ux.count_photos, ux.count_albums " +
@@ -208,12 +216,24 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
     // private String sqlReadGallery = "( " + sqlReadGalleryDestinations + " " + sqlReadGallery1OrderBy + " LIMIT " + (intRecsOnPage) + " ";
 //            ") UNION (" + sqlReadGallery2 + " " + sqlReadGallery2OrderBy + " LIMIT " + (intRecsOnPage / 2) + ") ";
 
+    private String sessionid;
+    private long sessionCreation;
+    private String publicIp;
+    private String strPath;
+    private String hostname;
+    private String hostAddress;
+    private String canonicalHostname;
     private UtilsDate utilsDate;
     private String sessionDateTime;
     private GenericView genericView;
     private VerticalLayout filtersContainer;
     private String strOS;
     private String strBrowser;
+
+    private String dirChar = FileSystems.getDefault().getSeparator();
+
+    public static String DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
+
 
 //    private Select<String> cmbCount;
 //    private Select<String> cmbSortBy;
@@ -228,13 +248,21 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
 
     private Section sidebar;
 
-    public GalleryView(RecordService recordService) {
+    public record PhotoItem(String url, String thumbnailUrl, String title, String description) {
+        public PhotoItem(String url, String title, String description) {
+            this(url, url, title, description);
+        }
+    }
+
+    public GalleryView(RecordService recordService, ShareService shareService, ShareMetricService shareMetricService, WeatherService weatherService) {
         this.recordService = recordService;
+        this.shareService = shareService;
+        this.shareMetricService = shareMetricService;
+        this.weatherService = weatherService;
         utilsDate = new UtilsDate();
         genericView = new GenericView(recordService);
 
         constructUI();
-
     }
 
 
@@ -271,10 +299,6 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         intPage = 1;
         VerticalLayout layoutHeaderParameters = null;
         verticalLayout.removeAll();
-        Div divContent = new Div();
-        divContent.addClassNames(Display.FLEX, Height.FULL, Overflow.HIDDEN);
-        divContent.add(createSidebar(),verticalLayout);
-        closeSidebar();
 
         Div divGallery = new Div();
         divGallery.addClassName("gallery");
@@ -284,24 +308,36 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
             filter(divGallery, "", VIEW_ONE_PHOTO);
 
             layoutHeaderParameters = loadHeader("Photos", "Uploaded by our members", "", "");
+            filtersContainer.removeAll();
             //   layoutHeaderParameters.add(loadFiltersHeader(sqlReadDestinationCat + sqlReadDestinationCatGroupby, arrDestinationCatNames, "Locations"));
             // String sqlOrderBy = " ORDER BY pm.date_inserted DESC, pm.title ASC, meta_date DESC ";
 
             filter(divGallery, "", VIEW_PHOTO_GRID);
-        } else if (!strUploadedMonth.isEmpty() && !strUploadedMonth.equalsIgnoreCase(STR_ALL_MONTHS)) {
+        } else if (!strUploadedMonth.isEmpty() && (strDestination.isEmpty() || strDestination.equalsIgnoreCase(STR_ALL_DESTINATIONS) && (strDestinationType.isEmpty() || strDestinationType.equalsIgnoreCase(STR_ALL_DESTINATION_TYPES)))) {
             layoutHeaderParameters = loadHeader("Photos", "Uploaded by our members", "Month Uploaded", strUploadedMonth);
-            String sqlWhereSubClause = " AND  DATE_FORMAT(pm.date_inserted, '%M %Y') LIKE '" + strUploadedMonth + "'  ";
-            filter(divGallery, sqlWhereSubClause, VIEW_PHOTO_GRID);
+
+            filtersContainer.removeAll();
+            filtersContainer.add(loadFiltersHeader(sqlUploadedPeriodCat + sqlUploadedPeriodCatGroupby, arrUploadedPeriodCatNames, "month-uploaded", "Photos"));
+
+            if(!strUploadedMonth.equalsIgnoreCase(STR_ALL_MONTHS)) {
+                String sqlWhereSubClause = " AND  DATE_FORMAT(pm.date_inserted, '%M %Y') LIKE '" + strUploadedMonth + "'  ";
+                filter(divGallery, sqlWhereSubClause, VIEW_PHOTO_GRID);
+            }else{
+                filter(divGallery,"", VIEW_PHOTO_GRID);
+            }
         } else if (strMember.equalsIgnoreCase(STR_ALL_MEMBERS) && strDestination.equalsIgnoreCase(STR_ALL_DESTINATIONS) && strDestinationType.equalsIgnoreCase(STR_ALL_DESTINATION_TYPES)) {
             layoutHeaderParameters = loadHeader("Photos", "Uploaded by our members", "", "");
             //   layoutHeaderParameters.add(loadFiltersHeader(sqlReadDestinationCat + sqlReadDestinationCatGroupby, arrDestinationCatNames, "Locations"));
             // String sqlOrderBy = " ORDER BY pm.date_inserted DESC, pm.title ASC, meta_date DESC ";
+            filtersContainer.removeAll();
 
             filter(divGallery, "", VIEW_PHOTO_GRID);
         } else if (strMember.equalsIgnoreCase(STR_ALL_MEMBERS) && strDestination.equalsIgnoreCase(STR_ALL_DESTINATIONS) && !strDestinationType.equalsIgnoreCase(STR_ALL_DESTINATION_TYPES)) {
             layoutHeaderParameters = loadHeader("Photos", "Uploaded by our members", "Location type", strDestinationType);
             //   layoutHeaderParameters.add(loadFiltersHeader(sqlReadDestinationCat + sqlReadDestinationCatGroupby, arrDestinationCatNames, "Locations"));
             // String sqlOrderBy = " ORDER BY pm.date_inserted DESC, pm.title ASC, meta_date DESC ";
+            filtersContainer.removeAll();
+            filtersContainer.add(loadFiltersHeader(sqlReadDestinationCat + sqlReadDestinationCatGroupby, arrDestinationCatNames, "destination-type", "Locations"));
 
             String sqlWhereSubClause = sqlReadDestination + " AND dc.dest_cat_title LIKE '" + strDestinationType + "'  " + sqlReadDestinationGroupby;
 
@@ -310,20 +346,65 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         } else if (strMember.equalsIgnoreCase(STR_ALL_MEMBERS) && !strDestination.equalsIgnoreCase(STR_ALL_DESTINATIONS) && !strDestination.isEmpty()) {
             layoutHeaderParameters = loadHeader("Photos", "Uploaded by our members", "Location", strDestination);
 
-            layoutHeaderParameters.add(loadWeather(strDestination, ""));
+            filtersContainer.removeAll();
+            filtersContainer.add(loadFiltersHeader(sqlReadDestinationCat + sqlReadDestinationCatGroupby, arrDestinationCatNames, "destination-type", "Locations"));
+
+            String sqlWhere = " AND city_name LIKE '"+sanitizeLocation(strDestination)+"' ";
+
+            String strForMap = "";
+            String strForWeather = "";
+            String strCountry = "";
+            List<Record> lstLocationRecs = getRecordsFromDb(sqlReadDestination+sqlWhere, arrDestinationNames);
+            if(lstLocationRecs!= null && !lstLocationRecs.isEmpty())
+            {
+                strForMap = lstLocationRecs.get(0).getColumnData("name_for_map");
+                strForWeather = lstLocationRecs.get(0).getColumnData("name_for_weather");
+                strCountry = lstLocationRecs.get(0).getColumnData("country");
+            }
+
+            HorizontalLayout layoutWeatherMap = new HorizontalLayout();
+            layoutWeatherMap.setAlignItems(FlexComponent.Alignment.CENTER);
+            layoutWeatherMap.setJustifyContentMode(FlexComponent.JustifyContentMode.AROUND);
+            layoutWeatherMap.setWrap(true);
+            layoutWeatherMap.add(
+                    loadWeatherSmall(strDestination, strForWeather, strCountry),
+                    loadMapSmall(strDestination, strForMap, strCountry));
+            layoutHeaderParameters.add(layoutWeatherMap);
 
             String sqlWhereSubClause = " AND d.city_name LIKE '" + strDestination + "'  ";
             filter(divGallery, sqlWhereSubClause, VIEW_PHOTO_GRID);
         } else if (!strMember.equalsIgnoreCase(STR_ALL_MEMBERS)) {
             layoutHeaderParameters = loadHeader("Photos", "Uploaded by our members", "", "");
-            layoutHeaderParameters.add(loadWeather(strDestination, ""));
+
+            String sqlWhere = " AND city_name LIKE "+strDestination+" ";
+
+            String strForMap = "";
+            String strForWeather = "";
+            String strCountry = "";
+            List<Record> lstLocationRecs = getRecordsFromDb(sqlReadDestination+sqlWhere, arrDestinationNames);
+            if(lstLocationRecs!= null && !lstLocationRecs.isEmpty())
+            {
+                strForMap = lstLocationRecs.get(0).getColumnData("name_for_map");
+                strForWeather = lstLocationRecs.get(0).getColumnData("name_for_weather");
+                strCountry = lstLocationRecs.get(0).getColumnData("country");
+            }
+
+            HorizontalLayout layoutWeatherMap = new HorizontalLayout();
+            layoutWeatherMap.setAlignItems(FlexComponent.Alignment.CENTER);
+            layoutWeatherMap.setJustifyContentMode(FlexComponent.JustifyContentMode.AROUND);
+            layoutWeatherMap.setWrap(true);
+            layoutWeatherMap.add(
+                    loadWeatherSmall(strDestination, strForWeather, strCountry),
+                    loadMapSmall(strDestination, strForMap, strCountry));
+            layoutHeaderParameters.add(layoutWeatherMap);
+
+            filtersContainer.removeAll();
 
             filter(divGallery, "", VIEW_PHOTO_GRID);
         } else {
 
             layoutHeaderParameters = loadHeader("Photos", "Uploaded by our members", "", "");
-
-            // layoutHeaderParameters.add(loadFiltersHeader(sqlReadDestinationCat + sqlReadDestinationCatGroupby, arrDestinationCatNames, "Locations"));
+            filtersContainer.removeAll();
 
             Div layoutFiltersSubject = new Div();
             layoutFiltersSubject.add(loadDestinationCards(sqlReadSubject, arrSubjectNames, "subject_name"));
@@ -333,12 +414,9 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
             filter(divGallery, "", VIEW_PHOTO_GRID);
         }
 
-
         this.removeAll();
 
-
         this.add(layoutHeaderParameters);
-
 
         if (isMobile) {
             VerticalLayout layoutMobileContent = new VerticalLayout();
@@ -348,7 +426,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
                     Gap.XSMALL
             );
 
-            layoutMobileContent.add(divContent);
+            layoutMobileContent.add(verticalLayout);
             this.add(layoutMobileContent);
         } else {
             VerticalLayout layoutContent = new VerticalLayout();
@@ -358,7 +436,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
                     Gap.XSMALL
             );
 
-            layoutContent.add(divContent);
+            layoutContent.add(verticalLayout);
             this.add(layoutContent);
         }
 
@@ -417,9 +495,6 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
                     AlignItems.CENTER, JustifyContent.CENTER
             );
 
-//            Html htmlTitle = new Html("<title>'photoact.net Network and Act around Photography'</title>");
-//            Html htmlMeta = new Html("<meta name='description' content='Get the latest uploaded photos from our community of photographers.'>");
-//            verticalLayout.add(htmlTitle, htmlMeta);
         }
 
 
@@ -473,7 +548,8 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         headerSection.addClassNames(
                 FontSize.XLARGE
         );
-        if (strSection.isEmpty()) {
+        headerSection.getStyle().set("text-transform","capitalize");
+        if (strSection.isEmpty() ||  strSection.contains("all")) {
             headerSection.setVisible(false);
         }
 
@@ -495,66 +571,51 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
                 Padding.NONE, Margin.NONE, Gap.XSMALL);
         layoutHeader.add(header, subheader);
 
+//
+//        Button btnLastUploaded = new Button("Last Uploaded");
+//        btnLastUploaded.setIcon(FontAwesome.Solid.CALENDAR_DAY.create());
 
-        Button btnLastUploaded = new Button("Last Uploaded");
-        btnLastUploaded.setIcon(FontAwesome.Solid.CALENDAR_DAY.create());
-
-        HorizontalLayout layoutTabViewPhotos = new HorizontalLayout();
-
-        layoutTabViewPhotos.addClassName("tab-select");
-        RadioButtonGroup<String> btnGroupShowPhotos = new RadioButtonGroup<>();
-//        btnGroupShowPhotos.setItems(btnLastUploaded);
-        btnGroupShowPhotos.setItems("Month Uploaded", "Location Type");
-        layoutTabViewPhotos.add(btnGroupShowPhotos);
-        btnGroupShowPhotos.addValueChangeListener(e -> {
-            if (e.getValue() == null) {
-
-            } else if (e.getValue().contains("Uploaded")) {
-                filtersContainer.removeAll();
-                filtersContainer.add(loadFiltersHeader(sqlUploadedPeriodCat + sqlUploadedPeriodCatGroupby, arrUploadedPeriodCatNames, "month-uploaded", "Photos"));
-//                e.getSource().getUI().ifPresent(ui ->
-//                        ui.navigate(GalleryView.class)
-//                );
-
-            } else if (e.getValue().contains("Location")) {
-                filtersContainer.removeAll();
-
-                filtersContainer.add(loadFiltersHeader(sqlReadDestinationCat + sqlReadDestinationCatGroupby, arrDestinationCatNames, "destination-type", "Locations"));
-
-            } else if (e.getValue().contains("Object")) {
-                filtersContainer.removeAll();
-                filtersContainer.add(loadFiltersHeader(sqlReadDestinationCat + sqlReadDestinationCatGroupby, arrDestinationCatNames, "destination-type", "Objects"));
-            } else if (e.getValue().contains("Date")) {
-                filtersContainer.removeAll();
-                filtersContainer.add(loadFiltersHeader(sqlReadDestinationCat + sqlReadDestinationCatGroupby, arrDestinationCatNames, "destination-type", "Objects"));
-            }
-        });
-        btnGroupShowPhotos.setValue("By Genre");
-
-
-        HorizontalLayout headerNTabsLayout = new HorizontalLayout();
-        headerNTabsLayout.addClassNames(Width.FULL,
-                AlignItems.CENTER, JustifyContent.CENTER,
-                Padding.NONE, Margin.NONE, Gap.XSMALL);
-        headerNTabsLayout.add(layoutHeader, layoutTabViewPhotos);
-
-        headerContainer.add(headerNTabsLayout);
+//        HorizontalLayout layoutTabViewPhotos = new HorizontalLayout();
+//
+//        layoutTabViewPhotos.addClassName("tab-select");
+//        RadioButtonGroup<String> btnGroupShowPhotos = new RadioButtonGroup<>();
+////        btnGroupShowPhotos.setItems(btnLastUploaded);
+//        btnGroupShowPhotos.setItems("Month Uploaded", "Location Type");
+//        layoutTabViewPhotos.add(btnGroupShowPhotos);
+//        btnGroupShowPhotos.addValueChangeListener(e -> {
+//            if (e.getValue() == null) {
+//
+//            } else if (e.getValue().contains("Uploaded")) {
+//                filtersContainer.removeAll();
+//                filtersContainer.add(loadFiltersHeader(sqlUploadedPeriodCat + sqlUploadedPeriodCatGroupby, arrUploadedPeriodCatNames, "month-uploaded", "Photos"));
+////                e.getSource().getUI().ifPresent(ui ->
+////                        ui.navigate(GalleryView.class)
+////                );
+//
+//            } else if (e.getValue().contains("Location")) {
+//                filtersContainer.removeAll();
+//
+//                filtersContainer.add(loadFiltersHeader(sqlReadDestinationCat + sqlReadDestinationCatGroupby, arrDestinationCatNames, "destination-type", "Locations"));
+//
+//            } else if (e.getValue().contains("Object")) {
+//                filtersContainer.removeAll();
+//                filtersContainer.add(loadFiltersHeader(sqlReadDestinationCat + sqlReadDestinationCatGroupby, arrDestinationCatNames, "destination-type", "Objects"));
+//            } else if (e.getValue().contains("Date")) {
+//                filtersContainer.removeAll();
+//                filtersContainer.add(loadFiltersHeader(sqlReadDestinationCat + sqlReadDestinationCatGroupby, arrDestinationCatNames, "destination-type", "Objects"));
+//            }
+//        });
+//        btnGroupShowPhotos.setValue("By Genre");
 
 
-        HorizontalLayout layoutTabRecordsView = new HorizontalLayout();
-        layoutTabRecordsView.addClassName("thin-tab-select");
-        RadioButtonGroup<String> btnGroupSelect = new RadioButtonGroup<>();
-        btnGroupSelect.setItems("Meta Data", "Rate");
-        btnGroupSelect.addValueChangeListener(event -> {
-            if (event.getSource().getValue().contains("Meta")) {
+//        HorizontalLayout headerNTabsLayout = new HorizontalLayout();
+//        headerNTabsLayout.addClassNames(Width.FULL,
+//                AlignItems.CENTER, JustifyContent.CENTER,
+//                Padding.NONE, Margin.NONE, Gap.XSMALL);
+//        headerNTabsLayout.add(layoutHeader, layoutTabViewPhotos);
 
-            } else {
+        headerContainer.add(layoutHeader);
 
-            }
-
-        });
-        layoutTabRecordsView.add(btnGroupSelect);
-        btnGroupSelect.setValue("Meta Data");
 
         headerContainer.add(filtersContainer);
         headerContainer.add(headerSection, headerSectionCaption, divLine);
@@ -678,71 +739,279 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         return filtersPanel;
     }
 
+    public VerticalLayout getWeatherCurrent(String destination, String country) {
+        HorizontalLayout layoutWeather = new HorizontalLayout();
+        layoutWeather.getStyle().setColor("#8b94a0");
+        layoutWeather.addClassNames(
+                LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER
+        );
+
+
+        LocalWeatherForecast weatherForecast = new LocalWeatherForecast(weatherService, destination, country);
+        weatherForecast.setMaxWidth("800px");
+
+        layoutWeather.add(weatherForecast);
+
+
+
+        if (destination != null && !destination.isEmpty()) {
+
+/*
+//        WeatherService weatherService = new WeatherService("metric");
+
+        String[] locations = weatherService.lookUpLocation(destination, "", country);
+        if (locations != null) {
+            for (int i = 0; i < locations.length; i++) {
+                logger.info("locations  " + locations[i]);
+            }
+            String[] currentWeatherData = weatherService.getCurrentWeatherDataMetric(locations);
+            //String[][] dailyForecast =weatherService.getDailyForecastMetric(locations);
+
+//        layoutWeather.getStyle().setAlignItems(Style.AlignItems.CENTER);
+//        layoutWeather.getStyle().setJustifyContent(Style.JustifyContent.SPACE_AROUND);
+
+            VerticalLayout layoutLeft = new VerticalLayout();
+            layoutLeft.setMargin(false);
+            layoutLeft.setSpacing(false);
+            layoutLeft.setPadding(false);
+
+            WeatherImageService weatherImage = new WeatherImageService();
+
+            Image imageWeather = new Image();
+            imageWeather.getStyle().setOpacity("62%");
+
+            StreamResource iconWeather = new StreamResource(currentWeatherData[5],
+                    () -> getClass().getResourceAsStream(weatherImage.weatherImage(currentWeatherData)));
+
+            imageWeather.setSrc(iconWeather);
+            imageWeather.setMaxWidth("80px");
+            imageWeather.setAlt(currentWeatherData[5]);
+
+            VerticalLayout layoutRight = new VerticalLayout();
+            layoutRight.setMinWidth("180px");
+            layoutRight.setMargin(false);
+            layoutRight.setSpacing(false);
+            layoutRight.setPadding(false);
+
+            layoutLeft.add(imageWeather);
+            layoutLeft.setSizeFull();
+            Div hTemp = new Div(currentWeatherData[0]);
+            hTemp.addClassName("lazy-card-overview-font-big");
+            hTemp.getStyle().setFontSize("26px");
+            hTemp.getStyle().setFontWeight(Style.FontWeight.BOLDER);
+            layoutLeft.add(hTemp);
+
+            Div hCondition = new Div(currentWeatherData[5]);
+            hCondition.addClassName("lazy-card-overview-font-big");
+            hCondition.getStyle().setFontSize("16px");
+            hTemp.getStyle().setFontWeight(Style.FontWeight.BOLD);
+            layoutLeft.add(hCondition);
+
+
+            Div divTime = new Div(currentWeatherData[14]);
+            divTime.getStyle().setFontWeight(Style.FontWeight.BOLDER);
+
+            Div divSunRise = new Div(currentWeatherData[12]);
+            divSunRise.getStyle().setFontWeight(Style.FontWeight.BOLD);
+
+            Div divSunset = new Div(currentWeatherData[13]);
+            divSunset.getStyle().setFontWeight(Style.FontWeight.BOLD);
+
+            String strIconSize = "35px";
+
+            Image imageSunrise = new Image();
+            StreamResource iconSunrise = new StreamResource("Sunrise",
+                    () -> getClass().getResourceAsStream("/icons/sunrise.png"));
+            imageSunrise.setSrc(iconSunrise);
+            imageSunrise.setAlt("Sunrise");
+//        imageSunrise.setClassName("lazy-card-travel-weather-icons");
+            imageSunrise.getStyle().setWidth(strIconSize);
+            imageSunrise.getStyle().setHeight(strIconSize);
+
+            Image imageSet = new Image();
+            StreamResource iconSunset = new StreamResource("Sunset",
+                    () -> getClass().getResourceAsStream("/icons/sunset.png"));
+            imageSet.setSrc(iconSunset);
+            imageSet.setAlt("Sunset");
+//        imageSet.setClassName("lazy-card-travel-weather-icons");
+            imageSet.getStyle().setWidth(strIconSize);
+            imageSet.getStyle().setHeight(strIconSize);
+
+
+            Div divToday = new Div("Today");
+            divToday.getStyle().setFontSize("11px");
+            layoutRight.add(new HorizontalLayout(divToday));
+            layoutRight.add(new HorizontalLayout(new Div("Sunrise: "), divSunRise));
+            layoutRight.add(new HorizontalLayout(new Div("Sunset: "), divSunset));
+            // layoutRight.add(new HorizontalLayout(new Div("Sunset: "), divSunset));
+
+
+            Div divL = new Div(currentWeatherData[2]);
+            divL.getStyle().setFontWeight(Style.FontWeight.BOLDER);
+
+            Div divH = new Div(currentWeatherData[3]);
+            divH.getStyle().setFontWeight(Style.FontWeight.BOLDER);
+
+
+            Div divFeelsLike = new Div(currentWeatherData[1]);
+            divFeelsLike.getStyle().setFontWeight(Style.FontWeight.BOLDER);
+
+            Div divHumidity = new Div(currentWeatherData[4]);
+            divHumidity.getStyle().setFontWeight(Style.FontWeight.BOLDER);
+
+            Div divWindSpeed = new Div(currentWeatherData[7]);
+            divWindSpeed.getStyle().setFontWeight(Style.FontWeight.BOLDER);
+
+            Div divClouds = new Div(currentWeatherData[15]);
+            divClouds.getStyle().setFontWeight(Style.FontWeight.BOLDER);
+
+            Div divRain = new Div();
+            String rain = currentWeatherData[16];
+
+            Div divVisibility = new Div(currentWeatherData[17]);
+            divVisibility.getStyle().setFontWeight(Style.FontWeight.BOLDER);
+
+
+            layoutRight.add(new HorizontalLayout(new Div("L: "), divL, new Div("H: "), divH));
+            Div divNow = new Div("Now");
+            divNow.getStyle().setFontSize("11px");
+            layoutRight.add(new HorizontalLayout(divNow));
+
+            layoutRight.add(new HorizontalLayout(new Div("Feels like: "), divFeelsLike));
+            layoutRight.add(new HorizontalLayout(new Div("Clouds: "), divClouds));
+
+            if (!rain.equalsIgnoreCase("")) {
+                divRain.setText(currentWeatherData[16]);
+                divRain.getStyle().setFontWeight(Style.FontWeight.BOLDER);
+                layoutRight.add(new HorizontalLayout(new Div("Rain: "), divRain));
+            }
+
+            layoutRight.add(new HorizontalLayout(new Div("Humidity: "), divHumidity));
+            layoutRight.add(new HorizontalLayout(new Div("Wind speed: "), divWindSpeed));
+
+            layoutWeather.add(layoutLeft, layoutRight);
+
+ */
+
+            VerticalLayout layout = new VerticalLayout();
+            layout.setMargin(false);
+            layout.setSpacing(false);
+            layout.setPadding(false);
+            layout.addClassNames(LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER);
+
+
+            Anchor apiLink = new Anchor();
+            apiLink.getStyle().setColor("#8b94a0");
+            apiLink.setClassName("lazy-api-link");
+//            apiLink.setHref(weatherService.getUrlReference());
+//            apiLink.setTarget("_blank");
+//            apiLink.setText("Weather data by: " + weatherService.getTitleReference());
+
+            layout.add(layoutWeather, apiLink);
+
+            return layout;
+        } else {
+            VerticalLayout layout = new VerticalLayout();
+            layout.setMargin(false);
+            layout.setSpacing(false);
+            layout.setPadding(false);
+            return layout;
+        }
+    }
+
+    private IFrame getDestinationMap(String city, String country)
+    {
+
+
+        String strHtml = "<!DOCTYPE html>\n" +
+                "<html>\n" +
+                "<head>\n" +
+                "<meta charset=\"utf-8\">\n" +
+                "<title>Add a marker using a place name</title>\n" +
+                "<meta name=\"viewport\" content=\"initial-scale=1,maximum-scale=1,user-scalable=no\">\n" +
+                "<link href=\"https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.css\" rel=\"stylesheet\">\n" +
+                "<script src=\"https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.js\"></script>\n" +
+                "<style>\n" +
+                "body { margin: 0; padding: 0; }\n" +
+                "#map { position: absolute; top: 0; bottom: 0; width: 100%; }\n" +
+                "</style>\n" +
+                "</head>\n" +
+                "<body>\n" +
+                "<div id=\"map\"></div>\n" +
+                "\n" +
+                "<script src=\"https://unpkg.com/@mapbox/mapbox-sdk/umd/mapbox-sdk.min.js\"></script>\n" +
+                "\n" +
+                "<script>\n" +
+                "\tmapboxgl.accessToken = 'pk.eyJ1Ijoibmlja2dpY2siLCJhIjoiY20xcm9nMTZ5MGJsNDJzczM1aWk0Mm1zdCJ9.qSV85DCU8ewpGjTA3uajpg';\n" +
+                "    const mapboxClient = mapboxSdk({ accessToken: mapboxgl.accessToken });\n" +
+                "    mapboxClient.geocoding\n" +
+                "        .forwardGeocode({\n" +
+                "            query: '"+city+", "+country+"',\n" +
+                "            autocomplete: false,\n" +
+                "            limit: 1\n" +
+                "        })\n" +
+                "        .send()\n" +
+                "        .then((response) => {\n" +
+                "            if (\n" +
+                "                !response ||\n" +
+                "                !response.body ||\n" +
+                "                !response.body.features ||\n" +
+                "                !response.body.features.length\n" +
+                "            ) {\n" +
+                "                console.error('Invalid response:');\n" +
+                "                console.error(response);\n" +
+                "                return;\n" +
+                "            }\n" +
+                "            const feature = response.body.features[0];\n" +
+                "\n" +
+                "            const map = new mapboxgl.Map({\n" +
+                "                container: 'map',\n" +
+                "                // Choose from Mapbox's core styles, or make your own style with Mapbox Studio\n" +
+                "                style: 'mapbox://styles/mapbox/streets-v12',\n" +
+                "                center: feature.center,\n" +
+                "                zoom: 12\n" +
+                "            });\n" +
+                "\n" +
+                "    // Add the control to the map.\n" +
+                "    map.addControl(\n" +
+                "        new MapboxGeocoder({\n" +
+                "            accessToken: mapboxgl.accessToken,\n" +
+                "            language: 'en-GB',\n"+
+                "            mapboxgl: mapboxgl\n" +
+                "        })\n" +
+                "    );\n"+
+                "\n" +
+                "            // Create a marker and add it to the map.\n" +
+                "            new mapboxgl.Marker().setLngLat(feature.center).addTo(map);\n" +
+                "        });\n" +
+                "\n" +
+                "\n" +
+                "    map.addControl(new mapboxgl.FullscreenControl());\n"+
+                "\n" +
+                "</script>\n" +
+                "\n" +
+                "</body>\n" +
+                "</html>";
+
+        //String mapSrc = "https://api.mapbox.com/search/geocode/v6/forward?q=budapest&proximity=ip&access_token=pk.eyJ1Ijoibmlja2dpY2siLCJhIjoiY20xcm9nMTZ5MGJsNDJzczM1aWk0Mm1zdCJ9.qSV85DCU8ewpGjTA3uajpg";
+
+        //String strMaps =
+//"<iframe width='100%' height='400px' src=\""+mapSrc+"\" title=\"Navigation\" style=\"border:none;\"></iframe>";
+
+        IFrame mapsFrame = new IFrame();
+        mapsFrame.setSrcdoc(strHtml);
+        mapsFrame.setWidthFull();
+        mapsFrame.setHeight("400px");
+        mapsFrame.getStyle().setBorder("0px");
+        mapsFrame.getStyle().setBorderRadius("6px");
+
+
+
+        return mapsFrame;
+    }
 
     private int filter(Div divGallery, String sqlWhereSubClause, String strPhotoView) {
         int intResultsCount = 0;
-
-//        String strWhere1SubClause = "";
-//        String strWhere2SubClause = "";
-
-//        Set<String> setSelectedGenres = checkboxDates.getSelectedItems();
-//        List<String> lstSelectedGenres = setSelectedGenres.stream().toList();
-
-/*
-        Set<String> setSelected = checkboxCheckboxGroup.getSelectedItems();
-        List<String> lstSelected = setSelected.stream().toList();
-
-        Set<String> setSelectedSubject = checkboxSubject.getSelectedItems();
-        List<String> lstSelectedSubject = setSelectedSubject.stream().toList();
-
-        if ((lstSelected.isEmpty())) {
-        } else {
-            strWhere1SubClause = strWhere1SubClause + " AND ( ";
-            for (int s = 0; s < lstSelected.size(); s++) {
-
-                String strCategory = lstSelected.get(s); //  OR lc2.cat_type LIKE '" + strCategory + "')
-                strWhere1SubClause = strWhere1SubClause + "  d.city_name LIKE '" + strCategory + "'  ";
-
-                if (s < lstSelected.size() - 1) {
-                    strWhere1SubClause = strWhere1SubClause + " OR ";
-                }
-            }
-            strWhere1SubClause = strWhere1SubClause + " ) ";
-
-            //used to return 0 results when only the above is set
-            if (lstSelectedSubject.isEmpty()) {
-                strWhere2SubClause = strWhere2SubClause + " AND subject_name LIKE 'subject_name'  ";
-            }
-        }
-
-        if (lstSelectedSubject.isEmpty()) {
-        } else {
-            strWhere2SubClause = strWhere2SubClause + " AND ( ";
-            for (int s = 0; s < lstSelectedSubject.size(); s++) {
-
-                String strSubject = lstSelectedSubject.get(s); //  OR lc2.cat_type LIKE '" + strCategory + "')
-                strWhere2SubClause = strWhere2SubClause + "  s.subject_name LIKE '" + strSubject + "'  ";
-
-                if (s < lstSelectedSubject.size() - 1) {
-                    strWhere2SubClause = strWhere2SubClause + " OR ";
-                }
-            }
-            strWhere2SubClause = strWhere2SubClause + " ) ";
-
-            //used to return 0 results when only the above is set
-            if (lstSelected.isEmpty()) {
-                strWhere1SubClause = strWhere1SubClause + " AND city_name LIKE 'city_name'  ";
-            }
-        }
-*/
-
-//        intRecsOnPage = Integer.parseInt(cmbCount.getValue());
-
-//        if (sqlOrderBy == null) {
-//            int intSelected = cmbSortBy.getItemPosition(cmbSortBy.getValue());
-//            sqlOrderBy = arrOrderByItemsSql[intSelected];
-//        }
-
 
         if (strPhotoView.equalsIgnoreCase(VIEW_ONE_PHOTO)) {
             showDialogWithCarousel("", sqlWhereSubClause, strPhotoId, false);
@@ -758,7 +1027,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
             if (intRecsOnPage == intPage * intRecsOnPage) {
                 sqlOrderNLimit = sqlReadGallery1OrderBy + " LIMIT " + (intRecsOnPage);
             } else {
-                sqlOrderNLimit = sqlReadGallery1OrderBy + " LIMIT " + (intRecsOnPage) + " OFFSET " + (intPage * intRecsOnPage);
+                sqlOrderNLimit = sqlReadGallery1OrderBy + " LIMIT " + (intRecsOnPage) + " OFFSET " + ((intPage -1) * intRecsOnPage);
             }
 
             String sqlReadPage;
@@ -770,19 +1039,10 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
 
             boolean isEditable = false;
 
-            VerticalLayout viewBiggerPhotos = new VerticalLayout();
-            if (isMobile) {
-                viewBiggerPhotos.addClassNames(Width.FULL,
-                        AlignItems.CENTER, JustifyContent.CENTER,
-                        Gap.MEDIUM,
-                        Padding.MEDIUM, Margin.NONE);
-            } else {
-                viewBiggerPhotos.addClassNames(Width.FULL,
-                        AlignItems.CENTER, JustifyContent.CENTER,
-                        Gap.XLARGE,
-                        Padding.MEDIUM, Margin.NONE);
-            }
-            viewBiggerPhotos.setMaxWidth("1080px");
+
+
+/*            verticalLayout.add(createGalleryGrid(lstRecords));
+            buildLightbox();*/
 
             verticalLayout.remove(layoutRecControl);
             if (strPhotoView.equalsIgnoreCase(VIEW_PHOTO_GRID)) {
@@ -815,140 +1075,12 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
                 verticalLayout.add(layoutRecControl);
             }
 
-            //  verticalLayout.add(getFooterControls("", ""));
             return intResultsCount;
         }
     }
 
 
-//    private Div getImagesItemsFromDb(String sqlRead, String[] arrColumnNames) {
-//
-//
-//        boolean isEditable = false;
-//
-//        Div divGallery = new Div();
-//        divGallery.addClassName("gallery");
-//
-//        List<Record> lstRecords = getRecordsFromDb(sqlRead, arrColumnNames);
-//        for (int r = 0; r < lstRecords.size(); r++) {
-//
-//            Record rec = lstRecords.get(r);
-//            divGallery.add(getImageGalleryThumbsFromDb(rec, isEditable));
-//        }
-//        return divGallery;
-//    }
 
-    public Component createToolbar() {
-        TextField search = new TextField();
-        search.addClassNames(Flex.GROW, MinWidth.NONE);
-        search.setAriaLabel("Search");
-        search.setPlaceholder("Search...");
-        search.setPrefixComponent(VaadinIcon.SEARCH.create());
-
-        MultiSelectComboBox<String> brands = new MultiSelectComboBox<>();
-        brands.addClassNames(Display.HIDDEN, Display.Breakpoint.Large.INLINE_FLEX, MinWidth.NONE);
-        brands.setAriaLabel("Brands");
-        brands.setItems("LuxeLiving", "DecoHaven", "CasaCharm", "HomelyCraft", "ArtisanHaus");
-        brands.setPlaceholder("Brands");
-
-        Button price = new Button("Price", VaadinIcon.ARROW_CIRCLE_DOWN.create());
-        price.addClassNames(Display.HIDDEN, Display.Breakpoint.Large.INLINE_BLOCK);
-        price.setIconAfterText(true);
-
-//        PriceRangeField priceRangeField = new PriceRangeField("Price");
-//        priceRangeField.addClassNames(Margin.SMALL, Padding.Top.XSMALL);
-//        priceRangeField.setWidth(16, Unit.REM);
-//
-//        Popover priceDialog = new Popover(priceRangeField);
-//        priceDialog.setTarget(price);
-
-        // TODO: a11y improvements, opened/closed states
-        Button filters = new Button("Filters", VaadinIcon.FILTER.create());
-        filters.addClickListener(e -> toggleSidebar());
-
-        RadioButtonGroup<String> mode = new RadioButtonGroup<>();
-        mode.setAriaLabel("View mode");
-        mode.setItems("Grid", "List");
-        mode.setRenderer(new ComponentRenderer<>(this::renderIconWithAriaLabel));
-        mode.setValue("Grid");
-        setRadioButtonGroupTheme(mode, RadioButtonTheme.TOGGLE);
-
-        Layout toolbar = new Layout(search, brands, price,  filters, mode);
-        toolbar.addClassNames(Border.BOTTOM, Padding.Horizontal.LARGE, Padding.Vertical.SMALL);
-        toolbar.setAlignItems(Layout.AlignItems.CENTER);
-        toolbar.setGap(Layout.Gap.MEDIUM);
-        return toolbar;
-    }
-
-    private Section createSidebar() {
-        H2 title = new H2("Filters");
-        title.addClassNames(FontSize.MEDIUM);
-
-        Button close = new Button(VaadinIcon.CLOSE.create(), e -> closeSidebar());
-        close.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-        close.setAriaLabel("Close sidebar");
-        close.setTooltipText("Close sidebar");
-
-        Layout header = new Layout(title, close);
-        header.addClassNames(Padding.End.MEDIUM, Padding.Start.LARGE, Padding.Vertical.SMALL);
-        header.setAlignItems(Layout.AlignItems.CENTER);
-        header.setJustifyContent(Layout.JustifyContent.BETWEEN);
-
-        CheckboxGroup<String> brands = new CheckboxGroup<>("Brands");
-        brands.setItems("LuxeLiving", "DecoHaven", "CasaCharm", "HomelyCraft", "ArtisanHaus");
-        brands.addThemeVariants(CheckboxGroupVariant.LUMO_VERTICAL);
-        setRenderer(brands);
-
-       // PriceRangeField priceRangeField = new PriceRangeField("Price");
-
-        CheckboxGroup<String> rating = new CheckboxGroup<>("Rating");
-        rating.addThemeVariants(CheckboxGroupVariant.LUMO_VERTICAL);
-        rating.setItems("1 star", "2 stars", "3 stars", "4 stars", "5 stars");
-        rating.setRenderer(new ComponentRenderer<>(item -> {
-            String count = Integer.toString((100));
-
-            Badge badge = new Badge(count);
-            badge.addThemeVariants(BadgeVariant.CONTRAST, BadgeVariant.SMALL, BadgeVariant.PILL);
-
-            int stars = Integer.parseInt(item.split(" ")[0]);
-
-            Span span = new Span(getStars(stars), badge);
-            span.addClassNames(AlignItems.CENTER, Display.FLEX, Gap.SMALL);
-            span.getElement().setAttribute("aria-hidden", "true");
-
-            Span screenReader = new Span(item + ", " + count + " items");
-            screenReader.addClassNames(Accessibility.SCREEN_READER_ONLY);
-
-            return new Span(span, screenReader);
-        }));
-
-        CheckboxGroup<String> availability = new CheckboxGroup<>("Availability");
-        availability.addThemeVariants(CheckboxGroupVariant.LUMO_VERTICAL);
-        availability.setItems("In stock", "Out of stock");
-        setRenderer(availability);
-
-        Layout form = new Layout(brands, rating, availability);
-        form.addClassNames(Padding.Horizontal.LARGE);
-        form.setFlexDirection(Layout.FlexDirection.COLUMN);
-
-        this.sidebar = new Section(header, form);
-        this.sidebar.addClassNames(BackdropBlur.SMALL, Background.TINT_90, Border.RIGHT, Display.FLEX,
-                FlexDirection.COLUMN, Position.ABSOLUTE, Position.Breakpoint.Large.STATIC, Position.Bottom.NONE,
-                Position.Top.NONE, Transition.ALL, ZIndex.XSMALL);
-        this.sidebar.setWidth(20, Unit.REM);
-        return this.sidebar;
-    }
-
-    private void setRenderer(CheckboxGroup<String> checkboxGroup) {
-        checkboxGroup.setRenderer(new ComponentRenderer<>(item -> {
-            Badge badge = new Badge(Integer.toString(100));
-            badge.addThemeVariants(BadgeVariant.CONTRAST, BadgeVariant.SMALL, BadgeVariant.PILL);
-
-            Span span = new Span(new Text(item), badge);
-            span.addClassNames(AlignItems.CENTER, Display.FLEX, Gap.SMALL);
-            return span;
-        }));
-    }
 
     private Text getStars(int stars) {
         StringBuilder builder = new StringBuilder();
@@ -1058,7 +1190,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         logger.info(" strImagePath " + strImagePath);
 
         GalleryImageViewCard imageGalleryViewCard = new GalleryImageViewCard(record, strImagePath, isMobile, userId, strUsername, sessionCreation, hostname, publicIp, isEditable,
-                recordService, isType, sqlReadGallery, sqlOrderBy, arrColumnNamesGallery);
+                recordService, isType, sqlReadGallery, sqlOrderBy, arrColumnNamesGallery,shareService,  shareMetricService, weatherService );
         return imageGalleryViewCard;
     }
 
@@ -1149,23 +1281,13 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         logger.info(" strImagePath " + strImagePath);
 //        Image image1 = new Image("https://images.unsplash.com/photo-1536048810607-3dc7f86981cb?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80", "img2");
         //GalleryImageViewCard imageGalleryViewCard = new GalleryImageViewCard(record,strImagePath,isMobile,userId, strUsername, sessionCreation,hostname,publicIp, isEditable, linkUploader, lstRouterLinks, recordService);
+
+
+        Path path = Paths.get(strImagePath);
+        File file = path.toFile();
         Image image = new Image();
 
-        final StreamResource imageResource = new StreamResource("streamResource", () -> {
-            try {
-
-                Path path = Paths.get(strImagePath);
-                File file = path.toFile();
-                return new FileInputStream(file);
-            } catch (final FileNotFoundException e) {
-//                logErrorInDb(e, "GalleryImageViewCard StreamResource FileNotFoundException", hostname, userId, strUserName, publicIp, sessionCreation, file.getAbsolutePath());
-                // logErrorInDb(e,hostname,"CreationsViewCard StreamResource",userId,strUserName,file.getAbsolutePath());
-                logger.error(e.getMessage());
-            }
-            return null;
-        });
-
-        image.setSrc(imageResource);
+        image.setSrc(file.getAbsolutePath());
         return image;
     }
 
@@ -1297,51 +1419,40 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         return recordService.findAll(sql, arrColumnNames, sqlParValue, sqlParType);
     }
 
-    private VerticalLayout loadWeather(String city, String country) {
 
-//        String strWhereSubClause ="";
+    private VerticalLayout loadMapSmall(String cityLabel, String strForMap, String country) {
+
+        VerticalLayout layoutMapResult = new VerticalLayout();
+        layoutMapResult.addClassNames(
+                AlignItems.CENTER, JustifyContent.CENTER,
+                Padding.SMALL, Margin.NONE,
+                BorderRadius.LARGE)
+        ;
+
+//        IFrame frameMapResult = getDestinationMap(strForMap, country);
+//        frameMapResult.setMaxWidth("970px");
 //
-//        if(category.isEmpty() ||  category.equalsIgnoreCase(STR_ALL_CATEGORIES)) {
-//        }
-//        else if (inCategory!=null && !inCategory.isEmpty()){
-//            strWhereSubClause = strWhereSubClause  + " AND l.category LIKE '"+inCategory+"' ";
-//        }else{
-//            strWhereSubClause = strWhereSubClause  + " AND l.category LIKE '"+category+"' ";
-//        }
-//        sqlLearningsReadOrderBy =" ORDER BY l.dateInsert DESC";
-//        String sqlRead = sqlLearningsRead + strWhereSubClause + sqlLearningsReadOrderBy;
+//        layoutMapResult.add(frameMapResult);
+
+        return layoutMapResult;
+    }
+
+
+    private VerticalLayout loadWeatherSmall(String cityLabel, String strForWeather, String country) {
 
         VerticalLayout layoutWeatherResult = new VerticalLayout();
+        layoutWeatherResult.addClassNames(
+                AlignItems.CENTER, JustifyContent.CENTER,
+                Padding.SMALL, Margin.NONE,
+                BorderRadius.LARGE)
+        ;
 
-        VerticalLayout weatherCard = genericView.getWeatherApiCurrent(city, country);
+        VerticalLayout weatherCard = getWeatherCurrent(strForWeather, country);
+        weatherCard.setMaxWidth("990px");
 
-        VerticalLayout layoutWeather = new VerticalLayout();
         if (weatherCard.getChildren().count() > 0) {
-            layoutWeather.add(weatherCard);
 
-
-            VerticalLayout layoutResults = new VerticalLayout();
-            layoutResults.addClassName("weather-layout");
-            HorizontalLayout layoutButtons = new HorizontalLayout();
-            layoutButtons.addClassNames(Width.FULL,
-                    AlignItems.CENTER, JustifyContent.CENTER,
-                    Gap.XSMALL, Padding.SMALL, Margin.NONE);
-
-            Button btnNow = new Button("Now");
-            btnNow.setIcon(VaadinIcon.REFRESH.create());
-            btnNow.addClickListener(event -> {
-                layoutWeather.removeAll();
-                VerticalLayout layout = genericView.getWeatherApiCurrent(city, country);
-                layoutWeather.add(layout);
-            });
-
-            layoutButtons.add(btnNow); //, btnToday, btnTomorrow, btnDayPlusTwo, btnDayPlusThree, btnDayPlusFour);
-
-            genericView.getLocationCoordinates(city, country);
-
-
-            layoutResults.add(layoutButtons, layoutWeather);
-            layoutWeatherResult.add(layoutResults);
+            layoutWeatherResult.add(weatherCard);
         }
 
         return layoutWeatherResult;

@@ -68,7 +68,7 @@ public class StoriesView extends Main implements HasUrlParameter<String>, Before
             " , DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since " +
             " , usr.avatar_path " +
             " , count(usr.userId) AS stories_count " +
-            " FROM dbuser usr LEFT JOIN stories s ON s.user_id = usr.userId " +
+            " FROM dbuser usr LEFT JOIN photo_stories s ON s.user_id = usr.userId " +
             " WHERE  1 = 1 " +
             " AND s.story_visible_to = 'ALL' ";
     String sqlMemberOfStoriesGroupBy =
@@ -86,7 +86,7 @@ public class StoriesView extends Main implements HasUrlParameter<String>, Before
             " , sc.cat_title, sc.cat_title_gr " +
             " , usr.username, usr.username, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined, usr.avatar_path " +
             //     "--  , pa.inc, pm.title, pm.id, pm.name_new, pm.title, pm.subtitle, pm.space_size, pm.location_by_user\\n\" +\n" +
-            " FROM stories_photo sp , photo_meta pm, stories_categories sc, dbuser usr, stories s LEFT JOIN photo_meta p1 ON s.photo_id1 = p1.id " +
+            " FROM photo_stories_photo sp , photo_meta pm, photo_stories_categories sc, dbuser usr, photo_stories s LEFT JOIN photo_meta p1 ON s.photo_id1 = p1.id " +
             " LEFT JOIN photo_meta p2 ON s.photo_id2 = p2.id " +
             " WHERE s.id = sp.story_id AND sp.photo_id = pm.id AND s.user_id = usr.userId " +
             " AND s.story_visible_to = 'ALL' AND pm.visible_to  = 'ALL' " +
@@ -101,7 +101,7 @@ public class StoriesView extends Main implements HasUrlParameter<String>, Before
             // + " lc.cat_title, lc.cat_title_gr, lc.cat_type, lc.cat_description_min. lc.cat_description_min_gr, count (lc.cat_title) AS cat_count "
 //            + " l.id, l.title, l.picture, l.section , l.category, l.format, l.url, l.parent_id, l.child_index, l.tutor_id, l.artists_ref, l.description, l.duration, l.pages, l.published, l.userIdInsert, l.username, l.dateInsert "
 //            + ", l.tutor_id, l.tutor_id_team, t.tutor_name, t.website, t.url_fb, t.url_yt, t.url_insta, t.url_flickr, t.url_wikipedia, t.url_ref1, t.url_ref2, t.url_ref3, t.city_base, t.country_base, t.userIdInsert, t.username, t.date_inserted "
-            + " FROM stories s LEFT JOIN stories_categories sc ON sc.id = s.category_id "
+            + " FROM photo_stories s LEFT JOIN photo_stories_categories sc ON sc.id = s.category_id "
             + " WHERE 1 = 1 "
             + " GROUP BY sc.cat_title ORDER BY sc.cat_order ASC ";
     private String strColorOfIcons = "#a62f03"; //"#f9943b";//"#a62c5c";//"#7d1e32";
@@ -150,7 +150,7 @@ public class StoriesView extends Main implements HasUrlParameter<String>, Before
             " , sp.inc, sp.descr " +
             " , usr.username, usr.username, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined, usr.avatar_path " +
             //, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description, DATE_FORMAT(f.dateInsert , '%D %M %Y') AS formatedDateUpdated  " +
-            " FROM dbuser usr, stories s , stories_photo sp LEFT JOIN photo_meta pm ON sp.photo_id = pm.id " +
+            " FROM dbuser usr, photo_stories s , photo_stories_photo sp LEFT JOIN photo_meta pm ON sp.photo_id = pm.id " +
             " WHERE s.user_Id = usr.userId AND s.id = sp.story_id ";
     private UtilsDate utilsDate;
     private String sessionDateTime;
@@ -408,7 +408,7 @@ public class StoriesView extends Main implements HasUrlParameter<String>, Before
             String strAvatarPath = rec.getColumnData("avatar_path");
 
 
-            Image imgAvatar = genericView.getAvatarImage(strAvatarPath, strNameOfUser, "120px", "120px");
+            Image imgAvatar = genericView.getAvatarThumbImage(strAvatarPath, strNameOfUser, "120px", "120px");
 
             H3 objMember = new H3(strNameOfUser);
             Div divMemberSince = new Div("Member since " + strMemberSince);
@@ -502,8 +502,8 @@ public class StoriesView extends Main implements HasUrlParameter<String>, Before
         String strPhotoUserJoined = record.getColumnData("date_joined");
 
 
-        Image imgAvatarSmall = genericView.getAvatarImage(strAvatarPath, strPhotoUserName, "40px", "40px");
-        Image imgAvatarMedium = genericView.getAvatarImage(strAvatarPath, strPhotoUserName, "70px", "70px");
+        Image imgAvatarSmall = genericView.getAvatarThumbImage(strAvatarPath, strPhotoUserName, "40px", "40px");
+        Image imgAvatarMedium = genericView.getAvatarThumbImage(strAvatarPath, strPhotoUserName, "70px", "70px");
 
 
         HorizontalLayout layoutDetailsAvatarNActions = new HorizontalLayout();

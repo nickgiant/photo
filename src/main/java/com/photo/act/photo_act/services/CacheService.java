@@ -84,6 +84,10 @@ public class CacheService {
 
     }
 
+    @CacheEvict(value = "learnings", allEntries = true)
+    public void evictAllLearnings() {
+    }
+
     public List<Record> getRecordsFromDb(String sql, String[] arrColumnNames) {
 
         logger.info(" cache  getRecordsFromDb:   " + sql);

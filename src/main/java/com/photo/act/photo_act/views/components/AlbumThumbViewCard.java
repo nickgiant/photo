@@ -127,12 +127,40 @@ public class AlbumThumbViewCard extends RouterLink {
 
         String imagePath = strImagePath + dirChar + strPhotoUrl;
         Image image1 = getImage(imagePath);
-        if (strMetaOrientation1.equalsIgnoreCase("8")) {
-            image1.getStyle().set("rotate", "-90deg");
-        }
+//        if (strMetaOrientation1.equalsIgnoreCase("8")) {
+//            image1.getStyle().set("rotate", "-90deg");
+//        }
         Div divImage1 = new Div();
         divImage1.addClassName("image1-div");
         divImage1.add(image1);
+
+        String strMetaLength = record.getColumnData("meta_i_length");
+        String strMetaWidth = record.getColumnData("meta_i_width");
+        String strMetaHeight = record.getColumnData("meta_i_height");
+        int intW = 1;
+        int intH = 1;
+        try {
+            intW = Integer.parseInt(strMetaLength);
+            intH = Integer.parseInt(strMetaHeight);
+        } catch (NumberFormatException e) {
+
+            logger.error(e.getMessage());
+        }
+        try {
+
+            if(intW!=0 && intH!= 0) {
+                int ratio = intW / intH;
+                if (ratio < 0.8) {
+                    divImage1.addClassName("portrait");
+                } else if (ratio > 1.5) {
+                    divImage1.addClassName("landscape");
+                }else{
+                    divImage1.addClassName("square");
+                }
+            }
+        }catch (ArithmeticException e){
+            logger.error(e.getMessage());
+        }
 
         Div divImage2 = new Div();
         if (strPhoto2 != null && !strPhoto2.isEmpty() && !strPhoto2.equalsIgnoreCase("null")) {
@@ -363,10 +391,10 @@ public class AlbumThumbViewCard extends RouterLink {
         layoutLocationsCountAll.add(layoutLocationsCount, divLocationsLabel);
 
 
-        Image imgAvatarSmall = genericView.getAvatarImage(strAvatarPath, strAlbumNameOfUser, "40px", "40px");
+        Image imgAvatarSmall = genericView.getAvatarThumbImage(strAvatarPath, strAlbumNameOfUser, "40px", "40px");
         //Image imgAvatarSmall = getAvatarImage(strAvatar, strAlbumUserName, "40px", "40px");
 
-        Image imgAvatarMedium = genericView.getAvatarImage(strAvatarPath, strAlbumNameOfUser, "70px", "70px");
+        Image imgAvatarMedium = genericView.getAvatarThumbImage(strAvatarPath, strAlbumNameOfUser, "70px", "70px");
 //        Image imgAvatarMedium = getAvatarImage(strAvatar, strAlbumUserName, "70px", "70px");
 
         AvatarItem avatarItemMe = new AvatarItem(strAlbumNameOfUser, "", imgAvatarSmall);

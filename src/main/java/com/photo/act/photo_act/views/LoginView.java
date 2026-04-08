@@ -6,18 +6,19 @@ import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.photo.act.photo_act.views.components.DialogRegistration;
 import com.photo.act.photo_act.views.components.GenericView;
+import com.photo.act.photo_act.views.components.LoginDialog;
+import com.photo.act.photo_act.views.components.RegistrationDialog;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.HasStyle;
 import com.vaadin.flow.component.Html;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.H1;
-import com.vaadin.flow.component.html.Header;
-import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.login.LoginForm;
 import com.vaadin.flow.component.login.LoginI18n;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
@@ -27,21 +28,26 @@ import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
+import com.vaadin.flow.server.streams.DownloadHandler;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.provisioning.UserDetailsManager;
 
+import java.io.File;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Locale;
 
 import static com.photo.act.photo_act.views.MainLayout.*;
 
 // https://vaadin.com/docs/latest/building-apps/security/add-login/flow
 
-@Route(value = "login", autoLayout = false)
+@Route(value = "login", layout = MainLayout.class) //autoLayout = false)
 @AnonymousAllowed
 public class LoginView extends VerticalLayout implements BeforeEnterObserver, HasComponents, HasDynamicTitle, HasStyle {
 
@@ -70,10 +76,12 @@ public class LoginView extends VerticalLayout implements BeforeEnterObserver, Ha
     private String strOS;
     private String strBrowser;
     private GenericView genericView;
-    private final LoginForm login;
+//    private final LoginForm login;
     @Autowired
     UserDetailsManager userDetailsManager;
     private EmailSendService emailSendService;
+
+    private String dirChar = FileSystems.getDefault().getSeparator();
 
     public LoginView(RecordService recordService, EmailSendService emailSendService) {
         this.recordService = recordService;
@@ -82,16 +90,6 @@ public class LoginView extends VerticalLayout implements BeforeEnterObserver, Ha
         genericView = new GenericView(recordService);
 
         constructUI();
-//        setAlignItems(Alignment.CENTER);
-//        setJustifyContentMode(JustifyContentMode.CENTER);
-
-        login = new LoginForm();
-        login.setAction("login");
-        login.setForgotPasswordButtonVisible(false);
-//        login.addLoginListener(l -> UI.getCurrent().navigate("/home"));
-
-//        UI.getCurrent().navigate(StringUtils.removeStart(requestedURI, "/"));
-
 
         var i18n = LoginI18n.createDefault();
         i18n.getForm().setTitle("Login");
@@ -100,19 +98,6 @@ public class LoginView extends VerticalLayout implements BeforeEnterObserver, Ha
         i18nErrorMessage.setTitle("Wrong credentials");
         i18nErrorMessage.setMessage("Wrong credentials. Please retype username and password.");
         i18n.setErrorMessage(i18nErrorMessage);
-        //i18n.setErrorMessage("Wrong credentials");
-//        i18n.getForm().setUsername("Email");
-//        i18n.getErrorMessage().setUsername("Email is required");
-        // login.setError(true);
-//        login.setI18n(i18n);
-//        login.addLoginListener(event -> {
-//
-//
-//            InMemoryUserDetailsManager inMemoryUserDetailsManager = new InMemoryUserDetailsManager();
-//            inMemoryUserDetailsManager.userExists(event.getUsername());
-//
-//
-//        });
 
         H1 titlePage = new H1(APP_NAME);
         Span subTitle = new Span("[ Through Photography, We Connect and Act ]");
@@ -120,26 +105,57 @@ public class LoginView extends VerticalLayout implements BeforeEnterObserver, Ha
         Header siteHeader = new Header(titlePage, subTitle);
         siteHeader.addClassNames(LumoUtility.Width.FULL);
 
+        Div divMainImage = new Div();
+        Image mainImage = new Image();
+        String strMainImagePath = DIR_PHOTOS_SERVER + dirChar + "photographerM.jpg";
+
+        Path path = Paths.get(strMainImagePath);
+        File file = path.toFile();
+
+        mainImage.setSrc(DownloadHandler.forFile(file));
+        mainImage.setAlt("sketch image of a photographer");
+        mainImage.setHeight("18rem");
+        mainImage.setWidth("auto");
+        mainImage.getStyle().setBorderRadius("20px");
+        mainImage.getStyle().setPadding("10px");
+
+        divMainImage.add(mainImage);
+
         Div div1 = new Div("We are a community site, with members exchanging info and links in order to improve our skills in photography!");
         Div div2 = new Div("Currently, we share info about events and learnings. Of course, we also have space for our photos and albums.");
 
-        StreamResource imageResourceMember = new StreamResource("user-profile-icon.svg",
-                () -> getClass()
-                        .getResourceAsStream("/icons/user-profile-icon.svg"));
-        SvgIcon svgMember = new SvgIcon(imageResourceMember);
+        Button btnLogin = new Button("Login");
+        btnLogin.addClassName("btn-register");
+        btnLogin.addClickListener(click ->{
+            displayLoginDialog();
+        });
+
         Button btnRegister = new Button("Register");
-        btnRegister.setIcon(svgMember);
         btnRegister.addClassName("btn-register");
-//        btnSuggestEvent.setIcon(svgComments);
         btnRegister.addClickListener(click -> {
             displayRegisterDialog();
         });
+
+        HorizontalLayout layoutUserBtns = new HorizontalLayout();
+        layoutUserBtns.setAlignItems(FlexComponent.Alignment.CENTER);
+        layoutUserBtns.setJustifyContentMode(FlexComponent.JustifyContentMode.AROUND);
+        layoutUserBtns.setWrap(true);
+        String usrName = genericView.checkIfAuthUserName();
+        if (usrName == null) {
+            layoutUserBtns.add(btnLogin,btnRegister);
+        } else {
+            mainImage.setHeight("16rem");
+            mainImage.setWidth("auto");
+            layoutUserBtns.add(genericView.getAuthUserPanel(usrName));
+        }
+
+        H2 titleLastPhotos = new H2("Content for members. Login or Register");
 
         this.addClassNames(LumoUtility.Width.FULL,
                 LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER
         );
 
-        this.add(siteHeader, div1, div2, btnRegister, login, genericView.loadFooter(isMobile));
+        this.add(siteHeader, divMainImage, div1, div2, titleLastPhotos, layoutUserBtns, genericView.loadFooter(isMobile));
     }
 
     @Override
@@ -157,9 +173,7 @@ public class LoginView extends VerticalLayout implements BeforeEnterObserver, Ha
                 .getQueryParameters()
                 .getParameters()
                 .containsKey("error")) {
-            login.setError(true);
-
-
+//            login.setError(true);
         }
     }
 
@@ -186,8 +200,17 @@ public class LoginView extends VerticalLayout implements BeforeEnterObserver, Ha
 
     }
 
+    private void displayLoginDialog(){
+
+        LoginDialog loginDialog = new LoginDialog();
+
+        loginDialog.getLoginForm().setAction("login");
+        loginDialog.open();
+
+    }
+
     private void displayRegisterDialog() {
-        DialogRegistration dialogRegister = new DialogRegistration(isMobile, "", sessionCreation, hostname, publicIp, recordService,
+        RegistrationDialog dialogRegister = new RegistrationDialog(isMobile, "", sessionCreation, hostname, publicIp, recordService,
                 section, "register-from-login-view", emailSendService);
         dialogRegister.open();
     }

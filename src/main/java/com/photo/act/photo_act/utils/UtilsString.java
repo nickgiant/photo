@@ -161,6 +161,27 @@ public class UtilsString {
 
     }
 
+
+    //Use this when you expect human-readable place names like "Thessaloniki, Greece".
+
+    public static String sanitizeLocation(String input) {
+        if (input == null) return null;
+
+        // Trim whitespace
+        String sanitized = input.trim();
+
+        // Normalize Unicode (remove weird encodings)
+        sanitized = java.text.Normalizer.normalize(sanitized, java.text.Normalizer.Form.NFKC);
+
+        // Allow letters, numbers, spaces, commas, hyphens
+        sanitized = sanitized.replaceAll("[^\\p{L}\\p{N}\\s,\\-]", "");
+
+        // Collapse multiple spaces
+        sanitized = sanitized.replaceAll("\\s+", " ");
+
+        return sanitized;
+    }
+
     public static String escapeSqlInjection(String s) {
         int length = s.length();
         int newLength = length;

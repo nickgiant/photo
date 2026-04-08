@@ -41,7 +41,8 @@ import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.streams.DownloadHandler;
 import com.vaadin.flow.theme.lumo.LumoUtility.*;
 import jakarta.annotation.security.PermitAll;
-import org.imgscalr.Scalr;
+import org.apache.commons.io.FileUtils;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -123,6 +124,29 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
     String sqlMemberPhotosGroupBy =
             " GROUP BY usr.userid " +
                     " ORDER BY usr.username ASC ";
+
+    private String[] arrColumnNamesGalleryProfile = {"id", "name_new", "title", "subtitle", "notes", "photo_type", "uploader", "creator", "visible_to", "meta_date", "photo_date", "photo_time", "photo_time_shot"
+            , "space_size", "space_size_medium", "space_size_thumb", "meta_camera_make", "meta_camera_model", "meta_lens_make", "meta_lens_model"
+            , "meta_focal_length", "meta_focal_length_ff", "meta_iso", "meta_aperture", "meta_shutter_speed", "meta_orientation", "meta_i_height", "meta_i_length", "meta_i_width"
+            , "location_by_user", "location_area", "location_country_code", "location_lat", "location_lon"
+            , "city_name"
+            , "subject_name", "subject_description", "subject_type"
+            , "date_inserted"
+            , "username", "surname", "name", "resident", "resident_country", "date_joined", "member_since", "avatar_path", "short_bio", "count_photos", "count_albums"
+    };
+
+    private String sqlReadGalleryProfile =
+            " SELECT pm.id, pm.name_new, pm.title, pm.subtitle, pm.notes, pm.photo_type, pm.uploader, pm.creator, pm.visible_to,  DATE_FORMAT(pm.meta_date, '%W %D %M %Y %H:%i %p') AS meta_date, DATE_FORMAT(pm.meta_date, '%M %Y') AS photo_date, DATE_FORMAT(pm.meta_date, '%H:%i') AS photo_time,  DATE_FORMAT(pm.date_inserted, '%W %d/%m/%Y %H:%i') AS date_inserted " +
+                    " , DATE_FORMAT(pm.meta_date, '%d/%m/%Y - %H:%i:%S') AS photo_time_shot,  pm.space_size, pm.space_size_medium, pm.space_size_thumb, pm.meta_camera_make, pm.meta_camera_model, pm.meta_lens_make, pm.meta_lens_model,  pm.meta_focal_length, pm.meta_focal_length_ff, pm.meta_iso, meta_aperture,  meta_shutter_speed, meta_orientation ,  pm.meta_i_height, pm.meta_i_length, pm.meta_i_width , pm.location_by_user, pm.location_area, pm.location_country_code, pm.location_lat, pm.location_lon " +
+                    " , usr.username, usr.surname, usr.name, usr.resident, usr.resident_country, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined, DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since, usr.avatar_path " +
+                    " , usr.short_bio " +
+                    " , ux.count_photos, ux.count_albums " +
+                    " FROM dbuser usr, dbuser_extra ux, photo_meta pm" +
+                    " WHERE pm.uploaderId = usr.userId AND pm.visible_to = 'Profile' " +
+                    " AND usr.userId = ux.user_id ";
+    private String sqlReadGalleryProfileOrderBy = " ORDER BY pm.date_inserted DESC  ";
+
+
     private String strColorOfIcons = "#a62f03"; //"#f9943b";//"#a62c5c";//"#7d1e32";
     private VerticalLayout verticalLayout;
     private String sessionid;
@@ -580,6 +604,10 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
             cacheService.evictAllPhotos();
         });
 
+        Button btnEvictCacheLearnings = new Button("Evict All Learnings Cache");
+        btnEvictCacheLearnings.addClickListener(event -> {
+            cacheService.evictAllLearnings();
+        });
 
         Button btnCalcAMembersSums = new Button("ReCalculate a Member's Photos Sums");
         btnCalcAMembersSums.addClickListener(event -> {
@@ -641,7 +669,7 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
 
         layoutTabsAll.add(layoutTabs);
         if (txtUserRights.equalsIgnoreCase("3")) {
-            layoutButtons.add(btnRefreshAMembersPhotosMeta, btnCalcAMembersSums, btnEvictCache);
+            layoutButtons.add(btnRefreshAMembersPhotosMeta, btnCalcAMembersSums, btnEvictCache, btnEvictCacheLearnings);
         }
 
 
@@ -824,88 +852,6 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
     }
 
 
-    private void reCompressPhotos(int sizeType, String intStart, String intFinish) {
-
-        String sqlReadPhotos = "SELECT name_new FROM photo_meta WHERE id >= " + intStart + " AND id <= " + intFinish + " ORDER BY id ASC ";
-        String[] arrColumns = {"name_new"};
-        List<Record> lstPhotoFilenames = recordService.findAll(sqlReadPhotos, arrColumns);
-
-        Notification notificationStart = Notification.show(
-                lstPhotoFilenames.size() + " Photos:",
-                5000,
-                Notification.Position.MIDDLE
-        );
-        notificationStart.addThemeVariants(NotificationVariant.LUMO_CONTRAST);
-
-        for (int r = 0; r < lstPhotoFilenames.size(); r++) {
-
-            String strNewFileName = lstPhotoFilenames.get(r).getColumnData("name_new");
-
-            String strPathUpload = DIR_PHOTOS_SERVER + dirChar + subPathUpload;
-            String outputUploadFileName = strPathUpload + dirChar + strNewFileName;
-            File fileUploaded = new File(outputUploadFileName);
-
-            String strPathShow = DIR_PHOTOS_SERVER + dirChar + subPathShow;
-            String outputShowFileName = strPathShow + dirChar + strNewFileName;
-            File directoryShow = new File(strPathShow);
-            File fileShow = new File(outputShowFileName);
-
-
-//            String strPathMedium = DIR_PHOTOS_SERVER + dirChar + subPathMedium;
-//            String outputMediumFileName = strPathMedium + dirChar + strNewFileName;
-//            File fileMedium = new File(outputMediumFileName);
-//
-//            String strPathSmall = DIR_PHOTOS_SERVER + dirChar + subPathSmall;
-//            String outputSmallFileName = strPathSmall + dirChar + strNewFileName;
-//            File fileSmall = new File(outputSmallFileName);
-
-
-            try {
-                //    FileUtils.copyFileToDirectory(fileUploaded, directoryShow);
-
-
-                int intSize = 140;
-                String strSubPath = subPathThumbs;
-                if (sizeType == 1) {
-                    intSize = 140;
-                    strSubPath = subPathThumbs;
-                } else if (sizeType == 2) {
-                    intSize = 660;
-                    strSubPath = subPathSmall;
-                } else if (sizeType == 3) {
-                    intSize = 1040;
-                    strSubPath = subPathMedium;
-                } else if (sizeType == 4) {
-                    intSize = 1990;
-                    strSubPath = subPathLarge;
-                }
-
-                String strPathThumbs = DIR_PHOTOS_SERVER + dirChar + strSubPath;
-                logger.info(r + "   path to compress from: " + fileShow.getAbsolutePath());
-                logger.info("path to compress   to:   " + strPathThumbs);
-                String outputThumbsFileName = strPathThumbs + dirChar + strNewFileName;
-                File fileThumbs = new File(outputThumbsFileName);
-
-                BufferedImage bImageT = ImageIO.read(fileShow);
-                BufferedImage bufferedThumb = Scalr.resize(bImageT, Scalr.Method.QUALITY, Scalr.Mode.AUTOMATIC, intSize, Scalr.OP_ANTIALIAS);   //  Imgscalr    https://www.baeldung.com/java-resize-image
-                ImageIO.write(bufferedThumb, "jpg", fileThumbs);
-
-                logger.info("photo copy size: " + fileShow.length() + "  - > " + fileThumbs.length()); // + "  - >  " + fileMedium.length());
-                logger.info("photo copy size MB: " + getFileSizeAsString(fileShow) + "  - >   " + getFileSizeAsString(fileThumbs));
-
-            } catch (IOException e) {
-
-                String errorMessage = "reCompress failed: " + e.getMessage();
-
-                Notification notification = Notification.show(
-                        errorMessage,
-                        5000,
-                        Notification.Position.MIDDLE
-                );
-                notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
-            }
-        }
-    }
 
     private void reUpdateMyPhotoMetadata(int intUserId) {
 
@@ -1215,21 +1161,22 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
             divImgAvatar.addClassNames(Padding.NONE, Margin.NONE);
 
             String strAvatarSize = "150px";
-            Image imageAvatar = genericView.getAvatarImage(strAvatarPath, strMember, strAvatarSize, strAvatarSize);
+            Image imageAvatar = genericView.getAvatarThumbImage(strAvatarPath, strMember, strAvatarSize, strAvatarSize);
             divImgAvatar.add(imageAvatar);
 
             Button btnSelectEmptyAvatar = new Button();
+            btnSelectEmptyAvatar.setTooltipText("Set the default Avatar");
             btnSelectEmptyAvatar.setIcon(FontAwesome.Solid.O.create());
             btnSelectEmptyAvatar.addClickListener(event -> {
 
-                if (setAvatarPhotoForMember("no-avatar.jpg", genericView.checkIfAuthMemberId())) {
+                if (setAvatarPhotoInDb("no-avatar.jpg", genericView.checkIfAuthMemberId())) {
                     Notification notification = new Notification("Avatar Updated!");
                     notification.setPosition(Notification.Position.MIDDLE);
                     notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
 
                     String strNewAvatarPath = genericView.getAuthAvatarPath();
                     divImgAvatar.removeAll();
-                    Image imgAvatar = genericView.getAvatarImage(strNewAvatarPath, strMember, strAvatarSize, strAvatarSize);
+                    Image imgAvatar = genericView.getAvatarThumbImage(strNewAvatarPath, strMember, strAvatarSize, strAvatarSize);
                     divImgAvatar.add(imgAvatar);
                 } else {
                     Notification notification = new Notification("Avatar NOT Updated! Error logged to be investigated.");
@@ -1240,6 +1187,7 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
             });
 
             Button btnSelectAvatar = new Button();
+            btnSelectAvatar.setTooltipText("Select from already available Avatars");
             btnSelectAvatar.setIcon(FontAwesome.Solid.PORTRAIT.create());
             btnSelectAvatar.addClickListener(event -> {
                 Dialog dlg = displayDialogSelectAvatar();
@@ -1248,13 +1196,29 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
                     if (!close.isOpened()) {
                         divImgAvatar.removeAll();
                         String strNewAvatarPath = genericView.getAuthAvatarPath();
-                        Image imgAvatar = genericView.getAvatarImage(strNewAvatarPath, strMember, strAvatarSize, strAvatarSize);
+                        Image imgAvatar = genericView.getAvatarThumbImage(strNewAvatarPath, strMember, strAvatarSize, strAvatarSize);
                         divImgAvatar.add(imgAvatar);
                     }
                 });
             });
 
-            layoutPhotoAvatarSelection.add(btnSelectEmptyAvatar, btnSelectAvatar);
+            Button btnSelectPhotoProfile = new Button("Profile Photo");
+            btnSelectPhotoProfile.setTooltipText("Select from your Profile Photos");
+            btnSelectPhotoProfile.setIcon(FontAwesome.Solid.FACE_SMILE.create());
+            btnSelectPhotoProfile.addClickListener(event -> {
+                Dialog dlg = displayDialogSelectProfilePhoto();
+                dlg.open();
+                dlg.addOpenedChangeListener(close -> {
+                    if (!close.isOpened()) {
+                        divImgAvatar.removeAll();
+                        String strNewAvatarPath = genericView.getAuthAvatarPath();
+                        Image imgAvatar = genericView.getAvatarThumbImage(strNewAvatarPath, strMember, strAvatarSize, strAvatarSize);
+                        divImgAvatar.add(imgAvatar);
+                    }
+                });
+            });
+
+            layoutPhotoAvatarSelection.add(btnSelectEmptyAvatar, btnSelectAvatar,btnSelectPhotoProfile);
 
             VerticalLayout layoutMemberLinks = new VerticalLayout();
             layoutMemberLinks.addClassNames(AlignItems.CENTER, JustifyContent.CENTER, Padding.NONE, Margin.NONE);
@@ -1395,15 +1359,6 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
 
         layoutAlbumsPanel.add(listBoxAvatar);
 
-        // List<Record> lstAlbums = getRecordsFromDb(sqlMembersAlbums, arrColumnsMemberAlbums);
-//        List<String> lstAlbumTitle = new ArrayList<>();
-//        List<String> lstAlbumUserId = new ArrayList<>();
-//        List<String> lstAlbumId = new ArrayList<>();
-//        for (int i = 0; i < lstAvatarRecords.size(); i++) {
-//            lstAlbumTitle.add(lstAvatarRecords.get(i).getColumnData("title"));
-//            lstAlbumId.add(lstAvatarRecords.get(i).getColumnData("id"));
-//            lstAlbumUserId.add(lstAvatarRecords.get(i).getColumnData("user_id"));
-//        }
 
         HorizontalLayout layoutControls = new HorizontalLayout();
         layoutControls.addClassNames(AlignItems.CENTER, JustifyContent.CENTER,
@@ -1413,7 +1368,7 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
         btnSave.setIcon(FontAwesome.Solid.CHECK.create());
         btnSave.addClickListener(event -> {
 
-            if (setAvatarPhotoForMember(listBoxAvatar.getValue().getColumnData("path"), genericView.checkIfAuthMemberId())) {
+            if (setAvatarPhotoInDb(listBoxAvatar.getValue().getColumnData("path"), genericView.checkIfAuthMemberId())) {
                 Notification notification = new Notification("Avatar Updated!");
                 notification.setPosition(Notification.Position.MIDDLE);
                 notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
@@ -1440,7 +1395,7 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
     }
 
 
-    private boolean setAvatarPhotoForMember(String strPath, String strMemberId) {
+    private boolean setAvatarPhotoInDb(String strPath, String strMemberId) {
 
         Object[] strValues = {strPath, strMemberId};
         String[] arrTypes = {"java.lang.String", "java.lang.Integer"};
@@ -1450,6 +1405,135 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
             return true;
         }
         return false;
+    }
+
+    private Dialog displayDialogSelectProfilePhoto() {
+
+        Dialog dlg = new Dialog("Select Profile Photo");
+        dlg.setResizable(true);
+        dlg.setDraggable(true);
+        dlg.setCloseOnEsc(true);
+        dlg.setCloseOnOutsideClick(true);
+        dlg.setMinWidth("370px");
+        dlg.setMinHeight("500px");
+        dlg.setMaxWidth("450px");
+        dlg.addClassName("me-view");
+
+        VerticalLayout layoutAlbumsPanel = new VerticalLayout();
+        layoutAlbumsPanel.addClassNames(Width.FULL,
+                Padding.SMALL, Margin.NONE,
+                AlignItems.CENTER, JustifyContent.CENTER,
+                Background.CONTRAST_5, BorderRadius.LARGE);
+
+
+        String strPathOfThumbs = DIR_PHOTOS_SERVER + dirChar + subPathThumbs + dirChar;
+
+        String strMemberId = genericView.checkIfAuthMemberId();
+        String sqlMember = " AND usr.userId = "+strMemberId+" ";
+
+        List<Record> lstAvatarRecords = getRecordsFromDb(sqlReadGalleryProfile+sqlMember+sqlReadGalleryProfileOrderBy, arrColumnNamesGalleryProfile);
+
+
+        ListBox<Record> listBoxAvatar = new ListBox<>();
+        listBoxAvatar.setItems(lstAvatarRecords);
+        listBoxAvatar.setRenderer(new ComponentRenderer<>(record -> {
+            HorizontalLayout row = new HorizontalLayout();
+            row.setAlignItems(FlexComponent.Alignment.CENTER);
+
+            String strAvatarFile = record.getColumnData("name_new");
+            String imagePath = strPathOfThumbs + strAvatarFile;
+            File imgFile = new File(imagePath);
+
+            Image image = new Image();
+            image.setSrc(DownloadHandler.forFile(imgFile));
+            image.setAlt(imagePath);
+            image.setHeight("75px");
+            image.setWidth("75px");
+            image.getStyle().setBorderRadius("8px");
+
+            Div divAvatar = new Div(image);
+
+
+            Span title = new Span(record.getColumnData("notes"));
+            title.getStyle()
+                    .set("color", "var(--lumo-contrast-80pct)")
+                    .set("font-size", "var(--lumo-font-size-m)");
+            Span description = new Span(record.getColumnData("date_inserted"));
+            description.getStyle()
+                    .set("color", "var(--lumo-contrast-50pct)")
+                    .set("font-size", "var(--lumo-font-size-s)");
+            Span avatarType = new Span("Uploaded Profile Photo");
+            avatarType.getStyle()
+                    .set("color", "var(--lumo-contrast-40pct)")
+                    .set("font-size", "var(--lumo-font-size-s)")
+                    .set("font-weight", "800");
+
+            VerticalLayout column = new VerticalLayout(title, description, avatarType);
+            column.setPadding(false);
+            column.setSpacing(false);
+
+            row.add(divAvatar, column);
+            row.getStyle().set("line-height", "var(--lumo-line-height-m)");
+            row.setWidthFull();
+            return row;
+        }));
+
+
+        layoutAlbumsPanel.add(listBoxAvatar);
+
+        HorizontalLayout layoutControls = new HorizontalLayout();
+        layoutControls.addClassNames(AlignItems.CENTER, JustifyContent.CENTER,
+                Padding.MEDIUM, Margin.NONE);
+
+        Button btnSave = new Button("Set");
+        btnSave.setIcon(FontAwesome.Solid.CHECK.create());
+        btnSave.addClickListener(event -> {
+
+            String photoFileName = listBoxAvatar.getValue().getColumnData("name_new");
+            if (setAvatarPhotoInDb(photoFileName, genericView.checkIfAuthMemberId())) {
+                String strPathOfProfileThumb = DIR_PHOTOS_SERVER + dirChar + subPathThumbs + dirChar+photoFileName;
+                File filePhoto = new File(strPathOfProfileThumb);
+                String strPathAvatars = DIR_PHOTOS_SERVER + dirChar + SUB_PATH_AVATARS_THUMBS + dirChar+photoFileName;
+                File filePhotoProfile = new File(strPathAvatars);
+
+                String strPathOfProfileSmall = DIR_PHOTOS_SERVER + dirChar + subPathSmall + dirChar+photoFileName;
+                File filePhotoSmall = new File(strPathOfProfileSmall);
+                String strPathAvatarsSmall = DIR_PHOTOS_SERVER + dirChar + SUB_PATH_AVATARS_SMALL + dirChar+photoFileName;
+                File filePhotoProfileSmall = new File(strPathAvatarsSmall);
+
+                try {
+                    FileUtils.copyFile(filePhoto, filePhotoProfile);
+                    FileUtils.copyFile(filePhotoSmall, filePhotoProfileSmall);
+                } catch (IOException e) {
+                    Notification notification = new Notification("Avatar Photo NOT Updated!. Photo file issue.");
+                    notification.setPosition(Notification.Position.MIDDLE);
+                    notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+                    logger.error(e.getMessage());
+                }
+
+                Notification notification = new Notification("Avatar Photo Updated!");
+                notification.setPosition(Notification.Position.MIDDLE);
+                notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+
+            } else {
+
+                Notification notification = new Notification("Avatar Photo NOT Updated! Error logged to be investigated.");
+                notification.setPosition(Notification.Position.MIDDLE);
+                notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+            }
+            // savePhotoInAlbums(listBoxAlbums, lstAlbumTitle, lstAlbumId, lstAlbumUserId, strPhotoId);
+            dlg.close();
+        });
+
+        Button btnCancel = new Button("Cancel");
+        btnCancel.setIcon(FontAwesome.Solid.CLOSE.create());
+        btnCancel.addClickListener(event -> {
+            dlg.close();
+        });
+        layoutControls.add(btnSave, btnCancel);
+        dlg.add(layoutAlbumsPanel, layoutControls);
+        return dlg;
+
     }
 
 

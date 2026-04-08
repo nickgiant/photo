@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<!--
+  og-preview.html — Thymeleaf template served ONLY to social bots.
+  Real users never see this page; they get the full Vaadin SPA.
+
+  ── Rendering notes ───────────────────────────────────────────────────────────
+  • All og:image URLs MUST be absolute (https://).
+  • og:image:width / og:image:height MUST match the actual image dimensions.
+  • og:description is capped at 155 characters in OgMetaService.
+  • article:* tags are included unconditionally; bots ignore them when og:type≠article.
+  • JSON-LD is injected raw — no XSS risk because it comes from our DB (trusted source).
+-->
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+    <!-- ── Canonical ──────────────────────────────────────────────────── -->
+    <link rel="canonical" th:href="${og.canonicalUrl}"/>
+
+    <!-- ── Primary HTML meta ──────────────────────────────────────────── -->
+    <title th:text="${og.ogTitle}">Page Title</title>
+    <meta name="description"  th:content="${og.ogDescription}"/>
+    <meta name="keywords"     th:content="${og.keywords}"     th:if="${og.keywords != null}"/>
+    <meta name="robots"       content="index, follow"/>
+
+    <!-- ── Open Graph (Facebook, Instagram, LinkedIn, Pinterest, WhatsApp) -->
+    <meta property="og:title"       th:content="${og.ogTitle}"/>
+    <meta property="og:description" th:content="${og.ogDescription}"/>
+    <meta property="og:url"         th:content="${og.ogUrl}"/>
+    <meta property="og:type"        th:content="${og.ogType}"/>
+    <meta property="og:locale"      th:content="${og.ogLocale}"/>
+    <meta property="og:site_name"   th:content="${og.siteName}"/>
+
+    <!-- OG Image — 1200×630 for article/photo/news; 400×400 for photographer -->
+    <meta property="og:image"        th:content="${og.ogImage}"/>
+    <meta property="og:image:secure_url" th:content="${og.ogImage}"/>
+    <meta property="og:image:width"  th:content="${og.ogImageWidth}"/>
+    <meta property="og:image:height" th:content="${og.ogImageHeight}"/>
+    <meta property="og:image:alt"    th:content="${og.ogImageAlt}"/>
+    <meta property="og:image:type"   content="image/jpeg"/>
+
+    <!-- Article-specific OG (used by Facebook, LinkedIn, Pinterest Rich Pins) -->
+    <meta property="article:author"         th:content="${og.articleAuthor}"    th:if="${og.articleAuthor != null}"/>
+    <meta property="article:published_time" th:content="${og.articlePublished}" th:if="${og.articlePublished != null}"/>
+    <meta property="article:section"        th:content="${og.articleSection}"   th:if="${og.articleSection != null}"/>
+
+    <!-- ── Twitter / X Card ───────────────────────────────────────────── -->
+    <!-- summary_large_image = wide banner; summary = square (used for PHOTOGRAPHER) -->
+    <meta name="twitter:card"        th:content="${og.twitterCard}"/>
+    <meta name="twitter:title"       th:content="${og.twitterTitle}"/>
+    <meta name="twitter:description" th:content="${og.twitterDescription}"/>
+    <meta name="twitter:image"       th:content="${og.twitterImage}"/>
+    <meta name="twitter:image:alt"   th:content="${og.twitterImageAlt}"/>
+    <meta name="twitter:site"        th:content="${og.twitterSite}"    th:if="${og.twitterSite != null}"/>
+    <meta name="twitter:creator"     th:content="${og.twitterCreator}" th:if="${og.twitterCreator != null}"/>
+
+    <!-- ── Pinterest Rich Pins ────────────────────────────────────────── -->
+    <!-- Pinterest reads og:* above. These extras improve Rich Pin eligibility. -->
+    <meta name="pinterest-rich-pin" content="true"/>
+
+    <!-- ── Schema.org JSON-LD ─────────────────────────────────────────── -->
+    <script type="application/ld+json"
+            th:utext="${og.schemaOrgJson}">
+    </script>
+</head>
+<body>
+<!--
+  Minimal visible body — bots don't render it, but a real user who lands here
+  (e.g. JS disabled) gets a graceful redirect to the full Vaadin app.
+-->
+<noscript>
+    <meta http-equiv="refresh" th:content="'0;url=' + ${og.canonicalUrl}"/>
+</noscript>
+
+<div style="display:none" aria-hidden="true">
+    <!-- Content summary for accessibility crawlers -->
+    <h1 th:text="${og.ogTitle}"></h1>
+    <p  th:text="${og.ogDescription}"></p>
+</div>
+
+</body>
+</html>

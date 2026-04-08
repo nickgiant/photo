@@ -122,6 +122,7 @@ public class StoryItemViewCard extends Div {
         );
 
         Div divImage = new Div();
+        divImage.addClassName("image-container");
 
         Image image = new Image();
         image.addClassNames(Width.FULL, Height.FULL);
@@ -156,8 +157,8 @@ public class StoryItemViewCard extends Div {
 
 //        Image imgAvatarSmall = getAvatarImage(strAvatar, strPhotoUserName, "40px", "40px");
 
-        Image imgAvatarSmall = genericView.getAvatarImage(strAvatarPath, strPhotoUserName, "40px", "40px");
-        Image imgAvatarMedium = genericView.getAvatarImage(strAvatarPath, strPhotoUserName, "70px", "70px");
+        Image imgAvatarSmall = genericView.getAvatarThumbImage(strAvatarPath, strPhotoUserName, "40px", "40px");
+        Image imgAvatarMedium = genericView.getAvatarThumbImage(strAvatarPath, strPhotoUserName, "70px", "70px");
 //        Image imgAvatarMedium = getAvatarImage(strAvatar, strPhotoUserName, "70px", "70px");
 
 

@@ -677,7 +677,7 @@ public class ConfirmView extends Main implements HasUrlParameter<String>, Before
 //                divBio.setVisible(false);
             }
 
-            Image imgAvatar = genericView.getAvatarImage(strAvatarPath, strMember, "150px", "150px");
+            Image imgAvatar = genericView.getAvatarThumbImage(strAvatarPath, strMember, "150px", "150px");
 //            Image imgAvatar = getAvatarImage(strAvatarPath, strNameOfUser, "120px", "120px");
 
             H3 objName = new H3(strName + " " + strSurname);

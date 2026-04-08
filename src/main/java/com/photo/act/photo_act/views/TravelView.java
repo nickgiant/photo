@@ -6,6 +6,7 @@ import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.photo.act.photo_act.views.components.GenericView;
+import com.photo.act.photo_act.views.components.LocalWeatherForecast;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.HasStyle;
@@ -26,6 +27,7 @@ import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
+import com.vaadin.flow.theme.lumo.LumoUtility;
 import jakarta.annotation.security.PermitAll;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -519,10 +521,10 @@ public class TravelView extends Composite<VerticalLayout> implements HasUrlParam
                     logger.info("destinations:  " + r + " " + destination + " != " + destinationBefore + " " + listDivSpot.size());
 
 
-                    VerticalLayout layoutWeather = genericView.getWeatherCurrent(city, country);
-
-                    layoutPostLine.add(getDestinationTitle(rec));
-                    layoutPostLine.add(layoutWeather);
+//                    VerticalLayout layoutWeather = getWeatherCurrent(city, country);
+//
+//                    layoutPostLine.add(getDestinationTitle(rec));
+//                    layoutPostLine.add(layoutWeather);
                     layoutWithMap.add(layoutSpots, getDestinationMap(destination, country));
                     layoutPostLine.add(layoutWithMap);
 //                    layoutPostLine.add(getDestinationPhotos(city,6));
@@ -790,6 +792,9 @@ public class TravelView extends Composite<VerticalLayout> implements HasUrlParam
 //        return layoutPhotos;
 //
 //    }
+
+
+
     private void getUserClientInfo() {
 
         sessionid = VaadinSession.getCurrent().getSession().getId();

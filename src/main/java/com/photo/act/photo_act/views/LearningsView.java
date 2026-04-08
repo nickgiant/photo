@@ -258,23 +258,23 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         verticalLayout.removeAll();
 
         if (!category.equalsIgnoreCase(STR_ALL_CATEGORIES)) {
-            layoutHeaderParameters = loadHeader("Learnings", "Lessons to improve ourselves", category);
+            layoutHeaderParameters = loadHeader("Learnings", "Lessons to improve our photography skills", category);
             VerticalLayout layoutResults = loadResults(0);
             verticalLayout.add(layoutResults);
         } else if (!genre.equalsIgnoreCase(STR_ALL_GENRES)) {
-            layoutHeaderParameters = loadHeader("Learnings", "Lessons to improve ourselves", genre);
+            layoutHeaderParameters = loadHeader("Learnings", "Lessons to improve our photography skills", genre);
             VerticalLayout layoutResults = loadResults(0);
             verticalLayout.add(layoutResults);
         } else if (!title.equalsIgnoreCase(STR_ALL_TITLES)) {
-            layoutHeaderParameters = loadHeader("Learnings", "Lessons to improve ourselves", "");
+            layoutHeaderParameters = loadHeader("Learnings", "Lessons to improve our photography skills", "");
             VerticalLayout layoutResults = loadResults(0);
             verticalLayout.add(layoutResults);
         } else if (category.equalsIgnoreCase(STR_ALL_CATEGORIES) || genre.equalsIgnoreCase(STR_ALL_GENRES)) {
-            layoutHeaderParameters = loadHeader("Learnings", "Lessons to improve ourselves", "");
+            layoutHeaderParameters = loadHeader("Learnings", "Lessons to improve our photography skills", "");
             VerticalLayout layoutResults = loadResults(25);
             verticalLayout.add(layoutResults);
         } else {
-            layoutHeaderParameters = loadHeader("Learnings", "Lessons to improve ourselves", "");
+            layoutHeaderParameters = loadHeader("Learnings", "Lessons to improve our photography skills", "");
             logger.warn(category + "  " + tutor + "  " + genre);
         }
 
@@ -992,15 +992,6 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
 //        htmlVideo.addClassNames(Padding.SMALL, Margin.MEDIUM, Background.CONTRAST_60, BorderRadius.LARGE);
         htmlVideoSmall.setClassName("video-container-small");
 
-//        Div layoutVideo = new Div();
-//        layoutVideo.addClassNames( AlignItems.CENTER, JustifyContent.CENTER,
-//                Padding.NONE, Margin.NONE,                    Width.FULL,
-//                Background.CONTRAST_70, Border.NONE, BorderRadius.LARGE,
-//                BoxShadow.MEDIUM);
-
-//        layoutVideo.add(htmlVideo);
-
-
         VerticalLayout layoutSourceCardSmall = new VerticalLayout();
         layoutSourceCardSmall.addClassNames(
                 Overflow.HIDDEN, Width.FULL,
@@ -1009,24 +1000,9 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
                 Padding.MEDIUM,
                 Gap.MEDIUM,
                 TextColor.SECONDARY
-                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-//                Background.TINT_10
-//                BorderColor.CONTRAST_10,
-//                Border.ALL,  BorderRadius.LARGE
-        );
-//        layoutSourceCardSmall.setMaxWidth("280px");
 
-//        RouteParam routeCategory = new RouteParam("category", strCategory);
-//        RouterLink linkPhotoCategory = new RouterLink(strCategory, LearningsView.class, new RouteParameters(routeCategory));
-//
-//        RouteParam routeCategory2 = new RouteParam("category", strCatGenre);
-//        RouterLink linkPhotoCategory2 = new RouterLink(strCatGenre, LearningsView.class, new RouteParameters(routeCategory2));
-//
-//        if (strCatGenre == null || strCatGenre.equalsIgnoreCase("") || strCatGenre.equalsIgnoreCase("null") || strCatGenre.isEmpty()) {
-//            linkPhotoCategory2.setVisible(false);
-//        } else {
-//            linkPhotoCategory2.setVisible(true);
-//        }
+        );
+
 
         HorizontalLayout layoutCategorySmallAll = new HorizontalLayout();
         layoutCategorySmallAll.addClassNames(
@@ -2015,12 +1991,6 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         Paragraph formattedParagraph = new Paragraph(strDescriptionNew);
         formattedParagraph.getElement().getStyle().set("white-space", "pre-wrap");
 
-//        Html html = new Html(Jsoup.clean("<p>Formatted <b>text</b><br>as <i>HTML</i></p>", Safelist.basic()));
-
-//        Paragraph elements = new Paragraph();
-//        elements.getElement().appendChild(Element.createText("Formatted "), new Element("b").setText("text"),
-//                new Element("br"), Element.createText("as "), new Element("i").setText("elements"));
-
         layoutFormattedText.add(formattedParagraph);
 //        ,
 //                new Paragraph(
@@ -2169,11 +2139,11 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
 
     public Details getMemberDetail(String strUserIdPost, String strAvatarPath, String strUserName, String strNameOfUser, String strUserJoined) {
 
-        Image imgAvatarSmall = genericView.getAvatarImage(strAvatarPath, strNameOfUser, "40px", "40px");
+        Image imgAvatarSmall = genericView.getAvatarThumbImage(strAvatarPath, strNameOfUser, "40px", "40px");
         AvatarItem avatarItemMe = new AvatarItem(strNameOfUser, "", imgAvatarSmall);
         avatarItemMe.addClassNames(Width.FULL, AlignItems.STRETCH, JustifyContent.BETWEEN);
 
-        Image imgAvatarMedium = genericView.getAvatarImage(strAvatarPath, strNameOfUser, "70px", "70px");
+        Image imgAvatarMedium = genericView.getAvatarThumbImage(strAvatarPath, strNameOfUser, "70px", "70px");
         AvatarItem avatarLargeItemMe = new AvatarItem(strNameOfUser, "@" + strUserName, imgAvatarMedium);
 
 

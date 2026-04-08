@@ -2,6 +2,9 @@ package com.photo.act.photo_act.views;
 
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
+import com.photo.act.photo_act.services.ShareMetricService;
+import com.photo.act.photo_act.services.ShareService;
+import com.photo.act.photo_act.services.WeatherService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.photo.act.photo_act.views.components.*;
@@ -28,7 +31,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import static com.photo.act.photo_act.views.HomeView.subPathLarge;
 import static com.photo.act.photo_act.views.HomeView.subPathSmall;
 import static com.photo.act.photo_act.views.MainLayout.*;
 
@@ -61,6 +63,9 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
 
     private String strAlbumTitle;
     private RecordService recordService;
+    private ShareService shareService;
+    private ShareMetricService shareMetricService;
+    private WeatherService weatherService;
     private String strHeader;
 
     private String strUrlRequestToBeLogged;
@@ -95,14 +100,16 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
                     " GROUP BY ac.cat_title " +
                     " ORDER BY ac.cat_title ASC";
     String[] arrColumnsAlbumsCategories = {"id", "cat_title", "cat_type", "cat_description_min", "cat_type_description_min", "cat_description_big", "date_inserted", "cat_count",
-            "photo_1", "photo_2", "photo_3", "photo_4", "datetime_album_created"
-            , "username", "surname", "name", "resident", "date_joined", "avatar_path"
+            "photo_1", "meta_orientation1", "meta_i_length1", "meta_i_width1", "meta_i_height1"
+            , "photo_2", "photo_3", "photo_4", "datetime_album_created"
+            , "username", "surname", "name", "resident", "date_joined", "member_since", "avatar_path"
     };
 
 
     String[] arrColumnsMemberAlbums = {"id", "title", "description", "album_visible_to", "category_id"
             , "username", "name", "surname", "resident", "date_joined", "member_since", "avatar_path"
             , "album_count"
+            , "count_photos", "count_albums"
     };
 
     String sqlMemberOfAlbums = "SELECT a.id, a.title, a.description, a.album_visible_to, a.category_id " +
@@ -110,8 +117,10 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
             " , DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since " +
             " , usr.avatar_path " +
             " , count(usr.userId) AS album_count " +
-            " FROM dbuser usr, photo_album a " +
+            " , ux.count_photos, ux.count_albums " +
+            " FROM dbuser usr,  dbuser_extra ux, photo_album a " +
             " WHERE a.user_id = usr.userId " +
+            " AND usr.userId = ux.user_id " +
             " AND a.album_visible_to = 'ALL' ";
 
     String sqlMemberOfAlbumsGroupBy =
@@ -119,11 +128,11 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
                     " ORDER BY usr.username ASC, a.date_inserted DESC ";
     String sqlAlbumsCategoriesAll = "SELECT ac.id, ac.cat_title, ac.cat_type, ac.cat_description_min, ac.cat_type_description_min, ac.cat_description_big " +
             " , count(ac.cat_type) AS cat_count " + //SUM(pm.space_size) AS album_photo_size " +
-            " , a.photo_id1, p1.name_new AS photo_1 , p1.meta_orientation AS meta_orientation1 " +
+            " , a.photo_id1, p1.name_new AS photo_1 , p1.meta_orientation AS meta_orientation1 , p1.meta_i_length AS meta_i_length1 , p1.meta_i_width AS meta_i_width1 , p1.meta_i_height AS meta_i_height1 " +
             " , a.photo_id2, p2.name_new  AS photo_2 " +
             " , a.photo_id3, p3.name_new AS photo_3 ,  a.photo_id4, p4.name_new  AS photo_4 " +
             " , getDateDiffFromNow(a.date_inserted) AS datetime_album_created " +
-            " , usr.username, usr.surname, usr.name, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined, usr.avatar_path " +
+            " , usr.username, usr.surname, usr.name, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined, DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since, usr.avatar_path " +
             " FROM photo_album_categories ac, dbuser usr, photo_album a LEFT JOIN photo_meta p1 ON a.photo_id1 = p1.id " +
             " LEFT JOIN photo_meta p2 ON a.photo_id2 = p2.id  LEFT JOIN photo_meta p3 ON a.photo_id3 = p3.id " +
             " LEFT JOIN photo_meta p4 ON a.photo_id4 = p4.id " +
@@ -134,24 +143,28 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
             " GROUP BY ac.cat_type " +
                     " ORDER BY ac.cat_order ASC, a.date_inserted DESC ";
     String[] arrColumnsAlbums = {"id", "album_title", "description", "album_visible_to", "user_id", "date_inserted", "album_photo_count", "album_photo_size",
-            "name_new", "photo_1", "photo_2", "photo_3", "photo_4", "datetime_album_created"
+            "name_new", "photo_1", "meta_orientation1", "meta_i_length1", "meta_i_width1", "meta_i_height1"
+            , "photo_2", "photo_3", "photo_4", "datetime_album_created"
             , "cat_type"
-            , "username", "surname", "name", "resident", "date_joined", "avatar_path"
+            , "username", "surname", "name", "resident", "date_joined", "member_since", "avatar_path"
+            , "count_photos", "count_albums"
     };
     String sqlAlbumsAll = "SELECT a.id, a.title AS album_title, a.description, a.album_visible_to, a.user_id, a.date_inserted " +
             " , count(pap.photo_album_id) AS album_photo_count, SUM(pm.space_size) AS album_photo_size " +
-            " , pm.name_new , a.photo_id1, p1.name_new AS photo_1 , p1.meta_orientation AS meta_orientation1," +
-            "  a.photo_id2, p2.name_new  AS photo_2 " +
+            " , pm.name_new , a.photo_id1, p1.name_new AS photo_1 , p1.meta_orientation AS meta_orientation1,  p1.meta_i_length AS meta_i_length1 , p1.meta_i_width AS meta_i_width1 , p1.meta_i_height AS meta_i_height1 " +
+            " , a.photo_id2, p2.name_new  AS photo_2 " +
             " , a.photo_id3, p3.name_new AS photo_3 ,  a.photo_id4, p4.name_new  AS photo_4 " +
             " , getDateDiffFromNow(a.date_inserted) AS datetime_album_created " +
             " , ac.cat_type " +
-            " , usr.username, usr.surname, usr.name, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined, usr.avatar_path " +
+            " , usr.username, usr.surname, usr.name, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined, DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since, usr.avatar_path " +
+            " , ux.count_photos, ux.count_albums " +
             //     "--  , pap.inc, pm.title, pm.id, pm.name_new, pm.title, pm.subtitle, pm.space_size, pm.location_by_user\\n\" +\n" +
-            " FROM photo_album_photo pap , photo_meta pm, photo_album_categories ac, dbuser usr, photo_album a LEFT JOIN photo_meta p1 ON a.photo_id1 = p1.id " +
+            " FROM photo_album_photo pap , photo_meta pm, photo_album_categories ac,  dbuser_extra ux, dbuser usr, photo_album a LEFT JOIN photo_meta p1 ON a.photo_id1 = p1.id " +
             " LEFT JOIN photo_meta p2 ON a.photo_id2 = p2.id  LEFT JOIN photo_meta p3 ON a.photo_id3 = p3.id " +
             "  LEFT JOIN photo_meta p4 ON a.photo_id4 = p4.id " +
             " WHERE a.id = pap.photo_album_id AND pap.photo_id = pm.id AND a.user_id = usr.userId AND a.user_id = pap.user_id " +
             " AND ac.id = a.category_id " +
+            " AND usr.userId = ux.user_id " +
             " AND a.album_visible_to = 'ALL' AND pm.visible_to  = 'ALL' ";
     private String strCategory;
 
@@ -161,12 +174,13 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
 
     private String[] arrColumnNamesAlbumPhotos = {"album_title", "album_visible_to", "description"
             , "id", "name_new", "title", "subtitle", "photo_type", "uploader", "creator", "visible_to", "album_destination_name_map", "album_destination_country_map", "city_name", "country"
-            , "meta_date", "photo_date", "photo_time_shot"
+            , "meta_date", "photo_date", "photo_time_shot", "date_inserted_diff_from_now"
             , "space_size", "space_size_medium", "space_size_thumb", "meta_camera_make", "meta_camera_model", "meta_lens_make", "meta_lens_model"
             , "meta_focal_length", "meta_focal_length_ff", "meta_iso", "meta_aperture", "meta_shutter_speed", "meta_orientation"
             , "location_by_user", "location_area", "location_country_code", "location_lat", "location_lon"
             , "date_inserted"
-            , "username", "surname", "name", "resident", "date_joined", "avatar_path"
+            , "username", "surname", "name", "resident", "date_joined", "member_since", "avatar_path"
+            , "count_photos", "count_albums"
     };
 
     private String sqlReadAlbumPhotos = "SELECT a.title AS album_title, a.user_id, a. album_visible_to, a.description, " +
@@ -175,13 +189,17 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
             " if(da.name_for_map IS NULL, da.city_name, da.name_for_map ) AS album_destination_name_map, " +
             " da.country AS album_destination_country_map, " +
             " DATE_FORMAT(pm.meta_date, '%W %D %M %Y %H:%i %p') AS meta_date, DATE_FORMAT(pm.meta_date, '%M %Y') AS photo_date, DATE_FORMAT(pm.meta_date, '%d/%m/%Y - %H:%i:%S') AS photo_time_shot, " +
-            " pm.space_size, pm.space_size_medium, pm.space_size_thumb, pm.meta_camera_make, pm.meta_camera_model, pm.meta_lens_make, pm.meta_lens_model, " +
-            " pm.meta_focal_length, pm.meta_focal_length_ff, pm.meta_iso, meta_aperture,  meta_shutter_speed, meta_orientation " +
+            " getDateDiffFromNow(pm.date_inserted) AS date_inserted_diff_from_now " +
+            " , pm.space_size, pm.space_size_medium, pm.space_size_thumb, pm.meta_camera_make, pm.meta_camera_model, pm.meta_lens_make, pm.meta_lens_model " +
+            " , pm.meta_focal_length, pm.meta_focal_length_ff, pm.meta_iso, meta_aperture,  meta_shutter_speed, meta_orientation " +
             " , pm.location_by_user, pm.location_area, pm.location_country_code, pm.location_lat, pm.location_lon " +
-            " , usr.username, usr.surname, usr.name, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined, usr.avatar_path " +
+            " , usr.username, usr.surname, usr.name, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined, DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since, usr.avatar_path " +
+            " , ux.count_photos, ux.count_albums " +
             //, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description, DATE_FORMAT(f.dateInsert , '%D %M %Y') AS formatedDateUpdated  " +
-            " FROM dbuser usr, photo_album a LEFT JOIN destination da  ON (da.id = a.destination_id) , photo_album_photo pap , photo_meta pm LEFT JOIN destination d ON pm.destination_Id = d.id " +
-            " WHERE  a.user_id = usr.userId AND a.user_id = pap.user_id AND a.id = pap.photo_album_id AND pap.photo_id = pm.id AND pm.visible_to = 'ALL' ";
+            " FROM dbuser usr, dbuser_extra ux, photo_album a LEFT JOIN destination da  ON (da.id = a.destination_id) , photo_album_photo pap , photo_meta pm LEFT JOIN destination d ON pm.destination_Id = d.id " +
+            " WHERE  a.user_id = usr.userId AND a.user_id = pap.user_id AND a.id = pap.photo_album_id AND pap.photo_id = pm.id " +
+            " AND usr.userId = ux.user_id " +
+            " AND pm.visible_to = 'ALL' ";
     // String sqlAlbumsGroupBy =
     //         " GROUP BY concat( usr.userId, pa.photo_album_id )  ";
 
@@ -191,8 +209,11 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
     private String sessionDateTime;
     private GenericView genericView;
 
-    public AlbumsView(RecordService recordService) {
+    public AlbumsView(RecordService recordService, ShareService shareService, ShareMetricService shareMetricService, WeatherService weatherService) {
         this.recordService = recordService;
+        this.shareService = shareService;
+        this.shareMetricService = shareMetricService;
+        this.weatherService = weatherService;
         utilsDate = new UtilsDate();
         genericView = new GenericView(recordService);
 
@@ -473,7 +494,7 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
             String strMemberSince = rec.getColumnData("member_since");
             String strAvatarPath = rec.getColumnData("avatar_path");
 
-            Image imgAvatar = genericView.getAvatarImage(strAvatarPath, strName + " " + strSurname, "80px", "80px");
+            Image imgAvatar = genericView.getAvatarThumbImage(strAvatarPath, strName + " " + strSurname, "80px", "80px");
 
             H2 objMemberName = new H2(strName + " " + strSurname);
             objMemberName.addClassNames(TextColor.TERTIARY);
@@ -572,19 +593,8 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
 
         List<Record> lstRecords = getRecordsFromDb(sqlRead, arrColumnNames);
 
-        VerticalLayout viewBiggerPhotos = new VerticalLayout();
-        if (isMobile) {
-            viewBiggerPhotos.addClassNames(Width.FULL,
-                    AlignItems.CENTER, JustifyContent.CENTER,
-                    Gap.MEDIUM,
-                    Padding.MEDIUM, Margin.NONE);
-        } else {
-            viewBiggerPhotos.addClassNames(Width.FULL,
-                    AlignItems.CENTER, JustifyContent.CENTER,
-                    Gap.XLARGE,
-                    Padding.MEDIUM, Margin.NONE);
-        }
-        viewBiggerPhotos.setMaxWidth("1080px");
+
+
 
         Div divGallery = new Div();
         divGallery.addClassName("gallery");
@@ -678,14 +688,9 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
         String strImagePath = strPath + dirChar + strFileName;
         logger.info(" strImagePath " + strImagePath);
 
-        boolean isViewPortrait = false;
-        String strMetaOrientation = record.getColumnData("meta_orientation");
-        if (strPath.contains(subPathLarge) && strMetaOrientation.equalsIgnoreCase("8")) {
-            isViewPortrait = true;
-        }
 
         GalleryImageViewCard imageGalleryViewCard = new GalleryImageViewCard(record, strImagePath, isMobile, userId, strUsername, sessionCreation, hostname, publicIp, isEditable,
-                recordService, 1, sqlReadAlbumPhotos, sqlReadAlbumPhotosOrderBy, arrColumnNamesAlbumPhotos);
+                recordService, 1, sqlReadAlbumPhotos, sqlReadAlbumPhotosOrderBy, arrColumnNamesAlbumPhotos, shareService, shareMetricService, weatherService );
         return imageGalleryViewCard;
 
     }

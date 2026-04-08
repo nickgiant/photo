@@ -23,7 +23,9 @@ header span {
   letter-spacing: 7px;
   font-size: 20px;
   line-height: 1;
+    text-shadow: 1px 2px 6px var(--shadow-medium);
 }
+
 header p {
   padding-top: 30px;
 }
@@ -33,6 +35,7 @@ header p {
     font-weight: 900;
     padding: 40px 0 25px;
     font-family:  "Lucida Console", "Lucida Sans Typewriter", sans-serif;
+    text-shadow: 1px 2px 6px var(--shadow-strong);
 }
 
 .home-view h2{
@@ -220,7 +223,7 @@ header p {
 
 .home-view .page-section{
     background-color: var(--lumo-contrast-5pct); /* #fdeec5;*/
-    border-radius: 40px;
+    border-radius: 18px;
 }
 
 /*
@@ -297,4 +300,487 @@ header p {
     grid-gap: 1.4rem;
     padding: 1rem;
     margin: 0;
+}
+
+
+/* ============================================================
+   Registration Dialog — Colorlib RegForm-7 inspired styles
+   ============================================================
+   Place this file in:
+     frontend/themes/<your-theme>/styles.css
+   or @import it from your master styles.css
+   ============================================================ */
+
+/* ── Dialog overlay — remove default chrome ─────────────────── */
+
+vaadin-dialog-overlay.registration-dialog::part(overlay) {
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+    border: none;
+}
+
+vaadin-dialog-overlay.registration-dialog::part(content) {
+    padding: 0;
+}
+
+/* ── Dialog inner content wrapper ───────────────────────────── */
+
+.reg-dialog-content {
+    min-height: 580px;
+}
+
+/* ── Left side: Form ────────────────────────────────────────── */
+
+.reg-form-side {
+    background: #fff;
+}
+
+.reg-title {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 1.75rem;
+    color: #333;
+    margin: 0 0 28px 0;
+    letter-spacing: -0.02em;
+}
+
+/* ── Text fields — underline style matching Colorlib ────────── */
+
+.reg-text-field,
+.reg-password-field {
+    --vaadin-input-field-border-width: 0;
+    --vaadin-input-field-border-color: transparent;
+    --vaadin-input-field-background: transparent;
+    margin-bottom: 4px;
+}
+
+.reg-text-field::part(input-field),
+.reg-password-field::part(input-field) {
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid #e0e0e0;
+    border-radius: 0;
+    padding-left: 0;
+    box-shadow: none;
+    transition: border-color 0.3s ease;
+}
+
+.reg-text-field:hover::part(input-field),
+.reg-password-field:hover::part(input-field) {
+    border-bottom-color: #b0b0b0;
+    background: transparent;
+}
+
+.reg-text-field[focused]::part(input-field),
+.reg-password-field[focused]::part(input-field) {
+    border-bottom-color: #6c63ff;
+    background: transparent;
+    box-shadow: none;
+}
+
+/* Prefix icon color */
+.reg-text-field vaadin-icon,
+.reg-password-field vaadin-icon {
+    color: #b0b0b0;
+    width: 18px;
+    height: 18px;
+    transition: color 0.3s ease;
+}
+
+.reg-text-field[focused] vaadin-icon,
+.reg-password-field[focused] vaadin-icon {
+    color: #6c63ff;
+}
+
+/* Placeholder text */
+.reg-text-field::part(input-field)::placeholder,
+.reg-password-field::part(input-field)::placeholder {
+    color: #999;
+    font-size: 0.9rem;
+}
+
+/* Remove the label (we use placeholders) */
+.reg-text-field::part(label),
+.reg-password-field::part(label) {
+    display: none;
+}
+
+/* ── Terms checkbox row ─────────────────────────────────────── */
+
+.reg-terms-label {
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.reg-terms-link {
+    color: #6c63ff;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s ease;
+}
+
+.reg-terms-link:hover {
+    color: #524ae0;
+    text-decoration: underline;
+}
+
+/* ── Register button ────────────────────────────────────────── */
+
+.reg-submit-btn {
+    margin-top: 20px;
+    width: 100%;
+    height: 48px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #fff;
+    background: linear-gradient(135deg, #6c63ff 0%, #a855f7 100%);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(108, 99, 255, 0.35);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.reg-submit-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(108, 99, 255, 0.45);
+    background: linear-gradient(135deg, #5b52e6 0%, #9645e6 100%);
+}
+
+.reg-submit-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 10px rgba(108, 99, 255, 0.3);
+}
+
+/* ── "Already a member" link ────────────────────────────────── */
+
+.reg-already-member {
+    text-align: center;
+    margin-top: 16px;
+}
+
+.reg-login-link {
+    color: #999;
+    font-size: 0.85rem;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.reg-login-link:hover {
+    color: #6c63ff;
+}
+
+/* ── Right side: Illustration panel ─────────────────────────── */
+
+.reg-illustration-side {
+    background: linear-gradient(135deg, #6c63ff 0%, #a855f7 50%, #c084fc 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Decorative circles */
+.reg-illustration-side::before {
+    content: '';
+    position: absolute;
+    width: 250px;
+    height: 250px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.06);
+    top: -60px;
+    right: -80px;
+}
+
+.reg-illustration-side::after {
+    content: '';
+    position: absolute;
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.04);
+    bottom: -40px;
+    left: -50px;
+}
+
+.reg-illustration-wrapper {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(8px);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.reg-illustration-icon {
+    width: 56px;
+    height: 56px;
+    color: #fff;
+}
+
+.reg-illustration-text {
+    color: rgba(255, 255, 255, 0.95);
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.2rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    margin-top: 20px;
+    z-index: 1;
+}
+
+/* ── Responsive: stack vertically on small dialogs ──────────── */
+
+@media (max-width: 700px) {
+    .reg-dialog-content {
+        flex-direction: column !important;
+    }
+
+    .reg-form-side,
+    .reg-illustration-side {
+        width: 100% !important;
+    }
+
+    .reg-illustration-side {
+        min-height: 180px;
+        order: -1; /* illustration on top */
+    }
+}
+
+
+/* ============================================================
+   Login Dialog — Styles for LoginForm inside Dialog
+   ============================================================
+   Requires: registration-dialog.css (shared base styles)
+
+/* ── Dialog overlay ─────────────────────────────────────────── */
+
+vaadin-dialog-overlay.login-dialog::part(overlay) {
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+    border: none;
+}
+
+vaadin-dialog-overlay.login-dialog::part(content) {
+    padding: 0;
+}
+
+/* ── Form side — centred vertically ─────────────────────────── */
+
+.login-form-side {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background: #fff;
+}
+
+/* ── Illustration panel (left) ──────────────────────────────── */
+
+.login-illustration-side {
+    border-radius: 16px 0 0 16px;
+}
+
+/* "Create an account" ghost button on the illustration panel */
+.login-create-account-link {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.85rem;
+    text-decoration: none;
+    margin-top: 12px;
+    padding: 6px 16px;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 6px;
+    transition: background 0.25s ease, color 0.25s ease,
+                border-color 0.25s ease;
+    z-index: 1;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 500;
+}
+
+.login-create-account-link:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.6);
+}
+
+/* ============================================================
+   LoginForm (vaadin-login-form) theming
+   ============================================================ */
+
+/* ── Remove default background / card styling from the wrapper ─ */
+
+.login-styled-form {
+    width: 100%;
+}
+
+.login-styled-form vaadin-login-form-wrapper {
+    background: none;
+    padding: 0;
+    box-shadow: none;
+}
+
+.login-styled-form vaadin-login-form-wrapper::part(form) {
+    padding: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+/* ── Form title ─────────────────────────────────────────────── */
+
+.login-styled-form vaadin-login-form-wrapper::part(form-title) {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 1.75rem;
+    color: #333;
+    letter-spacing: -0.02em;
+    margin-bottom: 24px;
+}
+
+/* ── Input fields — underline style ─────────────────────────── */
+
+.login-styled-form vaadin-text-field,
+.login-styled-form vaadin-password-field {
+    --vaadin-input-field-border-width: 0;
+    --vaadin-input-field-border-color: transparent;
+    --vaadin-input-field-background: transparent;
+    width: 100%;
+}
+
+.login-styled-form vaadin-text-field::part(input-field),
+.login-styled-form vaadin-password-field::part(input-field) {
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid #e0e0e0;
+    border-radius: 0;
+    padding-left: 0;
+    box-shadow: none;
+    transition: border-color 0.3s ease;
+}
+
+.login-styled-form vaadin-text-field:hover::part(input-field),
+.login-styled-form vaadin-password-field:hover::part(input-field) {
+    border-bottom-color: #b0b0b0;
+    background: transparent;
+}
+
+.login-styled-form vaadin-text-field[focused]::part(input-field),
+.login-styled-form vaadin-password-field[focused]::part(input-field) {
+    border-bottom-color: #6c63ff;
+    background: transparent;
+    box-shadow: none;
+}
+
+/* Field labels */
+.login-styled-form vaadin-text-field::part(label),
+.login-styled-form vaadin-password-field::part(label) {
+    color: #999;
+    font-size: 0.9rem;
+}
+
+.login-styled-form vaadin-text-field[focused]::part(label),
+.login-styled-form vaadin-password-field[focused]::part(label) {
+    color: #6c63ff;
+}
+
+/* ── Log-in button — purple gradient ────────────────────────── */
+
+.login-styled-form vaadin-button[theme~="submit"] {
+    width: 100%;
+    height: 48px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #fff;
+    background: linear-gradient(135deg, #6c63ff 0%, #a855f7 100%);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(108, 99, 255, 0.35);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    margin-top: 12px;
+}
+
+.login-styled-form vaadin-button[theme~="submit"]:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(108, 99, 255, 0.45);
+    background: linear-gradient(135deg, #5b52e6 0%, #9645e6 100%);
+}
+
+.login-styled-form vaadin-button[theme~="submit"]:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 10px rgba(108, 99, 255, 0.3);
+}
+
+/* ── Forgot-password button ─────────────────────────────────── */
+
+.login-styled-form [slot="forgot-password"] {
+    color: #6c63ff;
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: normal;
+    transition: color 0.2s ease;
+    padding: 0;
+    margin-top: 8px;
+    min-width: 0;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+}
+
+.login-styled-form [slot="forgot-password"]:hover {
+    color: #524ae0;
+    text-decoration: underline;
+}
+
+/* ── Error message styling ──────────────────────────────────── */
+
+.login-styled-form vaadin-login-form-wrapper::part(error-message) {
+    background: #fef2f2;
+    border-left: 3px solid #ef4444;
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin-bottom: 12px;
+}
+
+.login-styled-form vaadin-login-form-wrapper::part(error-message-title) {
+    color: #dc2626;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.login-styled-form vaadin-login-form-wrapper::part(error-message-description) {
+    color: #991b1b;
+    font-size: 0.85rem;
+}
+
+/* ── Footer area ────────────────────────────────────────────── */
+
+.login-styled-form vaadin-login-form-wrapper::part(footer) {
+    padding: 0;
+    margin-top: 8px;
+}
+
+/* ── Responsive: stack vertically on narrow screens ─────────── */
+
+@media (max-width: 700px) {
+    vaadin-dialog-overlay.login-dialog .reg-dialog-content {
+        flex-direction: column !important;
+    }
+
+    vaadin-dialog-overlay.login-dialog .login-illustration-side,
+    vaadin-dialog-overlay.login-dialog .login-form-side {
+        width: 100% !important;
+    }
+
+    .login-illustration-side {
+        min-height: 180px;
+        border-radius: 16px 16px 0 0;
+    }
 }
