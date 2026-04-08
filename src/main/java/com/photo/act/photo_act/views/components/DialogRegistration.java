@@ -62,7 +62,6 @@ public class DialogRegistration extends Dialog {
         this.publicIp = publicIp;
         this.isMobile = isMobile;
 
-        int userId = 1;
 
         utilsString = new UtilsString();
         genericView = new GenericView(recordService);
@@ -187,9 +186,6 @@ public class DialogRegistration extends Dialog {
                 this.strSurname = strSurname;
             }
 
-            public String setStrSurname() {
-                return strSurname;
-            }
 
             public String getStrName() {
                 return strName;

@@ -167,15 +167,15 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
         verticalLayout.removeAll();
 
         if (!country.equalsIgnoreCase(STR_ALL_COUNTRIES)) {
-            layoutHeaderParameters = loadHeader("Events", "Around the globe", country);
+            layoutHeaderParameters = loadHeader("Events", "Photo events around the globe", country);
             VerticalLayout layoutResults = loadResults(0);
             verticalLayout.add(layoutResults);
         } else if (country.equalsIgnoreCase(STR_ALL_COUNTRIES)) {
-            layoutHeaderParameters = loadHeader("Events", "Around the globe", "");
+            layoutHeaderParameters = loadHeader("Events", "Photo events around the globe", "");
             VerticalLayout layoutResults = loadResults(15);
             verticalLayout.add(layoutResults);
         } else {
-            layoutHeaderParameters = loadHeader("Events", "Around the globe", "");
+            layoutHeaderParameters = loadHeader("Events", "Photo events around the globe", "");
             logger.warn(country + "  ");
         }
 

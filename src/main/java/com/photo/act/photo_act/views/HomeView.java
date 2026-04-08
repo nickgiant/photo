@@ -15,17 +15,16 @@ import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.services.EmailSendService;
 import com.photo.act.photo_act.services.PhotoFlickrService;
+import com.photo.act.photo_act.services.WeatherService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
-import com.photo.act.photo_act.views.components.AvatarItem;
-import com.photo.act.photo_act.views.components.DialogRegistration;
-import com.photo.act.photo_act.views.components.GenericView;
-import com.photo.act.photo_act.views.components.HeaderFilterTabs;
+import com.photo.act.photo_act.views.components.*;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.HasStyle;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.CheckboxGroup;
+import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.SvgIcon;
@@ -40,6 +39,8 @@ import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
+import com.vaadin.flow.server.streams.DownloadHandler;
+import com.vaadin.flow.theme.lumo.LumoUtility;
 import com.vaadin.flow.theme.lumo.LumoUtility.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -188,10 +189,12 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
     private Div layoutLastPhotos;
     private EmailSendService emailSendService;
+    private WeatherService weatherService;
 
-    public HomeView(RecordService recordService, EmailSendService emailSendService) {
+    public HomeView(RecordService recordService, EmailSendService emailSendService,  WeatherService weatherService) {
         this.recordService = recordService;
         this.emailSendService = emailSendService;
+        this.weatherService = weatherService;
         utilsDate = new UtilsDate();
         genericView = new GenericView(recordService);
 
@@ -250,25 +253,6 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
         String sqlReadGallery = "SELECT pm.name_org, pm.name_new, pm.title, pm.subtitle, pm.photo_type, pm.uploader, pm.uploaderId, pm.photo_type, pm.contains_tags, " +
                 " pm.space_size, pm.space_size_medium, pm.space_size_thumb,  d.city_name, DATE_FORMAT(pm.meta_date, '%W %D %M %Y %H:%i %p') AS meta_date " +
-                //, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description, DATE_FORMAT(f.dateInsert , '%D %M %Y') AS formatedDateUpdated  " +
-//                "                 ( case " +
-//                "                WHEN TIMEDIFF(NOW(), pm.date_inserted) <= '00:06:00' THEN 'almost now'" +
-//                "                WHEN TIMEDIFF(NOW(), pm.date_inserted) <= '00:18:00' THEN '10 minutes ago'" +
-//                "                WHEN TIMEDIFF(NOW(), pm.date_inserted) <= '00:48:00' THEN '30 minutes ago'" +
-//                "                WHEN TIMEDIFF(NOW(), pm.date_inserted) <= '01:37:00' THEN 'an hour ago'" +
-//                "                WHEN TIMEDIFF(NOW(), pm.date_inserted) <= '02:40:00' THEN 'two hours ago'" +
-//                "                WHEN TIMEDIFF(NOW(), pm.date_inserted) <= '03:42:00' THEN 'three hours ago'" +
-//                "                WHEN TIMEDIFF(NOW(), pm.date_inserted) <= '04:28:00' THEN 'four hours ago'" +
-//                "                WHEN TIMEDIFF(NOW(), pm.date_inserted) <= '05:35:00' THEN 'five hours ago'" +
-//                "                WHEN TIMEDIFF(NOW(), pm.date_inserted) <= '06:35:00' THEN 'six hours ago'" +
-//                "                WHEN TIMEDIFF(NOW(), pm.date_inserted) <= '07:35:00' THEN 'seven hours ago'" +
-//                "                WHEN TIMEDIFF(NOW(), pm.date_inserted) <= '08:35:00' THEN 'eight hours ago'" +
-//                "                when DATE(DATE(pm.date_inserted) + 1) = DATE(NOW()) then CONCAT('Yesterday at ' , DATE_FORMAT(pm.date_inserted, '%H:%i %p') )" +
-//                "                when DATE(DATE(pm.date_inserted) + 2) = DATE(NOW())  then CONCAT('Last ' , DATE_FORMAT(pm.date_inserted, '%W at %H:%i %p') )" +
-//                "                when DATE(DATE(pm.date_inserted) + 6) >= DATE(NOW())  then CONCAT('Last ' , DATE_FORMAT(pm.date_inserted, '%W') )" +
-//                "                when DATE(DATE(pm.date_inserted) + 6) < DATE(NOW())  then CONCAT('' , DATE_FORMAT(pm.date_inserted, '%D %M %Y') )" +
-//                "                ELSE DATE_FORMAT(pm.date_inserted, '%D %M %Y') " +
-//                "              END ) " +
                 " , getDateDiffFromNow(pm.date_inserted) AS date_inserted " +
                 " , usr.username, usr.name, usr.surname, usr.avatar_path, DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since " +
                 " FROM dbuser usr, photo_meta pm LEFT JOIN destination d ON pm.destination_Id = d.id ";
@@ -276,12 +260,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 //                    " ORDER BY pm.title ASC ";
         String sqlGalleryAll = sqlReadGallery + " WHERE pm.visible_to = 'ALL' " +
                 " AND usr.userId = pm.uploaderId";
-//        if(!strDestination.equalsIgnoreCase(STR_ALL_DESTINATIONS)) {
-//            sqlGalleryAll = sqlGalleryAll + " AND d.city_name LIKE '" + strDestination + "' ";
-//        }
         sqlGalleryAll = sqlGalleryAll + " ORDER BY pm.date_inserted DESC, pm.title ASC, pm.meta_date DESC, pm.name_new ASC ";
-
-//        ArrayList<Image> lstImage = loadImagesFromDbToCarousel(sqlGalleryAll + " LIMIT 10 ", arrColumnNamesGallery, false, false);
 
         String[] arrColsUploadsGrouped = {"Month", "Photos"};
 
@@ -304,22 +283,11 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         Image mainImage = new Image();
         String strMainImagePath = DIR_PHOTOS_SERVER + dirChar + "photographerM.jpg";
 
-        final StreamResource imageMainResource = new StreamResource("streamResource", () -> {
-            try {
 
-                Path path = Paths.get(strMainImagePath);
-                File file = path.toFile();
-                return new FileInputStream(file);
-            } catch (final FileNotFoundException e) {
-//                logErrorInDb(e, "GalleryImageViewCard StreamResource FileNotFoundException", hostname, userId, strUserName, publicIp, sessionCreation, file.getAbsolutePath());
-                // logErrorInDb(e,hostname,"CreationsViewCard StreamResource",userId,strUserName,file.getAbsolutePath());
-                logger.error(e.getMessage());
-            }
-            return null;
-        });
+        Path path = Paths.get(strMainImagePath);
+        File file = path.toFile();
 
-
-        mainImage.setSrc(imageMainResource);
+        mainImage.setSrc(DownloadHandler.forFile(file));
         mainImage.setAlt("sketch image of a photographer");
         mainImage.setHeight("24rem");
         mainImage.setWidth("auto");
@@ -332,12 +300,15 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         Div div1 = new Div("We are a community site, with members exchanging info and links in order to improve our skills in photography!");
         Div div2 = new Div("Currently, we share info about events and learnings. Of course, we also have space for our photos and albums.");
 
-        StreamResource imageResourceMember = new StreamResource("user-profile-icon.svg",
-                () -> getClass()
-                        .getResourceAsStream("/icons/user-profile-icon.svg"));
-        SvgIcon svgMember = new SvgIcon(imageResourceMember);
+
+        Button btnLogin = new Button("Login");
+        btnLogin.addClassName("btn-register");
+        btnLogin.addClickListener(click ->{
+            displayLoginDialog();
+        });
+
+
         Button btnRegister = new Button("Register");
-        btnRegister.setIcon(svgMember);
         btnRegister.addClassName("btn-register");
 //        btnSuggestEvent.setIcon(svgComments);
         btnRegister.addClickListener(click -> {
@@ -346,9 +317,12 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
 
         HorizontalLayout layoutUserBtns = new HorizontalLayout();
+        layoutUserBtns.setAlignItems(FlexComponent.Alignment.CENTER);
+        layoutUserBtns.setJustifyContentMode(FlexComponent.JustifyContentMode.AROUND);
+        layoutUserBtns.setWrap(true);
         String usrName = genericView.checkIfAuthUserName();
         if (usrName == null) {
-            layoutUserBtns.add(btnRegister);
+            layoutUserBtns.add(btnLogin,btnRegister);
         } else {
 
             mainImage.setHeight("16rem");
@@ -379,9 +353,9 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         verticalLayout.add(layoutLearningTopics);
 
 
-        Div layoutLearningGenres = loadLearningsAboutGenres(sqlLearningGenres, arrColLearningGenres);
+        //Div layoutLearningGenres = loadLearningsAboutGenres(sqlLearningGenres, arrColLearningGenres);
 
-        H2 titleLearnGenres = new H2("Learning Photo Genres");
+/*        H2 titleLearnGenres = new H2("Learning Photo Genres");
 
         HorizontalLayout layoutLearningsActionsGenres = new HorizontalLayout();
         layoutLearningsActionsGenres.addClassName("view-more");
@@ -392,20 +366,13 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
             );
         });
         layoutLearningsActionsGenres.add(btnMoreLearningGenres);
-        verticalLayout.add(titleLearnGenres, layoutLearningGenres, layoutLearningsActionsGenres);
+        verticalLayout.add(titleLearnGenres, layoutLearningGenres, layoutLearningsActionsGenres);*/
 
 
 //        H3 titleCarousel = new H3("10 Recently Uploaded Photos:");
 //        verticalLayout.add(titleCarousel, getCarousel(lstImage));
 
-        VerticalLayout layoutLastLearnings = new VerticalLayout();
-        layoutLastLearnings.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER, Padding.MEDIUM);
-        layoutLastLearnings.addClassName("page-section");
 
-        H2 titleLastLearnings = new H2("Last Posted Learnings");
-        Div divLastLearnings = loadLastLearnings(sqlLearningsRead, arrColumnsLearning);
-        layoutLastLearnings.add(titleLastLearnings, divLastLearnings);
-        verticalLayout.add(layoutLastLearnings);
 
         H2 titleGraphLastPhotos = new H2("Photo Uploads");
         HorizontalLayout layoutFilterUploadsPeriod = new HorizontalLayout();
@@ -431,30 +398,28 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         });
         btnGroupSelectPeriod.setValue("Last 10 Months");
 
-//        Button btnMonthly = new Button("Monthly");
-//        btnMonthly.addClickListener(clk -> {
-//            layoutGraph.removeAll();
-//            layoutGraph.add(loadGraphUploads(sqlUploadsGrouped + sqlGroupByMonthly + sqlUploadsGroupedOrderBy, arrColsUploadsGrouped, "month"));
-//
-//        });
-//        Button btnWeekly = new Button("Weekly");
-//        btnWeekly.addClickListener(clk -> {
-//            layoutGraph.removeAll();
-//            layoutGraph.add(loadGraphUploads(sqlUploadsGrouped + sqlGroupByWeekly + sqlUploadsGroupedOrderBy, arrColsUploadsGrouped, "week"));
-//        });
-
         layoutFilterUploadsPeriod.add(btnGroupSelectPeriod);
 
 
-        VerticalLayout layoutLastPhotoUploads = new VerticalLayout();
-        layoutLastPhotoUploads.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER, Padding.MEDIUM);
-        layoutLastPhotoUploads.addClassName("page-section");
+
+        VerticalLayout layoutLastLearnings = new VerticalLayout();
+        layoutLastLearnings.addClassName("page-section");
+        layoutLastLearnings.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER, Padding.MEDIUM);
+        H2 titleLastLearnings = new H2("Last Posted Learnings");
+        Div divLastLearnings = loadLastLearnings(sqlLearningsRead, arrColumnsLearning);
+        layoutLastLearnings.add(titleLastLearnings, divLastLearnings);
+        verticalLayout.add(layoutLastLearnings);
+
 
         H2 titleLastPhotos = new H2("Last Photos Uploaded");
         layoutLastPhotos.addClassNames(Overflow.HIDDEN, Width.FULL,
                 AlignItems.CENTER, JustifyContent.CENTER,
                 Margin.NONE, Padding.SMALL);
         layoutLastPhotos.addClassName("container-uploaded-lines");
+
+        VerticalLayout layoutLastPhotoUploads = new VerticalLayout();
+        layoutLastPhotoUploads.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER, Padding.MEDIUM);
+
 
         String finalSqlGalleryAll = sqlGalleryAll;
 
@@ -479,27 +444,6 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         });
         btnGroupShowPhotos.setValue("Last 5 Photos");
         layoutTabViewPhotos.add(btnGroupShowPhotos);
-
-//        Button btnPhotosA = new Button("Last 6");
-//        btnPhotosA.addClickListener(e -> {
-//            layoutLastPhotos.removeAll();
-//            layoutLastPhotos.add(loadUploadedPhotos(finalSqlGalleryAll + " LIMIT 6 OFFSET 0", arrColumnNamesGallery, false, false));
-//        });
-//        Button btnPhotosB = new Button("Last 7 - 12");
-//        btnPhotosB.addClickListener(e -> {
-//            layoutLastPhotos.removeAll();
-//            layoutLastPhotos.add(loadUploadedPhotos(finalSqlGalleryAll + " LIMIT 6 OFFSET 6", arrColumnNamesGallery, false, false));
-//
-//        });
-//        Button btnPhotosC = new Button("Last 13 - 18");
-//        btnPhotosC.addClickListener(e -> {
-//            layoutLastPhotos.removeAll();
-//            layoutLastPhotos.add(loadUploadedPhotos(finalSqlGalleryAll + " LIMIT 6 OFFSET 12", arrColumnNamesGallery, false, false));
-//        });
-//
-//        layoutPhotosButton.add(btnPhotosA, btnPhotosB, btnPhotosC);
-
-        //layoutLastPhotos.add(loadUploadedPhotos(sqlGalleryAll + " LIMIT 6 OFFSET 0 ", arrColumnNamesGallery, false, false));
 
         HorizontalLayout layoutMorePhotosActions = new HorizontalLayout();
         layoutMorePhotosActions.addClassName("view-more");
@@ -714,8 +658,6 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 //        String sqlRead = sqlLearningsRead + strWhereSubClause + sqlLearningsReadOrderBy;
 
 
-        VerticalLayout layoutWeather = new VerticalLayout();
-        layoutWeather.add(genericView.getWeatherApiCurrent(city, country));
 
 //        HorizontalLayout  layoutPhotos = getDestinationPhotos(city,4);
 
@@ -730,27 +672,25 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         logger.info("Current date: " + currentDate + " DAY " + currentDate.getDayOfWeek());
 
 
-        // Current date and time
-        LocalDateTime currentDateTime = LocalDateTime.now();
-        logger.info("Current date and time: " + currentDateTime);
 
-
-        Button btnNow = new Button("Now");
+        Button btnNow = new Button("Weather @ "+city);
         btnNow.setIcon(VaadinIcon.REFRESH.create());
         btnNow.addClickListener(event -> {
-            layoutWeather.removeAll();
-            VerticalLayout layout = genericView.getWeatherApiCurrent(city, country);
-            layoutWeather.add(layout);
+
+           Dialog dialog = getWeatherCurrent(city, country);
+           dialog.open();
+
         });
 
 
-        // add 300 Months to LocalDate
-        LocalDate dateTomorrow = currentDate.plusDays(1);
-        LocalDate datePlusTwo = currentDate.plusDays(2);
-        LocalDate datePlusThree = currentDate.plusDays(3);
-        LocalDate datePlusFour = currentDate.plusDays(4);
+//        // add 300 Months to LocalDate
+//        LocalDate dateTomorrow = currentDate.plusDays(1);
+//        LocalDate datePlusTwo = currentDate.plusDays(2);
+//        LocalDate datePlusThree = currentDate.plusDays(3);
+//        LocalDate datePlusFour = currentDate.plusDays(4);
 
 
+/*
         Button btnToday = new Button(currentDate.getDayOfWeek().name());
         btnToday.addClickListener(event -> {
             layoutWeather.removeAll();
@@ -780,16 +720,70 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         });
 
         Button btnDayPlusFour = new Button(datePlusFour.getDayOfWeek().name());
+*/
 
 
         Button btnSaturday = new Button();
         Button btnSunday = new Button();
         layoutButtons.add(btnNow); //, btnToday, btnTomorrow, btnDayPlusTwo, btnDayPlusThree, btnDayPlusFour);
 
-        layoutResults.add(layoutButtons, layoutWeather);
+        layoutResults.add(layoutButtons);
 
         return layoutResults;
     }
+
+    public Dialog getWeatherCurrent(String destination, String country) {
+
+
+        Dialog dialog = new Dialog();
+        dialog.setDraggable(true);
+        dialog.setCloseOnOutsideClick(true);
+        dialog.setCloseOnEsc(true);
+
+        HorizontalLayout layoutWeather = new HorizontalLayout();
+        layoutWeather.getStyle().setColor("#8b94a0");
+        layoutWeather.addClassNames(
+                LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER
+        );
+
+
+        LocalWeatherForecast weatherForecast = new LocalWeatherForecast(weatherService, destination, country);
+        weatherForecast.setMaxWidth("900px");
+
+        layoutWeather.add(weatherForecast);
+
+
+
+        if (destination != null && !destination.isEmpty()) {
+
+
+
+            VerticalLayout layout = new VerticalLayout();
+            layout.setMargin(false);
+            layout.setSpacing(false);
+            layout.setPadding(false);
+            layout.addClassNames(LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER);
+
+
+            Anchor apiLink = new Anchor();
+            apiLink.getStyle().setColor("#8b94a0");
+            apiLink.setClassName("lazy-api-link");
+//            apiLink.setHref(weatherService.getUrlReference());
+//            apiLink.setTarget("_blank");
+//            apiLink.setText("Weather data by: " + weatherService.getTitleReference());
+
+            layout.add(layoutWeather, apiLink);
+            dialog.add(layout);
+            return dialog;
+        } else {
+            VerticalLayout layout = new VerticalLayout();
+            layout.setMargin(false);
+            layout.setSpacing(false);
+            layout.setPadding(false);
+            return null;
+        }
+    }
+
 
     private Div loadLastLearnings(String sqlRead, String[] arrColumnNames) {
 
@@ -923,7 +917,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
             Div divLocation = new Div("photo shoot at");
             divLocation.addClassNames(FontSize.XSMALL);
 
-            Image imgAvatarMedium = genericView.getAvatarImage(strAvatarPath, strName + " " + strSurname, "70px", "70px");
+            Image imgAvatarMedium = genericView.getAvatarThumbImage(strAvatarPath, strName + " " + strSurname, "70px", "70px");
             AvatarItem avatarLargeItemMe = new AvatarItem(strName + " " + strSurname, "@" + strUsername, imgAvatarMedium);
 
 //            Avatar userAvatar = new Avatar(strUploader);
@@ -1282,15 +1276,6 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
         String strCityName = record.getColumnData("city_name");
         String strUploader = record.getColumnData("uploader");
-
-//        RouteParam routeUploader = new RouteParam("member", strUploader);
-//        RouterLink linkUploader = new RouterLink(strUploader, GalleryView.class,new RouteParameters(routeUploader));
-//
-//        RouteParam routeDestination = new RouteParam("destination", strCityName);
-//        RouterLink linkDestination = new RouterLink(strCityName, GalleryView.class,new RouteParameters(routeDestination));
-//
-//        ArrayList<RouterLink> lstRouterLinks =new ArrayList<>();
-//        lstRouterLinks.add(linkDestination);
 
         if (strTitle == null || strTitle.isEmpty()) {
             strTitle = "image";
@@ -1699,13 +1684,23 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
         layoutTabsInfo.add(btnGroup, divTabContent);
 
-
         return layoutTabsInfo;
+    }
+
+    private void displayLoginDialog(){
+
+        LoginDialog loginDialog = new LoginDialog();
+
+        loginDialog.getLoginForm().setAction("login");
+        loginDialog.open();
+
     }
 
 
     private void displayRegisterDialog() {
-        DialogRegistration dialogRegister = new DialogRegistration(isMobile, "", sessionCreation, hostname, publicIp, recordService,
+//        DialogRegistration dialogRegister = new DialogRegistration(isMobile, "", sessionCreation, hostname, publicIp, recordService,
+//                section, "register-from-home-view", emailSendService);
+        RegistrationDialog dialogRegister = new RegistrationDialog(isMobile, "", sessionCreation, hostname, publicIp, recordService,
                 section, "register-from-home-view", emailSendService);
         dialogRegister.open();
     }

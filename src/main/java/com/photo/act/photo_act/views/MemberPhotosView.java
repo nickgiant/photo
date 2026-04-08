@@ -4,6 +4,9 @@ import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.services.EmailSendService;
+import com.photo.act.photo_act.services.ShareMetricService;
+import com.photo.act.photo_act.services.ShareService;
+import com.photo.act.photo_act.services.WeatherService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.photo.act.photo_act.views.components.GalleryImageViewCard;
@@ -130,6 +133,9 @@ public class MemberPhotosView extends Main implements HasUrlParameter<String>, B
     private String localeName;
     private String forMemberName;
     private RecordService recordService;
+    private ShareService shareService;
+    private ShareMetricService shareMetricService;
+    private WeatherService weatherService;
     private String strHeader;
 
 //    private String[] arrColumnMemberGalleryCount = {"countOfMemberPhotos"
@@ -169,7 +175,7 @@ public class MemberPhotosView extends Main implements HasUrlParameter<String>, B
             , "space_size", "space_size_medium", "space_size_thumb", "meta_camera_make", "meta_camera_model", "meta_lens_make", "meta_lens_model"
             , "meta_focal_length", "meta_focal_length_ff", "meta_iso", "meta_aperture", "meta_shutter_speed", "meta_orientation"
             , "location_by_user", "location_area", "location_country_code", "location_lat", "location_lon", "date_inserted"
-            , "destination_id", "subject_id", "user_rights_id"
+            , "genre_id", "destination_id", "subject_id", "user_rights_id"
             , "city_name"
             , "subject_name", "subject_description", "subject_type"
             , "username", "surname", "name", "resident", "date_joined", "avatar_path"
@@ -178,7 +184,7 @@ public class MemberPhotosView extends Main implements HasUrlParameter<String>, B
             " SELECT pm.id, pm.name_new, pm.title, pm.subtitle, pm.photo_type, pm.uploader, pm.creator, pm.visible_to,  DATE_FORMAT(pm.meta_date, '%W %D %M %Y %H:%i %p') AS meta_date, " +
                     "DATE_FORMAT(pm.meta_date, '%M %Y') AS photo_date, DATE_FORMAT(pm.meta_date, '%d/%m/%Y - %H:%i:%S') AS photo_time_shot,  pm.space_size, pm.space_size_medium, pm.space_size_thumb, pm.meta_camera_make, pm.meta_camera_model, pm.meta_lens_make, pm.meta_lens_model,  pm.meta_focal_length, pm.meta_focal_length_ff, pm.meta_iso, meta_aperture,  meta_shutter_speed, meta_orientation  , pm.location_by_user, pm.location_area, pm.location_country_code, pm.location_lat, pm.location_lon " +
                     " , DATE_FORMAT(pm.date_inserted, '%d/%m/%Y - %H:%i:%S') AS date_inserted " +
-                    " , pm.destination_id, pm.subject_id, user_rights_id " +
+                    " , pm.genre_id, pm.destination_id, pm.subject_id, user_rights_id " +
                     " , usr.username, usr.surname, usr.name, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined, usr.avatar_path " +
                     " FROM dbuser usr, photo_meta pm " +
                     " WHERE pm.uploaderId = usr.userId AND pm.visible_to = 'ALL' ";
@@ -214,11 +220,15 @@ public class MemberPhotosView extends Main implements HasUrlParameter<String>, B
     private GenericView genericView;
     private EmailSendService emailSendService;
 
+
     private ListBox<String> listBoxAlbums;
 
-    public MemberPhotosView(RecordService recordService, EmailSendService emailSendService) {
+    public MemberPhotosView(RecordService recordService, EmailSendService emailSendService, ShareService shareService, ShareMetricService shareMetricService, WeatherService weatherService) {
         this.recordService = recordService;
         this.emailSendService = emailSendService;
+        this.shareService = shareService;
+        this.shareMetricService = shareMetricService;
+        this.weatherService = weatherService;
 
         utilsDate = new UtilsDate();
         genericView = new GenericView(recordService);
@@ -249,7 +259,7 @@ public class MemberPhotosView extends Main implements HasUrlParameter<String>, B
         verticalLayout.removeAll();
 
 
-        verticalLayout.add(loadHeader("My Photos", "Manage info about my photos", ""));
+        verticalLayout.add(loadHeader("My Photos", "Manage my photos", ""));
 
 
         String sqlMembers = sqlMemberCountPhotos + " " + sqlMemberPhotosGroupBy;
@@ -349,6 +359,7 @@ public class MemberPhotosView extends Main implements HasUrlParameter<String>, B
                     AlignItems.CENTER, JustifyContent.CENTER
             );
         }
+
         this.setWidthFull();
 
     }
@@ -706,7 +717,7 @@ public class MemberPhotosView extends Main implements HasUrlParameter<String>, B
 //                divBio.setVisible(false);
             }
 
-            Image imgAvatar = genericView.getAvatarImage(strAvatarPath, strMember, "150px", "150px");
+            Image imgAvatar = genericView.getAvatarThumbImage(strAvatarPath, strMember, "150px", "150px");
 //            Image imgAvatar = getAvatarImage(strAvatarPath, strNameOfUser, "120px", "120px");
 
             H3 objName = new H3(strName + " " + strSurname);
@@ -763,7 +774,7 @@ public class MemberPhotosView extends Main implements HasUrlParameter<String>, B
         boolean isEditable = true;
 
         GalleryImageViewCard imageGalleryViewCard = new GalleryImageViewCard(record, strImagePath, isMobile, intUserId, strMember, sessionCreation, hostname, publicIp, isEditable,
-                recordService, isType, sqlReadGallery, sqlMemberPhotosOrderby, arrColumnNamesGallery);
+                recordService, isType, sqlReadGallery, sqlMemberPhotosOrderby, arrColumnNamesGallery,shareService, shareMetricService, weatherService);
 
         imageGalleryViewCard.addClassName("image-to-show");
         imageGalleryViewCard.getStyle().setOpacity("1");
@@ -788,6 +799,7 @@ public class MemberPhotosView extends Main implements HasUrlParameter<String>, B
                 Background.CONTRAST_5, BorderRadius.LARGE);
         layoutAlbumsPanel.setMinWidth("380px");
         layoutAlbumsPanel.setMaxWidth("420px");
+        layoutAlbumsPanel.setMaxHeight("600px");
 
         Div divAlbumsCaption = new Div("Albums");
         divAlbumsCaption.addClassNames(TextAlignment.CENTER);
@@ -796,8 +808,9 @@ public class MemberPhotosView extends Main implements HasUrlParameter<String>, B
         layoutControls.addClassNames(AlignItems.CENTER, JustifyContent.CENTER);
 
 
-        listBoxAlbums.addClassNames(Background.BASE, BorderRadius.SMALL);
+        listBoxAlbums.addClassNames(Background.BASE, BorderRadius.SMALL, Height.FULL, Overflow.SCROLL);
         listBoxAlbums.setWidthFull();
+        listBoxAlbums.setHeightFull();
         listBoxAlbums.setMinHeight("250px");
         listBoxAlbums.setItems(lstAlbumTitle);
         if (!lstAlbumTitle.isEmpty()) {
@@ -1229,7 +1242,7 @@ public class MemberPhotosView extends Main implements HasUrlParameter<String>, B
             String strAvatarPath = rec.getColumnData("avatar_path");
 
 
-            Image imgAvatar = genericView.getAvatarImage(strAvatarPath, strNameOfUser, "130px", "130px");
+            Image imgAvatar = genericView.getAvatarThumbImage(strAvatarPath, strNameOfUser, "130px", "130px");
 
             H3 objMember = new H3(strNameOfUser);
             Div divMemberSince = new Div("Member since " + strMemberSince);
@@ -1380,7 +1393,7 @@ public class MemberPhotosView extends Main implements HasUrlParameter<String>, B
 //                divBio.setVisible(false);
                 }
 
-                Image imgAvatar = genericView.getAvatarImage(strAvatarPath, strUsername, "150px", "150px");
+                Image imgAvatar = genericView.getAvatarThumbImage(strAvatarPath, strUsername, "150px", "150px");
 //            Image imgAvatar = getAvatarImage(strAvatarPath, strNameOfUser, "120px", "120px");
 
                 H3 objName = new H3(strName + " " + strSurname);

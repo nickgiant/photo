@@ -182,7 +182,7 @@ public class StoryView extends Main implements HasUrlParameter<String>, BeforeEn
             verticalLayout.add(loadStoryItemsFromDb(sqlGalleryAll, arrColumnNamesGallery, false));
         } else if (strMember.equalsIgnoreCase(STR_ALL_MEMBERS) && !strTitle.equalsIgnoreCase(STR_ALL_TITLES)) {
             verticalLayout.add(loadHeader("Story", "", strTitle));
-            verticalLayout.add(loadWeather(strTitle, ""));
+//            verticalLayout.add(loadWeather(strTitle, ""));
 
 
             String sqlGalleryAll = sqlReadGallery + " AND pm.visible_to = 'ALL' ";
@@ -196,7 +196,7 @@ public class StoryView extends Main implements HasUrlParameter<String>, BeforeEn
             verticalLayout.add(loadStoryItemsFromDb(sqlGalleryAll, arrColumnNamesGallery, false));
         } else if (!strMember.equalsIgnoreCase(STR_ALL_MEMBERS)) {
             verticalLayout.add(loadHeader("My Story", "and how to manage them.", ""));
-            verticalLayout.add(loadWeather(strTitle, ""));
+//            verticalLayout.add(loadWeather(strTitle, ""));
             String sqlGalleryUser = sqlReadGallery +
                     " AND pm.visible_to = 'ALL' AND pm.uploader LIKE '" + strMember + "' " +
                     " ORDER BY pm.date_inserted DESC, meta_date DESC";
@@ -723,7 +723,7 @@ public class StoryView extends Main implements HasUrlParameter<String>, BeforeEn
         return recordService.findAll(sql, arrColumnNames, sqlParValue, sqlParType);
     }
 
-    private VerticalLayout loadWeather(String city, String country) {
+    /*private VerticalLayout loadWeather(String city, String country) {
 
 //        String strWhereSubClause ="";
 //
@@ -738,7 +738,7 @@ public class StoryView extends Main implements HasUrlParameter<String>, BeforeEn
 //        String sqlRead = sqlLearningsRead + strWhereSubClause + sqlLearningsReadOrderBy;
 
 
-        VerticalLayout layoutWeather = genericView.getWeatherCurrent(city, country);
+        VerticalLayout layoutWeather = getWeatherCurrent(city, country);
 
 //        HorizontalLayout  layoutPhotos = getDestinationPhotos(city,4);
 
@@ -746,7 +746,7 @@ public class StoryView extends Main implements HasUrlParameter<String>, BeforeEn
         layoutResults.add(layoutWeather);
 
         return layoutResults;
-    }
+    }*/
 
 
     private void logVisitorToDb() {

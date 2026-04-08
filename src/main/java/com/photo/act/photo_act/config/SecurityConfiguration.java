@@ -49,6 +49,22 @@ public class SecurityConfiguration {
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
+        // Permit public paths (OG bot controller, static assets, actuator)
+        http.authorizeHttpRequests(auth -> auth
+                .requestMatchers(
+                        "/og/**",           // OG Thymeleaf bot pages
+                        "/static/**",       // static images, favicon
+                        "/uploads/**",      // media files
+                        "/actuator/health", // load balancer health check
+                        "/og/ping",
+                        "/admin/cache/**"
+                ).permitAll()
+        );
+
+        // VaadinSecurityConfigurer handles:
+        //   - CSRF exemption for /UIDL/, /HEARTBEAT/, /PUSH/ (the key fix)
+        //   - ViewAccessChecker for @PermitAll / @RolesAllowed on views
+        //   - Proper logout handling
         // Configure Vaadin's security using VaadinSecurityConfigurer
         http.with(VaadinSecurityConfigurer.vaadin(), configurer -> {
             configurer.loginView(LoginView.class);

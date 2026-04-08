@@ -4,6 +4,9 @@ import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.services.EmailSendService;
+import com.photo.act.photo_act.services.ShareMetricService;
+import com.photo.act.photo_act.services.ShareService;
+import com.photo.act.photo_act.services.WeatherService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.photo.act.photo_act.views.components.DialogRegistration;
@@ -42,11 +45,11 @@ import static com.photo.act.photo_act.views.MainLayout.*;
 //@RouteAlias(value = "members/name/:member?", layout = MainLayout.class)
 //@RouteAlias(value = ":section/:member?", layout = MainLayout.class)
 //@Menu(order = 0, icon = "line-awesome/svg/th-list-solid.svg")
-public class MembersView extends Main implements HasUrlParameter<String>, BeforeEnterObserver, HasComponents, HasDynamicTitle, HasStyle {
+public class UploadView extends Main implements HasUrlParameter<String>, BeforeEnterObserver, HasComponents, HasDynamicTitle, HasStyle {
 
     private String strColorOfIcons = "#a62f03"; //"#f9943b";//"#a62c5c";//"#7d1e32";
 
-    private static final Logger logger = LoggerFactory.getLogger(MembersView.class);
+    private static final Logger logger = LoggerFactory.getLogger(UploadView.class);
 
 
     private VerticalLayout verticalLayout;
@@ -60,6 +63,8 @@ public class MembersView extends Main implements HasUrlParameter<String>, Before
     String[] arrColumnsMemberExists = {"userId", "username", "username", "resident", "date_joined", "member_since", "avatar_path"};
     private String forMemberName;
     private RecordService recordService;
+    private ShareService shareService;
+    private ShareMetricService shareMetricService;
     private String strHeader;
 
     private String dirChar = FileSystems.getDefault().getSeparator();
@@ -194,18 +199,20 @@ public class MembersView extends Main implements HasUrlParameter<String>, Before
     private String strBrowser;
     private GenericView genericView;
     private EmailSendService emailSendService;
+    private WeatherService weatherService;
 
-    public MembersView(RecordService recordService, EmailSendService emailSendService) {
+    public UploadView(RecordService recordService, EmailSendService emailSendService, ShareService shareService, ShareMetricService shareMetricService, WeatherService weatherService) {
         this.recordService = recordService;
         this.emailSendService = emailSendService;
+        this.shareService = shareService;
+        this.shareMetricService = shareMetricService;
+        this.weatherService = weatherService;
 
         utilsDate = new UtilsDate();
         genericView = new GenericView(recordService);
 
         constructUI();
-
     }
-
 
     @Override
     public String getPageTitle() {
@@ -224,15 +231,10 @@ public class MembersView extends Main implements HasUrlParameter<String>, Before
             strUrlRequestToBeLogged = currentUrl.toExternalForm();
         });
 
-
         verticalLayout.removeAll();
-
-
         verticalLayout.add(loadHeader("Member Upload", "Upload photos", ""));
 
-
         String sqlMembers = sqlMemberCountPhotos + " " + sqlMemberPhotosGroupBy;
-        //       verticalLayout.add(getMembersPanels(sqlMembers, arrColumnsMemberPhotos, false));
 
         String usrName = genericView.checkIfAuthUserName();
         strMember = usrName;
@@ -242,17 +244,14 @@ public class MembersView extends Main implements HasUrlParameter<String>, Before
 //        sqlMemberGallery = "( " + sqlMemberGallery1 + "  AND usr.username = '" + strMember + "' " + sqlMemberGallery1OrderBy +
 //                ") UNION (" + sqlMemberGallery2 + "  AND usr.username = '" + strMember + "' " + sqlMemberGallery2OrderBy + " ) ";
 
-
         verticalLayout.add(loadMemberInfo(sqlMemberMe, arrColumnsMember, false));
         loadUploadView(intUserId, strMember);
-
 
         this.removeAll();
         this.add(verticalLayout);
         this.add(genericView.loadFooter(isMobile));
 
         logVisitorToDb("");
-
     }
 
     @Override
@@ -467,7 +466,7 @@ public class MembersView extends Main implements HasUrlParameter<String>, Before
             String strFlickr = rec.getColumnData("url_flickr");
             String strWebsite = rec.getColumnData("url_website");
 
-            Image imgAvatar = genericView.getAvatarImage(strAvatarPath, strMember, "150px", "150px");
+            Image imgAvatar = genericView.getAvatarThumbImage(strAvatarPath, strMember, "150px", "150px");
 //            Image imgAvatar = getAvatarImage(strAvatarPath, strNameOfUser, "120px", "120px");
 
             H3 objName = new H3(strName + " " + strSurname);
@@ -523,7 +522,7 @@ public class MembersView extends Main implements HasUrlParameter<String>, Before
         boolean isEditable = true;
 
         GalleryImageViewCard imageGalleryViewCard = new GalleryImageViewCard(record, strImagePath, isMobile, intUserId, strMember, sessionCreation, hostname, publicIp, isEditable,
-                recordService, isType, sqlReadGallery, sqlMemberPhotosOrderby, arrColumnNamesGallery);
+                recordService, isType, sqlReadGallery, sqlMemberPhotosOrderby, arrColumnNamesGallery,shareService,  shareMetricService, weatherService );
         return imageGalleryViewCard;
     }
 
@@ -648,7 +647,7 @@ public class MembersView extends Main implements HasUrlParameter<String>, Before
             String strAvatarPath = rec.getColumnData("avatar_path");
 
 
-            Image imgAvatar = genericView.getAvatarImage(strAvatarPath, strNameOfUser, "130px", "130px");
+            Image imgAvatar = genericView.getAvatarThumbImage(strAvatarPath, strNameOfUser, "130px", "130px");
 
             H3 objMember = new H3(strNameOfUser);
             Div divMemberSince = new Div("Member since " + strMemberSince);
@@ -799,7 +798,7 @@ public class MembersView extends Main implements HasUrlParameter<String>, Before
 //                divBio.setVisible(false);
                 }
 
-                Image imgAvatar = genericView.getAvatarImage(strAvatarPath, strUsername, "150px", "150px");
+                Image imgAvatar = genericView.getAvatarThumbImage(strAvatarPath, strUsername, "150px", "150px");
 //            Image imgAvatar = getAvatarImage(strAvatarPath, strNameOfUser, "120px", "120px");
 
                 H3 objName = new H3(strName + " " + strSurname);

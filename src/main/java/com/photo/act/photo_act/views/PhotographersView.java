@@ -9,6 +9,7 @@ import com.photo.act.photo_act.services.ImageService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.photo.act.photo_act.utils.UtilsString;
+import com.photo.act.photo_act.views.components.AvatarItem;
 import com.photo.act.photo_act.views.components.DialogMessage;
 import com.photo.act.photo_act.views.components.GenericView;
 import com.photo.act.photo_act.views.components.UploadImageCard;
@@ -28,6 +29,7 @@ import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.tabs.TabSheetVariant;
@@ -42,7 +44,7 @@ import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.server.streams.DownloadHandler;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import com.vaadin.flow.theme.lumo.LumoUtility.*;
-import org.imgscalr.Scalr;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,10 +52,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.FileSystems;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -112,21 +118,12 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
             " FROM destination d " +
             " GROUP BY country " +
             " ORDER BY country ASC ";
-    String[] arrColumnsMemberPhotos = {"photo_count", "photo_size",
-            "userId", "username", "name", "surname", "resident", "resident_country", "date_joined", "member_since", "avatar_path",
-            "short_bio", "url_fb", "url_yt", "url_insta", "url_flickr", "url_website"
-    };
-    String sqlMemberPhotos = "SELECT count(pm.id) AS photo_count, SUM(pm.space_size) AS photo_size " +
-            " ,  usr.userId, usr.username, usr.resident, usr.resident_country, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined,  DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since " +
-            " , usr.avatar_path, usr.name, usr.surname " +
-            " , usr.short_bio, usr.url_fb, usr.url_yt, usr.url_insta, usr.url_flickr, usr.url_website " +
-            //     "--  , pa.inc, pm.title, pm.id, pm.name_new, pm.title, pm.subtitle, pm.space_size, pm.location_by_user\\n\" +\n" +
-            " FROM dbuser usr LEFT JOIN photo_meta pm ON pm.uploaderId = usr.userId " +
-            " WHERE 1 = 1  " +
-            " AND pm.visible_to  = 'ALL' ";
-    String sqlMemberPhotosGroupBy =
-            " GROUP BY usr.userid " +
-                    " ORDER BY usr.username ASC ";
+
+
+
+
+
+
     private String strColorOfIcons = "#a62f03"; //"#f9943b";//"#a62c5c";//"#7d1e32";
     private VerticalLayout verticalLayout;
     private String sessionid;
@@ -159,18 +156,22 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
     private String sqlShowClubsOrder = " ORDER BY o.city ASC, o.org_name ASC";
 
 
-    private String[] arrColumnNamesGallery = {"name_new", "title", "subtitle", "photo_type", "uploader", "city_name", "meta_date"
-            , "space_size", "space_size_medium", "space_size_thumb", "meta_camera_make", "meta_camera_model", "meta_lens_make", "meta_lens_model"
-            , "meta_focal_length", "meta_focal_length_ff", "meta_iso"
-            , "location_by_user", "location_area", "location_country_code", "location_lat", "location_lon"
-            , "date_inserted"};
 
-    private String sqlReadGallery = "SELECT pm.name_new, pm.title, pm.subtitle, pm.photo_type, pm.uploader, d.city_name, DATE_FORMAT(pm.meta_date, '%W %D %M %Y %H:%i %p') AS meta_date, " +
-            " pm.space_size, pm.space_size_medium, pm.space_size_thumb, pm.meta_camera_make, pm.meta_camera_model, pm.meta_lens_make, pm.meta_lens_model, " +
-            " pm.meta_focal_length, pm.meta_focal_length_ff, pm.meta_iso, " +
-            "  pm.location_by_user, pm.location_area, pm.location_country_code, pm.location_lat, pm.location_lon " +
-            //, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description, DATE_FORMAT(f.dateInsert , '%D %M %Y') AS formatedDateUpdated  " +
-            " FROM  photo_meta pm LEFT JOIN destination d ON pm.destination_Id = d.id ";
+
+
+    String[] arrColumnNamesGallery = {"name_org", "name_new", "title", "subtitle", "photo_type", "uploader", "uploaderId", "photo_type", "contains",
+            "space_size", "space_size_medium", "space_size_thumb", "city_name", "meta_date", "date_inserted",
+            "username", "name", "surname", "avatar_path", "member_since"
+    };
+
+    String sqlReadGallery = "SELECT pm.name_org, pm.name_new, pm.title, pm.subtitle, pm.photo_type, pm.uploader, pm.uploaderId, pm.photo_type, pm.contains_tags, " +
+            " pm.space_size, pm.space_size_medium, pm.space_size_thumb,  d.city_name, DATE_FORMAT(pm.meta_date, '%W %D %M %Y %H:%i %p') AS meta_date " +
+            " , getDateDiffFromNow(pm.date_inserted) AS date_inserted " +
+            " , usr.username, usr.name, usr.surname, usr.avatar_path, DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since " +
+            " FROM dbuser usr, photo_meta pm LEFT JOIN destination d ON pm.destination_Id = d.id " +
+            " WHERE pm.visible_to = 'ALL' " +
+            " AND usr.userId = pm.uploaderId";
+    String sqlGalleryOrderBy = " ORDER BY pm.date_inserted DESC, pm.title ASC, pm.meta_date DESC, pm.name_new ASC ";
 
 
     private UtilsDate utilsDate;
@@ -239,19 +240,11 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
             verticalLayout.add(loadMembersProfiles(sqlMembers + sqlMembersOrderBy, arrColumnsMembers, false));
         }
 
-
-        //VerticalLayout layoutTabs = loadMemberInfoTabs(sqlMember, arrColumnsMember);
-
-
-        // verticalLayout.add(layoutTabs);
-
-
         this.removeAll();
         this.add(verticalLayout);
         this.add(genericView.loadFooter(isMobile));
 
         logVisitorToDb("");
-
     }
 
     @Override
@@ -838,94 +831,144 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
     }
 
 
-    private void reCompressPhotos(int sizeType, String intStart, String intFinish) {
-
-        String sqlReadPhotos = "SELECT name_new FROM photo_meta WHERE id >= " + intStart + " AND id <= " + intFinish + " ORDER BY id ASC ";
-        String[] arrColumns = {"name_new"};
-        List<Record> lstPhotoFilenames = recordService.findAll(sqlReadPhotos, arrColumns);
-
-        Notification notificationStart = Notification.show(
-                lstPhotoFilenames.size() + " Photos:",
-                5000,
-                Notification.Position.MIDDLE
-        );
-        notificationStart.addThemeVariants(NotificationVariant.LUMO_CONTRAST);
-
-        for (int r = 0; r < lstPhotoFilenames.size(); r++) {
-
-            String strNewFileName = lstPhotoFilenames.get(r).getColumnData("name_new");
-
-            String strPathUpload = DIR_PHOTOS_SERVER + dirChar + subPathUpload;
-            String outputUploadFileName = strPathUpload + dirChar + strNewFileName;
-            File fileUploaded = new File(outputUploadFileName);
-
-            String strPathShow = DIR_PHOTOS_SERVER + dirChar + subPathShow;
-            String outputShowFileName = strPathShow + dirChar + strNewFileName;
-            File directoryShow = new File(strPathShow);
-            File fileShow = new File(outputShowFileName);
+    private Div loadUploadedPhotos(String sqlRead, String[] arrColumnNames, boolean isEditable, boolean isThumbnails) {
 
 
-//            String strPathMedium = DIR_PHOTOS_SERVER + dirChar + subPathMedium;
-//            String outputMediumFileName = strPathMedium + dirChar + strNewFileName;
-//            File fileMedium = new File(outputMediumFileName);
-//
-//            String strPathSmall = DIR_PHOTOS_SERVER + dirChar + subPathSmall;
-//            String outputSmallFileName = strPathSmall + dirChar + strNewFileName;
-//            File fileSmall = new File(outputSmallFileName);
-
-
-            try {
-                //    FileUtils.copyFileToDirectory(fileUploaded, directoryShow);
-
-
-                int intSize = 140;
-                String strSubPath = subPathThumbs;
-                if (sizeType == 1) {
-                    intSize = 140;
-                    strSubPath = subPathThumbs;
-                } else if (sizeType == 2) {
-                    intSize = 660;
-                    strSubPath = subPathSmall;
-                } else if (sizeType == 3) {
-                    intSize = 1040;
-                    strSubPath = subPathMedium;
-                } else if (sizeType == 4) {
-                    intSize = 1990;
-                    strSubPath = subPathLarge;
-                }
-
-                String strPathThumbs = DIR_PHOTOS_SERVER + dirChar + strSubPath;
-                logger.info(r + "   path to compress from: " + fileShow.getAbsolutePath());
-                logger.info("path to compress   to:   " + strPathThumbs);
-                String outputThumbsFileName = strPathThumbs + dirChar + strNewFileName;
-                File fileThumbs = new File(outputThumbsFileName);
-
-                BufferedImage bImageT = ImageIO.read(fileShow);
-                BufferedImage bufferedThumb = Scalr.resize(bImageT, Scalr.Method.QUALITY, Scalr.Mode.AUTOMATIC, intSize, Scalr.OP_ANTIALIAS);   //  Imgscalr    https://www.baeldung.com/java-resize-image
-                ImageIO.write(bufferedThumb, "jpg", fileThumbs);
-
-                logger.info("photo copy size: " + fileShow.length() + "  - > " + fileThumbs.length()); // + "  - >  " + fileMedium.length());
-                logger.info("photo copy size MB: " + getFileSizeAsString(fileShow) + "  - >   " + getFileSizeAsString(fileThumbs));
-
-            } catch (IOException e) {
-
-                String errorMessage = "reCompress failed: " + e.getMessage();
-
-                Notification notification = Notification.show(
-                        errorMessage,
-                        5000,
-                        Notification.Position.MIDDLE
-                );
-                notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
-            }
+        strPath = DIR_PHOTOS_SERVER + dirChar;
+        String strPath;
+        if (!isThumbnails) {
+            strPath = DIR_PHOTOS_SERVER + dirChar + subPathMedium;
+        } else {
+            strPath = DIR_PHOTOS_SERVER + dirChar + subPathSmall;
         }
+
+//
+//        Div layoutLastPhotos = new Div();
+//        layoutLastPhotos.addClassNames(Overflow.HIDDEN,
+//                AlignItems.CENTER, JustifyContent.CENTER,
+//                Margin.NONE, Padding.MEDIUM);
+/*                Width.FULL, AlignItems.CENTER, JustifyContent.CENTER,
+                Margin.Horizontal.XLARGE, Margin.Vertical.SMALL,
+                Padding.Horizontal.XLARGE, Padding.Vertical.SMALL,
+                Gap.LARGE);*/
+
+
+        List<Record> lstRecords = getRecordsFromDb(sqlRead, arrColumnNames);
+        Div layoutPhotoUploaded = new Div(); //[lstRecords.size()];
+        if(isThumbnails) {
+            layoutPhotoUploaded.addClassName("photographer-profile-thumb-photo-container");
+        }else{
+            layoutPhotoUploaded.addClassName("photographer-profile-photo-container");
+        }
+
+        for (int r = 0; r < lstRecords.size(); r++) {
+
+            Div layoutPhotoUploadedPanel = new Div();
+            layoutPhotoUploadedPanel.addClassNames(
+                    AlignItems.CENTER, JustifyContent.CENTER,
+                   Margin.NONE, Padding.XSMALL,
+                    Gap.MEDIUM,
+                    TextColor.TERTIARY
+            );
+            layoutPhotoUploadedPanel.addClassName("photographer-profile-photo");
+
+            Record record = lstRecords.get(r);
+            String strFileName = record.getColumnData("name_new");
+            String strTitle = record.getColumnData("title");
+            String strSubTitle = record.getColumnData("subtitle");
+            String strPhotoType = record.getColumnData("photo_type");
+
+            String strCityName = record.getColumnData("city_name");
+            String strUploader = record.getColumnData("uploader");
+            String strDateUploaded = record.getColumnData("date_inserted");
+
+            String strUsername = record.getColumnData("username");
+            String strName = record.getColumnData("name");
+            String strSurname = record.getColumnData("surname");
+            String strAvatarPath = record.getColumnData("avatar_path");
+            String strMemberSince = record.getColumnData("member_since");
+
+            Image image = getImageThumbFromDb(record, strPath);
+            image.setWidthFull();
+            image.setHeightFull();
+/*            image.getStyle().setWidth("auto");
+            image.getStyle().setMaxHeight("200px");*/
+            image.addClassNames(BorderRadius.SMALL);
+
+            Icon iconLocation = VaadinIcon.LOCATION_ARROW_CIRCLE_O.create();
+            iconLocation.getStyle().set("padding", "var(--lumo-space-xs)");
+            if (strCityName == null || strCityName.trim().equalsIgnoreCase("") || strCityName.trim().equalsIgnoreCase("null") || strCityName.isEmpty()) {
+                strCityName = "not defined";
+            }
+
+            Span badgeLocation = new Span(iconLocation, new Span(strCityName));
+            // badgeLocation.getElement().setAttribute("theme", "badge");
+            badgeLocation.getElement().getThemeList().add("badge contrast");
+
+            Div divUploadedAt = new Div("uploaded");
+            divUploadedAt.addClassNames(FontSize.XSMALL);
+/*            Div divLocation = new Div("photo shoot at");
+            divLocation.addClassNames(FontSize.XSMALL);*/
+
+//            Image imgAvatarMedium = genericView.getAvatarThumbImage(strAvatarPath, strName + " " + strSurname, "70px", "70px");
+//            AvatarItem avatarLargeItemMe = new AvatarItem(strName + " " + strSurname, "@" + strUsername, imgAvatarMedium);
+
+            Icon iconDateTime = VaadinIcon.CALENDAR_CLOCK.create();
+            iconDateTime.getStyle().set("padding", "var(--lumo-space-xs)");
+            Span badgeDateTime = new Span(iconDateTime, new Span(strDateUploaded));
+            if (strDateUploaded.trim().isEmpty() || strDateUploaded.equalsIgnoreCase("null")) {
+                badgeDateTime.setText("");
+                badgeDateTime.setVisible(false);
+            }
+            badgeDateTime.getElement().getThemeList().add("badge contrast");
+
+//            VerticalLayout layoutMemberUp = new VerticalLayout();
+//            layoutMemberUp.addClassNames(AlignItems.CENTER, JustifyContent.CENTER, Margin.NONE, Padding.SMALL);
+//            layoutMemberUp.add(avatarLargeItemMe);
+
+            VerticalLayout layoutDateLocationUp = new VerticalLayout();
+            layoutDateLocationUp.addClassNames(AlignItems.END, JustifyContent.CENTER, Margin.NONE, Padding.XSMALL, Gap.XSMALL);
+            layoutDateLocationUp.add(divUploadedAt, badgeDateTime);
+
+            layoutPhotoUploadedPanel.add(image, layoutDateLocationUp);
+
+            layoutPhotoUploadedPanel.getStyle().setOpacity("1");
+            layoutPhotoUploaded.add(layoutPhotoUploadedPanel);
+        }
+        return layoutPhotoUploaded;
     }
 
-    private void reUpdateMyPhotoMetadata(int intUserId) {
 
+    private Image getImageThumbFromDb(Record record, String strPathIn) {
+        strPath = strPathIn;
+
+        String strFileName = record.getColumnData("name_new");
+        String strTitle = record.getColumnData("title");
+        String strSubTitle = record.getColumnData("subtitle");
+        String strPhotoType = record.getColumnData("photo_type");
+
+        String strCityName = record.getColumnData("city_name");
+        String strUploader = record.getColumnData("uploader");
+
+        if (strTitle == null || strTitle.isEmpty()) {
+            strTitle = "image";
+        }
+
+        String strImagePath = strPath + dirChar + strFileName;
+        logger.info(" strImagePath " + strImagePath);
+        Image image = new Image();
+
+        Path path = Paths.get(strImagePath);
+        File file = path.toFile();
+
+        image.setSrc(DownloadHandler.forFile(file));
+        return image;
+    }
+
+
+    private void reUpdateMyPhotoMetadata(int intUserId) {
         ImageService imageService = new ImageService();
         imageService.updatePhotoMeta(recordService, intUserId);
-
     }
 
     private boolean reUpdateMyPhotoCounts(int intUserId) {
@@ -1254,24 +1297,19 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
 //                divBio.setVisible(false);
                 }
 
-                Image imgAvatar = genericView.getAvatarImage(strAvatarPath, strMember, "150px", "150px");
-//            Image imgAvatar = getAvatarImage(strAvatarPath, strNameOfUser, "120px", "120px");
+                Image imgAvatar = genericView.getAvatarThumbImage(strAvatarPath, strMember, "150px", "150px");
 
                 H3 objName = new H3(strName + " " + strSurname);
                 objName.addClassNames(TextColor.SECONDARY, FontWeight.EXTRABOLD);
                 H4 objMember = new H4(strUsername);
                 objMember.addClassNames(TextColor.SECONDARY, FontWeight.EXTRABOLD);
-//            Div divMemberSince = new Div("Member since " + strMemberSince);
-//            divMemberSince.addClassNames(TextColor.SECONDARY, FontWeight.MEDIUM);
 
                 HorizontalLayout layoutAll = new HorizontalLayout();
-
 
                 VerticalLayout layoutMemberCard = new VerticalLayout();
                 layoutMemberCard.setMinWidth("220px");
                 layoutMemberCard.setMaxWidth("340px");
 
-//            layoutMemberCard.getStyle().set("border", "lightgrey 1px solid");
                 layoutMemberCard.addClassNames(AlignItems.CENTER, JustifyContent.CENTER, TextAlignment.CENTER);
                 layoutMemberCard.add(imgAvatar, objName);
 
@@ -1300,11 +1338,42 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
                 layoutCounts.add(layoutStories, layoutPhotos);
                 layoutCounts.addClassName("member-count-panel");
 
-
                 Div divResident = new Div("Lives at " + strResident);
 
                 layoutMember.add(layoutAll, layoutCounts);
 
+                String sqlGallerForMember = sqlReadGallery+" AND usr.userId = "+strUserId+" "+sqlGalleryOrderBy;
+
+                Div layoutLastPhotos = new Div();
+                layoutLastPhotos.addClassNames(Overflow.HIDDEN, Width.FULL, Height.FULL,
+                        AlignItems.CENTER, JustifyContent.CENTER,
+                        Margin.NONE, Padding.NONE,
+                        Gap.LARGE
+                );
+
+
+                HorizontalLayout layoutTabViewPhotos = new HorizontalLayout();
+                layoutTabViewPhotos.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER);
+                layoutTabViewPhotos.addClassName("tab-select");
+                RadioButtonGroup<String> btnGroupShowPhotos = new RadioButtonGroup<>();
+                btnGroupShowPhotos.setItems("Last 5 Photos", "Last 10 Photos", "Last 15 Photos");
+                btnGroupShowPhotos.addValueChangeListener(e -> {
+                    String strSelection = e.getSource().getValue();
+                    if (strSelection.indexOf(" 5 ") != -1) {
+                        layoutLastPhotos.removeAll();
+                        layoutLastPhotos.add(loadUploadedPhotos(sqlGallerForMember + " LIMIT 5", arrColumnNamesGallery, false, true));
+                    } else if (strSelection.indexOf(" 10 ") != -1) {
+                        layoutLastPhotos.removeAll();
+                        layoutLastPhotos.add(loadUploadedPhotos(sqlGallerForMember + " LIMIT 10", arrColumnNamesGallery, false, true));
+                    } else if (strSelection.indexOf(" 15 ") != -1) {
+                        layoutLastPhotos.removeAll();
+                        layoutLastPhotos.add(loadUploadedPhotos(sqlGallerForMember + " LIMIT 15", arrColumnNamesGallery, false, true));
+                    }
+                });
+                btnGroupShowPhotos.setValue("Last 5 Photos");
+                layoutTabViewPhotos.add(btnGroupShowPhotos);
+
+                layoutMember.add(layoutTabViewPhotos,layoutLastPhotos);
 
                 layoutMembersAll.add(layoutMember);
             }
@@ -1324,7 +1393,7 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
                 Gap.SMALL
 //                BorderRadius.LARGE, Background.CONTRAST_5
         );
-        layoutMember.addClassNames("member-profile");
+        layoutMember.addClassNames("photographer-profile");
 
         List<Record> lstRecords = getRecordsFromDb(sqlRead, arrColumnNames);
 
@@ -1437,7 +1506,7 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
 //                divBio.setVisible(false);
             }
 
-            Image imgAvatar = genericView.getAvatarImage(strAvatarPath, strMember, "150px", "150px");
+            Image imgAvatar = genericView.getAvatarThumbImage(strAvatarPath, strMember, "150px", "150px");
 //            Image imgAvatar = getAvatarImage(strAvatarPath, strNameOfUser, "120px", "120px");
 
             H3 objName = new H3(strName + " " + strSurname);
@@ -1483,9 +1552,46 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
             layoutCounts.add(layoutStories, layoutPhotos);
             layoutCounts.addClassName("member-count-panel");
 
+            layoutMember.add(layoutAll, layoutCounts);
+
             Div divResident = new Div("Lives at " + strResident);
 
-            layoutMember.add(layoutAll, layoutCounts);
+            String sqlGallerForMember = sqlReadGallery+" AND usr.userId = "+strUserId+" "+sqlGalleryOrderBy;
+
+            Div layoutLastPhotos = new Div();
+            layoutLastPhotos.addClassNames(Overflow.HIDDEN, Width.FULL,
+                    AlignItems.CENTER, JustifyContent.CENTER,
+                    Margin.NONE, Padding.NONE,
+                    Gap.LARGE
+            );
+            layoutLastPhotos.addClassName("container-uploaded-lines");
+
+            HorizontalLayout layoutTabViewPhotos = new HorizontalLayout();
+            layoutTabViewPhotos.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER);
+            layoutTabViewPhotos.addClassName("tab-select");
+            RadioButtonGroup<String> btnGroupShowPhotos = new RadioButtonGroup<>();
+            btnGroupShowPhotos.setItems("Last 5 Photos", "Last 10 Photos", "Last 15 Photos");
+            btnGroupShowPhotos.addValueChangeListener(e -> {
+                String strSelection = e.getSource().getValue();
+                if (strSelection.indexOf(" 5 ") != -1) {
+                    layoutLastPhotos.removeAll();
+                    layoutLastPhotos.add(loadUploadedPhotos(sqlGallerForMember + " LIMIT 5", arrColumnNamesGallery, false, false));
+                } else if (strSelection.indexOf(" 10 ") != -1) {
+                    layoutLastPhotos.removeAll();
+                    layoutLastPhotos.add(loadUploadedPhotos(sqlGallerForMember + " LIMIT 10", arrColumnNamesGallery, false, false));
+                } else if (strSelection.indexOf(" 15 ") != -1) {
+                    layoutLastPhotos.removeAll();
+                    layoutLastPhotos.add(loadUploadedPhotos(sqlGallerForMember + " LIMIT 15", arrColumnNamesGallery, false, false));
+                }
+            });
+            btnGroupShowPhotos.setValue("Last 5 Photos");
+            layoutTabViewPhotos.add(btnGroupShowPhotos);
+
+
+            layoutMember.add(layoutTabViewPhotos,layoutLastPhotos);
+
+
+
         } else {
             logger.warn(" lstRecords is more than one record");
         }

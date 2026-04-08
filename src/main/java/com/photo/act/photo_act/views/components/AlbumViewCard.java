@@ -126,13 +126,40 @@ public class AlbumViewCard extends RouterLink {
 
         String imagePath = strImagePath + dirChar + strPhotoUrl;
         Image image1 = getImage(imagePath);
-        if (strMetaOrientation1.equalsIgnoreCase("8")) {
-            image1.getStyle().set("rotate", "-90deg");
-        }
+//        if (strMetaOrientation1.equalsIgnoreCase("8")) {
+//            image1.getStyle().set("rotate", "-90deg");
+//        }
         Div divImage1 = new Div();
         divImage1.addClassName("image1-div");
         divImage1.add(image1);
 
+        String strMetaLength = record.getColumnData("meta_i_length1");
+        String strMetaWidth = record.getColumnData("meta_i_width1");
+        String strMetaHeight = record.getColumnData("meta_i_height1");
+        int intW = 1;
+        int intH = 1;
+        try {
+            intW = Integer.parseInt(strMetaLength);
+            intH = Integer.parseInt(strMetaHeight);
+        } catch (NumberFormatException e) {
+
+            logger.error(e.getMessage());
+        }
+        try {
+
+            if(intW!=0 && intH!= 0) {
+                int ratio = intW / intH;
+                if (ratio < 0.8) {
+                    divImage1.addClassName("portrait");
+                } else if (ratio > 1.5) {
+                    divImage1.addClassName("landscape");
+                }else{
+                    divImage1.addClassName("square");
+                }
+            }
+        }catch (ArithmeticException e){
+            logger.error(e.getMessage());
+        }
 
         Div divImage2 = new Div();
         if (strPhoto2 != null && !strPhoto2.isEmpty() && !strPhoto2.equalsIgnoreCase("null")) {
@@ -346,7 +373,7 @@ public class AlbumViewCard extends RouterLink {
         divViewsLabel.addClassNames(FontSize.XXSMALL);
         layoutViewCountAll.add(layoutViewCount, divViewsLabel);
 
-        VerticalLayout layoutLocationsCountAll = new VerticalLayout();
+/*        VerticalLayout layoutLocationsCountAll = new VerticalLayout();
         layoutLocationsCountAll.addClassNames(
                 // Overflow.HIDDEN, Width.FULL,
                 AlignItems.CENTER, JustifyContent.CENTER,
@@ -372,7 +399,7 @@ public class AlbumViewCard extends RouterLink {
         layoutLocationsCount.add(FontAwesome.Regular.COMPASS.create(), divLocations);
         Span divLocationsLabel = new Span("Locations");
         divLocationsLabel.addClassNames(FontSize.XXSMALL);
-        layoutLocationsCountAll.add(layoutLocationsCount, divLocationsLabel);
+        layoutLocationsCountAll.add(layoutLocationsCount, divLocationsLabel);*/
 
 //        VerticalLayout layoutDateAlbumCreatedAll = new VerticalLayout();
 //        layoutDateAlbumCreatedAll.addClassNames(
@@ -449,11 +476,11 @@ public class AlbumViewCard extends RouterLink {
 //        userAvatarLarge.addThemeVariants(AvatarVariant.LUMO_XLARGE);
 
 
-        Image imgAvatarSmall = genericView.getAvatarImage(strAvatarPath, strAlbumMember, "50px", "50px");
+        Image imgAvatarSmall = genericView.getAvatarThumbImage(strAvatarPath, strAlbumMember, "50px", "50px");
         imgAvatarSmall.addClassNames(BorderRadius.FULL);
         //Image imgAvatarSmall = getAvatarImage(strAvatar, strAlbumUserName, "40px", "40px");
 
-        Image imgAvatarMedium = genericView.getAvatarImage(strAvatarPath, strAlbumMember, "70px", "70px");
+        Image imgAvatarMedium = genericView.getAvatarThumbImage(strAvatarPath, strAlbumMember, "70px", "70px");
 //        Image imgAvatarMedium = getAvatarImage(strAvatar, strAlbumUserName, "70px", "70px");
 
         AvatarItem avatarItemMe = new AvatarItem(strAlbumMember, "", imgAvatarSmall);
@@ -535,7 +562,7 @@ public class AlbumViewCard extends RouterLink {
         layoutDateJoined.add(VaadinIcon.CALENDAR_CLOCK.create(), divDateJoined); // FontAwesome.Regular.CALENDAR.create()
         layoutMemberInfo.add(layoutMemberPhotoCount, layoutMemberViewCount, layoutMemberLocationsCount, layoutDateJoined);
 
-        layoutPhotosInfo.add(layoutRateAll, layoutViewCountAll, layoutLocationsCountAll, avatarItemMe);
+        layoutPhotosInfo.add(layoutRateAll, layoutViewCountAll, avatarItemMe);
 
         RouteParam routeAlbum = new RouteParam("title", strAlbumTitle);
         RouteParam routeMember = new RouteParam("member", strAlbumMemberUsername);

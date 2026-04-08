@@ -78,6 +78,7 @@ public class GenericView {
     private String strUrlRequestToBeLogged;
 
     private RecordService recordService;
+    private WeatherService weatherService ;
 
     private static final Logger logger = LoggerFactory.getLogger(GenericView.class);
     private String dirChar = FileSystems.getDefault().getSeparator();
@@ -233,7 +234,7 @@ public class GenericView {
         String strMemberFor = rec.getColumnData("member_for");
         String strAvatarPath = rec.getColumnData("avatar_path");
 
-        Image imgAvatar = getAvatarImage(strAvatarPath, strUsername, "180px", "180px");
+        Image imgAvatar = getAvatarThumbImage(strAvatarPath, strUsername, "180px", "180px");
 
         H3 objName = new H3(strName + " " + strSurname);
         H4 objMember = new H4(strUsername);
@@ -265,178 +266,14 @@ public class GenericView {
         return null;
     }
 
-    public VerticalLayout getWeatherCurrent(String destination, String country) {
-        HorizontalLayout layoutWeather = new HorizontalLayout();
-        layoutWeather.getStyle().setColor("#8b94a0");
-        layoutWeather.addClassNames(
-                LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER
-        );
 
-        WeatherService weatherService = new WeatherService("metric");
-
-        String[] locations = weatherService.lookUpLocation(destination, "", country);
-        if (locations != null) {
-            for (int i = 0; i < locations.length; i++) {
-                logger.info("locations  " + locations[i]);
-            }
-            String[] currentWeatherData = weatherService.getCurrentWeatherDataMetric(locations);
-            //String[][] dailyForecast =weatherService.getDailyForecastMetric(locations);
-
-//        layoutWeather.getStyle().setAlignItems(Style.AlignItems.CENTER);
-//        layoutWeather.getStyle().setJustifyContent(Style.JustifyContent.SPACE_AROUND);
-
-            VerticalLayout layoutLeft = new VerticalLayout();
-            layoutLeft.setMargin(false);
-            layoutLeft.setSpacing(false);
-            layoutLeft.setPadding(false);
-
-            WeatherImageService weatherImage = new WeatherImageService();
-
-            Image imageWeather = new Image();
-            imageWeather.getStyle().setOpacity("62%");
-
-            StreamResource iconWeather = new StreamResource(currentWeatherData[5],
-                    () -> getClass().getResourceAsStream(weatherImage.weatherImage(currentWeatherData)));
-
-            imageWeather.setSrc(iconWeather);
-            imageWeather.setMaxWidth("80px");
-            imageWeather.setAlt(currentWeatherData[5]);
-
-            VerticalLayout layoutRight = new VerticalLayout();
-            layoutRight.setMinWidth("180px");
-            layoutRight.setMargin(false);
-            layoutRight.setSpacing(false);
-            layoutRight.setPadding(false);
-
-            layoutLeft.add(imageWeather);
-            layoutLeft.setSizeFull();
-            Div hTemp = new Div(currentWeatherData[0]);
-            hTemp.addClassName("lazy-card-overview-font-big");
-            hTemp.getStyle().setFontSize("26px");
-            hTemp.getStyle().setFontWeight(Style.FontWeight.BOLDER);
-            layoutLeft.add(hTemp);
-
-            Div hCondition = new Div(currentWeatherData[5]);
-            hCondition.addClassName("lazy-card-overview-font-big");
-            hCondition.getStyle().setFontSize("16px");
-            hTemp.getStyle().setFontWeight(Style.FontWeight.BOLD);
-            layoutLeft.add(hCondition);
-
-
-            Div divTime = new Div(currentWeatherData[14]);
-            divTime.getStyle().setFontWeight(Style.FontWeight.BOLDER);
-
-            Div divSunRise = new Div(currentWeatherData[12]);
-            divSunRise.getStyle().setFontWeight(Style.FontWeight.BOLD);
-
-            Div divSunset = new Div(currentWeatherData[13]);
-            divSunset.getStyle().setFontWeight(Style.FontWeight.BOLD);
-
-            String strIconSize = "35px";
-
-            Image imageSunrise = new Image();
-            StreamResource iconSunrise = new StreamResource("Sunrise",
-                    () -> getClass().getResourceAsStream("/icons/sunrise.png"));
-            imageSunrise.setSrc(iconSunrise);
-            imageSunrise.setAlt("Sunrise");
-//        imageSunrise.setClassName("lazy-card-travel-weather-icons");
-            imageSunrise.getStyle().setWidth(strIconSize);
-            imageSunrise.getStyle().setHeight(strIconSize);
-
-            Image imageSet = new Image();
-            StreamResource iconSunset = new StreamResource("Sunset",
-                    () -> getClass().getResourceAsStream("/icons/sunset.png"));
-            imageSet.setSrc(iconSunset);
-            imageSet.setAlt("Sunset");
-//        imageSet.setClassName("lazy-card-travel-weather-icons");
-            imageSet.getStyle().setWidth(strIconSize);
-            imageSet.getStyle().setHeight(strIconSize);
-
-
-            Div divToday = new Div("Today");
-            divToday.getStyle().setFontSize("11px");
-            layoutRight.add(new HorizontalLayout(divToday));
-            layoutRight.add(new HorizontalLayout(new Div("Sunrise: "), divSunRise));
-            layoutRight.add(new HorizontalLayout(new Div("Sunset: "), divSunset));
-            // layoutRight.add(new HorizontalLayout(new Div("Sunset: "), divSunset));
-
-
-            Div divL = new Div(currentWeatherData[2]);
-            divL.getStyle().setFontWeight(Style.FontWeight.BOLDER);
-
-            Div divH = new Div(currentWeatherData[3]);
-            divH.getStyle().setFontWeight(Style.FontWeight.BOLDER);
-
-
-            Div divFeelsLike = new Div(currentWeatherData[1]);
-            divFeelsLike.getStyle().setFontWeight(Style.FontWeight.BOLDER);
-
-            Div divHumidity = new Div(currentWeatherData[4]);
-            divHumidity.getStyle().setFontWeight(Style.FontWeight.BOLDER);
-
-            Div divWindSpeed = new Div(currentWeatherData[7]);
-            divWindSpeed.getStyle().setFontWeight(Style.FontWeight.BOLDER);
-
-            Div divClouds = new Div(currentWeatherData[15]);
-            divClouds.getStyle().setFontWeight(Style.FontWeight.BOLDER);
-
-            Div divRain = new Div();
-            String rain = currentWeatherData[16];
-
-            Div divVisibility = new Div(currentWeatherData[17]);
-            divVisibility.getStyle().setFontWeight(Style.FontWeight.BOLDER);
-
-
-            layoutRight.add(new HorizontalLayout(new Div("L: "), divL, new Div("H: "), divH));
-            Div divNow = new Div("Now");
-            divNow.getStyle().setFontSize("11px");
-            layoutRight.add(new HorizontalLayout(divNow));
-
-            layoutRight.add(new HorizontalLayout(new Div("Feels like: "), divFeelsLike));
-            layoutRight.add(new HorizontalLayout(new Div("Clouds: "), divClouds));
-
-            if (!rain.equalsIgnoreCase("")) {
-                divRain.setText(currentWeatherData[16]);
-                divRain.getStyle().setFontWeight(Style.FontWeight.BOLDER);
-                layoutRight.add(new HorizontalLayout(new Div("Rain: "), divRain));
-            }
-
-            layoutRight.add(new HorizontalLayout(new Div("Humidity: "), divHumidity));
-            layoutRight.add(new HorizontalLayout(new Div("Wind speed: "), divWindSpeed));
-
-            layoutWeather.add(layoutLeft, layoutRight);
-
-            VerticalLayout layout = new VerticalLayout();
-            layout.setMargin(false);
-            layout.setSpacing(false);
-            layout.setPadding(false);
-            layout.addClassNames(LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER);
-
-            Anchor apiLink = new Anchor();
-            apiLink.getStyle().setColor("#8b94a0");
-            apiLink.setClassName("lazy-api-link");
-            apiLink.setHref(weatherService.getUrlReference());
-            apiLink.setTarget("_blank");
-            apiLink.setText("Weather data by: " + weatherService.getTitleReference());
-
-            layout.add(layoutWeather, apiLink);
-
-            return layout;
-        } else {
-            VerticalLayout layout = new VerticalLayout();
-            layout.setMargin(false);
-            layout.setSpacing(false);
-            layout.setPadding(false);
-            return layout;
-        }
-    }
-
-    public String[] getLocationCoordinates(String destination, String country) {
+/*    public String[] getLocationCoordinates(String destination, String country) {
         WeatherService weatherService = new WeatherService("metric");
         String[] locations = weatherService.lookUpLocation(destination, "", country);
         return locations;
-    }
+    }*/
 
+/*
     public VerticalLayout getWeatherApiCurrent(String destination, String country) {
 
         WeatherImageService weatherImage = new WeatherImageService();
@@ -624,7 +461,9 @@ public class GenericView {
 
         return layout;
     }
+*/
 
+/*
     public VerticalLayout getWeatherApiForecast(String destination, String country, int countOfTimeStamps) {
 
         WeatherService weatherServiceForecast = new WeatherService("metric");
@@ -786,11 +625,12 @@ public class GenericView {
         layout.add(apiLink);
         return layout;
     }
+*/
 
 
-    public Image getAvatarImage(String strAvatarPath, String altDescr, String width, String height) {
+    public Image getAvatarThumbImage(String strAvatarPath, String altDescr, String width, String height) {
 
-        String strAvatarFullPath = getAppProps(PROP_PHOTOS) + dirChar + SUB_PATH_AVATARS + dirChar + strAvatarPath;
+        String strAvatarFullPath = getAppProps(PROP_PHOTOS) + dirChar + SUB_PATH_AVATARS_THUMBS + dirChar + strAvatarPath;
         Path path = Paths.get(strAvatarFullPath);
         File file = path.toFile();
 
@@ -890,6 +730,7 @@ public class GenericView {
         String strMetaOrientation = record.getColumnData("meta_orientation");
         Image imageLarge = fetchPhotosLarge(sqlReadPhotos, arrColumnsGallery, strPhotoId);
         imageLarge.addClassNames(LumoUtility.Width.FULL, LumoUtility.Height.FULL);
+
         if (strMetaOrientation.equalsIgnoreCase("8")) {
             imageLarge.getStyle().set("rotate", "-90deg");
         } else if (strMetaOrientation.equalsIgnoreCase("6")) {
@@ -911,20 +752,28 @@ public class GenericView {
         HorizontalLayout layoutTabSelect = new HorizontalLayout();
         layoutTabSelect.addClassName("thin-tab-select");
         RadioButtonGroup<String> btnGroupSelect = new RadioButtonGroup<>();
-        btnGroupSelect.setItems("Meta Data", "Rate");
+
+            btnGroupSelect.setItems("Meta Data", "Rate");
+
         btnGroupSelect.addValueChangeListener(event -> {
             if (event.getSource().getValue().contains("Meta")) {
                 layoutMeta.removeAll();
                 layoutMeta.add(fetchPhotoMetaInfoOnCarousel(finalRec));
-                layoutMeta.add(fetchPhotoCreatorOnCarousel(finalRec));
+                layoutMeta.add(fetchPhotoCreatorOnCarousel(finalRec,false));
             } else {
                 layoutMeta.removeAll();
                 layoutMeta.add(loadPanelRate(strPhotoId));
+                layoutMeta.add(fetchPhotoCreatorOnCarousel(finalRec,true));
 //                layoutMeta.add(fetchPhotoCreatorOnCarousel(finalRec));
             }
         });
         layoutTabSelect.add(btnGroupSelect);
-        btnGroupSelect.setValue("Meta Data");
+
+        if(isOnlyRating){
+            btnGroupSelect.setValue("Rate");
+        }else {
+            btnGroupSelect.setValue("Meta Data");
+        }
 
         imageLarge.getStyle().setOpacity("1");
         divCarousel.add(imageLarge);
@@ -951,12 +800,8 @@ public class GenericView {
         layoutPhotoInfo.add(horizontalLayout, layoutMeta);
 
         HorizontalLayout layoutThumbsFull = new HorizontalLayout();
-        layoutThumbsFull.addClassNames(LumoUtility.Width.FULL,
-                LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER,
-                LumoUtility.Margin.NONE, LumoUtility.Padding.NONE,
-                LumoUtility.Background.CONTRAST_5,
-                LumoUtility.BorderRadius.SMALL
-        );
+        layoutThumbsFull.addClassName("layout-thumbs");
+        layoutThumbsFull.setVisible(false);
 
         if (!isOnlyRating) {
 
@@ -1024,22 +869,21 @@ public class GenericView {
             layoutPhotoInfo.add(layoutTitle);
 
             scroller.setScrollDirection(Scroller.ScrollDirection.HORIZONTAL);
-            scroller.addClassNames(
-                    LumoUtility.Width.FULL,
-                    LumoUtility.Margin.NONE, LumoUtility.Padding.XSMALL,
-                    LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER
-            );
 
             HorizontalLayout layoutThumbs = fetchThumbs(sqlReadPhotos, arrColumnsGallery);
-            scroller.setContent(layoutThumbs);
+           scroller.setContent(layoutThumbs);
 
 
             Button btnThumbsLeft = new Button();
+            btnThumbsLeft.addClassNames(LumoUtility.Height.FULL);
             btnThumbsLeft.setIcon(FontAwesome.Solid.ARROW_LEFT.create());
 
             Button btnThumbsRight = new Button();
+            btnThumbsRight.addClassNames(LumoUtility.Height.FULL);
             btnThumbsRight.setIcon(FontAwesome.Solid.ARROW_RIGHT.create());
+
             layoutThumbsFull.add(scroller);
+            layoutThumbsFull.setVisible(true);
         }
 
         HorizontalLayout layoutCarouselAndInfo = new HorizontalLayout();
@@ -1125,8 +969,9 @@ public class GenericView {
                 LumoUtility.Gap.XSMALL,
                 LumoUtility.BorderRadius.LARGE,
                 LumoUtility.AlignItems.START, LumoUtility.JustifyContent.START);
-//        layoutPhotoInfo.addClassName("image-meta-to-show");
+        layoutPhotoInfo.addClassName("member-profile-design");
         layoutPhotoInfo.addClassName("image-to-show");
+        layoutPhotoInfo.getStyle().setOpacity("1");
 
         String strMetaCameraModel = record.getColumnData("meta_camera_model");
         String strMetaLensModel = record.getColumnData("meta_lens_model");
@@ -1228,11 +1073,11 @@ public class GenericView {
                 divMetaSS, divMetaIso, divDateTimeTitle, divMetaPhotoDate);
 
         layoutPhotoInfo.add(layoutPhotoCameraMeta, layoutPhotoMeta);
-        layoutPhotoInfo.getStyle().setOpacity("1");
+
         return layoutPhotoInfo;
     }
 
-    private VerticalLayout fetchPhotoCreatorOnCarousel(Record record) {
+    private VerticalLayout fetchPhotoCreatorOnCarousel(Record record, boolean showMinimum) {
 
         VerticalLayout layoutCreatorInfo = new VerticalLayout();
         layoutCreatorInfo.addClassNames(
@@ -1242,7 +1087,7 @@ public class GenericView {
                 LumoUtility.BorderRadius.LARGE,
                 LumoUtility.AlignItems.START, LumoUtility.JustifyContent.START);
         layoutCreatorInfo.addClassNames("member-profile-design");
-        layoutCreatorInfo.addClassName("image-to-show");
+        layoutCreatorInfo.addClassName("info-to-show");
         layoutCreatorInfo.setMaxHeight("160px");
 //        layoutCreatorInfo.getStyle().setOpacity("1");
 
@@ -1263,18 +1108,9 @@ public class GenericView {
         divImgAvatar.addClassNames(LumoUtility.Padding.NONE, LumoUtility.Margin.NONE);
 
         String strAvatarSize = "50px";
-        Image imageAvatar = getAvatarImage(strAvatarPath, strUsername, strAvatarSize, strAvatarSize);
+        Image imageAvatar = getAvatarThumbImage(strAvatarPath, strUsername, strAvatarSize, strAvatarSize);
         divImgAvatar.add(imageAvatar);
-        Div divBioTitle = new Div("Short Bio");
-        Div divBio = new Div();
-        divBio.addClassNames(LumoUtility.FontWeight.BOLD);
-//            divBio.setVisible(false);
-        if (strShortBio != null && !strShortBio.equalsIgnoreCase("null") && !strShortBio.isEmpty()) {
-            divBio.setVisible(true);
-            divBio.setText(strShortBio);
-        } else {
-//                divBio.setVisible(false);
-        }
+
 
         HorizontalLayout horizontalLayout = new HorizontalLayout();
 
@@ -1290,13 +1126,12 @@ public class GenericView {
         objName.addClassNames(LumoUtility.TextColor.SECONDARY, LumoUtility.FontWeight.BOLD, LumoUtility.FontSize.SMALL,
                 LumoUtility.Margin.NONE, LumoUtility.Padding.NONE,
                 LumoUtility.Gap.XSMALL);
-        Div divMemberSinceTitle = new Div("Member since");
-        divMemberSinceTitle.addClassNames(LumoUtility.TextColor.SECONDARY, LumoUtility.FontWeight.EXTRALIGHT, LumoUtility.FontSize.XSMALL,
+
+        Div divMemberSince = new Div("Member since "+strMemberSince);
+        divMemberSince.addClassNames(LumoUtility.TextColor.SECONDARY, LumoUtility.FontWeight.EXTRALIGHT, LumoUtility.FontSize.XSMALL,
                 LumoUtility.Margin.NONE, LumoUtility.Padding.XSMALL,
                 LumoUtility.Gap.XSMALL);
-        Div divMemberSince = new Div(strMemberSince);
-        divMemberSince.addClassNames(LumoUtility.TextColor.SECONDARY, LumoUtility.FontWeight.EXTRALIGHT, LumoUtility.FontSize.XXSMALL);
-        divMemberSinceTitle.add(divMemberSince);
+
 
 
         Icon iconPhoto = VaadinIcon.PICTURE.create();
@@ -1335,11 +1170,15 @@ public class GenericView {
         layoutAdditional.addClassNames(LumoUtility.Width.FULL, LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER,
                 LumoUtility.Margin.NONE, LumoUtility.Padding.XSMALL,
                 LumoUtility.Gap.XSMALL);
-        layoutAdditional.add(objMember, objName, divMemberSinceTitle); //, divBioTitle, divBio);//, divResidentCaption, divResident);
+        layoutAdditional.add(objMember, objName, divMemberSince); //, divBioTitle, divBio);//, divResidentCaption, divResident);
 
         horizontalLayout.add(layoutMemberCard, layoutAdditional);
 
-        layoutCreatorInfo.add(horizontalLayout, layoutCounts);
+        if(showMinimum){
+            layoutCreatorInfo.add(horizontalLayout);
+        }else {
+            layoutCreatorInfo.add(horizontalLayout, layoutCounts);
+        }
 
         return layoutCreatorInfo;
     }
@@ -1356,6 +1195,8 @@ public class GenericView {
         VerticalLayout verticalLayout = new VerticalLayout();
         verticalLayout.addClassNames(LumoUtility.Width.FULL, LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER);
         verticalLayout.addClassName("rating-content");
+        verticalLayout.addClassName("info-to-show");
+        verticalLayout.getStyle().setOpacity("1");
         //verticalLayout.addClassNames(LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER, LumoUtility.Padding.LARGE, LumoUtility.Gap.MEDIUM);
 
         Paragraph paragraph = new Paragraph();
@@ -1363,13 +1204,25 @@ public class GenericView {
 //        paragraph.addClassName("rating-text");
 
 
-        String[] str7 = {"7 World Class", "Flawless technique, powerful storytelling, exceptional artistry."};
-        String[] str6 = {"6 Exceptional Professional", "Strong vision, refined execution, consistently striking impact."};
-        String[] str5 = {"5 Advanced Skilled", "Confident composition, controlled lighting, expressive style throughout."};
-        String[] str4 = {"4 Solid Intermediate", "Good fundamentals, developing creativity, occasionally strong moments."};
-        String[] str3 = {"3 Emerging Amateur", "Improving skills with clearer intent and consistency."};
-        String[] str2 = {"2 Novice Beginner", "Noticeable issues but increasing understanding and experimentation."};
-        String[] str1 = {"1 Basic Snapshot", "Simple image lacking technique, intention, coherence."};
+
+
+
+//        String[] str7 = {"7 World Class", "Flawless technique, powerful storytelling, exceptional artistry."};
+//        String[] str6 = {"6 Exceptional Professional", "Strong vision, refined execution, consistently striking impact."};
+//        String[] str5 = {"5 Advanced Skilled", "Confident composition, controlled lighting, expressive style throughout."};
+//        String[] str4 = {"4 Solid Intermediate", "Good fundamentals, developing creativity, occasionally strong moments."};
+//        String[] str3 = {"3 Emerging Amateur", "Improving skills with clearer intent and consistency."};
+//        String[] str2 = {"2 Novice Beginner", "Noticeable issues but increasing understanding and experimentation."};
+//        String[] str1 = {"1 Snapshot", "Simple image lacking technique, intention, coherence."};
+
+        String[] str1 = {"1 Snapshot", "Casual capture with minimal intent or craft."};
+        String[] str2 = {"2 Adequate", "Technically acceptable image lacking strong visual intent."};
+        String[] str3 = {"3 Competent", "Clear subject, balanced exposure, developing compositional awareness."};
+        String[] str4 = {"4 Polished", "Intentional composition supported by effective light control."};
+        String[] str5 = {"5 Compelling", "Engaging mood with confident artistic decision making."};
+        String[] str6 = {"6 Exceptional", "Distinct vision executed with precision and emotional depth."};
+        String[] str7 = {"7 World Class", "Iconic imagery demonstrating mastery, originality, and lasting impact."};
+
         RadioButtonGroup<String[]> radioButtonGroup = new RadioButtonGroup<>();
         radioButtonGroup.addClassNames(LumoUtility.Width.FULL);
         radioButtonGroup.setRenderer(new ComponentRenderer<>(strings -> {
@@ -1397,7 +1250,7 @@ public class GenericView {
 
         radioButtonGroup.addThemeVariants(RadioGroupVariant.LUMO_VERTICAL);
         radioButtonGroup.addClassName("rating-options");
-        radioButtonGroup.setItems(str7, str6, str5, str4, str3, str2, str1);
+        radioButtonGroup.setItems(str1, str2,str3,str4,str5,str6,str7);
 
 
         Button btnRate = new Button("Submit");
@@ -1444,7 +1297,13 @@ public class GenericView {
             sqlReadWithLocation = sqlRead + " AND " + filterColumn + " LIKE '" + locationName + "' " + sqlReadOrderBy;
         }
 
+
+//        HorizontalLayout layoutThumbs = fetchThumbs(sqlReadWithLocation, arrColumnsGallery);
+//        layoutThumbs.addClassNames(LumoUtility.Width.FULL);
+//        scroller.setContent(layoutThumbs);
+
         HorizontalLayout layoutThumbs = fetchThumbs(sqlReadWithLocation, arrColumnsGallery);
+
         Image imageLarge = fetchPhotosLarge(sqlReadWithLocation, arrColumnsGallery, null);
         imageLarge.addClassNames(LumoUtility.Width.FULL, LumoUtility.Height.FULL);
         imageLarge.getStyle().set("object-fit", "contain");
@@ -1499,7 +1358,7 @@ public class GenericView {
 
         layoutMeta.removeAll();
         layoutMeta.add(fetchPhotoMetaInfoOnCarousel(record));
-        layoutMeta.add(fetchPhotoCreatorOnCarousel(record));
+        layoutMeta.add(fetchPhotoCreatorOnCarousel(record,false));
 
     }
 
@@ -1508,23 +1367,20 @@ public class GenericView {
         ArrayList<Image> lstImageThumbs = fetchPhotoThumbs(sqlRead, arrColumnNames);
         List<Record> lstImageFiles = getRecordsFromDb(sqlRead, arrColumnNames);
 
+
         HorizontalLayout layoutThumbs = new HorizontalLayout();
-        layoutThumbs.addClassNames(//LumoUtility.Overflow.HIDDEN,
+        layoutThumbs.addClassNames(
                 //  don't   LumoUtility.Width.FULL, //LumoUtility.Height.FULL,
                 LumoUtility.Display.INLINE_FLEX,
                 LumoUtility.Margin.NONE, LumoUtility.Padding.NONE,
                 LumoUtility.Gap.XSMALL,
                 LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER);
-        layoutThumbs.setHeight("82px");
+
+
 
         for (int t = 0; t < lstImageThumbs.size(); t++) {
             Div divBtnPhoto = new Div();
-            divBtnPhoto.addClassNames(LumoUtility.Overflow.HIDDEN,
-                    LumoUtility.Width.FULL, LumoUtility.Height.AUTO,
-                    LumoUtility.Margin.NONE, LumoUtility.Padding.XSMALL,
-                    LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER,
-                    LumoUtility.BorderRadius.SMALL
-            );
+            divBtnPhoto.addClassName("btn-thumb-photo");
 
             Image imageThumb = lstImageThumbs.get(t);
             imageThumb.addClassNames(
@@ -1533,12 +1389,7 @@ public class GenericView {
                     LumoUtility.BorderRadius.SMALL
             );
 
-            imageThumb.setMaxWidth("80px");
-            imageThumb.setHeight("Auto");
-
             divBtnPhoto.add(imageThumb);
-            divBtnPhoto.addClassName("btn-thumb-photo");
-
 
             final int tFinal = t;
             divBtnPhoto.addClickListener(click -> {
@@ -1546,6 +1397,7 @@ public class GenericView {
             });
             layoutThumbs.add(divBtnPhoto);
         }
+
         return layoutThumbs;
     }
 
@@ -1797,6 +1649,9 @@ public class GenericView {
             return null;
         });
         image.setSrc(imageResource);
+
+
+
         if (strMetaOrientation.equalsIgnoreCase("8")) {
             image.getStyle().set("rotate", "-90deg");
         }

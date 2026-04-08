@@ -3,36 +3,45 @@ package com.photo.act.photo_act.views.components;
 import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
-import com.photo.act.photo_act.utils.ImageUtilsMeta;
+import com.photo.act.photo_act.model.ShareType;
+import com.photo.act.photo_act.model.ShareableResource;
+import com.photo.act.photo_act.services.ShareMetricService;
+import com.photo.act.photo_act.services.ShareService;
+import com.photo.act.photo_act.services.WeatherService;
+import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.Checkbox;
+import com.vaadin.flow.component.combobox.MultiSelectComboBox;
+import com.vaadin.flow.component.contextmenu.HasMenuItems;
 import com.vaadin.flow.component.contextmenu.MenuItem;
+import com.vaadin.flow.component.contextmenu.SubMenu;
 import com.vaadin.flow.component.dialog.Dialog;
-import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.Image;
-import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.listbox.MultiSelectListBox;
 import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.menubar.MenuBarVariant;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.popover.Popover;
+import com.vaadin.flow.component.popover.PopoverPosition;
+import com.vaadin.flow.component.popover.PopoverVariant;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.streams.DownloadHandler;
+import com.vaadin.flow.theme.lumo.LumoUtility;
 import com.vaadin.flow.theme.lumo.LumoUtility.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -42,11 +51,21 @@ import java.util.List;
 import java.util.Set;
 
 import static com.photo.act.photo_act.views.HomeView.subPathLarge;
+import static com.photo.act.photo_act.views.MainLayout.baseUrl;
 
 public class GalleryImageViewCard extends Div {
 
+
+
     private static final Logger logger = LoggerFactory.getLogger(GalleryImageViewCard.class);
     private RecordService recordService;
+    private ShareService shareService;
+    private ShareMetricService shareMetricService;
+
+    private final WeatherService weatherService;
+    private LocalWeatherForecast weatherForecast;
+
+
     private boolean isMobile;
     private GenericView genericView;
     private RouterLink linkUploader;
@@ -61,6 +80,11 @@ public class GalleryImageViewCard extends Div {
     private String sqlCarousel;
     private String sqlCarouselOrderBy;
     private String[] arrColumnsCarousel;
+
+    private String[] arrGenreNames = {"id", "title"};
+    private String sqlReadGenre = "SELECT id,  title " +
+            " FROM  photo_genres " +
+            " ORDER BY title ASC ";
 
     private String[] arrDestinationAllNames = {"id", "city_name", "prefecture", "country"};
     private String sqlReadDestinationAll = "SELECT distinct city_name, id, prefecture, country " +
@@ -90,16 +114,21 @@ public class GalleryImageViewCard extends Div {
     //     "  AND usr.username = '" + strAlbumUsername + "' " +
     private String sqlReadAlbumsOrderby = " ORDER BY title ASC ";
 
+    private boolean isTypeProfile = false;
+
     public GalleryImageViewCard(Record record, String strImagePath, boolean isMobile, int userId, String strUserName, long sessionCreation,
                                 String hostname, String publicIp, boolean isEditable, RecordService recordService, int isType, String sqlCarousel, String sqlCarouselOrderBy,
-                                String[] arrColumnsCarousel) {
+                                String[] arrColumnsCarousel, ShareService shareService, ShareMetricService shareMetricService, WeatherService weatherService) {
         this.recordService = recordService;
+        this.shareService = shareService;
+        this.shareMetricService = shareMetricService;
         this.isMobile = isMobile;
         this.record = record;
         this.strImagePath = strImagePath;
         this.sqlCarousel = sqlCarousel;
         this.sqlCarouselOrderBy = sqlCarouselOrderBy;
         this.arrColumnsCarousel = arrColumnsCarousel;
+        this.weatherService = weatherService;
 
 
         this.addClassName("gallery-view-card");
@@ -139,9 +168,9 @@ public class GalleryImageViewCard extends Div {
         String strMetaAperture = record.getColumnData("meta_aperture");
 
         String strMetaOrientation = record.getColumnData("meta_orientation");
-        String strMetaLength = record.getColumnData("meta_i_length");
-        String strMetaWidth = record.getColumnData("meta_i_width");
-        String strMetaHeight = record.getColumnData("meta_i_height");
+//        String strMetaLength = record.getColumnData("meta_i_length");
+//        String strMetaWidth = record.getColumnData("meta_i_width");
+//        String strMetaHeight = record.getColumnData("meta_i_height");
 
         String strPhotoUserName = record.getColumnData("username");
         String strPhotoNameUser = record.getColumnData("name");
@@ -152,6 +181,7 @@ public class GalleryImageViewCard extends Div {
 
         String strUserRights = record.getColumnData("user_rights_id");
 
+        String strGenreId = record.getColumnData("genre_id");
         String strCityId = record.getColumnData("destination_id");
         String strSubjectId = record.getColumnData("subject_id");
 
@@ -159,6 +189,7 @@ public class GalleryImageViewCard extends Div {
         String strSubject = record.getColumnData("subject_name");
 
         String strDateUploaded = record.getColumnData("date_inserted");
+        String strDateUploadedRelative = record.getColumnData("date_inserted_diff_from_now");
 
         logger.info(" gallery card city and subject:" + strCity + "_" + strSubject);
 
@@ -181,19 +212,9 @@ public class GalleryImageViewCard extends Div {
         Path path = Paths.get(strImagePath);
         File file = path.toFile();
 
-        final StreamResource imageResource = new StreamResource("streamResource", () -> {
-            try {
-                ImageUtilsMeta imageUtilsMeta = new ImageUtilsMeta();
-                imageUtilsMeta.printPhotoMetadataValue(file);
 
-                return new FileInputStream(file);
-            } catch (final FileNotFoundException e) {
-                logErrorInDb(e, "GalleryImageViewCard StreamResource FileNotFoundException", hostname, userId, strUserName, publicIp, sessionCreation, file.getAbsolutePath());
-                // logErrorInDb(e,hostname,"CreationsViewCard StreamResource",userId,strUserName,file.getAbsolutePath());
-                logger.error("FileNotFoundException  " + e.getMessage());
-            }
-            return null;
-        });
+
+
 
 //        HorizontalLayout layoutImage = new HorizontalLayout();
 //        layoutImage.addClassNames(
@@ -203,13 +224,14 @@ public class GalleryImageViewCard extends Div {
 //        );
 
         Div divImage = new Div();
-        divImage.addClassNames(Width.FULL, Height.AUTO,
-                Padding.NONE, Margin.NONE);
+        divImage.addClassName("image-container");
 
         Image image = new Image();
-        image.addClassNames(Width.FULL, Height.FULL,
-                Padding.NONE, Margin.NONE);
-        image.setSrc(imageResource);
+        image.setSrc(DownloadHandler.forFile(file));
+
+        String strMetaLength = record.getColumnData("meta_i_length");
+        String strMetaWidth = record.getColumnData("meta_i_width");
+        String strMetaHeight = record.getColumnData("meta_i_height");
         int intW = 1;
         int intH = 1;
         try {
@@ -219,36 +241,24 @@ public class GalleryImageViewCard extends Div {
 
             logger.error(e.getMessage());
         }
+        try {
 
-
-        int ratio = intW / intH;
-
-        if (ratio < 0.8) {
-            divImage.addClassName("tall");
-
-        } else if (ratio > 1.5) {
-            divImage.addClassName("wide");
+            if(intW!=0 && intH!= 0) {
+                    int ratio = intW / intH;
+                    if (ratio < 0.8) {
+                        divImage.addClassName("portrait");
+                    } else if (ratio > 1.5) {
+                        divImage.addClassName("landscape");
+                    }else{
+                        divImage.addClassName("square");
+                    }
+                        }
+        }catch (ArithmeticException e){
+            logger.error(e.getMessage());
         }
 
-        if (strMetaOrientation.equalsIgnoreCase("8")) {
-            image.getStyle().set("rotate", "-90deg");
-            if (isEditable) {
-                // image.getStyle().set("scale", "0.66");
-            }
-        } else if (strMetaOrientation.equalsIgnoreCase("6")) {
-            image.getStyle().set("rotate", "90deg");
-            if (isEditable) {
-                //image.getStyle().set("scale", "0.66");
-            }
-        } else {
-            divImage.addClassName("wide");
-            if (isEditable) {
-                // image.getStyle().set("scale", "0.85");
-            }
-        }
 
         divImage.add(image);
-
 
         HorizontalLayout layoutUser = new HorizontalLayout();
         layoutUser.addClassNames(
@@ -266,6 +276,23 @@ public class GalleryImageViewCard extends Div {
 
         layoutUser.add(VaadinIcon.USER.create(), h3User);
 
+
+        VerticalLayout layoutPhotographer = fetchPhotoCreator(record,false);
+
+        Popover popover = new Popover();
+        popover.setTarget(layoutUser);
+        popover.setOpenOnClick(false);
+        popover.setOpenOnHover(true);
+        popover.setHoverDelay(400);
+        popover.setHideDelay(100);
+
+        popover.setWidth("300px");
+        popover.addThemeVariants(PopoverVariant.ARROW,
+                PopoverVariant.LUMO_NO_PADDING);
+        popover.setPosition(PopoverPosition.TOP);
+        popover.setModal(true);
+        popover.setAriaLabelledBy("member-popup");
+        popover.add(layoutPhotographer);
 
         VerticalLayout divPhotoInfo = new VerticalLayout();
         divPhotoInfo.addClassNames(TextColor.TERTIARY,
@@ -288,9 +315,6 @@ public class GalleryImageViewCard extends Div {
             // divPhotoInfo.addClassName("image-and-info-panel");
 //            this.addClassName("bottom-radius-shadow");
         }
-
-        Image imgAvatarSmall = genericView.getAvatarImage(strAvatarPath, strPhotoUserName, "40px", "40px");
-        Image imgAvatarMedium = genericView.getAvatarImage(strAvatarPath, strPhotoUserName, "70px", "70px");
 
 
         HorizontalLayout layoutViewCount = new HorizontalLayout();
@@ -319,7 +343,6 @@ public class GalleryImageViewCard extends Div {
                 BorderRadius.NONE
         );
 
-
         HorizontalLayout layoutMemberTimeInfo = new HorizontalLayout();
         layoutMemberTimeInfo.addClassNames(
                 TextColor.TERTIARY,
@@ -332,7 +355,6 @@ public class GalleryImageViewCard extends Div {
                 //   Background.CONTRAST_5,
                 BorderRadius.NONE
         );
-
 
         HorizontalLayout layoutSpot = new HorizontalLayout();
         layoutSpot.addClassNames(
@@ -352,6 +374,21 @@ public class GalleryImageViewCard extends Div {
             layoutSpot.setVisible(false);
         }
 
+        HorizontalLayout layoutDateRelUploaded = new HorizontalLayout();
+        layoutDateRelUploaded.addClassNames(
+//                Overflow.HIDDEN, Width.FULL,
+                AlignItems.CENTER, JustifyContent.CENTER,
+                Margin.NONE,
+                Padding.NONE,
+                Gap.XSMALL,
+                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+                //   Background.CONTRAST_5,
+                BorderRadius.NONE
+        );
+        Div divDateRelUploaded = new Div(strDateUploadedRelative);
+        layoutDateRelUploaded.add(FontAwesome.Solid.UPLOAD.create(), divDateRelUploaded);
+
+
         HorizontalLayout layoutDateShot = new HorizontalLayout();
         layoutDateShot.addClassNames(
 //                Overflow.HIDDEN, Width.FULL,
@@ -364,11 +401,10 @@ public class GalleryImageViewCard extends Div {
                 BorderRadius.NONE
         );
         Div divDate = new Div(strPhotoDate);
-        layoutDateShot.add(VaadinIcon.CALENDAR.create(), divDate);
+        layoutDateShot.add(FontAwesome.Solid.CAMERA_ALT.create(), divDate);
 
-
-        HorizontalLayout layoutDateUploaded = new HorizontalLayout();
-        layoutDateUploaded.addClassNames(
+        HorizontalLayout layoutDateTimeUploaded = new HorizontalLayout();
+        layoutDateTimeUploaded.addClassNames(
 //                Overflow.HIDDEN, Width.FULL,
                 AlignItems.CENTER, JustifyContent.CENTER,
                 Margin.NONE,
@@ -378,8 +414,8 @@ public class GalleryImageViewCard extends Div {
                 //   Background.CONTRAST_5,
                 BorderRadius.NONE
         );
-        Div divDateUploaded = new Div(strDateUploaded);
-        layoutDateUploaded.add(FontAwesome.Solid.UPLOAD.create(), divDateUploaded);
+        Div divDateTimeUploaded = new Div(strDateUploaded);
+        layoutDateTimeUploaded.add(FontAwesome.Solid.UPLOAD.create(), divDateTimeUploaded);
 
         HorizontalLayout layoutDateTimeShot = new HorizontalLayout();
         layoutDateTimeShot.addClassNames(
@@ -482,10 +518,9 @@ public class GalleryImageViewCard extends Div {
         VerticalLayout layoutInfoPanel = new VerticalLayout();
         layoutInfoPanel.addClassNames(TextColor.BODY, Padding.Vertical.NONE, FontSize.SMALL);
         if (isEditable) {
-
-            layoutInfoPanel.add(layoutUser, layoutDateUploaded, layoutDateTimeShot);
+            layoutInfoPanel.add(popover,layoutUser, layoutDateTimeUploaded, layoutDateTimeShot);
         } else {
-            layoutMemberTimeInfo.add(layoutUser, layoutSpot, layoutDateShot);
+            layoutMemberTimeInfo.add(popover,layoutUser, layoutSpot, layoutDateRelUploaded);
             layoutInfoPanel.add(layoutMemberTimeInfo);
         }
         divImage.add(layoutPhotoDetails);
@@ -547,43 +582,7 @@ public class GalleryImageViewCard extends Div {
         Div divLocations = new Div(strPhotoUserResident);
         layoutLocationsCount.add(FontAwesome.Regular.COMPASS.create(), divLocations);
 
-        HorizontalLayout layoutDateJoined = new HorizontalLayout();
-        layoutDateJoined.addClassNames(
-//                Overflow.HIDDEN, Width.FULL,
-                AlignItems.CENTER, JustifyContent.CENTER,
-                Margin.NONE,
-                Padding.XSMALL,
-                Gap.XSMALL,
-                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                //   Background.CONTRAST_5,
-                BorderRadius.NONE
-        );
-        Div divDateJoined = new Div(strPhotoDate);
-        layoutDateJoined.add(VaadinIcon.CALENDAR_CLOCK.create(), divDateJoined); // FontAwesome.Regular.CALENDAR.create()
-//        if (isMobile) {
-//            layoutMemberInfo.add(layoutMemberPhotoCount, layoutMemberViewCount, layoutLocationsCount, layoutDateJoined);
-//            detailsPhotoInfo.add(avatarLargeItemMe, layoutMemberInfo);
-//        } else {
-//            layoutMemberInfo.add();
-//            layoutPhotoDetails.add(layoutPhotoCameraMeta, layoutPhotoFocalLength, layoutPhotoMeta);
-//        }
 
-
-//        Div divTextDescription = new Div();
-//        divTextDescription.addClassNames(Width.FULL, JustifyContent.CENTER, AlignItems.CENTER, Padding.NONE, Margin.SMALL);
-
-//        Div header = new Div();
-//        header.addClassNames(FontSize.MEDIUM, FontWeight.SEMIBOLD, Width.FULL, AlignItems.CENTER, JustifyContent.CENTER, Padding.XSMALL,
-//                TextAlignment.CENTER,
-//                Margin.Horizontal.XSMALL, Margin.Vertical.NONE
-//        );
-//        header.getStyle().set("font-family", "Times-New-Roman, serif");
-//        header.setText(strTitle);
-//        if (strTitle.trim().isEmpty() || strTitle.equalsIgnoreCase("null")) {
-//            header.setText("");
-//            header.setHeight("1px");
-//            header.setVisible(false);
-//        }
 
         Div subtitle = new Div();
         subtitle.addClassNames(FontSize.SMALL, Width.FULL, AlignItems.CENTER, JustifyContent.CENTER,
@@ -605,9 +604,9 @@ public class GalleryImageViewCard extends Div {
             //anyone logged in
             this.add(divImage, layoutInfoPanel, divPhotoInfo);
             if (isMobile) {
-                divPhotoInfo.add(subtitle, getActions(strPhotoId, isType, strSelection, strAlbumUsername));
+                divPhotoInfo.add(subtitle, getActions(strPhotoId, strSubTitle,strFileName, strCity,isType, strSelection, strAlbumUsername));
             } else {
-                divPhotoInfo.add(subtitle, getActions(strPhotoId, isType, strSelection, strAlbumUsername));
+                divPhotoInfo.add(subtitle, getActions(strPhotoId, strSubTitle,strFileName,strCity,isType, strSelection, strAlbumUsername));
             }
             //this.addClassNames(JustifyContent.EVENLY);
 
@@ -615,9 +614,9 @@ public class GalleryImageViewCard extends Div {
             // user himself
             this.add(divImage, layoutInfoPanel, divPhotoInfo);
             if (isMobile) {
-                divPhotoInfo.add(getEditPanel(strPhotoId, strAvailableAlbumsMemberId, strUserRights, strSubTitle, strCityId, strSubjectId, strPersonalNotes));
+                divPhotoInfo.add(getEditPanel(strPhotoId, strAvailableAlbumsMemberId, strUserRights, strSubTitle,strGenreId, strCityId, strSubjectId, strPersonalNotes));
             } else {
-                divPhotoInfo.add(getEditPanel(strPhotoId, strAvailableAlbumsMemberId, strUserRights, strSubTitle, strCityId, strSubjectId, strPersonalNotes));
+                divPhotoInfo.add(getEditPanel(strPhotoId, strAvailableAlbumsMemberId, strUserRights, strSubTitle, strGenreId, strCityId, strSubjectId, strPersonalNotes));
             }
             // this.addClassNames(JustifyContent.EVENLY);
 
@@ -625,7 +624,44 @@ public class GalleryImageViewCard extends Div {
     }
 
 
-    private HorizontalLayout getActions(String strPhotoId, int isType, String strSelection, String strAlbumUsername) {
+    private HorizontalLayout getActions(String strPhotoId, String strSubTitle, String strFileName, String strCity, int isType, String strSelection, String strAlbumUsername) {
+
+
+
+
+
+
+
+
+        ShareableResource photo = new ShareableResource(
+                ShareType.PHOTO,
+                strPhotoId,
+                strSubTitle,
+                "",
+                baseUrl+"/photo/"+strFileName,
+                baseUrl+"/photo/"+strPhotoId
+        );
+
+        ShareBottomBar shareBottomBar = new ShareBottomBar(photo,shareService,shareMetricService);
+
+        MenuItem viewLarger = createIconItem(shareBottomBar, VaadinIcon.VIEWPORT.create(), "View Larger", null);
+        viewLarger.addClickListener(click->{
+            showDialogWithCarousel(isType, strSelection, strPhotoId, strAlbumUsername, false);
+        });
+
+
+        if (strCity!= null && !strCity.isEmpty()) {
+            MenuItem viewCityInfo = createIconItem(shareBottomBar, VaadinIcon.LOCATION_ARROW_CIRCLE_O.create(), "", null);
+            viewCityInfo.addClickListener(click -> {
+                Dialog dialog = showDialogWeatherForCity(strCity, "");
+                dialog.open();
+            });
+        }
+
+
+        shareBottomBar.addShareItemMenu();
+
+
 
         SvgIcon svgLike = new SvgIcon(DownloadHandler.forClassResource(GalleryImageViewCard.class, "/icons/like-icon.svg"));
         Div divLike = new Div();
@@ -665,13 +701,13 @@ public class GalleryImageViewCard extends Div {
         Div tooltipShare = new Div("Share it");
         tooltipShare.addClassName("tooltip-top");
 
-        Div divSharesInfo = new Div("");
-        divSharesInfo.addClassName(TextColor.DISABLED);
-        SvgIcon svgShare = new SvgIcon(DownloadHandler.forClassResource(GalleryImageViewCard.class, "/icons/share-line-icon.svg"));
-        Button btnShare = new Button(svgShare);
-        //btnShare.setTooltipText("Share it");
-        btnShare.setSuffixComponent(divSharesInfo);
-        divShare.add(btnShare, tooltipShare);
+//        Div divSharesInfo = new Div("");
+//        divSharesInfo.addClassName(TextColor.DISABLED);
+//        SvgIcon svgShare = new SvgIcon(DownloadHandler.forClassResource(GalleryImageViewCard.class, "/icons/share-line-icon.svg"));
+//        Button btnShare = new Button(svgShare);
+//        //btnShare.setTooltipText("Share it");
+//        btnShare.setSuffixComponent(divSharesInfo);
+//        divShare.add(btnShare, tooltipShare);
 
         Div divRate = new Div();
         divRate.addClassName("tooltip-container");
@@ -694,6 +730,8 @@ public class GalleryImageViewCard extends Div {
 //           // );
                 }
         );
+
+
 
         Div divFullView = new Div();
         divFullView.addClassName("tooltip-container");
@@ -753,15 +791,48 @@ public class GalleryImageViewCard extends Div {
         //layoutActions.setWidthFull();
 
         if (isMobile) {
-            layoutActions.add(divLike, btnLists, btnShare);
+ //           layoutActions.add(divLike, btnLists, btnShare);
         } else {
             if (strImagePath.contains(subPathLarge)) {
-                layoutActions.add(divLike, divLists, divShare, divRate);
+ //               layoutActions.add(divLike, divLists, divShare, divRate);
             } else {
-                layoutActions.add(divLike, divLists, divShare, divRate, divFullView);
+//                layoutActions.add(divLike, divLists, divShare, divRate, divFullView);
+                layoutActions.add(shareBottomBar);
             }
         }
         return layoutActions;
+    }
+
+
+    private MenuItem createIconItem(HasMenuItems menu, Component iconName,
+                                    String label, String ariaLabel) {
+
+//                Icon icon = new Icon(iconName);
+        return createIconItem(menu, iconName, label, ariaLabel, false);
+    }
+
+    private MenuItem createIconItem(HasMenuItems menu, Component icon,
+                                    String label, String ariaLabel, boolean isChild) {
+//        Icon icon = new Icon(iconName);
+
+        if (isChild) {
+            icon.getStyle().setWidth("var(--lumo-icon-size-s)");
+            icon.getStyle().setHeight("var(--lumo-icon-size-s)");
+            icon.getStyle().setMarginRight("var(--lumo-space-s)");
+        }
+
+        MenuItem item = menu.addItem(icon, e -> {
+        });
+
+        if (ariaLabel != null) {
+            item.setAriaLabel(ariaLabel);
+        }
+
+        if (label != null) {
+            item.add(new Text(label));
+        }
+
+        return item;
     }
 
 
@@ -809,7 +880,8 @@ public class GalleryImageViewCard extends Div {
         dlgCarousel.open();
     }
 
-    private VerticalLayout getEditPanel(String strPhotoId, String strAvailableAlbumsMemberId, String strUserRights, String strSubTitle, String strCityIdDb, String strSubjectIdDb,
+    private VerticalLayout getEditPanel(String strPhotoId, String strAvailableAlbumsMemberId, String strUserRights, String strSubTitle,
+                                        String strGenreDbId, String strCityIdDb, String strSubjectIdDb,
                                         String strPersonalNotes) {
 
         logger.info(" end destination_Id:" + strCityIdDb + " subject_id:" + strSubjectIdDb);
@@ -819,20 +891,38 @@ public class GalleryImageViewCard extends Div {
                 Margin.NONE, Padding.XSMALL,
                 Gap.MEDIUM);
 
-        Select<String> cmbPhotoGenre = new Select<>();
-        cmbPhotoGenre.setLabel("Genre");
-        cmbPhotoGenre.setHelperText("Select the photo genre which the photo belongs.");
+        Select<String> cmbGenre = new Select<>();
+        cmbGenre.setLabel("Genre");
+        cmbGenre.setHelperText("Select the Genre which describes best the photo.");
+        cmbGenre.setWidthFull();
 
         Select<String> cmbDestination = new Select<>();
         cmbDestination.setLabel("Location");
-        cmbDestination.setHelperText("Select a location. Avoid to select, when there are identifiable humans.");
+        cmbDestination.setHelperText("Avoid to select, when there are identifiable humans.");
+        cmbDestination.setWidthFull();
 
         Select<String> cmbSubject = new Select<>();
         cmbSubject.setLabel("Main Subject");
         cmbSubject.setHelperText("Select a subject when is the main object and location can be anywhere.");
+        cmbSubject.setWidthFull();
 
+        List<Record> lstGenreRecs = getRecordsFromDb(sqlReadGenre, arrGenreNames);
+        ArrayList<String> lstGenres = new ArrayList<>();
+        ArrayList<String> lstGenreId = new ArrayList<>();
+        String strGenre = "";
+        for (int r = 0; r < lstGenreRecs.size(); r++) {
+            String strGenreId ="";
+            String genre = lstGenreRecs.get(r).getColumnData("title");
+            lstGenres.add(genre);
+            strGenreId = lstGenreRecs.get(r).getColumnData("id");
+            lstGenreId.add(strGenreId);
+            if (strGenreDbId.equalsIgnoreCase(strGenreId)) {
+                strGenre = genre;
+            }
+        }
+        cmbGenre.setItems(lstGenres);
+        cmbGenre.setValue(strGenre);
 
-        cmbDestination.setWidthFull();
         ArrayList<String> lstDestinations = new ArrayList<>();
         ArrayList<String> lstDestinationsId = new ArrayList<>();
 
@@ -853,8 +943,6 @@ public class GalleryImageViewCard extends Div {
         cmbDestination.setItems(lstDestinations);
         cmbDestination.setValue(strDestination);
 
-
-        cmbSubject.setWidthFull();
         ArrayList<String> lstSubjects = new ArrayList<>();
         ArrayList<String> lstSubjectsId = new ArrayList<>();
 
@@ -889,21 +977,80 @@ public class GalleryImageViewCard extends Div {
         txtPersonalNotes.setMinRows(2);
         txtPersonalNotes.setMaxLength(120);
 
-        Button btnAlbums = new Button("Add Photo to Albums ...");
-        btnAlbums.setIcon(FontAwesome.Solid.PHOTO_FILM.create());
-        btnAlbums.setWidthFull();
-        btnAlbums.addClickListener(click -> {
-            displayDialogAlbumsOfMember(strAvailableAlbumsMemberId, strPhotoId);
+
+        Checkbox chkIsTypeProfile = new Checkbox("Is for your Profile");
+        chkIsTypeProfile.addValueChangeListener(event->{
+            isTypeProfile = event.getValue();
 
         });
+
+        String[] arrColumnsMemberAlbums = {"id", "user_id", "title", "description", "album_visible_to", "category_id"
+                , "username", "name", "surname", "resident", "date_joined", "member_since", "avatar_path"
+        };
+
+        String sqlMemberOfAlbums = "SELECT a.id, a.user_id, a.title, a.description, a.album_visible_to, a.category_id " +
+                " , usr.username, usr.name, usr.surname, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined " +
+                " , DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since " +
+                " , usr.avatar_path " +
+                " FROM dbuser usr, photo_album a " +
+                " WHERE a.user_id = usr.userId " +
+                " AND a.album_visible_to = 'ALL' ";
+        String sqlMemberId = "  AND usr.userId = '" + strAvailableAlbumsMemberId + "' ";
+        String sqlMemberOfAlbumsOrderBy = " ORDER BY a.title ASC";
+
+        List<Record> lstAlbums = getRecordsFromDb(sqlMemberOfAlbums+sqlMemberId+sqlMemberOfAlbumsOrderBy, arrColumnsMemberAlbums);
+        List<String> lstAlbumTitle = new ArrayList<>();
+        List<String> lstAlbumId = new ArrayList<>();
+        List<String> lstAlbumUserId = new ArrayList<>();
+        for (int i = 0; i < lstAlbums.size(); i++) {
+            lstAlbumTitle.add(lstAlbums.get(i).getColumnData("title"));
+            lstAlbumId.add(lstAlbums.get(i).getColumnData("id"));
+            lstAlbumUserId.add(lstAlbums.get(i).getColumnData("user_id"));
+        }
+
+                String[] field = {"album_title"};
+        String sqlCountPhotosOfTheAlbum = "SELECT a.title AS album_title, a.user_id, a. album_visible_to, a.description " +
+                " " +
+                " FROM photo_album_photo pap, photo_album a " +
+                " WHERE pap.photo_album_id = a.id AND pap.user_id = a.user_id AND pap.user_id = " + strAvailableAlbumsMemberId + " AND pap.photo_id = " + strPhotoId +
+                " ORDER BY a.title ";
+        List<Record> lstAlbumsPhotoBelongs = getRecordsFromDb(sqlCountPhotosOfTheAlbum, field);
+
+        ArrayList<String> lstAlbumSelectedTitles = new ArrayList<>();
+        lstAlbumsPhotoBelongs.forEach(value -> {
+            lstAlbumSelectedTitles.add(value.getColumnData("album_title"));
+        });
+        Set<String> setAlbumsPhotoBelongs = new HashSet<>(lstAlbumSelectedTitles);
+
+
+        MultiSelectComboBox cmbAlbums = new MultiSelectComboBox<>();
+        cmbAlbums.setLabel("Albums");
+        cmbAlbums.setItems(lstAlbumTitle);
+        cmbAlbums.select(setAlbumsPhotoBelongs);
+        cmbAlbums.setWidthFull();
+        cmbAlbums.setAutoExpand(MultiSelectComboBox.AutoExpandMode.BOTH);
+
+//        Button btnAlbums = new Button("Add Photo to Albums ...");
+//        btnAlbums.setIcon(FontAwesome.Solid.PHOTO_FILM.create());
+//        btnAlbums.setWidthFull();
+//        btnAlbums.addClickListener(click -> {
+//            displayDialogAlbumsOfMember(strAvailableAlbumsMemberId, strPhotoId);
+//        });
 
         Button btnSave = new Button("Save");
         btnSave.setIcon(FontAwesome.Regular.SAVE.create());
 
         btnSave.addClickListener(event -> {
 
-            String strDestinationId = "";
+            String strGenreId = "";
+            String strGenreTitle = cmbGenre.getValue();
+            for (int i = 0; i < lstGenres.size(); i++) {
+                if (lstGenres.get(i).equalsIgnoreCase(strGenreTitle)) {
+                    strGenreId = lstGenreId.get(i);
+                }
+            }
 
+            String strDestinationId = "";
             String strSelectedDestination = cmbDestination.getValue();
             for (int i = 0; i < lstDestinations.size(); i++) {
                 if (lstDestinations.get(i).equalsIgnoreCase(strSelectedDestination)) {
@@ -913,7 +1060,6 @@ public class GalleryImageViewCard extends Div {
             }
 
             String strSubjectId = "";
-
             String strSelectedSubject = cmbSubject.getValue();
             for (int i = 0; i < lstSubjects.size(); i++) {
                 if (lstSubjects.get(i).equalsIgnoreCase(strSelectedSubject)) {
@@ -921,6 +1067,12 @@ public class GalleryImageViewCard extends Div {
                 }
             }
 
+            if (!strGenreId.isEmpty()) {
+                String strUpdateGenre = "UPDATE photo_meta SET " +
+                        " genre_id = '" + strGenreId + "' " +
+                        " WHERE id = '" + strPhotoId + "'";
+                recordService.insertOneRecordWithQuery(strUpdateGenre, null, null);
+            }
 
             if (!strDestinationId.isEmpty()) {
                 String strUpdateDest = "UPDATE photo_meta SET " +
@@ -936,6 +1088,14 @@ public class GalleryImageViewCard extends Div {
                 recordService.insertOneRecordWithQuery(strUpdateSubj, null, null);
             }
 
+            if(isTypeProfile){
+
+                String strUpdateIsProfile = "UPDATE photo_meta SET " +
+                        " visible_to = 'Profile' " +
+                        " WHERE id = '" + strPhotoId + "'";
+                int retProf = recordService.insertOneRecordWithQuery(strUpdateIsProfile, null, null);
+            }
+
             String strTxtSubtitle = txtSubtitle.getValue().trim();
             String strTxtPersonalNotes = txtPersonalNotes.getValue().trim();
             Object[] fieldValue = {strTxtSubtitle, strTxtPersonalNotes};
@@ -946,9 +1106,16 @@ public class GalleryImageViewCard extends Div {
                     " WHERE id = '" + strPhotoId + "'";
             int ret = recordService.insertOneRecordWithQuery(strUpdateSubj, fieldValue, fieldType);
 
+            savePhotoInAlbums(cmbAlbums, lstAlbumTitle, lstAlbumId, lstAlbumUserId, strPhotoId);
+
             if (ret == 1) {
-                String message = "Photo Updated !";
-                Notification notification = Notification.show(message, 4000, Notification.Position.MIDDLE);
+                String message = "Photo Updated ! ";
+                String messageUp = "Belongs in  " + cmbAlbums.getSelectedItems().toArray().length + "  Albums !";
+               // Notification notificationUp = Notification.show(messageUp, 3000, Notification.Position.MIDDLE);
+               // notificationUp.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+                logger.info(" length: " + cmbAlbums.getSelectedItems().toArray().length);
+
+                Notification notification = Notification.show(message+messageUp, 4000, Notification.Position.MIDDLE);
                 notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
             }
         });
@@ -964,7 +1131,6 @@ public class GalleryImageViewCard extends Div {
                 //   Background.CONTRAST_5,
                 BorderRadius.LARGE);
 
-
         Button btnMoreAction = new Button(FontAwesome.Regular.EDIT.create());//svgAction);
         btnMoreAction.setTooltipText("Edit");
         btnMoreAction.addClassName("btn-actions");
@@ -977,12 +1143,11 @@ public class GalleryImageViewCard extends Div {
 
         layoutUserActions.add(btnSave);//, btnMoreAction, btnComment, btnMoreInfo);
 
-        layoutEdit.add(txtSubtitle, cmbDestination, cmbSubject, txtPersonalNotes, btnAlbums, layoutUserActions);
-
+        layoutEdit.add(txtSubtitle, cmbGenre, cmbDestination, cmbSubject, txtPersonalNotes,chkIsTypeProfile, cmbAlbums, layoutUserActions);
         return layoutEdit;
-
     }
 
+/*
     private void displayDialogAlbumsOfMember(String strAlbumUserId, String strPhotoId) {
         Dialog dlg = new Dialog("My Albums");
 
@@ -999,7 +1164,6 @@ public class GalleryImageViewCard extends Div {
                 " AND a.album_visible_to = 'ALL' ";
         String sqlMemberId = "  AND usr.userId = '" + strAlbumUserId + "' ";
         String sqlMemberOfAlbumsOrderBy = " ORDER BY a.title ASC";
-
 
         VerticalLayout layoutAlbumsPanel = new VerticalLayout();
         layoutAlbumsPanel.addClassNames(Width.FULL,
@@ -1052,51 +1216,51 @@ public class GalleryImageViewCard extends Div {
         dlg.add(layoutAlbumsPanel, layoutControls);
         dlg.open();
     }
+*/
 
-    private MultiSelectListBox<String> loadAlbumsInfoPanel(String sqlMemberOfAlbums, String[] arrColumnsMemberAlbums,
-                                                           String strAlbumUserId, String strPhotoId) {
+//    private MultiSelectListBox<String> loadAlbumsInfoPanel(String sqlMemberOfAlbums, String[] arrColumnsMemberAlbums,
+//                                                           String strAlbumUserId, String strPhotoId) {
+//
+//
+//        List<Record> lstAlbums = getRecordsFromDb(sqlMemberOfAlbums, arrColumnsMemberAlbums);
+//        List<String> lstAlbumTitle = new ArrayList<>();
+//        List<String> lstAlbumId = new ArrayList<>();
+//        for (int i = 0; i < lstAlbums.size(); i++) {
+//            lstAlbumTitle.add(lstAlbums.get(i).getColumnData("title"));
+//            lstAlbumId.add(lstAlbums.get(i).getColumnData("id"));
+//        }
+//
+//
+//        MultiSelectListBox<String> listBoxAlbums;
+//        listBoxAlbums = new MultiSelectListBox<>();
+//        listBoxAlbums.addClassNames(Background.BASE, BorderRadius.SMALL);
+//        listBoxAlbums.setWidthFull();
+//        listBoxAlbums.setMinHeight("260px");
+//        listBoxAlbums.setItems(lstAlbumTitle);
+//
+//        String[] field = {"album_title"};
+//        String sqlCountPhotosOfTheAlbum = "SELECT a.title AS album_title, a.user_id, a. album_visible_to, a.description " +
+//                " " +
+//                " FROM photo_album_photo pap, photo_album a " +
+//                " WHERE pap.photo_album_id = a.id AND pap.user_id = a.user_id AND pap.user_id = " + strAlbumUserId + " AND pap.photo_id = " + strPhotoId +
+//                " ORDER BY a.title ";
+//        List<Record> lstAlbumsPhotoBelongs = getRecordsFromDb(sqlCountPhotosOfTheAlbum, field);
+//
+//        ArrayList<String> lstAlbumTitles = new ArrayList<>();
+//        lstAlbumsPhotoBelongs.forEach(value -> {
+//            lstAlbumTitles.add(value.getColumnData("album_title"));
+//        });
+//        Set<String> setAlbumsPhotoBelongs = new HashSet<>(lstAlbumTitles);
+//
+//
+//        listBoxAlbums.setValue(setAlbumsPhotoBelongs);
+//
+//
+//        return listBoxAlbums;
+//    }
 
-
-        List<Record> lstAlbums = getRecordsFromDb(sqlMemberOfAlbums, arrColumnsMemberAlbums);
-        List<String> lstAlbumTitle = new ArrayList<>();
-        List<String> lstAlbumId = new ArrayList<>();
-        for (int i = 0; i < lstAlbums.size(); i++) {
-            lstAlbumTitle.add(lstAlbums.get(i).getColumnData("title"));
-            lstAlbumId.add(lstAlbums.get(i).getColumnData("id"));
-        }
-
-
-        MultiSelectListBox<String> listBoxAlbums;
-        listBoxAlbums = new MultiSelectListBox<>();
-        listBoxAlbums.addClassNames(Background.BASE, BorderRadius.SMALL);
-        listBoxAlbums.setWidthFull();
-        listBoxAlbums.setMinHeight("260px");
-        listBoxAlbums.setItems(lstAlbumTitle);
-
-        String[] field = {"album_title"};
-        String sqlCountPhotosOfTheAlbum = "SELECT a.title AS album_title, a.user_id, a. album_visible_to, a.description " +
-                " " +
-                " FROM photo_album_photo pap, photo_album a " +
-                " WHERE pap.photo_album_id = a.id AND pap.user_id = a.user_id AND pap.user_id = " + strAlbumUserId + " AND pap.photo_id = " + strPhotoId +
-                " ORDER BY a.title ";
-        List<Record> lstAlbumsPhotoBelongs = getRecordsFromDb(sqlCountPhotosOfTheAlbum, field);
-
-        ArrayList<String> lstAlbumTitles = new ArrayList<>();
-        lstAlbumsPhotoBelongs.forEach(value -> {
-            lstAlbumTitles.add(value.getColumnData("album_title"));
-        });
-        Set<String> setAlbumsPhotoBelongs = new HashSet<>(lstAlbumTitles);
-
-
-        listBoxAlbums.setValue(setAlbumsPhotoBelongs);
-
-
-        return listBoxAlbums;
-    }
-
-    private boolean savePhotoInAlbums(MultiSelectListBox<String> photoInAlbums, List<String> lstAlbumTitle, List<String> lstAlbumId,
+    private boolean savePhotoInAlbums(MultiSelectComboBox<String> photoInAlbums, List<String> lstAlbumTitle, List<String> lstAlbumId,
                                       List<String> lstAlbumUserId, String strPhotoId) {
-
 
         for (int i = 0; i < photoInAlbums.getSelectedItems().toArray().length; i++) {
             for (int x = 0; x < lstAlbumTitle.size(); x++) {
@@ -1116,7 +1280,8 @@ public class GalleryImageViewCard extends Div {
                     fieldValue[2] = strPhotoId;
                     fieldValueType[2] = "java.lang.Integer";
 
-                    String sqlDelete = "DELETE FROM photo_album_photo WHERE `user_id` = " + strAlbumUserId + " AND `photo_album_id` = " + strAlbumId + " AND photo_id = " + strPhotoId;
+                    String sqlDelete = "DELETE FROM photo_album_photo WHERE `user_id` = " + strAlbumUserId + " AND photo_id = " + strPhotoId;
+                    //  " AND `photo_album_id` = " + strAlbumId +
 
                     recordService.insertOneRecordWithQuery(sqlDelete, null, null);
 
@@ -1132,12 +1297,10 @@ public class GalleryImageViewCard extends Div {
                     int intPhotoInc = Integer.parseInt(strPhotoCount) + x * 2;
                     logger.info(" -- intPhotoInc:" + intPhotoInc + " strPhotoCount:" + strPhotoCount + " x:" + x);
 
-
                     fieldValue[3] = intPhotoInc;
                     fieldValueType[3] = "java.lang.Integer";
 
                     strInsert.append("INSERT INTO photo_album_photo (`user_id`, `photo_album_id`, `photo_id`, `inc`) VALUES (?, ?, ?, ?)");
-
 
                     if (recordService.insertOneRecordWithQuery(strInsert.toString(), fieldValue, fieldValueType) == 1) {
 
@@ -1164,7 +1327,6 @@ public class GalleryImageViewCard extends Div {
                             recordService.insertOneRecordWithQuery(strInsert1and2Photos, fieldValue, fieldValueType);
                         }
 
-
                     } else {
                         String messageUp = "Photo Not Added on Albums !";
                         Notification notificationUp = Notification.show(messageUp, 3000, Notification.Position.MIDDLE);
@@ -1175,13 +1337,137 @@ public class GalleryImageViewCard extends Div {
             }
         }
 
-        String messageUp = "Photo Added in  " + photoInAlbums.getSelectedItems().toArray().length + "  Albums !";
-        Notification notificationUp = Notification.show(messageUp, 3000, Notification.Position.MIDDLE);
-        notificationUp.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-        logger.info(" length: " + photoInAlbums.getSelectedItems().toArray().length);
-
         return true;
     }
+
+    private Dialog  showDialogWeatherForCity(String city, String country) {
+
+        Dialog dialog = new Dialog();
+        dialog.setDraggable(true);
+        dialog.setCloseOnOutsideClick(true);
+        dialog.setCloseOnEsc(true);
+
+        HorizontalLayout layoutWeather = new HorizontalLayout();
+        layoutWeather.getStyle().setColor("#8b94a0");
+        layoutWeather.addClassNames(
+                LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER
+        );
+
+        LocalWeatherForecast weatherForecast = new LocalWeatherForecast(weatherService, city, country);
+        weatherForecast.setMaxWidth("900px");
+        layoutWeather.add(weatherForecast);
+
+        dialog.add(layoutWeather);
+        return dialog;
+    }
+
+    private VerticalLayout fetchPhotoCreator(Record record, boolean showMinimum) {
+
+        VerticalLayout layoutCreatorInfo = new VerticalLayout();
+        layoutCreatorInfo.addClassNames(
+                LumoUtility.Width.FULL, LumoUtility.Height.FULL,
+                LumoUtility.Padding.NONE, LumoUtility.Margin.NONE,
+                LumoUtility.Gap.XSMALL,
+                LumoUtility.BorderRadius.LARGE,
+                LumoUtility.AlignItems.START, LumoUtility.JustifyContent.START);
+        layoutCreatorInfo.addClassNames("member-profile-design");
+        layoutCreatorInfo.addClassName("info-to-show");
+        layoutCreatorInfo.setMaxHeight("160px");
+//        layoutCreatorInfo.getStyle().setOpacity("1");
+
+        String strCreatorId = record.getColumnData("uploaderId");
+        String strUsername = record.getColumnData("username");
+        String strName = record.getColumnData("name");
+        String strSurname = record.getColumnData("surname");
+        String strShortBio = record.getColumnData("short_bio");
+        String strMemberSince = record.getColumnData("member_since");
+        String strAvatarPath = record.getColumnData("avatar_path");
+        String strResident = record.getColumnData("resident");
+        String strResidentCountry = record.getColumnData("resident_country");
+
+        String strCountPhotos = record.getColumnData("count_photos");
+        String strCountAlbums = record.getColumnData("count_albums");
+
+        Div divImgAvatar = new Div();
+        divImgAvatar.addClassNames(LumoUtility.Padding.NONE, LumoUtility.Margin.NONE);
+
+        String strAvatarSize = "50px";
+        Image imageAvatar = genericView.getAvatarThumbImage(strAvatarPath, strUsername, strAvatarSize, strAvatarSize);
+        divImgAvatar.add(imageAvatar);
+
+
+        HorizontalLayout horizontalLayout = new HorizontalLayout();
+
+        layoutCreatorInfo.getStyle().setOpacity("1");
+
+
+        H4 objMember = new H4(strUsername);
+        objMember.addClassNames(LumoUtility.TextColor.SECONDARY, LumoUtility.FontWeight.NORMAL, LumoUtility.FontSize.SMALL,
+                LumoUtility.Margin.NONE, LumoUtility.Padding.NONE,
+                LumoUtility.Gap.XSMALL);
+
+        H4 objName = new H4(strName + " " + strSurname);
+        objName.addClassNames(LumoUtility.TextColor.SECONDARY, LumoUtility.FontWeight.BOLD, LumoUtility.FontSize.SMALL,
+                LumoUtility.Margin.NONE, LumoUtility.Padding.NONE,
+                LumoUtility.Gap.XSMALL);
+
+        Div divMemberSince = new Div("Member since "+strMemberSince);
+        divMemberSince.addClassNames(LumoUtility.TextColor.SECONDARY, LumoUtility.FontWeight.EXTRALIGHT, LumoUtility.FontSize.XSMALL,
+                LumoUtility.Margin.NONE, LumoUtility.Padding.XSMALL,
+                LumoUtility.Gap.XSMALL);
+
+
+
+        Icon iconPhoto = VaadinIcon.PICTURE.create();
+        Icon iconAlbum = FontAwesome.Solid.PHOTO_FILM.create();
+        Span spPhotos = new Span(" Photos");
+        spPhotos.addClassNames(LumoUtility.TextColor.TERTIARY, LumoUtility.FontSize.SMALL);
+        Span divPhotos = new Span(strCountPhotos);
+        divPhotos.add(spPhotos);
+        divPhotos.addClassNames(LumoUtility.TextColor.SECONDARY);
+        Span spAlbums = new Span(" Albums");
+        spAlbums.addClassNames(LumoUtility.TextColor.TERTIARY, LumoUtility.FontSize.SMALL);
+        Span divAlbums = new Span(strCountAlbums);
+        divAlbums.addClassNames(LumoUtility.TextColor.SECONDARY);
+        divAlbums.add(spAlbums);
+
+        HorizontalLayout layoutCounts = new HorizontalLayout();
+        layoutCounts.addClassNames(LumoUtility.Width.FULL, LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.EVENLY,
+                LumoUtility.Padding.SMALL, LumoUtility.Margin.NONE,
+                LumoUtility.Gap.XSMALL,
+                LumoUtility.BorderRadius.LARGE, LumoUtility.Background.CONTRAST_5,
+                LumoUtility.TextColor.SECONDARY, LumoUtility.FontSize.MEDIUM);
+        layoutCounts.add(iconPhoto, divPhotos, iconAlbum, divAlbums);
+
+        VerticalLayout layoutMemberCard = new VerticalLayout();
+//            layoutMemberCard.getStyle().setMaxWidth("300px");
+//            layoutMemberCard.getStyle().set("border", "lightgrey 1px solid");
+        layoutMemberCard.addClassNames(LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER);
+        layoutMemberCard.setMaxWidth("60px");
+        layoutMemberCard.add(divImgAvatar);
+
+        Div divResidentCaption = new Div("Resident");
+        Div divResident = new Div(strResident);
+        divResident.addClassNames(LumoUtility.FontWeight.BOLD);
+
+        VerticalLayout layoutAdditional = new VerticalLayout();
+        layoutAdditional.addClassNames(LumoUtility.Width.FULL, LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER,
+                LumoUtility.Margin.NONE, LumoUtility.Padding.XSMALL,
+                LumoUtility.Gap.XSMALL);
+        layoutAdditional.add(objMember, objName, divMemberSince); //, divBioTitle, divBio);//, divResidentCaption, divResident);
+
+        horizontalLayout.add(layoutMemberCard, layoutAdditional);
+
+        if(showMinimum){
+            layoutCreatorInfo.add(horizontalLayout);
+        }else {
+            layoutCreatorInfo.add(horizontalLayout, layoutCounts);
+        }
+
+        return layoutCreatorInfo;
+    }
+
+
 
     private HorizontalLayout getActions_as_a_backup() {
 

@@ -446,10 +446,10 @@ public class StoryViewCard extends VerticalLayout {
 //        userAvatarLarge.addThemeVariants(AvatarVariant.LUMO_XLARGE);
 
 
-        Image imgAvatarSmall = genericView.getAvatarImage(strAvatarPath, strAlbumNameOfUser, "40px", "40px");
+        Image imgAvatarSmall = genericView.getAvatarThumbImage(strAvatarPath, strAlbumNameOfUser, "40px", "40px");
         //Image imgAvatarSmall = getAvatarImage(strAvatar, strAlbumUserName, "40px", "40px");
 
-        Image imgAvatarMedium = genericView.getAvatarImage(strAvatarPath, strAlbumNameOfUser, "70px", "70px");
+        Image imgAvatarMedium = genericView.getAvatarThumbImage(strAvatarPath, strAlbumNameOfUser, "70px", "70px");
 //        Image imgAvatarMedium = getAvatarImage(strAvatar, strAlbumUserName, "70px", "70px");
 
         AvatarItem avatarItemMe = new AvatarItem(strAlbumNameOfUser, "", imgAvatarSmall);
