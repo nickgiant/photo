@@ -6,6 +6,7 @@ import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.model.ShareType;
 import com.photo.act.photo_act.model.ShareableResource;
 import com.photo.act.photo_act.services.PhotoRatingService;
+import com.photo.act.photo_act.services.PhotoViewService;
 import com.photo.act.photo_act.services.ShareMetricService;
 import com.photo.act.photo_act.services.ShareService;
 import com.photo.act.photo_act.services.WeatherService;
@@ -63,6 +64,9 @@ public class GalleryImageViewCard extends Div {
     private ShareService shareService;
     private ShareMetricService shareMetricService;
     private PhotoRatingService photoRatingService;
+    private PhotoViewService photoViewService;
+    private int cardUserId;
+    private String cardPublicIp;
 
     private final WeatherService weatherService;
     private LocalWeatherForecast weatherForecast;
@@ -121,11 +125,14 @@ public class GalleryImageViewCard extends Div {
     public GalleryImageViewCard(Record record, String strImagePath, boolean isMobile, int userId, String strUserName, long sessionCreation,
                                 String hostname, String publicIp, boolean isEditable, RecordService recordService, int isType, String sqlCarousel, String sqlCarouselOrderBy,
                                 String[] arrColumnsCarousel, ShareService shareService, ShareMetricService shareMetricService, WeatherService weatherService,
-                                PhotoRatingService photoRatingService) {
+                                PhotoRatingService photoRatingService, PhotoViewService photoViewService) {
         this.recordService = recordService;
         this.shareService = shareService;
         this.shareMetricService = shareMetricService;
         this.photoRatingService = photoRatingService;
+        this.photoViewService = photoViewService;
+        this.cardUserId = userId;
+        this.cardPublicIp = publicIp;
         this.isMobile = isMobile;
         this.record = record;
         this.strImagePath = strImagePath;
@@ -148,6 +155,16 @@ public class GalleryImageViewCard extends Div {
 
         String strPhotoId = record.getColumnData("id");
         String strFileName = record.getColumnData("name_new");
+
+        // Record this view (deduped per IP per hour by PhotoViewService)
+        if (photoViewService != null && strPhotoId != null) {
+            try {
+                int photoIdInt = Integer.parseInt(strPhotoId);
+                Integer viewUserId = (cardUserId > 0) ? cardUserId : null;
+                photoViewService.recordView(photoIdInt, strFileName, viewUserId, cardPublicIp);
+            } catch (NumberFormatException ignored) {}
+        }
+
         String strTitle = record.getColumnData("title");
         String strSubTitle = record.getColumnData("subtitle");
         String strPersonalNotes = record.getColumnData("notes");
@@ -605,13 +622,15 @@ public class GalleryImageViewCard extends Div {
         badgePhotoType.getElement().getThemeList().add("badge contrast");
         badgePhotoType.setText(strPhotoType);
 
+        HorizontalLayout statsRow = buildStatsRow(strPhotoId);
+
         if (!isEditable) {
             //anyone logged in
             this.add(divImage, layoutInfoPanel, divPhotoInfo);
             if (isMobile) {
-                divPhotoInfo.add(subtitle, getActions(strPhotoId, strSubTitle,strFileName, strCity,isType, strSelection, strAlbumUsername));
+                divPhotoInfo.add(subtitle, statsRow, getActions(strPhotoId, strSubTitle,strFileName, strCity,isType, strSelection, strAlbumUsername));
             } else {
-                divPhotoInfo.add(subtitle, getActions(strPhotoId, strSubTitle,strFileName,strCity,isType, strSelection, strAlbumUsername));
+                divPhotoInfo.add(subtitle, statsRow, getActions(strPhotoId, strSubTitle,strFileName,strCity,isType, strSelection, strAlbumUsername));
             }
             //this.addClassNames(JustifyContent.EVENLY);
 
@@ -619,15 +638,58 @@ public class GalleryImageViewCard extends Div {
             // user himself
             this.add(divImage, layoutInfoPanel, divPhotoInfo);
             if (isMobile) {
-                divPhotoInfo.add(getEditPanel(strPhotoId, strAvailableAlbumsMemberId, strUserRights, strSubTitle,strGenreId, strCityId, strSubjectId, strPersonalNotes));
+                divPhotoInfo.add(statsRow, getEditPanel(strPhotoId, strAvailableAlbumsMemberId, strUserRights, strSubTitle,strGenreId, strCityId, strSubjectId, strPersonalNotes));
             } else {
-                divPhotoInfo.add(getEditPanel(strPhotoId, strAvailableAlbumsMemberId, strUserRights, strSubTitle, strGenreId, strCityId, strSubjectId, strPersonalNotes));
+                divPhotoInfo.add(statsRow, getEditPanel(strPhotoId, strAvailableAlbumsMemberId, strUserRights, strSubTitle, strGenreId, strCityId, strSubjectId, strPersonalNotes));
             }
             // this.addClassNames(JustifyContent.EVENLY);
 
         }
     }
 
+
+    /** Builds the view-count + avg-rating stats bar shown below each photo. */
+    private HorizontalLayout buildStatsRow(String strPhotoId) {
+        long viewCount = 0;
+        double avgRating = 0.0;
+        long ratingCount = 0;
+        try {
+            int photoIdInt = Integer.parseInt(strPhotoId);
+            if (photoViewService != null) {
+                viewCount = photoViewService.getViewCount(photoIdInt);
+            }
+            if (photoRatingService != null) {
+                avgRating = photoRatingService.getAverageRating(photoIdInt);
+                ratingCount = photoRatingService.getRatingCount(photoIdInt);
+            }
+        } catch (NumberFormatException ignored) {}
+
+        HorizontalLayout row = new HorizontalLayout();
+        row.addClassNames(
+                Width.FULL, AlignItems.CENTER, JustifyContent.START,
+                Gap.SMALL, Padding.Horizontal.XSMALL, Padding.Vertical.NONE, Margin.NONE
+        );
+        row.getStyle().set("font-size", "0.78rem")
+                      .set("color", "var(--lumo-secondary-text-color)");
+
+        // Views count
+        HorizontalLayout viewsChip = new HorizontalLayout();
+        viewsChip.addClassNames(AlignItems.CENTER, Gap.XSMALL, Padding.NONE, Margin.NONE);
+        viewsChip.add(FontAwesome.Regular.EYE.create(), new Span(String.valueOf(viewCount)));
+
+        row.add(viewsChip);
+
+        // Rating – only if ratings exist
+        if (ratingCount > 0) {
+            HorizontalLayout ratingChip = new HorizontalLayout();
+            ratingChip.addClassNames(AlignItems.CENTER, Gap.XSMALL, Padding.NONE, Margin.NONE);
+            Span starSpan = new Span(String.format("\u2605 %.1f (%d)", avgRating, ratingCount));
+            ratingChip.add(starSpan);
+            row.add(ratingChip);
+        }
+
+        return row;
+    }
 
     private HorizontalLayout getActions(String strPhotoId, String strSubTitle, String strFileName, String strCity, int isType, String strSelection, String strAlbumUsername) {
 
@@ -654,23 +716,9 @@ public class GalleryImageViewCard extends Div {
             showDialogWithCarousel(isType, strSelection, strPhotoId, strAlbumUsername, false);
         });
 
-        // Query avg rating and count for this photo
-        double avgRating = 0.0;
-        long ratingCount = 0;
-        if (photoRatingService != null) {
-            try {
-                int photoIdInt = Integer.parseInt(strPhotoId);
-                avgRating = photoRatingService.getAverageRating(photoIdInt);
-                ratingCount = photoRatingService.getRatingCount(photoIdInt);
-            } catch (NumberFormatException ignored) {}
-        }
-        String ratingLabel = ratingCount > 0
-                ? String.format("Rate it  \u2605%.1f (%d)", avgRating, ratingCount)
-                : "Rate it";
-
         SvgIcon svgRate = new SvgIcon(DownloadHandler.forClassResource(GalleryImageViewCard.class, "/icons/star-empty-icon.svg"));
 
-        MenuItem viewRate = createIconItem(shareBottomBar, svgRate, ratingLabel, "rate it");
+        MenuItem viewRate = createIconItem(shareBottomBar, svgRate, "Rate it", "rate it");
         viewRate.addClickListener(click->{
             showDialogWithCarousel(isType, strSelection, strPhotoId, strAlbumUsername, true);
         });
