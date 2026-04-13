@@ -43,7 +43,7 @@ public class ShareBottomBar extends MenuBar {
 
     public void addShareItemMenu(){
 
-        addCopyItem();
+
         SvgIcon svgShare = new SvgIcon(DownloadHandler.forClassResource(GalleryImageViewCard.class, "/icons/share-line-icon.svg"));
         rootItem = createIconItem(this, svgShare, "", null);
 
@@ -82,6 +82,8 @@ public class ShareBottomBar extends MenuBar {
         addShareItem("LinkedIn", FontAwesome.Brands.LINKEDIN_IN.create(),
                 shareService.linkedIn(resource.publicUrl()),
                 "linkedin", null, true);
+
+
 
 /*        addShareItem("Email", VaadinIcon.MAILBOX.create(),
                 shareService.email(resource.title(),

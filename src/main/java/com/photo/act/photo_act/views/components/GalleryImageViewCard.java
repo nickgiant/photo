@@ -644,9 +644,16 @@ public class GalleryImageViewCard extends Div {
 
         ShareBottomBar shareBottomBar = new ShareBottomBar(photo,shareService,shareMetricService);
 
-        MenuItem viewLarger = createIconItem(shareBottomBar, VaadinIcon.VIEWPORT.create(), "View Larger", null);
+        MenuItem viewLarger = createIconItem(shareBottomBar, VaadinIcon.VIEWPORT.create(), "View Larger", "View Larger");
         viewLarger.addClickListener(click->{
             showDialogWithCarousel(isType, strSelection, strPhotoId, strAlbumUsername, false);
+        });
+
+        SvgIcon svgRate = new SvgIcon(DownloadHandler.forClassResource(GalleryImageViewCard.class, "/icons/star-empty-icon.svg"));
+
+        MenuItem viewRate = createIconItem(shareBottomBar, svgRate, "Rate it", "rate it");
+        viewRate.addClickListener(click->{
+            showDialogWithCarousel(isType, strSelection, strPhotoId, strAlbumUsername, true);
         });
 
 
@@ -819,6 +826,10 @@ public class GalleryImageViewCard extends Div {
             icon.getStyle().setWidth("var(--lumo-icon-size-s)");
             icon.getStyle().setHeight("var(--lumo-icon-size-s)");
             icon.getStyle().setMarginRight("var(--lumo-space-s)");
+        }else{
+            icon.getStyle().setWidth("var(--lumo-icon-size-m)");
+            icon.getStyle().setHeight("var(--lumo-icon-size-m)");
+            icon.getStyle().setMarginRight("var(--lumo-space-s)");
         }
 
         MenuItem item = menu.addItem(icon, e -> {
@@ -828,8 +839,11 @@ public class GalleryImageViewCard extends Div {
             item.setAriaLabel(ariaLabel);
         }
 
+        Text lbl =  new Text(" "+label);
+
+
         if (label != null) {
-            item.add(new Text(label));
+            item.add(lbl);
         }
 
         return item;
