@@ -4,6 +4,7 @@ import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.services.CacheService;
+import com.photo.act.photo_act.services.PhotoRatingService;
 import com.photo.act.photo_act.services.ShareMetricService;
 import com.photo.act.photo_act.services.ShareService;
 import com.photo.act.photo_act.services.WeatherService;
@@ -93,6 +94,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
     private ShareService shareService;
     private ShareMetricService shareMetricService;
     private WeatherService weatherService;
+    private PhotoRatingService photoRatingService;
     private String strHeader;
 
     private final List<PhotoItem> photos = new ArrayList<>();
@@ -254,11 +256,12 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         }
     }
 
-    public GalleryView(RecordService recordService, ShareService shareService, ShareMetricService shareMetricService, WeatherService weatherService) {
+    public GalleryView(RecordService recordService, ShareService shareService, ShareMetricService shareMetricService, WeatherService weatherService, PhotoRatingService photoRatingService) {
         this.recordService = recordService;
         this.shareService = shareService;
         this.shareMetricService = shareMetricService;
         this.weatherService = weatherService;
+        this.photoRatingService = photoRatingService;
         utilsDate = new UtilsDate();
         genericView = new GenericView(recordService);
 
@@ -1190,7 +1193,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         logger.info(" strImagePath " + strImagePath);
 
         GalleryImageViewCard imageGalleryViewCard = new GalleryImageViewCard(record, strImagePath, isMobile, userId, strUsername, sessionCreation, hostname, publicIp, isEditable,
-                recordService, isType, sqlReadGallery, sqlOrderBy, arrColumnNamesGallery,shareService,  shareMetricService, weatherService );
+                recordService, isType, sqlReadGallery, sqlOrderBy, arrColumnNamesGallery, shareService, shareMetricService, weatherService, photoRatingService);
         return imageGalleryViewCard;
     }
 

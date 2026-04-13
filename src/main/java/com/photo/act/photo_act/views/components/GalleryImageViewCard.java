@@ -5,6 +5,7 @@ import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.model.ShareType;
 import com.photo.act.photo_act.model.ShareableResource;
+import com.photo.act.photo_act.services.PhotoRatingService;
 import com.photo.act.photo_act.services.ShareMetricService;
 import com.photo.act.photo_act.services.ShareService;
 import com.photo.act.photo_act.services.WeatherService;
@@ -61,6 +62,7 @@ public class GalleryImageViewCard extends Div {
     private RecordService recordService;
     private ShareService shareService;
     private ShareMetricService shareMetricService;
+    private PhotoRatingService photoRatingService;
 
     private final WeatherService weatherService;
     private LocalWeatherForecast weatherForecast;
@@ -118,10 +120,12 @@ public class GalleryImageViewCard extends Div {
 
     public GalleryImageViewCard(Record record, String strImagePath, boolean isMobile, int userId, String strUserName, long sessionCreation,
                                 String hostname, String publicIp, boolean isEditable, RecordService recordService, int isType, String sqlCarousel, String sqlCarouselOrderBy,
-                                String[] arrColumnsCarousel, ShareService shareService, ShareMetricService shareMetricService, WeatherService weatherService) {
+                                String[] arrColumnsCarousel, ShareService shareService, ShareMetricService shareMetricService, WeatherService weatherService,
+                                PhotoRatingService photoRatingService) {
         this.recordService = recordService;
         this.shareService = shareService;
         this.shareMetricService = shareMetricService;
+        this.photoRatingService = photoRatingService;
         this.isMobile = isMobile;
         this.record = record;
         this.strImagePath = strImagePath;
@@ -134,6 +138,7 @@ public class GalleryImageViewCard extends Div {
         this.addClassName("gallery-view-card");
 
         genericView = new GenericView(recordService);
+        genericView.setPhotoRatingService(photoRatingService);
 
         this.strAvailableAlbumsMemberId = genericView.checkIfAuthMemberId();
 
@@ -649,9 +654,23 @@ public class GalleryImageViewCard extends Div {
             showDialogWithCarousel(isType, strSelection, strPhotoId, strAlbumUsername, false);
         });
 
+        // Query avg rating and count for this photo
+        double avgRating = 0.0;
+        long ratingCount = 0;
+        if (photoRatingService != null) {
+            try {
+                int photoIdInt = Integer.parseInt(strPhotoId);
+                avgRating = photoRatingService.getAverageRating(photoIdInt);
+                ratingCount = photoRatingService.getRatingCount(photoIdInt);
+            } catch (NumberFormatException ignored) {}
+        }
+        String ratingLabel = ratingCount > 0
+                ? String.format("Rate it  \u2605%.1f (%d)", avgRating, ratingCount)
+                : "Rate it";
+
         SvgIcon svgRate = new SvgIcon(DownloadHandler.forClassResource(GalleryImageViewCard.class, "/icons/star-empty-icon.svg"));
 
-        MenuItem viewRate = createIconItem(shareBottomBar, svgRate, "Rate it", "rate it");
+        MenuItem viewRate = createIconItem(shareBottomBar, svgRate, ratingLabel, "rate it");
         viewRate.addClickListener(click->{
             showDialogWithCarousel(isType, strSelection, strPhotoId, strAlbumUsername, true);
         });

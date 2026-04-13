@@ -4,6 +4,7 @@ import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.services.EmailSendService;
+import com.photo.act.photo_act.services.PhotoRatingService;
 import com.photo.act.photo_act.services.ShareMetricService;
 import com.photo.act.photo_act.services.ShareService;
 import com.photo.act.photo_act.services.WeatherService;
@@ -200,13 +201,15 @@ public class UploadView extends Main implements HasUrlParameter<String>, BeforeE
     private GenericView genericView;
     private EmailSendService emailSendService;
     private WeatherService weatherService;
+    private PhotoRatingService photoRatingService;
 
-    public UploadView(RecordService recordService, EmailSendService emailSendService, ShareService shareService, ShareMetricService shareMetricService, WeatherService weatherService) {
+    public UploadView(RecordService recordService, EmailSendService emailSendService, ShareService shareService, ShareMetricService shareMetricService, WeatherService weatherService, PhotoRatingService photoRatingService) {
         this.recordService = recordService;
         this.emailSendService = emailSendService;
         this.shareService = shareService;
         this.shareMetricService = shareMetricService;
         this.weatherService = weatherService;
+        this.photoRatingService = photoRatingService;
 
         utilsDate = new UtilsDate();
         genericView = new GenericView(recordService);
@@ -522,7 +525,7 @@ public class UploadView extends Main implements HasUrlParameter<String>, BeforeE
         boolean isEditable = true;
 
         GalleryImageViewCard imageGalleryViewCard = new GalleryImageViewCard(record, strImagePath, isMobile, intUserId, strMember, sessionCreation, hostname, publicIp, isEditable,
-                recordService, isType, sqlReadGallery, sqlMemberPhotosOrderby, arrColumnNamesGallery,shareService,  shareMetricService, weatherService );
+                recordService, isType, sqlReadGallery, sqlMemberPhotosOrderby, arrColumnNamesGallery, shareService, shareMetricService, weatherService, photoRatingService);
         return imageGalleryViewCard;
     }
 

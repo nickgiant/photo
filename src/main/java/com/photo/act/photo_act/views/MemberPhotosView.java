@@ -4,6 +4,7 @@ import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.services.EmailSendService;
+import com.photo.act.photo_act.services.PhotoRatingService;
 import com.photo.act.photo_act.services.ShareMetricService;
 import com.photo.act.photo_act.services.ShareService;
 import com.photo.act.photo_act.services.WeatherService;
@@ -136,6 +137,7 @@ public class MemberPhotosView extends Main implements HasUrlParameter<String>, B
     private ShareService shareService;
     private ShareMetricService shareMetricService;
     private WeatherService weatherService;
+    private PhotoRatingService photoRatingService;
     private String strHeader;
 
 //    private String[] arrColumnMemberGalleryCount = {"countOfMemberPhotos"
@@ -223,12 +225,13 @@ public class MemberPhotosView extends Main implements HasUrlParameter<String>, B
 
     private ListBox<String> listBoxAlbums;
 
-    public MemberPhotosView(RecordService recordService, EmailSendService emailSendService, ShareService shareService, ShareMetricService shareMetricService, WeatherService weatherService) {
+    public MemberPhotosView(RecordService recordService, EmailSendService emailSendService, ShareService shareService, ShareMetricService shareMetricService, WeatherService weatherService, PhotoRatingService photoRatingService) {
         this.recordService = recordService;
         this.emailSendService = emailSendService;
         this.shareService = shareService;
         this.shareMetricService = shareMetricService;
         this.weatherService = weatherService;
+        this.photoRatingService = photoRatingService;
 
         utilsDate = new UtilsDate();
         genericView = new GenericView(recordService);
@@ -774,7 +777,7 @@ public class MemberPhotosView extends Main implements HasUrlParameter<String>, B
         boolean isEditable = true;
 
         GalleryImageViewCard imageGalleryViewCard = new GalleryImageViewCard(record, strImagePath, isMobile, intUserId, strMember, sessionCreation, hostname, publicIp, isEditable,
-                recordService, isType, sqlReadGallery, sqlMemberPhotosOrderby, arrColumnNamesGallery,shareService, shareMetricService, weatherService);
+                recordService, isType, sqlReadGallery, sqlMemberPhotosOrderby, arrColumnNamesGallery, shareService, shareMetricService, weatherService, photoRatingService);
 
         imageGalleryViewCard.addClassName("image-to-show");
         imageGalleryViewCard.getStyle().setOpacity("1");
