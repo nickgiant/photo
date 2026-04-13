@@ -22,39 +22,39 @@ public class PhotoRatingService {
 
     /**
      * Save or update a rating for a photo by a user.
-     * If the user already rated this photo, updates the existing rating.
+     * If the user already rated this photo, updates the rating and rater IP.
+     *
+     * @param photoId   numeric photo id
+     * @param userId    logged-in user id
+     * @param rating    score 1–7
+     * @param nameNew   stored filename (name_new column)
+     * @param ipAddress rater's IP address
      */
     @Transactional
-    public void saveOrUpdateRating(int photoId, int userId, int rating) {
+    public void saveOrUpdateRating(int photoId, int userId, int rating, String nameNew, String ipAddress) {
         Optional<PhotoRating> existing = repository.findByPhotoIdAndUserId(photoId, userId);
         if (existing.isPresent()) {
-            existing.get().updateRating(rating);
+            existing.get().updateRating(rating, ipAddress);
             repository.save(existing.get());
             logger.info("Updated rating for photo {} by user {} to {}", photoId, userId, rating);
         } else {
-            repository.save(new PhotoRating(photoId, userId, rating));
+            repository.save(new PhotoRating(photoId, userId, rating, nameNew, ipAddress));
             logger.info("Saved new rating for photo {} by user {} = {}", photoId, userId, rating);
         }
     }
 
-    /**
-     * Returns the average rating for a photo, or 0.0 if no ratings exist.
-     */
+    /** Returns the average rating for a photo, or 0.0 if no ratings exist. */
     public double getAverageRating(int photoId) {
         Double avg = repository.findAverageRatingByPhotoId(photoId);
         return avg != null ? avg : 0.0;
     }
 
-    /**
-     * Returns the total number of ratings for a photo.
-     */
+    /** Returns the total number of ratings for a photo. */
     public long getRatingCount(int photoId) {
         return repository.countByPhotoId(photoId);
     }
 
-    /**
-     * Returns the existing rating a user gave to a photo, or 0 if none.
-     */
+    /** Returns the rating a user gave to a photo, or 0 if none. */
     public int getUserRating(int photoId, int userId) {
         return repository.findByPhotoIdAndUserId(photoId, userId)
                 .map(PhotoRating::getRating)

@@ -650,7 +650,8 @@ public class GenericView {
     }
 
     public Dialog showCarouselDialog(int isType, String sqlRead, String sqlReadOrderBy, String[] arrColumnNames, String strSelection, String filterColumn,
-                                     String sqlReadSelection, String[] arrColumnNamesSelection, String strPhotoId, String strAlbumUsername, boolean isOnlyRating) {
+                                     String sqlReadSelection, String[] arrColumnNamesSelection, String strPhotoId, String strAlbumUsername, boolean isOnlyRating,
+                                     Runnable onRatingSaved) {
 
         dlgCarousel = new Dialog();
         dlgCarousel.setDraggable(true);
@@ -678,13 +679,13 @@ public class GenericView {
         dlgCarousel.add(layoutTitle);
          */
         dlgCarousel.add(loadCarouselWithThumbnails(isType, sqlRead, sqlReadOrderBy, arrColumnNames, strSelection, filterColumn,
-                sqlReadSelection, arrColumnNamesSelection, strPhotoId, strAlbumUsername, isOnlyRating));
+                sqlReadSelection, arrColumnNamesSelection, strPhotoId, strAlbumUsername, isOnlyRating, onRatingSaved));
         return dlgCarousel;
     }
 
     public VerticalLayout loadCarouselWithThumbnails(int isType, String sqlRead, String sqlReadOrderBy, String[] arrColumnNames, String strSelection,
                                                      String filterColumn, String sqlReadSelection, String[] arrColumnNamesSelection, String strPhotoId,
-                                                     String strAlbumUsername, boolean isOnlyRating) {
+                                                     String strAlbumUsername, boolean isOnlyRating, Runnable onRatingSaved) {
         String sqlReadPhotos = "";
 
         if (strSelection.isEmpty()) {
@@ -760,16 +761,17 @@ public class GenericView {
 
             btnGroupSelect.setItems("Meta Data", "Rate");
 
+        final String nameNew = record.getColumnData("name_new");
+
         btnGroupSelect.addValueChangeListener(event -> {
             if (event.getSource().getValue().contains("Meta")) {
                 layoutMeta.removeAll();
                 layoutMeta.add(fetchPhotoMetaInfoOnCarousel(finalRec));
-                layoutMeta.add(fetchPhotoCreatorOnCarousel(finalRec,false));
+                layoutMeta.add(fetchPhotoCreatorOnCarousel(finalRec, false));
             } else {
                 layoutMeta.removeAll();
-                layoutMeta.add(loadPanelRate(strPhotoId));
-                layoutMeta.add(fetchPhotoCreatorOnCarousel(finalRec,true));
-//                layoutMeta.add(fetchPhotoCreatorOnCarousel(finalRec));
+                layoutMeta.add(loadPanelRate(strPhotoId, nameNew, onRatingSaved));
+                layoutMeta.add(fetchPhotoCreatorOnCarousel(finalRec, true));
             }
         });
         layoutTabSelect.add(btnGroupSelect);
@@ -1188,7 +1190,7 @@ public class GenericView {
         return layoutCreatorInfo;
     }
 
-    private VerticalLayout loadPanelRate(String strPhotoId) {
+    private VerticalLayout loadPanelRate(String strPhotoId, String nameNew, Runnable onRatingSaved) {
 
         VerticalLayout verticalLayout = new VerticalLayout();
         verticalLayout.addClassNames(LumoUtility.Width.FULL, LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER);
@@ -1272,6 +1274,8 @@ public class GenericView {
         // ── Submit button ─────────────────────────────────────────────────────
         final int finalPhotoId = photoIdInt;
         final String finalAuthUserId = authUserId;
+        final String finalIp = (publicIp != null && !publicIp.isBlank()) ? publicIp : "unknown";
+        final String finalNameNew = (nameNew != null) ? nameNew : "";
 
         Button btnRate = new Button("Submit Rating");
         btnRate.addClassName("btn-rate");
@@ -1289,13 +1293,10 @@ public class GenericView {
             if (photoRatingService != null) {
                 try {
                     int userIdInt = Integer.parseInt(finalAuthUserId);
-                    photoRatingService.saveOrUpdateRating(finalPhotoId, userIdInt, ratingValue);
-                    double newAvg = photoRatingService.getAverageRating(finalPhotoId);
-                    long newCount = photoRatingService.getRatingCount(finalPhotoId);
-                    spanAvg.setText(String.format("\u2605 %.1f  (%d ratings)", newAvg, newCount));
-                    spanStatus.setText("Your rating has been saved!");
-                    spanStatus.getStyle().set("color", "var(--lumo-success-color)");
-                    spanStatus.setVisible(true);
+                    photoRatingService.saveOrUpdateRating(finalPhotoId, userIdInt, ratingValue, finalNameNew, finalIp);
+                    // Close dialog and notify card to refresh its stats row
+                    dlgCarousel.close();
+                    if (onRatingSaved != null) onRatingSaved.run();
                 } catch (Exception e) {
                     logger.error("Error saving rating: " + e.getMessage());
                     spanStatus.setText("Could not save rating. Please try again.");
