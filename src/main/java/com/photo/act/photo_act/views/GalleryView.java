@@ -1397,6 +1397,8 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         strFilterColumn = "city_name";
 
 
+
+
         Dialog dlgCarousel = new Dialog();
         dlgCarousel.setDraggable(true);
         dlgCarousel.setResizable(true);
@@ -1409,7 +1411,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         dlgCarousel.setCloseOnOutsideClick(true);
         dlgCarousel.setCloseOnEsc(true);
         dlgCarousel = genericView.showCarouselDialog(isType, sqlReadGalleryDestinations + sqlWhereSubClause, sqlReadGallery1OrderBy, arrColumnNamesGallery, strSelection, strFilterColumn,
-                sqlRead, arrNames, strPhotoId, null, isOnlyRating);
+                sqlRead, arrNames, strPhotoId, null, isOnlyRating, null);
         dlgCarousel.setWidth("1590px");
 
         dlgCarousel.open();

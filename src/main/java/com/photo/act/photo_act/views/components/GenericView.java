@@ -1229,14 +1229,21 @@ public class GenericView {
         }
 
 
-        String[] str1 = {"1 Snapshot", "Casual capture with minimal intent or craft."};
+/*        String[] str1 = {"1 Snapshot", "Casual capture with minimal intent or craft."};
         String[] str2 = {"2 Adequate", "Technically acceptable image lacking strong visual intent."};
         String[] str3 = {"3 Competent", "Clear subject, balanced exposure, developing compositional awareness."};
         String[] str4 = {"4 Polished", "Intentional composition supported by effective light control."};
         String[] str5 = {"5 Compelling", "Engaging mood with confident artistic decision making."};
         String[] str6 = {"6 Exceptional", "Distinct vision executed with precision and emotional depth."};
-        String[] str7 = {"7 World Class", "Iconic imagery demonstrating mastery, originality, and lasting impact."};
-        String[][] allRatings = {str1, str2, str3, str4, str5, str6, str7};
+        String[] str7 = {"7 World Class", "Iconic imagery demonstrating mastery, originality, and lasting impact."};*/
+
+        String[] str1 = {"1 Snapshot", "Unplanned capture with minimal intent, weak composition, and technical flaws."};
+        String[] str2 = {"2 Basic", "Technically acceptable image but lacks clear subject and visual direction."};
+        String[] str3 = {"3 Competent", "Clear subject, balanced exposure, showing emerging compositional awareness and control."};
+        String[] str4 = {"4 Polished", "Intentional composition, effective lighting, strong clarity, and cohesive visual storytelling."};
+        String[] str5 = {"5 Compelling", "Powerful imagery with distinct vision, emotional impact, and confident artistic execution."};
+
+        String[][] allRatings = { str5, str4, str3, str2, str1};
 
         RadioButtonGroup<String[]> radioButtonGroup = new RadioButtonGroup<>();
         radioButtonGroup.addClassNames(LumoUtility.Width.FULL);
@@ -1253,7 +1260,7 @@ public class GenericView {
         }));
         radioButtonGroup.addThemeVariants(RadioGroupVariant.LUMO_VERTICAL);
         radioButtonGroup.addClassName("rating-options");
-        radioButtonGroup.setItems(str1, str2, str3, str4, str5, str6, str7);
+        radioButtonGroup.setItems( str5, str4, str3, str2, str1);
 
         // Pre-select existing user rating if any
         if (photoRatingService != null) {
