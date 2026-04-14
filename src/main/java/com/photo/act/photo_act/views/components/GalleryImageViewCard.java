@@ -5,6 +5,8 @@ import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.model.ShareType;
 import com.photo.act.photo_act.model.ShareableResource;
+import com.photo.act.photo_act.services.PhotoRatingService;
+import com.photo.act.photo_act.services.PhotoViewService;
 import com.photo.act.photo_act.services.ShareMetricService;
 import com.photo.act.photo_act.services.ShareService;
 import com.photo.act.photo_act.services.WeatherService;
@@ -34,7 +36,9 @@ import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.StreamResource;
+import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.streams.DownloadHandler;
+import com.photo.act.photo_act.utils.UtilsDate;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import com.vaadin.flow.theme.lumo.LumoUtility.*;
 import org.slf4j.Logger;
@@ -45,6 +49,7 @@ import java.io.File;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -61,6 +66,14 @@ public class GalleryImageViewCard extends Div {
     private RecordService recordService;
     private ShareService shareService;
     private ShareMetricService shareMetricService;
+    private PhotoRatingService photoRatingService;
+    private PhotoViewService photoViewService;
+    private int cardUserId;
+    private String cardPublicIp;
+    private String cardSessionId;
+    private LocalDateTime cardSessionDateTime;
+    private HorizontalLayout statsRow;
+    private Span ratingChipSpan;   // null until first rating exists
 
     private final WeatherService weatherService;
     private LocalWeatherForecast weatherForecast;
@@ -118,10 +131,18 @@ public class GalleryImageViewCard extends Div {
 
     public GalleryImageViewCard(Record record, String strImagePath, boolean isMobile, int userId, String strUserName, long sessionCreation,
                                 String hostname, String publicIp, boolean isEditable, RecordService recordService, int isType, String sqlCarousel, String sqlCarouselOrderBy,
-                                String[] arrColumnsCarousel, ShareService shareService, ShareMetricService shareMetricService, WeatherService weatherService) {
+                                String[] arrColumnsCarousel, ShareService shareService, ShareMetricService shareMetricService, WeatherService weatherService,
+                                PhotoRatingService photoRatingService, PhotoViewService photoViewService) {
         this.recordService = recordService;
         this.shareService = shareService;
         this.shareMetricService = shareMetricService;
+        this.photoRatingService = photoRatingService;
+        this.photoViewService = photoViewService;
+        this.cardUserId = userId;
+        this.cardPublicIp = publicIp;
+        this.cardSessionId = VaadinSession.getCurrent().getSession().getId();
+        long sessionCreationMs = VaadinSession.getCurrent().getSession().getCreationTime();
+        this.cardSessionDateTime = new UtilsDate().calcDateTimeFromLongInLDT(sessionCreationMs, "UTC");
         this.isMobile = isMobile;
         this.record = record;
         this.strImagePath = strImagePath;
@@ -134,6 +155,7 @@ public class GalleryImageViewCard extends Div {
         this.addClassName("gallery-view-card");
 
         genericView = new GenericView(recordService);
+        genericView.setPhotoRatingService(photoRatingService);
 
         this.strAvailableAlbumsMemberId = genericView.checkIfAuthMemberId();
 
@@ -143,6 +165,20 @@ public class GalleryImageViewCard extends Div {
 
         String strPhotoId = record.getColumnData("id");
         String strFileName = record.getColumnData("name_new");
+
+        // Record List view — uses auth-based userId (reliable over the constructor param)
+        if (photoViewService != null && strPhotoId != null) {
+            try {
+                int photoIdInt = Integer.parseInt(strPhotoId);
+                Integer viewUserId = null;
+                if (strAvailableAlbumsMemberId != null) {
+                    try { viewUserId = Integer.parseInt(strAvailableAlbumsMemberId); } catch (NumberFormatException ignored2) {}
+                }
+                photoViewService.recordView(photoIdInt, strFileName, viewUserId, cardPublicIp, PhotoViewService.TYPE_LIST,
+                        cardSessionId, cardSessionDateTime);
+            } catch (NumberFormatException ignored) {}
+        }
+
         String strTitle = record.getColumnData("title");
         String strSubTitle = record.getColumnData("subtitle");
         String strPersonalNotes = record.getColumnData("notes");
@@ -316,7 +352,7 @@ public class GalleryImageViewCard extends Div {
 //            this.addClassName("bottom-radius-shadow");
         }
 
-
+/*
         HorizontalLayout layoutViewCount = new HorizontalLayout();
         layoutViewCount.addClassNames(
 //                Overflow.HIDDEN, Width.FULL,
@@ -341,7 +377,7 @@ public class GalleryImageViewCard extends Div {
                 //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
                 //   Background.CONTRAST_5,
                 BorderRadius.NONE
-        );
+        );*/
 
         HorizontalLayout layoutMemberTimeInfo = new HorizontalLayout();
         layoutMemberTimeInfo.addClassNames(
@@ -355,7 +391,7 @@ public class GalleryImageViewCard extends Div {
                 //   Background.CONTRAST_5,
                 BorderRadius.NONE
         );
-
+/*
         HorizontalLayout layoutSpot = new HorizontalLayout();
         layoutSpot.addClassNames(
                 Overflow.HIDDEN,
@@ -368,11 +404,11 @@ public class GalleryImageViewCard extends Div {
                 BorderRadius.NONE
         );
         Div divSpot = new Div(strCity);
-        layoutSpot.add(VaadinIcon.LOCATION_ARROW_CIRCLE_O.create(), divSpot);
+        layoutSpot.add(VaadinIcon.LOCATION_ARROW_CIRCLE_O.create(), divSpot);*/
 
-        if (strCity == null || strCity.equalsIgnoreCase("null") || strCity.isEmpty()) {
+/*        if (strCity == null || strCity.equalsIgnoreCase("null") || strCity.isEmpty()) {
             layoutSpot.setVisible(false);
-        }
+        }*/
 
         HorizontalLayout layoutDateRelUploaded = new HorizontalLayout();
         layoutDateRelUploaded.addClassNames(
@@ -385,7 +421,7 @@ public class GalleryImageViewCard extends Div {
                 //   Background.CONTRAST_5,
                 BorderRadius.NONE
         );
-        Div divDateRelUploaded = new Div(strDateUploadedRelative);
+        Span divDateRelUploaded = new Span(strDateUploadedRelative);
         layoutDateRelUploaded.add(FontAwesome.Solid.UPLOAD.create(), divDateRelUploaded);
 
 
@@ -400,7 +436,7 @@ public class GalleryImageViewCard extends Div {
                 //   Background.CONTRAST_5,
                 BorderRadius.NONE
         );
-        Div divDate = new Div(strPhotoDate);
+        Span divDate = new Span(strPhotoDate);
         layoutDateShot.add(FontAwesome.Solid.CAMERA_ALT.create(), divDate);
 
         HorizontalLayout layoutDateTimeUploaded = new HorizontalLayout();
@@ -414,7 +450,7 @@ public class GalleryImageViewCard extends Div {
                 //   Background.CONTRAST_5,
                 BorderRadius.NONE
         );
-        Div divDateTimeUploaded = new Div(strDateUploaded);
+        Span divDateTimeUploaded = new Span(strDateUploaded);
         layoutDateTimeUploaded.add(FontAwesome.Solid.UPLOAD.create(), divDateTimeUploaded);
 
         HorizontalLayout layoutDateTimeShot = new HorizontalLayout();
@@ -428,7 +464,7 @@ public class GalleryImageViewCard extends Div {
                 //   Background.CONTRAST_5,
                 BorderRadius.NONE
         );
-        Div divDateTimeShot = new Div(strPhotoTimeShot);
+        Span divDateTimeShot = new Span(strPhotoTimeShot);
         layoutDateTimeShot.add(FontAwesome.Solid.CAMERA_ALT.create(), divDateTimeShot);
 
 //        HorizontalLayout layoutPhotoCameraMeta = new HorizontalLayout();
@@ -515,12 +551,14 @@ public class GalleryImageViewCard extends Div {
 
         layoutPhotoDetails.add(divMetaCamera, divMetaLens, layoutPhotoFocalLength, layoutAperture, layoutShutterSpeed, layoutIso);
 
+        HorizontalLayout statsRow = buildStatsRow(strPhotoId);
+
         VerticalLayout layoutInfoPanel = new VerticalLayout();
         layoutInfoPanel.addClassNames(TextColor.BODY, Padding.Vertical.NONE, FontSize.SMALL);
         if (isEditable) {
             layoutInfoPanel.add(popover,layoutUser, layoutDateTimeUploaded, layoutDateTimeShot);
         } else {
-            layoutMemberTimeInfo.add(popover,layoutUser, layoutSpot, layoutDateRelUploaded);
+            layoutMemberTimeInfo.add(popover,layoutUser, statsRow, layoutDateRelUploaded);
             layoutInfoPanel.add(layoutMemberTimeInfo);
         }
         divImage.add(layoutPhotoDetails);
@@ -554,7 +592,7 @@ public class GalleryImageViewCard extends Div {
         Div divMemberPhotoCount = new Div("111");
         layoutMemberPhotoCount.add(FontAwesome.Regular.IMAGES.create(), divMemberPhotoCount);
 
-        HorizontalLayout layoutMemberViewCount = new HorizontalLayout();
+/*        HorizontalLayout layoutMemberViewCount = new HorizontalLayout();
         layoutMemberViewCount.addClassNames(
 //                Overflow.HIDDEN, Width.FULL,
                 AlignItems.CENTER, JustifyContent.CENTER,
@@ -566,9 +604,9 @@ public class GalleryImageViewCard extends Div {
                 BorderRadius.NONE
         );
         Div divMemberViews = new Div("1");
-        layoutMemberViewCount.add(FontAwesome.Regular.EYE.create(), divMemberViews);
+        layoutMemberViewCount.add(FontAwesome.Regular.EYE.create(), divMemberViews);*/
 
-        HorizontalLayout layoutLocationsCount = new HorizontalLayout();
+/*        HorizontalLayout layoutLocationsCount = new HorizontalLayout();
         layoutLocationsCount.addClassNames(
 //                Overflow.HIDDEN, Width.FULL,
                 AlignItems.CENTER, JustifyContent.CENTER,
@@ -580,7 +618,7 @@ public class GalleryImageViewCard extends Div {
                 BorderRadius.NONE
         );
         Div divLocations = new Div(strPhotoUserResident);
-        layoutLocationsCount.add(FontAwesome.Regular.COMPASS.create(), divLocations);
+        layoutLocationsCount.add(FontAwesome.Regular.COMPASS.create(), divLocations);*/
 
 
 
@@ -600,13 +638,15 @@ public class GalleryImageViewCard extends Div {
         badgePhotoType.getElement().getThemeList().add("badge contrast");
         badgePhotoType.setText(strPhotoType);
 
+
+
         if (!isEditable) {
             //anyone logged in
             this.add(divImage, layoutInfoPanel, divPhotoInfo);
             if (isMobile) {
                 divPhotoInfo.add(subtitle, getActions(strPhotoId, strSubTitle,strFileName, strCity,isType, strSelection, strAlbumUsername));
             } else {
-                divPhotoInfo.add(subtitle, getActions(strPhotoId, strSubTitle,strFileName,strCity,isType, strSelection, strAlbumUsername));
+                divPhotoInfo.add(subtitle,  getActions(strPhotoId, strSubTitle,strFileName,strCity,isType, strSelection, strAlbumUsername));
             }
             //this.addClassNames(JustifyContent.EVENLY);
 
@@ -616,13 +656,79 @@ public class GalleryImageViewCard extends Div {
             if (isMobile) {
                 divPhotoInfo.add(getEditPanel(strPhotoId, strAvailableAlbumsMemberId, strUserRights, strSubTitle,strGenreId, strCityId, strSubjectId, strPersonalNotes));
             } else {
-                divPhotoInfo.add(getEditPanel(strPhotoId, strAvailableAlbumsMemberId, strUserRights, strSubTitle, strGenreId, strCityId, strSubjectId, strPersonalNotes));
+                divPhotoInfo.add( getEditPanel(strPhotoId, strAvailableAlbumsMemberId, strUserRights, strSubTitle, strGenreId, strCityId, strSubjectId, strPersonalNotes));
             }
             // this.addClassNames(JustifyContent.EVENLY);
 
         }
     }
 
+
+    /** Builds the view-count + avg-rating stats bar shown below each photo. */
+    private HorizontalLayout buildStatsRow(String strPhotoId) {
+        long viewCount = 0;
+        double avgRating = 0.0;
+        long ratingCount = 0;
+        try {
+            int photoIdInt = Integer.parseInt(strPhotoId);
+            if (photoViewService != null) {
+                viewCount = photoViewService.getViewCount(photoIdInt);
+            }
+            if (photoRatingService != null) {
+                avgRating = photoRatingService.getAverageRating(photoIdInt);
+                ratingCount = photoRatingService.getRatingCount(photoIdInt);
+            }
+        } catch (NumberFormatException ignored) {}
+
+        statsRow = new HorizontalLayout();
+        statsRow.addClassNames(
+                 AlignItems.CENTER, JustifyContent.CENTER,
+                Gap.MEDIUM, Padding.Horizontal.XSMALL, Padding.Vertical.NONE, Margin.NONE
+        );
+        statsRow.getStyle().set("font-size", "0.78rem");
+//                           .set("color", "var(--lumo-secondary-text-color)");
+
+        // Views count chip
+        HorizontalLayout viewsChip = new HorizontalLayout();
+        viewsChip.addClassNames(AlignItems.CENTER, Gap.XSMALL, Padding.NONE, Margin.NONE);
+        viewsChip.add(FontAwesome.Regular.EYE.create(), new Span(String.valueOf(viewCount)));
+        statsRow.add(viewsChip);
+
+        // Rating chip — only shown when ratings exist; kept as field for live update
+        if (ratingCount > 0) {
+
+            SvgIcon svgRate = new SvgIcon(DownloadHandler.forClassResource(GalleryImageViewCard.class, "/icons/star-empty-icon.svg"));
+            ratingChipSpan = new Span(String.format(" %.1f (%d)", avgRating, ratingCount));
+            HorizontalLayout ratingChip = new HorizontalLayout();
+            ratingChip.addClassNames(AlignItems.CENTER, Gap.XSMALL, Padding.NONE, Margin.NONE);
+            ratingChip.add(svgRate,ratingChipSpan);
+            statsRow.add(ratingChip);
+        }
+
+        return statsRow;
+    }
+
+    /**
+     * Called by the rating dialog callback after a rating is saved.
+     * Refreshes the ★ avg chip on the card without a full page reload.
+     */
+    private void refreshRatingChip(int photoId) {
+        if (photoRatingService == null) return;
+        double newAvg = photoRatingService.getAverageRating(photoId);
+        long newCount = photoRatingService.getRatingCount(photoId);
+        SvgIcon svgRate = new SvgIcon(DownloadHandler.forClassResource(GalleryImageViewCard.class, "/icons/star-empty-icon.svg"));
+        String text = String.format("%.1f (%d)", newAvg, newCount);
+        if (ratingChipSpan != null) {
+            ratingChipSpan.setText(text);
+        } else if (statsRow != null) {
+            // First-ever rating for this photo — create and add the chip
+            ratingChipSpan = new Span(text);
+            HorizontalLayout chip = new HorizontalLayout();
+            chip.addClassNames(AlignItems.CENTER, Gap.XSMALL, Padding.NONE, Margin.NONE);
+            chip.add(svgRate,ratingChipSpan);
+            statsRow.add(chip);
+        }
+    }
 
     private HorizontalLayout getActions(String strPhotoId, String strSubTitle, String strFileName, String strCity, int isType, String strSelection, String strAlbumUsername) {
 
@@ -876,19 +982,28 @@ public class GalleryImageViewCard extends Div {
         }
 
 
-        Dialog dlgCarousel = new Dialog();
-        dlgCarousel.setDraggable(true);
-        dlgCarousel.setResizable(true);
-        dlgCarousel.setWidth("91%");
-        dlgCarousel.setHeight("97%");
-        dlgCarousel.addClassNames(Overflow.HIDDEN,
-                Margin.NONE, Padding.SMALL,
-                AlignItems.CENTER, JustifyContent.CENTER,
-                BorderRadius.NONE);
-        dlgCarousel.setCloseOnOutsideClick(true);
-        dlgCarousel.setCloseOnEsc(true);
-        dlgCarousel = genericView.showCarouselDialog(isType, sqlCarousel, sqlCarouselOrderBy, arrColumnsCarousel, strSelection, strFilterColumn,
-                sqlRead, arrNames, strPhotoId, strAlbumUsername, isOnlyRating);
+        // Record Full view when dialog is opened
+        if (photoViewService != null && strPhotoId != null) {
+            try {
+                int photoIdInt = Integer.parseInt(strPhotoId);
+                Integer viewUserId = null;
+                if (strAvailableAlbumsMemberId != null && !strAvailableAlbumsMemberId.isBlank()) {
+                    try { viewUserId = Integer.parseInt(strAvailableAlbumsMemberId); } catch (NumberFormatException ignored) {}
+                }
+                String nameNew = (record != null) ? record.getColumnData("name_new") : "";
+                photoViewService.recordView(photoIdInt, nameNew, viewUserId, cardPublicIp, PhotoViewService.TYPE_FULL,
+                        cardSessionId, cardSessionDateTime);
+            } catch (NumberFormatException ignored) {}
+        }
+
+        // Callback: refresh card rating chip after a rating is saved
+        Runnable onRatingSaved = () -> {
+            try { refreshRatingChip(Integer.parseInt(strPhotoId)); }
+            catch (NumberFormatException ignored) {}
+        };
+
+        Dialog dlgCarousel = genericView.showCarouselDialog(isType, sqlCarousel, sqlCarouselOrderBy, arrColumnsCarousel, strSelection, strFilterColumn,
+                sqlRead, arrNames, strPhotoId, strAlbumUsername, isOnlyRating, onRatingSaved);
         dlgCarousel.setWidth("1590px");
 
         dlgCarousel.open();
@@ -1103,7 +1218,6 @@ public class GalleryImageViewCard extends Div {
             }
 
             if(isTypeProfile){
-
                 String strUpdateIsProfile = "UPDATE photo_meta SET " +
                         " visible_to = 'Profile' " +
                         " WHERE id = '" + strPhotoId + "'";
@@ -1413,7 +1527,6 @@ public class GalleryImageViewCard extends Div {
         HorizontalLayout horizontalLayout = new HorizontalLayout();
 
         layoutCreatorInfo.getStyle().setOpacity("1");
-
 
         H4 objMember = new H4(strUsername);
         objMember.addClassNames(LumoUtility.TextColor.SECONDARY, LumoUtility.FontWeight.NORMAL, LumoUtility.FontSize.SMALL,

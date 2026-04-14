@@ -6,6 +6,7 @@ import com.github.prominence.openweathermap.api.model.forecast.WeatherForecast;
 import com.github.prominence.openweathermap.api.model.weather.Weather;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
+import com.photo.act.photo_act.services.PhotoRatingService;
 import com.photo.act.photo_act.services.WeatherImageService;
 import com.photo.act.photo_act.services.WeatherService;
 import com.photo.act.photo_act.utils.NetUtils;
@@ -48,6 +49,7 @@ import java.net.UnknownHostException;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -78,7 +80,8 @@ public class GenericView {
     private String strUrlRequestToBeLogged;
 
     private RecordService recordService;
-    private WeatherService weatherService ;
+    private WeatherService weatherService;
+    private PhotoRatingService photoRatingService;
 
     private static final Logger logger = LoggerFactory.getLogger(GenericView.class);
     private String dirChar = FileSystems.getDefault().getSeparator();
@@ -117,6 +120,9 @@ public class GenericView {
         recProps = recordService.findAll(sqlReadAppConfig, arrCols);
     }
 
+    public void setPhotoRatingService(PhotoRatingService photoRatingService) {
+        this.photoRatingService = photoRatingService;
+    }
 
     public String checkIfAuthUserName() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -645,7 +651,8 @@ public class GenericView {
     }
 
     public Dialog showCarouselDialog(int isType, String sqlRead, String sqlReadOrderBy, String[] arrColumnNames, String strSelection, String filterColumn,
-                                     String sqlReadSelection, String[] arrColumnNamesSelection, String strPhotoId, String strAlbumUsername, boolean isOnlyRating) {
+                                     String sqlReadSelection, String[] arrColumnNamesSelection, String strPhotoId, String strAlbumUsername, boolean isOnlyRating,
+                                     Runnable onRatingSaved) {
 
         dlgCarousel = new Dialog();
         dlgCarousel.setDraggable(true);
@@ -673,13 +680,13 @@ public class GenericView {
         dlgCarousel.add(layoutTitle);
          */
         dlgCarousel.add(loadCarouselWithThumbnails(isType, sqlRead, sqlReadOrderBy, arrColumnNames, strSelection, filterColumn,
-                sqlReadSelection, arrColumnNamesSelection, strPhotoId, strAlbumUsername, isOnlyRating));
+                sqlReadSelection, arrColumnNamesSelection, strPhotoId, strAlbumUsername, isOnlyRating, onRatingSaved));
         return dlgCarousel;
     }
 
     public VerticalLayout loadCarouselWithThumbnails(int isType, String sqlRead, String sqlReadOrderBy, String[] arrColumnNames, String strSelection,
                                                      String filterColumn, String sqlReadSelection, String[] arrColumnNamesSelection, String strPhotoId,
-                                                     String strAlbumUsername, boolean isOnlyRating) {
+                                                     String strAlbumUsername, boolean isOnlyRating, Runnable onRatingSaved) {
         String sqlReadPhotos = "";
 
         if (strSelection.isEmpty()) {
@@ -755,16 +762,17 @@ public class GenericView {
 
             btnGroupSelect.setItems("Meta Data", "Rate");
 
+        final String nameNew = record.getColumnData("name_new");
+
         btnGroupSelect.addValueChangeListener(event -> {
             if (event.getSource().getValue().contains("Meta")) {
                 layoutMeta.removeAll();
                 layoutMeta.add(fetchPhotoMetaInfoOnCarousel(finalRec));
-                layoutMeta.add(fetchPhotoCreatorOnCarousel(finalRec,false));
+                layoutMeta.add(fetchPhotoCreatorOnCarousel(finalRec, false));
             } else {
                 layoutMeta.removeAll();
-                layoutMeta.add(loadPanelRate(strPhotoId));
-                layoutMeta.add(fetchPhotoCreatorOnCarousel(finalRec,true));
-//                layoutMeta.add(fetchPhotoCreatorOnCarousel(finalRec));
+                layoutMeta.add(loadPanelRate(strPhotoId, nameNew, onRatingSaved));
+                layoutMeta.add(fetchPhotoCreatorOnCarousel(finalRec, true));
             }
         });
         layoutTabSelect.add(btnGroupSelect);
@@ -1183,84 +1191,134 @@ public class GenericView {
         return layoutCreatorInfo;
     }
 
-    private VerticalLayout loadPanelRate(String strPhotoId) {
-
-        // https://uiverse.io/jack0237/nice-sloth-46
-        // https://uiverse.io/michaelgomeh/slimy-lion-96
-
-
-//        VerticalLayout layoutAll = new VerticalLayout();
-        //layoutAll.addClassName("image-gallery-view");
+    private VerticalLayout loadPanelRate(String strPhotoId, String nameNew, Runnable onRatingSaved) {
 
         VerticalLayout verticalLayout = new VerticalLayout();
         verticalLayout.addClassNames(LumoUtility.Width.FULL, LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER);
         verticalLayout.addClassName("rating-content");
         verticalLayout.addClassName("info-to-show");
         verticalLayout.getStyle().setOpacity("1");
-        //verticalLayout.addClassNames(LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER, LumoUtility.Padding.LARGE, LumoUtility.Gap.MEDIUM);
 
-        Paragraph paragraph = new Paragraph();
-//        paragraph.setText("Select the number to rate the photo.");
-//        paragraph.addClassName("rating-text");
+        // ── Average rating summary ─────────────────────────────────────────────
+        int photoIdInt = 0;
+        try { photoIdInt = Integer.parseInt(strPhotoId); } catch (NumberFormatException ignored) {}
+
+        double avgRating = 0.0;
+        long ratingCount = 0;
+        if (photoRatingService != null) {
+            avgRating = photoRatingService.getAverageRating(photoIdInt);
+            ratingCount = photoRatingService.getRatingCount(photoIdInt);
+        }
+
+        HorizontalLayout layoutSummary = new HorizontalLayout();
+        layoutSummary.addClassNames(LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER,
+                LumoUtility.Gap.SMALL, LumoUtility.Padding.XSMALL);
+        Span spanAvg = new Span(ratingCount > 0
+                ? String.format("\u2605 %.1f  (%d ratings)", avgRating, ratingCount)
+                : "No ratings yet");
+        spanAvg.addClassNames(LumoUtility.FontSize.SMALL, LumoUtility.TextColor.SECONDARY);
+        layoutSummary.add(spanAvg);
+
+        // ── Auth check ─────────────────────────────────────────────────────────
+        String authUserId = checkIfAuthMemberId();
+        if (authUserId == null) {
+            Span loginMsg = new Span("Please log in to rate this photo.");
+            loginMsg.addClassNames(LumoUtility.FontSize.SMALL, LumoUtility.TextColor.TERTIARY,
+                    LumoUtility.Padding.SMALL);
+            verticalLayout.add(layoutSummary, loginMsg);
+            return verticalLayout;
+        }
 
 
-
-
-
-//        String[] str7 = {"7 World Class", "Flawless technique, powerful storytelling, exceptional artistry."};
-//        String[] str6 = {"6 Exceptional Professional", "Strong vision, refined execution, consistently striking impact."};
-//        String[] str5 = {"5 Advanced Skilled", "Confident composition, controlled lighting, expressive style throughout."};
-//        String[] str4 = {"4 Solid Intermediate", "Good fundamentals, developing creativity, occasionally strong moments."};
-//        String[] str3 = {"3 Emerging Amateur", "Improving skills with clearer intent and consistency."};
-//        String[] str2 = {"2 Novice Beginner", "Noticeable issues but increasing understanding and experimentation."};
-//        String[] str1 = {"1 Snapshot", "Simple image lacking technique, intention, coherence."};
-
-        String[] str1 = {"1 Snapshot", "Casual capture with minimal intent or craft."};
+/*        String[] str1 = {"1 Snapshot", "Casual capture with minimal intent or craft."};
         String[] str2 = {"2 Adequate", "Technically acceptable image lacking strong visual intent."};
         String[] str3 = {"3 Competent", "Clear subject, balanced exposure, developing compositional awareness."};
         String[] str4 = {"4 Polished", "Intentional composition supported by effective light control."};
         String[] str5 = {"5 Compelling", "Engaging mood with confident artistic decision making."};
         String[] str6 = {"6 Exceptional", "Distinct vision executed with precision and emotional depth."};
-        String[] str7 = {"7 World Class", "Iconic imagery demonstrating mastery, originality, and lasting impact."};
+        String[] str7 = {"7 World Class", "Iconic imagery demonstrating mastery, originality, and lasting impact."};*/
+
+        String[] str1 = {"1 Snapshot", "Unplanned capture with minimal intent, weak composition, and technical flaws."};
+        String[] str2 = {"2 Basic", "Technically acceptable image but lacks clear subject and visual direction."};
+        String[] str3 = {"3 Competent", "Clear subject, balanced exposure, showing emerging compositional awareness and control."};
+        String[] str4 = {"4 Polished", "Intentional composition, effective lighting, strong clarity, and cohesive visual storytelling."};
+        String[] str5 = {"5 Compelling", "Powerful imagery with distinct vision, emotional impact, and confident artistic execution."};
+
+        String[][] allRatings = { str5, str4, str3, str2, str1};
 
         RadioButtonGroup<String[]> radioButtonGroup = new RadioButtonGroup<>();
         radioButtonGroup.addClassNames(LumoUtility.Width.FULL);
         radioButtonGroup.setRenderer(new ComponentRenderer<>(strings -> {
             HorizontalLayout row = new HorizontalLayout();
             row.setAlignItems(FlexComponent.Alignment.CENTER);
-
             H4 title = new H4(strings[0]);
-//            title.getStyle()
-//                    .set("color", "var(--lumo-contrast-80pct)")
-//                    .set("font-size", "14px");
             Span description = new Span(strings[1]);
-//            description.getStyle()
-//                    .set("color", "var(--lumo-contrast-50pct)")
-//                    .set("font-size", "11px");
-
             VerticalLayout column = new VerticalLayout(title, description);
-            column.addClassNames(LumoUtility.Margin.NONE, LumoUtility.Padding.XSMALL,
-                    LumoUtility.Gap.XSMALL);
-
+            column.addClassNames(LumoUtility.Margin.NONE, LumoUtility.Padding.XSMALL, LumoUtility.Gap.XSMALL);
             row.add(column);
-            // row.getStyle().set("line-height", "var(--lumo-line-height-m)");
             row.setWidthFull();
             return row;
         }));
-
         radioButtonGroup.addThemeVariants(RadioGroupVariant.LUMO_VERTICAL);
         radioButtonGroup.addClassName("rating-options");
-        radioButtonGroup.setItems(str1, str2,str3,str4,str5,str6,str7);
+        radioButtonGroup.setItems( str5, str4, str3, str2, str1);
 
+        // Pre-select existing user rating if any
+        if (photoRatingService != null) {
+            try {
+                int userIdInt = Integer.parseInt(authUserId);
+                int existing = photoRatingService.getUserRating(photoIdInt, userIdInt);
+                if (existing > 0 && existing <= allRatings.length) {
+                    radioButtonGroup.setValue(allRatings[existing - 1]);
+                }
+            } catch (NumberFormatException ignored) {}
+        }
 
-        Button btnRate = new Button("Submit");
+        // ── Status label ──────────────────────────────────────────────────────
+        final Span spanStatus = new Span();
+        spanStatus.addClassNames(LumoUtility.FontSize.SMALL);
+        spanStatus.setVisible(false);
+
+        // ── Submit button ─────────────────────────────────────────────────────
+        final int finalPhotoId = photoIdInt;
+        final String finalAuthUserId = authUserId;
+        final String finalIp = (publicIp != null && !publicIp.isBlank()) ? publicIp : "unknown";
+        final String finalNameNew = (nameNew != null) ? nameNew : "";
+
+        Button btnRate = new Button("Submit Rating");
         btnRate.addClassName("btn-rate");
-        //SvgIcon svgStar = new SvgIcon(DownloadHandler.forClassResource(GenericView.class, "/icons/star-empty-icon.svg"));
-        //btnRate.setIcon(svgStar);
+        btnRate.addThemeVariants(com.vaadin.flow.component.button.ButtonVariant.LUMO_PRIMARY,
+                com.vaadin.flow.component.button.ButtonVariant.LUMO_SMALL);
         btnRate.addClickListener(event -> {
-
+            String[] selected = radioButtonGroup.getValue();
+            if (selected == null) {
+                spanStatus.setText("Please select a rating first.");
+                spanStatus.getStyle().set("color", "var(--lumo-error-color)");
+                spanStatus.setVisible(true);
+                return;
+            }
+            int ratingValue = Character.getNumericValue(selected[0].charAt(0));
+            if (photoRatingService != null) {
+                try {
+                    int userIdInt = Integer.parseInt(finalAuthUserId);
+                    String sessionId = VaadinSession.getCurrent().getSession().getId();
+                    long sessionCreationMs = VaadinSession.getCurrent().getSession().getCreationTime();
+                    LocalDateTime sessionDateTime = new UtilsDate().calcDateTimeFromLongInLDT(sessionCreationMs, "UTC");
+                    photoRatingService.saveOrUpdateRating(finalPhotoId, userIdInt, ratingValue, finalNameNew, finalIp,
+                            sessionId, sessionDateTime);
+                    // Close dialog and notify card to refresh its stats row
+                    dlgCarousel.close();
+                    if (onRatingSaved != null) onRatingSaved.run();
+                } catch (Exception e) {
+                    logger.error("Error saving rating: " + e.getMessage());
+                    spanStatus.setText("Could not save rating. Please try again.");
+                    spanStatus.getStyle().set("color", "var(--lumo-error-color)");
+                    spanStatus.setVisible(true);
+                }
+            }
         });
-        verticalLayout.add(radioButtonGroup, btnRate);
+
+        verticalLayout.add(layoutSummary, radioButtonGroup, btnRate, spanStatus);
         return verticalLayout;
     }
 

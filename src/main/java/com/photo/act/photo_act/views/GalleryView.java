@@ -4,6 +4,8 @@ import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.services.CacheService;
+import com.photo.act.photo_act.services.PhotoRatingService;
+import com.photo.act.photo_act.services.PhotoViewService;
 import com.photo.act.photo_act.services.ShareMetricService;
 import com.photo.act.photo_act.services.ShareService;
 import com.photo.act.photo_act.services.WeatherService;
@@ -93,6 +95,8 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
     private ShareService shareService;
     private ShareMetricService shareMetricService;
     private WeatherService weatherService;
+    private PhotoRatingService photoRatingService;
+    private PhotoViewService photoViewService;
     private String strHeader;
 
     private final List<PhotoItem> photos = new ArrayList<>();
@@ -254,11 +258,13 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         }
     }
 
-    public GalleryView(RecordService recordService, ShareService shareService, ShareMetricService shareMetricService, WeatherService weatherService) {
+    public GalleryView(RecordService recordService, ShareService shareService, ShareMetricService shareMetricService, WeatherService weatherService, PhotoRatingService photoRatingService, PhotoViewService photoViewService) {
         this.recordService = recordService;
         this.shareService = shareService;
         this.shareMetricService = shareMetricService;
         this.weatherService = weatherService;
+        this.photoRatingService = photoRatingService;
+        this.photoViewService = photoViewService;
         utilsDate = new UtilsDate();
         genericView = new GenericView(recordService);
 
@@ -1190,7 +1196,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         logger.info(" strImagePath " + strImagePath);
 
         GalleryImageViewCard imageGalleryViewCard = new GalleryImageViewCard(record, strImagePath, isMobile, userId, strUsername, sessionCreation, hostname, publicIp, isEditable,
-                recordService, isType, sqlReadGallery, sqlOrderBy, arrColumnNamesGallery,shareService,  shareMetricService, weatherService );
+                recordService, isType, sqlReadGallery, sqlOrderBy, arrColumnNamesGallery, shareService, shareMetricService, weatherService, photoRatingService, photoViewService);
         return imageGalleryViewCard;
     }
 
@@ -1307,6 +1313,17 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
 
         sessionid = VaadinSession.getCurrent().getSession().getId();
         sessionCreation = VaadinSession.getCurrent().getSession().getCreationTime();
+        UI.getCurrent().getPage().retrieveExtendedClientDetails(extendedClientDetails -> {
+            if (extendedClientDetails == null) {
+                logger.info("Image gallery - error timeZoneId: Cannot retrieve client details:" + extendedClientDetails);
+                return;
+            }
+            timeZoneId = extendedClientDetails.getTimeZoneId();
+        });
+        sessionDateTime = utilsDate.calcDateTimeFromLong(sessionCreation, "UTC");
+
+
+
         isMobile = VaadinSession.getCurrent().getBrowser().isAndroid() || VaadinSession.getCurrent().getBrowser().isIPhone() || VaadinSession.getCurrent().getBrowser().isWindowsPhone();
 
         if (VaadinSession.getCurrent().getBrowser().isAndroid()) {
@@ -1342,15 +1359,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         }
 
 
-        UI.getCurrent().getPage().retrieveExtendedClientDetails(extendedClientDetails -> {
-            if (extendedClientDetails == null) {
-                logger.info("Image gallery - error timeZoneId: Cannot retrieve client details:" + extendedClientDetails);
-                return;
-            }
-            timeZoneId = extendedClientDetails.getTimeZoneId();
-        });
 
-        sessionDateTime = utilsDate.calcDateTimeFromLong(sessionCreation, "UTC");
         Locale loc = VaadinService.getCurrentRequest().getLocales().nextElement();
         locale = loc.getLanguage() + "." + loc.getCountry();
         localeName = loc.getDisplayName();
@@ -1391,6 +1400,8 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         strFilterColumn = "city_name";
 
 
+
+
         Dialog dlgCarousel = new Dialog();
         dlgCarousel.setDraggable(true);
         dlgCarousel.setResizable(true);
@@ -1403,7 +1414,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         dlgCarousel.setCloseOnOutsideClick(true);
         dlgCarousel.setCloseOnEsc(true);
         dlgCarousel = genericView.showCarouselDialog(isType, sqlReadGalleryDestinations + sqlWhereSubClause, sqlReadGallery1OrderBy, arrColumnNamesGallery, strSelection, strFilterColumn,
-                sqlRead, arrNames, strPhotoId, null, isOnlyRating);
+                sqlRead, arrNames, strPhotoId, null, isOnlyRating, null);
         dlgCarousel.setWidth("1590px");
 
         dlgCarousel.open();

@@ -2,6 +2,8 @@ package com.photo.act.photo_act.views;
 
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
+import com.photo.act.photo_act.services.PhotoRatingService;
+import com.photo.act.photo_act.services.PhotoViewService;
 import com.photo.act.photo_act.services.ShareMetricService;
 import com.photo.act.photo_act.services.ShareService;
 import com.photo.act.photo_act.services.WeatherService;
@@ -66,6 +68,8 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
     private ShareService shareService;
     private ShareMetricService shareMetricService;
     private WeatherService weatherService;
+    private PhotoRatingService photoRatingService;
+    private PhotoViewService photoViewService;
     private String strHeader;
 
     private String strUrlRequestToBeLogged;
@@ -209,11 +213,13 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
     private String sessionDateTime;
     private GenericView genericView;
 
-    public AlbumsView(RecordService recordService, ShareService shareService, ShareMetricService shareMetricService, WeatherService weatherService) {
+    public AlbumsView(RecordService recordService, ShareService shareService, ShareMetricService shareMetricService, WeatherService weatherService, PhotoRatingService photoRatingService, PhotoViewService photoViewService) {
         this.recordService = recordService;
         this.shareService = shareService;
         this.shareMetricService = shareMetricService;
         this.weatherService = weatherService;
+        this.photoRatingService = photoRatingService;
+        this.photoViewService = photoViewService;
         utilsDate = new UtilsDate();
         genericView = new GenericView(recordService);
 
@@ -690,7 +696,7 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
 
 
         GalleryImageViewCard imageGalleryViewCard = new GalleryImageViewCard(record, strImagePath, isMobile, userId, strUsername, sessionCreation, hostname, publicIp, isEditable,
-                recordService, 1, sqlReadAlbumPhotos, sqlReadAlbumPhotosOrderBy, arrColumnNamesAlbumPhotos, shareService, shareMetricService, weatherService );
+                recordService, 1, sqlReadAlbumPhotos, sqlReadAlbumPhotosOrderBy, arrColumnNamesAlbumPhotos, shareService, shareMetricService, weatherService, photoRatingService, photoViewService);
         return imageGalleryViewCard;
 
     }
