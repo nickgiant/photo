@@ -36,7 +36,9 @@ import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.StreamResource;
+import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.streams.DownloadHandler;
+import com.photo.act.photo_act.utils.UtilsDate;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import com.vaadin.flow.theme.lumo.LumoUtility.*;
 import org.slf4j.Logger;
@@ -67,6 +69,8 @@ public class GalleryImageViewCard extends Div {
     private PhotoViewService photoViewService;
     private int cardUserId;
     private String cardPublicIp;
+    private String cardSessionId;
+    private String cardSessionDateTime;
     private HorizontalLayout statsRow;
     private Span ratingChipSpan;   // null until first rating exists
 
@@ -135,6 +139,9 @@ public class GalleryImageViewCard extends Div {
         this.photoViewService = photoViewService;
         this.cardUserId = userId;
         this.cardPublicIp = publicIp;
+        this.cardSessionId = VaadinSession.getCurrent().getSession().getId();
+        long sessionCreationMs = VaadinSession.getCurrent().getSession().getCreationTime();
+        this.cardSessionDateTime = new UtilsDate().calcDateTimeFromLong(sessionCreationMs, "UTC");
         this.isMobile = isMobile;
         this.record = record;
         this.strImagePath = strImagePath;
@@ -166,7 +173,8 @@ public class GalleryImageViewCard extends Div {
                 if (strAvailableAlbumsMemberId != null) {
                     try { viewUserId = Integer.parseInt(strAvailableAlbumsMemberId); } catch (NumberFormatException ignored2) {}
                 }
-                photoViewService.recordView(photoIdInt, strFileName, viewUserId, cardPublicIp, PhotoViewService.TYPE_LIST);
+                photoViewService.recordView(photoIdInt, strFileName, viewUserId, cardPublicIp, PhotoViewService.TYPE_LIST,
+                        cardSessionId, cardSessionDateTime);
             } catch (NumberFormatException ignored) {}
         }
 
@@ -982,7 +990,8 @@ public class GalleryImageViewCard extends Div {
                     try { viewUserId = Integer.parseInt(strAvailableAlbumsMemberId); } catch (NumberFormatException ignored) {}
                 }
                 String nameNew = (record != null) ? record.getColumnData("name_new") : "";
-                photoViewService.recordView(photoIdInt, nameNew, viewUserId, cardPublicIp, PhotoViewService.TYPE_FULL);
+                photoViewService.recordView(photoIdInt, nameNew, viewUserId, cardPublicIp, PhotoViewService.TYPE_FULL,
+                        cardSessionId, cardSessionDateTime);
             } catch (NumberFormatException ignored) {}
         }
 

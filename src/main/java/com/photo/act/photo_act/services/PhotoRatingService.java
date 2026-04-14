@@ -31,14 +31,15 @@ public class PhotoRatingService {
      * @param ipAddress rater's IP address
      */
     @Transactional
-    public void saveOrUpdateRating(int photoId, int userId, int rating, String nameNew, String ipAddress) {
+    public void saveOrUpdateRating(int photoId, int userId, int rating, String nameNew, String ipAddress,
+                                   String sessionId, String sessionDateTime) {
         Optional<PhotoRating> existing = repository.findByPhotoIdAndUserId(photoId, userId);
         if (existing.isPresent()) {
-            existing.get().updateRating(rating, ipAddress);
+            existing.get().updateRating(rating, ipAddress, sessionId, sessionDateTime);
             repository.save(existing.get());
             logger.info("Updated rating for photo {} by user {} to {}", photoId, userId, rating);
         } else {
-            repository.save(new PhotoRating(photoId, userId, rating, nameNew, ipAddress));
+            repository.save(new PhotoRating(photoId, userId, rating, nameNew, ipAddress, sessionId, sessionDateTime));
             logger.info("Saved new rating for photo {} by user {} = {}", photoId, userId, rating);
         }
     }

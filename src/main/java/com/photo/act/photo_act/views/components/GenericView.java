@@ -1300,7 +1300,11 @@ public class GenericView {
             if (photoRatingService != null) {
                 try {
                     int userIdInt = Integer.parseInt(finalAuthUserId);
-                    photoRatingService.saveOrUpdateRating(finalPhotoId, userIdInt, ratingValue, finalNameNew, finalIp);
+                    String sessionId = VaadinSession.getCurrent().getSession().getId();
+                    long sessionCreationMs = VaadinSession.getCurrent().getSession().getCreationTime();
+                    String sessionDateTime = new UtilsDate().calcDateTimeFromLong(sessionCreationMs, "UTC");
+                    photoRatingService.saveOrUpdateRating(finalPhotoId, userIdInt, ratingValue, finalNameNew, finalIp,
+                            sessionId, sessionDateTime);
                     // Close dialog and notify card to refresh its stats row
                     dlgCarousel.close();
                     if (onRatingSaved != null) onRatingSaved.run();

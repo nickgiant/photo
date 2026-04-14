@@ -32,25 +32,36 @@ public class PhotoView {
     @Column(name = "view_type", nullable = false, length = 10)
     private String viewType;
 
+    @Column(name = "session_id", length = 255)
+    private String sessionId;
+
+    @Column(name = "session_date_time", length = 50)
+    private String sessionDateTime;
+
     @Column(name = "viewed_at", nullable = false)
     private LocalDateTime viewedAt;
 
     protected PhotoView() {}
 
-    public PhotoView(int photoId, String nameNew, Integer userId, String ipAddress, String viewType) {
-        this.photoId   = photoId;
-        this.nameNew   = nameNew;
-        this.userId    = userId;
-        this.ipAddress = ipAddress;
-        this.viewType  = viewType;
-        this.viewedAt  = LocalDateTime.now();
+    public PhotoView(int photoId, String nameNew, Integer userId, String ipAddress, String viewType,
+                     String sessionId, String sessionDateTime) {
+        this.photoId          = photoId;
+        this.nameNew          = nameNew;
+        this.userId           = userId;
+        this.ipAddress        = ipAddress;
+        this.viewType         = viewType;
+        this.sessionId        = sessionId;
+        this.sessionDateTime  = sessionDateTime;
+        this.viewedAt         = LocalDateTime.now();
     }
 
-    public Long    getId()        { return id; }
-    public int     getPhotoId()   { return photoId; }
-    public String  getNameNew()   { return nameNew; }
-    public Integer getUserId()    { return userId; }
-    public String  getIpAddress() { return ipAddress; }
-    public String  getViewType()  { return viewType; }
-    public LocalDateTime getViewedAt() { return viewedAt; }
+    public Long    getId()              { return id; }
+    public int     getPhotoId()         { return photoId; }
+    public String  getNameNew()         { return nameNew; }
+    public Integer getUserId()          { return userId; }
+    public String  getIpAddress()       { return ipAddress; }
+    public String  getViewType()        { return viewType; }
+    public String  getSessionId()       { return sessionId; }
+    public String  getSessionDateTime() { return sessionDateTime; }
+    public LocalDateTime getViewedAt()  { return viewedAt; }
 }

@@ -40,13 +40,14 @@ public class PhotoViewService {
      * @param viewType {@link #TYPE_LIST} or {@link #TYPE_FULL}
      */
     @Transactional
-    public void recordView(int photoId, String nameNew, Integer userId, String ip, String viewType) {
+    public void recordView(int photoId, String nameNew, Integer userId, String ip, String viewType,
+                           String sessionId, String sessionDateTime) {
         if (ip == null || ip.isBlank()) ip = "unknown";
         if (viewType == null || viewType.isBlank()) viewType = TYPE_LIST;
         try {
             LocalDateTime since = LocalDateTime.now().minusHours(DEDUP_HOURS);
             if (!repository.existsRecentView(photoId, ip, viewType, since)) {
-                repository.save(new PhotoView(photoId, nameNew, userId, ip, viewType));
+                repository.save(new PhotoView(photoId, nameNew, userId, ip, viewType, sessionId, sessionDateTime));
                 logger.debug("Recorded {} view for photo {} from {}", viewType, photoId, ip);
             }
         } catch (Exception e) {
