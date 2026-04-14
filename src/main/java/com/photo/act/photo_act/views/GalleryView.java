@@ -1313,6 +1313,17 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
 
         sessionid = VaadinSession.getCurrent().getSession().getId();
         sessionCreation = VaadinSession.getCurrent().getSession().getCreationTime();
+        UI.getCurrent().getPage().retrieveExtendedClientDetails(extendedClientDetails -> {
+            if (extendedClientDetails == null) {
+                logger.info("Image gallery - error timeZoneId: Cannot retrieve client details:" + extendedClientDetails);
+                return;
+            }
+            timeZoneId = extendedClientDetails.getTimeZoneId();
+        });
+        sessionDateTime = utilsDate.calcDateTimeFromLong(sessionCreation, "UTC");
+
+
+
         isMobile = VaadinSession.getCurrent().getBrowser().isAndroid() || VaadinSession.getCurrent().getBrowser().isIPhone() || VaadinSession.getCurrent().getBrowser().isWindowsPhone();
 
         if (VaadinSession.getCurrent().getBrowser().isAndroid()) {
@@ -1348,15 +1359,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         }
 
 
-        UI.getCurrent().getPage().retrieveExtendedClientDetails(extendedClientDetails -> {
-            if (extendedClientDetails == null) {
-                logger.info("Image gallery - error timeZoneId: Cannot retrieve client details:" + extendedClientDetails);
-                return;
-            }
-            timeZoneId = extendedClientDetails.getTimeZoneId();
-        });
 
-        sessionDateTime = utilsDate.calcDateTimeFromLong(sessionCreation, "UTC");
         Locale loc = VaadinService.getCurrentRequest().getLocales().nextElement();
         locale = loc.getLanguage() + "." + loc.getCountry();
         localeName = loc.getDisplayName();

@@ -16,4 +16,14 @@ public class UtilsDate {
 
         return localDateTime.format(formatter);
     }
+
+    public LocalDateTime calcDateTimeFromLongInLDT(Long datetime, String timeZoneId) {
+
+        Instant instant = Instant.ofEpochMilli(datetime);
+        LocalDateTime localDateTime = LocalDateTime.ofInstant(instant, ZoneId.of(timeZoneId));
+
+       // DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+        return localDateTime;
+    }
 }

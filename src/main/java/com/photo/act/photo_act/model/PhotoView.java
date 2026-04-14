@@ -36,7 +36,7 @@ public class PhotoView {
     private String sessionId;
 
     @Column(name = "session_date_time", length = 50)
-    private String sessionDateTime;
+    private LocalDateTime sessionDateTime;
 
     @Column(name = "viewed_at", nullable = false)
     private LocalDateTime viewedAt;
@@ -44,7 +44,7 @@ public class PhotoView {
     protected PhotoView() {}
 
     public PhotoView(int photoId, String nameNew, Integer userId, String ipAddress, String viewType,
-                     String sessionId, String sessionDateTime) {
+                     String sessionId, LocalDateTime sessionDateTime) {
         this.photoId          = photoId;
         this.nameNew          = nameNew;
         this.userId           = userId;
@@ -62,6 +62,6 @@ public class PhotoView {
     public String  getIpAddress()       { return ipAddress; }
     public String  getViewType()        { return viewType; }
     public String  getSessionId()       { return sessionId; }
-    public String  getSessionDateTime() { return sessionDateTime; }
+    public LocalDateTime  getSessionDateTime() { return sessionDateTime; }
     public LocalDateTime getViewedAt()  { return viewedAt; }
 }

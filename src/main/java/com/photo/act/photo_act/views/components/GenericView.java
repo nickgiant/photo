@@ -49,6 +49,7 @@ import java.net.UnknownHostException;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -1302,7 +1303,7 @@ public class GenericView {
                     int userIdInt = Integer.parseInt(finalAuthUserId);
                     String sessionId = VaadinSession.getCurrent().getSession().getId();
                     long sessionCreationMs = VaadinSession.getCurrent().getSession().getCreationTime();
-                    String sessionDateTime = new UtilsDate().calcDateTimeFromLong(sessionCreationMs, "UTC");
+                    LocalDateTime sessionDateTime = new UtilsDate().calcDateTimeFromLongInLDT(sessionCreationMs, "UTC");
                     photoRatingService.saveOrUpdateRating(finalPhotoId, userIdInt, ratingValue, finalNameNew, finalIp,
                             sessionId, sessionDateTime);
                     // Close dialog and notify card to refresh its stats row

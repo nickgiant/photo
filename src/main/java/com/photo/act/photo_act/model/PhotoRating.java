@@ -31,7 +31,7 @@ public class PhotoRating {
     private String sessionId;
 
     @Column(name = "session_date_time", length = 50)
-    private String sessionDateTime;
+    private LocalDateTime sessionDateTime;
 
     @Column(name = "rated_at", nullable = false)
     private LocalDateTime ratedAt;
@@ -39,7 +39,7 @@ public class PhotoRating {
     protected PhotoRating() {}
 
     public PhotoRating(int photoId, int userId, int rating, String nameNew, String ipAddress,
-                       String sessionId, String sessionDateTime) {
+                       String sessionId, LocalDateTime sessionDateTime) {
         this.photoId          = photoId;
         this.userId           = userId;
         this.rating           = rating;
@@ -57,10 +57,10 @@ public class PhotoRating {
     public String getNameNew()         { return nameNew; }
     public String getIpAddress()       { return ipAddress; }
     public String getSessionId()       { return sessionId; }
-    public String getSessionDateTime() { return sessionDateTime; }
+    public LocalDateTime getSessionDateTime() { return sessionDateTime; }
     public LocalDateTime getRatedAt()  { return ratedAt; }
 
-    public void updateRating(int rating, String ipAddress, String sessionId, String sessionDateTime) {
+    public void updateRating(int rating, String ipAddress, String sessionId, LocalDateTime sessionDateTime) {
         this.rating          = rating;
         this.ipAddress       = ipAddress;
         this.sessionId       = sessionId;

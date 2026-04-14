@@ -49,6 +49,7 @@ import java.io.File;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -70,7 +71,7 @@ public class GalleryImageViewCard extends Div {
     private int cardUserId;
     private String cardPublicIp;
     private String cardSessionId;
-    private String cardSessionDateTime;
+    private LocalDateTime cardSessionDateTime;
     private HorizontalLayout statsRow;
     private Span ratingChipSpan;   // null until first rating exists
 
@@ -141,7 +142,7 @@ public class GalleryImageViewCard extends Div {
         this.cardPublicIp = publicIp;
         this.cardSessionId = VaadinSession.getCurrent().getSession().getId();
         long sessionCreationMs = VaadinSession.getCurrent().getSession().getCreationTime();
-        this.cardSessionDateTime = new UtilsDate().calcDateTimeFromLong(sessionCreationMs, "UTC");
+        this.cardSessionDateTime = new UtilsDate().calcDateTimeFromLongInLDT(sessionCreationMs, "UTC");
         this.isMobile = isMobile;
         this.record = record;
         this.strImagePath = strImagePath;

@@ -41,7 +41,7 @@ public class PhotoViewService {
      */
     @Transactional
     public void recordView(int photoId, String nameNew, Integer userId, String ip, String viewType,
-                           String sessionId, String sessionDateTime) {
+                           String sessionId, LocalDateTime sessionDateTime) {
         if (ip == null || ip.isBlank()) ip = "unknown";
         if (viewType == null || viewType.isBlank()) viewType = TYPE_LIST;
         try {

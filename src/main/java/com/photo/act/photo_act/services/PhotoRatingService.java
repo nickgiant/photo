@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Service
@@ -32,7 +33,7 @@ public class PhotoRatingService {
      */
     @Transactional
     public void saveOrUpdateRating(int photoId, int userId, int rating, String nameNew, String ipAddress,
-                                   String sessionId, String sessionDateTime) {
+                                   String sessionId, LocalDateTime sessionDateTime) {
         Optional<PhotoRating> existing = repository.findByPhotoIdAndUserId(photoId, userId);
         if (existing.isPresent()) {
             existing.get().updateRating(rating, ipAddress, sessionId, sessionDateTime);

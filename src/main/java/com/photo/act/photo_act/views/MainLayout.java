@@ -49,7 +49,7 @@ import java.net.UnknownHostException;
 @AnonymousAllowed
 public class MainLayout extends AppLayout {
 
-    public static final String APP_VERSION = "2026.03.0.16";
+    public static final String APP_VERSION = "2026.04.1.14";
     public static final String APP_NAME = "PhotoAct.net";
     public static final String baseUrl = "https://photoact.net";
     public static final String baseMoto = "Through Photography, We Connect and Act";
