@@ -6,10 +6,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
+import com.photo.act.photo_act.services.PhotoViewService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.photo.act.photo_act.views.components.GenericView;
 import com.photo.act.photo_act.views.components.GlightboxComponent;
+import com.photo.act.photo_act.views.components.LikeButton;
 import com.photo.act.photo_act.views.components.ThumbnailStrip;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
@@ -91,10 +93,8 @@ public class PhotoLightboxView extends VerticalLayout
     private RecordService recordService;
 
     // ── Dependencies ──────────────────────────────────────────────────────────
-//    private final ContentRepository contentRepo;
-/*    private final PhotoMetadataRepository metaRepo;
-    private final LikeService           likeService;*/
-    private final ObjectMapper          objectMapper;
+    private final ObjectMapper      objectMapper;
+    private final PhotoViewService  photoViewService;
 
     // ── Components ────────────────────────────────────────────────────────────
     private GlightboxComponent glightbox;
@@ -105,7 +105,7 @@ public class PhotoLightboxView extends VerticalLayout
     private final Span  authorSpan   = new Span();
     private final Div   exifGrid     = new Div();
     private final Div   tagsRow      = new Div();
-    private final Button likeBtn     = new Button("Like");
+    private LikeButton  likeButton;
     private final Button downloadBtn = new Button("Download");
     private final Button shareBtn    = new Button("Share");
     private final Div   commentsDiv  = new Div();
@@ -203,16 +203,12 @@ public class PhotoLightboxView extends VerticalLayout
 
     // ── View setup ────────────────────────────────────────────────────────────
 
-    public PhotoLightboxView(//ContentRepository contentRepo,
-/*                             PhotoMetadataRepository metaRepo,
-                             LikeService likeService,*/
-                             RecordService recordService,
-                             ObjectMapper objectMapper) {
-  //      this.contentRepo  = contentRepo;
-/*        this.metaRepo     = metaRepo;
-        this.likeService  = likeService;*/
-        this.recordService = recordService;
-        this.objectMapper = objectMapper;
+    public PhotoLightboxView(RecordService recordService,
+                             ObjectMapper objectMapper,
+                             PhotoViewService photoViewService) {
+        this.recordService    = recordService;
+        this.objectMapper     = objectMapper;
+        this.photoViewService = photoViewService;
 
         // Outer VerticalLayout: full screen, no padding/gap
         setSizeFull();
@@ -293,11 +289,18 @@ public class PhotoLightboxView extends VerticalLayout
 
         buildView();
 
-
-
-
-
-//        loadInfoPanel(Long.parseLong(photos.get(0).getColumnData("id").toString()));
+        // Load like count for the initial photo
+        if (!strPhotoId.isBlank()) {
+            try {
+                currentPhotoId = Long.parseLong(strPhotoId);
+                loadInfoPanel(currentPhotoId);
+            } catch (NumberFormatException ignored) {}
+        } else if (!photos.isEmpty()) {
+            try {
+                currentPhotoId = Long.parseLong(photos.get(0).getColumnData("id"));
+                loadInfoPanel(currentPhotoId);
+            } catch (NumberFormatException ignored) {}
+        }
     }
 
     // ── Build the full layout ─────────────────────────────────────────────────
@@ -371,10 +374,10 @@ public class PhotoLightboxView extends VerticalLayout
         effectSelect.setWidthFull();
         effectSelect.addValueChangeListener(e -> glightbox.setEffect(e.getValue()));
 
-        // Action buttons
-        likeBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL);
-        likeBtn.setWidthFull();
-        likeBtn.addClickListener(e -> handleLike());
+        // Like button
+        likeButton = new LikeButton(0); // count is refreshed in loadInfoPanel()
+        likeButton.setTitle("Like this photo");
+        likeButton.addLikeClickListener(e -> handleLike());
 
         downloadBtn.addThemeVariants(ButtonVariant.LUMO_SUCCESS, ButtonVariant.LUMO_SMALL);
         downloadBtn.setWidthFull();
@@ -404,7 +407,7 @@ public class PhotoLightboxView extends VerticalLayout
         VerticalLayout panel = new VerticalLayout(
                 photoTitle, authorSpan,
                 new Hr(),
-                likeBtn, downloadBtn, shareBtn,
+                likeButton, downloadBtn, shareBtn,
                 effectSelect,
                 new Hr(),
                 new H4("Camera info"), exifGrid,
@@ -422,13 +425,9 @@ public class PhotoLightboxView extends VerticalLayout
     // ── Load info panel data for a given photoId ──────────────────────────────
 
     private void loadInfoPanel(long photoId) {
-//        contentRepo.findById(photoId).ifPresent(photo -> {
-//            photoTitle.setText(photo.getTitle());
-//            authorSpan.setText("by " + photo.getAuthorName());
-
-            /*metaRepo.findByContentId(photoId).ifPresent(this::populateExif);*/
-//            populateTags(photo.getKeywords());
-//        });
+        if (photoViewService != null && likeButton != null) {
+            likeButton.setCount(photoViewService.getLikeCount((int) photoId));
+        }
     }
 
 /*    private void populateExif(PhotoMetadata m) {
@@ -468,8 +467,17 @@ public class PhotoLightboxView extends VerticalLayout
     // ── Actions ───────────────────────────────────────────────────────────────
 
     private void handleLike() {
-/*        likeService.toggle(currentPhotoId, getCurrentUserId());
-        likeBtn.setText(likeBtn.getText().startsWith("Like") ? "Liked ♥" : "Like");*/
+        if (photoViewService == null || currentPhotoId == 0) return;
+        int photoIdInt = (int) currentPhotoId;
+        String nameNew = photos.stream()
+                .filter(p -> String.valueOf(currentPhotoId).equals(p.getColumnData("id")))
+                .map(p -> p.getColumnData("name_new"))
+                .findFirst().orElse("");
+        java.time.LocalDateTime sessionLdt =
+                utilsDate.calcDateTimeFromLongInLDT(sessionCreation, "UTC");
+        photoViewService.recordLike(photoIdInt, nameNew, null,
+                publicIp, sessionid, sessionLdt);
+        likeButton.setCount(photoViewService.getLikeCount(photoIdInt));
     }
 
     private void handleDownload() {

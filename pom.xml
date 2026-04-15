@@ -113,11 +113,11 @@
 			<scope>compile</scope>
 		</dependency>
 
-
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-devtools</artifactId>
 		</dependency>
+
 		<dependency>
 			<groupId>org.mariadb.jdbc</groupId>
 			<artifactId>mariadb-java-client</artifactId>
@@ -135,7 +135,6 @@
 <!--			<artifactId>upload-helper-addon</artifactId>-->
 <!--			<version>1.0.0</version>-->
 <!--		</dependency>-->
-
 
 		<dependency>
 			<groupId>com.flowingcode.addons</groupId>
@@ -158,7 +157,6 @@
 			<version>4.2</version>
 		</dependency>
 
-
 		<dependency>
 			<groupId>net.coobird</groupId>
 			<artifactId>thumbnailator</artifactId>
@@ -177,6 +175,7 @@
             <artifactId>vaadin-maps-leaflet-flow</artifactId>
             <version>4.2.0</version>
         </dependency>
+
 <!--		<dependency>-->
 <!--			<groupId>org.vaadin.addons.themeselect</groupId>-->
 <!--			<artifactId>themeselect</artifactId>-->
@@ -206,7 +205,6 @@
 			<artifactId>paged-tabs</artifactId>
 			<version>4.0.0</version>
 		</dependency>
-
 
 		<!--        vaadin components start-->
 <!--		<dependency>-->
@@ -261,6 +259,7 @@
 			<groupId>org.springframework.boot</groupId>
 			<version>3.5.9</version>
 		</dependency>
+
 		<dependency>
 			<artifactId>spring-boot-starter-webflux</artifactId>
 			<groupId>org.springframework.boot</groupId>

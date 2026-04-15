@@ -24,4 +24,13 @@ public interface PhotoViewRepository extends JpaRepository<PhotoView, Long> {
                              @Param("ip") String ip,
                              @Param("viewType") String viewType,
                              @Param("since") LocalDateTime since);
+
+    /**
+     * Counts distinct people who liked a photo, using IP address as the
+     * unique-person identifier (logged-in users and guests are both tracked by IP).
+     */
+    @Query("SELECT COUNT(DISTINCT v.ipAddress) FROM PhotoView v " +
+           "WHERE v.photoId = :photoId AND v.viewType = :viewType")
+    long countDistinctLikersByPhotoId(@Param("photoId") int photoId,
+                                      @Param("viewType") String viewType);
 }
