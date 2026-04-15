@@ -41,8 +41,8 @@ public class LikeButton extends Div {
         SvgIcon icon = new SvgIcon(
                 DownloadHandler.forClassResource(LikeButton.class, "/icons/like-icon.svg"));
         icon.getStyle()
-                .set("width",  "1.1em")
-                .set("height", "1.1em");
+                .set("width",  "1.9em")
+                .set("height", "1.9em");
 
         iconWrap = new Div(icon);
         iconWrap.addClassName("like-btn-icon");
