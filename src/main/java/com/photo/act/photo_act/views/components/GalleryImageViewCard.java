@@ -776,23 +776,31 @@ public class GalleryImageViewCard extends Div {
 
 
 
-        SvgIcon svgLike = new SvgIcon(DownloadHandler.forClassResource(GalleryImageViewCard.class, "/icons/like-icon.svg"));
-        Div divLike = new Div();
-        divLike.addClassName("tooltip-container");
-        Button btnLike = new Button(svgLike);
+        // ── Like button ───────────────────────────────────────────────────────
+        long initialLikeCount = 0;
+        int photoIdForLike = 0;
+        try {
+            photoIdForLike = Integer.parseInt(strPhotoId);
+            if (photoViewService != null) {
+                initialLikeCount = photoViewService.getLikeCount(photoIdForLike);
+            }
+        } catch (NumberFormatException ignored) {}
 
-        Div tooltipLike = new Div("Like it!");
-        tooltipLike.addClassName("tooltip-top");
-
-        Div divLikeInfo = new Div("1");
-        divLikeInfo.addClassName(TextColor.DISABLED);
-
-        btnLike.setSuffixComponent(divLikeInfo);
-        divLike.add(btnLike, tooltipLike);
-
-        // btnLike.setTooltipText("Like It");
-
-        Checkbox chkLike = new Checkbox();
+        final int photoIdLikeFinal = photoIdForLike;
+        LikeButton likeButton = new LikeButton(initialLikeCount);
+        likeButton.setTitle("Like it!");
+        likeButton.addLikeClickListener(e -> {
+            if (photoViewService != null) {
+                Integer likeUserId = null;
+                if (strAvailableAlbumsMemberId != null && !strAvailableAlbumsMemberId.isBlank()) {
+                    try { likeUserId = Integer.parseInt(strAvailableAlbumsMemberId); } catch (NumberFormatException ignored) {}
+                }
+                String nameNew = (record != null) ? record.getColumnData("name_new") : "";
+                photoViewService.recordLike(photoIdLikeFinal, nameNew, likeUserId,
+                        cardPublicIp, cardSessionId, cardSessionDateTime);
+                likeButton.setCount(photoViewService.getLikeCount(photoIdLikeFinal));
+            }
+        });
 
         Div divLists = new Div();
         divLists.addClassName("tooltip-container");
@@ -904,13 +912,12 @@ public class GalleryImageViewCard extends Div {
         //layoutActions.setWidthFull();
 
         if (isMobile) {
- //           layoutActions.add(divLike, btnLists, btnShare);
+            layoutActions.add(likeButton);
         } else {
             if (strImagePath.contains(subPathLarge)) {
- //               layoutActions.add(divLike, divLists, divShare, divRate);
+                layoutActions.add(likeButton);
             } else {
-//                layoutActions.add(divLike, divLists, divShare, divRate, divFullView);
-                layoutActions.add(shareBottomBar);
+                layoutActions.add(likeButton, shareBottomBar);
             }
         }
         return layoutActions;

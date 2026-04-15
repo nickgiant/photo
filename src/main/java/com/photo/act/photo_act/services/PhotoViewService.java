@@ -19,6 +19,7 @@ public class PhotoViewService {
 
     public static final String TYPE_LIST = "List";
     public static final String TYPE_FULL = "Full";
+    public static final String TYPE_LIKE = "Like";
 
     private final PhotoViewRepository repository;
 
@@ -63,6 +64,28 @@ public class PhotoViewService {
             return repository.countByPhotoId(photoId);
         } catch (Exception e) {
             logger.error("Error fetching view count for photo {}: {}", photoId, e.getMessage());
+            return 0;
+        }
+    }
+
+    /**
+     * Records a like for a photo. Uses the same 3-hour dedup window as views,
+     * so a given IP can only contribute one like-record per dedup window.
+     */
+    @Transactional
+    public void recordLike(int photoId, String nameNew, Integer userId, String ip,
+                           String sessionId, LocalDateTime sessionDateTime) {
+        recordView(photoId, nameNew, userId, ip, TYPE_LIKE, sessionId, sessionDateTime);
+    }
+
+    /**
+     * Returns the count of distinct people (by IP) who liked a photo.
+     */
+    public long getLikeCount(int photoId) {
+        try {
+            return repository.countDistinctLikersByPhotoId(photoId, TYPE_LIKE);
+        } catch (Exception e) {
+            logger.error("Error fetching like count for photo {}: {}", photoId, e.getMessage());
             return 0;
         }
     }
