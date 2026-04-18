@@ -15,7 +15,7 @@ public class PhotoViewService {
     private static final Logger logger = LoggerFactory.getLogger(PhotoViewService.class);
 
     /** Dedup window: same IP + same viewType within this many hours counts as one view. */
-    private static final int DEDUP_HOURS = 80;
+    private static final int DEDUP_HOURS = 800;
 
     public static final String TYPE_LIST = "List";
     public static final String TYPE_FULL = "Full";

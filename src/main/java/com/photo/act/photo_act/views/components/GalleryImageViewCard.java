@@ -35,7 +35,7 @@ import com.vaadin.flow.component.popover.PopoverVariant;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.router.RouterLink;
-import com.vaadin.flow.server.StreamResource;
+
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.streams.DownloadHandler;
 import com.photo.act.photo_act.utils.UtilsDate;
@@ -755,12 +755,12 @@ public class GalleryImageViewCard extends Div {
             showDialogWithCarousel(isType, strSelection, strPhotoId, strAlbumUsername, false);
         });
 
-        SvgIcon svgRate = new SvgIcon(DownloadHandler.forClassResource(GalleryImageViewCard.class, "/icons/star-empty-icon.svg"));
+//        SvgIcon svgRate = new SvgIcon(DownloadHandler.forClassResource(GalleryImageViewCard.class, "/icons/star-empty-icon.svg"));
 
-        MenuItem viewRate = createIconItem(shareBottomBar, svgRate, "Rate it", "rate it");
-        viewRate.addClickListener(click->{
-            showDialogWithCarousel(isType, strSelection, strPhotoId, strAlbumUsername, true);
-        });
+/*        MenuItem viewRate = createIconItem(shareBottomBar, svgRate, "Rate it", "rate it");
+        viewRate.addClickListener(click->{*/
+//            showDialogWithCarousel(isType, strSelection, strPhotoId, strAlbumUsername, true);
+        /*});*/
 
 
         if (strCity!= null && !strCity.isEmpty()) {
@@ -802,6 +802,33 @@ public class GalleryImageViewCard extends Div {
             }
         });
 
+
+        // ── Rate button ───────────────────────────────────────────────────────
+        long initialRateCount = 0;
+        int photoIdForRate = 0;
+        try {
+            photoIdForRate = Integer.parseInt(strPhotoId);
+            if (photoRatingService != null) {
+                initialRateCount = photoRatingService.getRatingCount(photoIdForRate);
+            }
+        } catch (NumberFormatException ignored) {}
+
+        final int photoIdRateFinal = photoIdForRate;
+        RateButton rateButton = new RateButton(initialRateCount);
+        rateButton.setTitle("Rate it!");
+        rateButton.addRateClickListener(e -> {
+            if (photoViewService != null) {
+                Integer rateUserId = null;
+                if (strAvailableAlbumsMemberId != null && !strAvailableAlbumsMemberId.isBlank()) {
+                    try { rateUserId = Integer.parseInt(strAvailableAlbumsMemberId); } catch (NumberFormatException ignored) {}
+                }
+                String nameNew = (record != null) ? record.getColumnData("name_new") : "";
+//                photoViewService.recordRate(photoIdRateFinal, nameNew, rateUserId, cardPublicIp, cardSessionId, cardSessionDateTime);
+                showDialogWithCarousel(isType, strSelection, strPhotoId, strAlbumUsername, true);
+                rateButton.setCount(photoRatingService.getRatingCount(photoIdRateFinal));
+            }
+        });
+
         Div divLists = new Div();
         divLists.addClassName("tooltip-container");
 
@@ -833,7 +860,7 @@ public class GalleryImageViewCard extends Div {
         Div divRate = new Div();
         divRate.addClassName("tooltip-container");
 
-        Div tooltipRate = new Div("Rate it");
+/*        Div tooltipRate = new Div("Rate it");
         tooltipRate.addClassName("tooltip-top");
         Div divRatesInfo = new Div("");
         divRatesInfo.addClassName(TextColor.DISABLED);
@@ -850,7 +877,7 @@ public class GalleryImageViewCard extends Div {
 //                //    ui.navigate(LearningsView.class, new RouteParameters(routeTitle))
 //           // );
                 }
-        );
+        );*/
 
 
 
@@ -917,7 +944,7 @@ public class GalleryImageViewCard extends Div {
             if (strImagePath.contains(subPathLarge)) {
                 layoutActions.add(likeButton);
             } else {
-                layoutActions.add(likeButton, shareBottomBar);
+                layoutActions.add(likeButton, rateButton, shareBottomBar);
             }
         }
         return layoutActions;
@@ -1608,14 +1635,7 @@ public class GalleryImageViewCard extends Div {
         MenuBar menuBar = new MenuBar();
         menuBar.addThemeVariants(MenuBarVariant.LUMO_ICON);
 
-        StreamResource iconLike = new StreamResource("star-empty-icon.svg",
-                () -> getClass().getResourceAsStream("/icons/star-empty-icon.svg"));
-        SvgIcon svgLike = new SvgIcon(iconLike);
-//        Button btnLike = new Button(svgLike);
-        MenuItem btnLike = menuBar.addItem(svgLike, "Like It");
 
-        Div divInfo = new Div("1");
-        divInfo.addClassName(TextColor.DISABLED);
 
 //        btnLike.setSuffixComponent(divInfo);
 //        btnLike.setTooltipText("Like It");
@@ -1631,21 +1651,17 @@ public class GalleryImageViewCard extends Div {
 
 //        Button btnComment = new Button(VaadinIcon.COMMENT.create());
 //        btnComment.setTooltipText("Comment on it");
-        MenuItem btnComment = menuBar.addItem(VaadinIcon.COMMENT.create(), "Comment on it");
+//        MenuItem btnComment = menuBar.addItem(VaadinIcon.COMMENT.create(), "Comment on it");
+//
+////        Button btnMoreInfo = new Button(VaadinIcon.INFO_CIRCLE_O.create());
+////        btnMoreInfo.setTooltipText("More info");
+//        MenuItem btnMoreInfo = menuBar.addItem(VaadinIcon.COMMENT.create(), "More info");
 
-//        Button btnMoreInfo = new Button(VaadinIcon.INFO_CIRCLE_O.create());
-//        btnMoreInfo.setTooltipText("More info");
-        MenuItem btnMoreInfo = menuBar.addItem(VaadinIcon.COMMENT.create(), "More info");
-
-        StreamResource iconShare = new StreamResource("share-line-icon.svg",
-                () -> getClass().getResourceAsStream("/icons/share-line-icon.svg"));
-        SvgIcon svgShare = new SvgIcon(iconShare);
-        MenuItem btnShare = menuBar.addItem(svgShare, "Share it");
 //        Button btnShare = new Button(svgShare);
 //        btnShare.setTooltipText("Share it");
 
 
-        Icon icon = new Icon(VaadinIcon.PENCIL);
+//        Icon icon = new Icon(VaadinIcon.PENCIL);
 
 
 //

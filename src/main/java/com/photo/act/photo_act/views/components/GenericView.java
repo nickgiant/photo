@@ -20,6 +20,7 @@ import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -767,12 +768,13 @@ public class GenericView {
         btnGroupSelect.addValueChangeListener(event -> {
             if (event.getSource().getValue().contains("Meta")) {
                 layoutMeta.removeAll();
-                layoutMeta.add(fetchPhotoMetaInfoOnCarousel(finalRec));
                 layoutMeta.add(fetchPhotoCreatorOnCarousel(finalRec, false));
+                layoutMeta.add(fetchPhotoMetaInfoOnCarousel(finalRec));
             } else {
                 layoutMeta.removeAll();
+                layoutMeta.add(fetchPhotoCreatorOnCarousel(finalRec, false));
                 layoutMeta.add(loadPanelRate(strPhotoId, nameNew, onRatingSaved));
-                layoutMeta.add(fetchPhotoCreatorOnCarousel(finalRec, true));
+
             }
         });
         layoutTabSelect.add(btnGroupSelect);
@@ -1210,20 +1212,22 @@ public class GenericView {
             ratingCount = photoRatingService.getRatingCount(photoIdInt);
         }
 
+        SvgIcon svgRate = new SvgIcon(DownloadHandler.forClassResource(GalleryImageViewCard.class, "/icons/star-empty-icon.svg"));
         HorizontalLayout layoutSummary = new HorizontalLayout();
         layoutSummary.addClassNames(LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER,
                 LumoUtility.Gap.SMALL, LumoUtility.Padding.XSMALL);
         Span spanAvg = new Span(ratingCount > 0
-                ? String.format("\u2605 %.1f  (%d ratings)", avgRating, ratingCount)
+                ? String.format(" %.1f  (%d ratings)", avgRating, ratingCount)
                 : "No ratings yet");
         spanAvg.addClassNames(LumoUtility.FontSize.SMALL, LumoUtility.TextColor.SECONDARY);
-        layoutSummary.add(spanAvg);
+        layoutSummary.add(svgRate,spanAvg);
 
         // ── Auth check ─────────────────────────────────────────────────────────
         String authUserId = checkIfAuthMemberId();
         if (authUserId == null) {
             Span loginMsg = new Span("Please log in to rate this photo.");
-            loginMsg.addClassNames(LumoUtility.FontSize.SMALL, LumoUtility.TextColor.TERTIARY,
+            loginMsg.addClassNames(LumoUtility.TextColor.ERROR, LumoUtility.Background.ERROR_10,
+                    LumoUtility.FontSize.SMALL, LumoUtility.TextColor.TERTIARY,
                     LumoUtility.Padding.SMALL);
             verticalLayout.add(layoutSummary, loginMsg);
             return verticalLayout;
@@ -1415,8 +1419,9 @@ public class GenericView {
 
 
         layoutMeta.removeAll();
-        layoutMeta.add(fetchPhotoMetaInfoOnCarousel(record));
         layoutMeta.add(fetchPhotoCreatorOnCarousel(record,false));
+        layoutMeta.add(fetchPhotoMetaInfoOnCarousel(record));
+
 
     }
 

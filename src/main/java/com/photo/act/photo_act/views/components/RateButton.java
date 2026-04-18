@@ -27,7 +27,7 @@ import com.vaadin.flow.server.streams.DownloadHandler;
  *   layout.add(btn);
  * </pre>
  */
-public class LikeButton extends Div {
+public class RateButton extends Div {
 
     private final Div    iconWrap;
     private final Span   countSpan;
@@ -35,11 +35,11 @@ public class LikeButton extends Div {
     /**
      * @param initialCount number of distinct people who already liked this photo
      */
-    public LikeButton(long initialCount) {
+    public RateButton(long initialCount) {
         addClassName("like-btn");
 
         SvgIcon icon = new SvgIcon(
-                DownloadHandler.forClassResource(LikeButton.class, "/icons/like-icon.svg"));
+                DownloadHandler.forClassResource(RateButton.class, "/icons/star-empty-icon.svg"));
         icon.getStyle()
                 .set("width",  "1.9em")
                 .set("height", "1.9em");
@@ -48,7 +48,7 @@ public class LikeButton extends Div {
         iconWrap.addClassName("like-btn-icon");
 
         if(initialCount==0){
-            countSpan = new Span("");
+            countSpan = new Span();
         }else {
             countSpan = new Span(String.valueOf(initialCount));
         }
@@ -73,7 +73,9 @@ public class LikeButton extends Div {
 
     /** Updates the displayed like count. */
     public void setCount(long count) {
-        countSpan.setText(String.valueOf(count));
+        if(count>0) {
+            countSpan.setText(String.valueOf(count));
+        }
     }
 
     /** Returns the current displayed count. */
@@ -89,7 +91,7 @@ public class LikeButton extends Div {
      * Adds a server-side click listener that fires after the animation JS is sent.
      * Use this to record the like and refresh the count.
      */
-    public void addLikeClickListener(ComponentEventListener<ClickEvent<Div>> listener) {
+    public void addRateClickListener(ComponentEventListener<ClickEvent<Div>> listener) {
         addClickListener(listener);
     }
 }
