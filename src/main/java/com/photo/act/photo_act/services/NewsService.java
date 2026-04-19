@@ -4,6 +4,7 @@ import com.photo.act.photo_act.dto.NewsCategoryDto;
 import com.photo.act.photo_act.dto.NewsCreateDto;
 import com.photo.act.photo_act.dto.NewsDto;
 import com.photo.act.photo_act.dto.NewsItemDto;
+import com.photo.act.photo_act.dto.NewsPageResult;
 import com.photo.act.photo_act.model.*;
 import com.photo.act.photo_act.repository.*;
 import org.slf4j.Logger;
@@ -29,8 +30,12 @@ import java.util.Optional;
  *
  * Cache names:
  *   news-item        – single NewsDto by id            TTL 30 min
- *   news-list        – paged news by category / latest TTL 10 min
- *   news-categories  – all categories with stats       TTL 5 min
+ *   news-list        – paged NewsPageResult            TTL 10 min
+ *   news-categories  – all categories with stats       TTL  5 min
+ *
+ * NOTE: methods returning Optional<> or Spring Page<> are NOT cached because
+ * those types are not safely round-trippable through Jackson/Redis.
+ * news-item and news-list use plain Serializable DTOs instead.
  *
  * Redis atomic counters (StringRedisTemplate):
  *   news:views:{id}  – incremented on every accepted view event
@@ -41,7 +46,6 @@ public class NewsService {
 
     private static final Logger log = LoggerFactory.getLogger(NewsService.class);
 
-    /** View dedup window: same IP counts as one view within this many hours. */
     private static final int VIEW_DEDUP_HOURS = 24;
 
     private static final String REDIS_VIEWS_KEY = "news:views:";
@@ -70,7 +74,7 @@ public class NewsService {
 
     // ──────────────────────────── Categories ────────────────────────────────
 
-    /** All categories with computed stats (count, last date, views, likes, authors). */
+    /** All categories with computed stats — cached as List (safe for Redis). */
     @Cacheable("news-categories")
     public List<NewsCategoryDto> getAllCategories() {
         return categoryRepo.findAllByOrderByTitleAsc().stream()
@@ -78,7 +82,7 @@ public class NewsService {
                 .toList();
     }
 
-    @Cacheable(value = "news-categories", key = "#id")
+    /** Single category — NOT cached (Optional not safely serializable). */
     public Optional<NewsCategoryDto> getCategoryById(Long id) {
         return categoryRepo.findById(id).map(this::buildCategoryDto);
     }
@@ -104,53 +108,70 @@ public class NewsService {
     }
 
     private NewsCategoryDto buildCategoryDto(NewsCategoryEntity cat) {
-        long          count     = categoryRepo.countNewsByCategoryId(cat.getId());
-        LocalDateTime lastAt    = categoryRepo.findLastNewDateByCategoryId(cat.getId()).orElse(null);
-        long          views     = categoryRepo.countViewsByCategoryId(cat.getId());
-        long          likes     = categoryRepo.countLikesByCategoryId(cat.getId());
-        long          authors   = categoryRepo.countDistinctAuthorsByCategoryId(cat.getId());
-        String        timeAgo   = lastAt != null ? timeAgo(lastAt) : "—";
+        long          count   = categoryRepo.countNewsByCategoryId(cat.getId());
+        LocalDateTime lastAt  = categoryRepo.findLastNewDateByCategoryId(cat.getId()).orElse(null);
+        long          views   = categoryRepo.countViewsByCategoryId(cat.getId());
+        long          likes   = categoryRepo.countLikesByCategoryId(cat.getId());
+        long          authors = categoryRepo.countDistinctAuthorsByCategoryId(cat.getId());
+        String        timeAgo = lastAt != null ? timeAgo(lastAt) : "—";
         return NewsCategoryDto.from(cat, count, lastAt, timeAgo, views, likes, authors);
     }
 
     // ──────────────────────────────── News ──────────────────────────────────
 
-    /** Full news entry with items, view count, and like count — cached by id. */
-    @Cacheable(value = "news-item", key = "#id")
+    /**
+     * Full news entry — NOT cached with Spring Cache because Optional<> is not
+     * safely Jackson-deserializable through Redis. PK lookup is fast enough.
+     */
     public Optional<NewsDto> getNewsById(Long id) {
         return newsRepo.findById(id).map(this::buildNewsDto);
     }
 
-    /** Paged news for a specific category. */
+    /**
+     * Paged news for a category — cached as NewsPageResult (Jackson-safe).
+     */
     @Cacheable(value = "news-list", key = "'cat-' + #categoryId + '-p' + #page")
-    public Page<NewsDto> getNewsByCategory(Long categoryId, int page, int size) {
+    public NewsPageResult getNewsByCategory(Long categoryId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        return newsRepo.findByCategoryIdOrderByCreatedAtDesc(categoryId, pageable)
-                       .map(this::buildNewsDto);
+        Page<NewsDto> p = newsRepo.findByCategoryIdOrderByCreatedAtDesc(categoryId, pageable)
+                                  .map(this::buildNewsDto);
+        return toPageResult(p, page);
     }
 
-    /** Latest news across all categories. */
+    /** Latest news across all categories — cached as NewsPageResult (Jackson-safe). */
     @Cacheable(value = "news-list", key = "'latest-p' + #page")
-    public Page<NewsDto> getLatestNews(int page, int size) {
+    public NewsPageResult getLatestNews(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        return newsRepo.findAllByOrderByCreatedAtDesc(pageable)
-                       .map(this::buildNewsDto);
+        Page<NewsDto> p = newsRepo.findAllByOrderByCreatedAtDesc(pageable)
+                                  .map(this::buildNewsDto);
+        return toPageResult(p, page);
     }
 
-    /** News created by a specific user (no caching — personal feed). */
+    private static NewsPageResult toPageResult(Page<NewsDto> p, int page) {
+        return NewsPageResult.builder()
+                .content(p.getContent())
+                .totalElements(p.getTotalElements())
+                .totalPages(p.getTotalPages())
+                .pageNumber(page)
+                .hasNext(p.hasNext())
+                .hasPrevious(p.hasPrevious())
+                .build();
+    }
+
+    /** News by user — no caching (personal feed). */
     public List<NewsDto> getNewsByUser(Integer userId) {
         return newsRepo.findByUserIdOrderByCreatedAtDesc(userId).stream()
                        .map(this::buildNewsDto)
                        .toList();
     }
 
-    /** Full-text keyword search across title, description, original_author. */
-    public Page<NewsDto> searchNews(String keyword, int page, int size) {
-        return newsRepo.searchByKeyword(keyword, PageRequest.of(page, size))
-                       .map(this::buildNewsDto);
+    /** Full-text keyword search — no caching. */
+    public NewsPageResult searchNews(String keyword, int page, int size) {
+        Page<NewsDto> p = newsRepo.searchByKeyword(keyword, PageRequest.of(page, size))
+                                  .map(this::buildNewsDto);
+        return toPageResult(p, page);
     }
 
-    /** Create a news entry with optional items. Requires an authenticated user. */
     @Transactional
     @Caching(evict = {
         @CacheEvict(value = "news-list",       allEntries = true),
@@ -174,10 +195,8 @@ public class NewsService {
         return buildNewsDto(news);
     }
 
-    /** Update headline fields of an existing news entry. */
     @Transactional
     @Caching(evict = {
-        @CacheEvict(value = "news-item",       key = "#id"),
         @CacheEvict(value = "news-list",       allEntries = true),
         @CacheEvict(value = "news-categories", allEntries = true)
     })
@@ -193,9 +212,8 @@ public class NewsService {
         });
     }
 
-    /** Replace all items for a news entry (delete existing, insert new). */
     @Transactional
-    @CacheEvict(value = "news-item", key = "#newsId")
+    @CacheEvict(value = "news-list", allEntries = true)
     public void replaceItems(Long newsId, List<NewsCreateDto.NewsItemCreateDto> itemDtos) {
         itemRepo.deleteByNewsId(newsId);
         int order = 0;
@@ -224,10 +242,6 @@ public class NewsService {
 
     // ──────────────────────────────── Views ─────────────────────────────────
 
-    /**
-     * Records a view. Deduplication: same IP within {@value #VIEW_DEDUP_HOURS}h is skipped.
-     * Also increments the Redis counter for fast reads.
-     */
     @Transactional
     public void recordView(Long newsId, Integer userId, String ip,
                            String sessionId, LocalDateTime sessionDateTime) {
@@ -237,7 +251,6 @@ public class NewsService {
             if (!viewRepo.existsRecentView(newsId, ip, since)) {
                 viewRepo.save(new NewsViewEntity(newsId, userId, ip, sessionId, sessionDateTime));
                 redis.opsForValue().increment(REDIS_VIEWS_KEY + newsId);
-                log.debug("Recorded view for news {} from {}", newsId, ip);
             }
         } catch (Exception e) {
             log.error("Error recording view for news {}: {}", newsId, e.getMessage());
@@ -246,21 +259,14 @@ public class NewsService {
 
     // ──────────────────────────────── Likes ─────────────────────────────────
 
-    /**
-     * Toggles like for a news entry by IP. Returns true if the like was added,
-     * false if already liked (no duplicate likes per IP).
-     */
     @Transactional
     public boolean toggleLike(Long newsId, Integer userId, String ip,
                                String sessionId, LocalDateTime sessionDateTime) {
         if (ip == null || ip.isBlank()) ip = "unknown";
         try {
-            if (likeRepo.existsByNewsIdAndIpAddress(newsId, ip)) {
-                return false;
-            }
+            if (likeRepo.existsByNewsIdAndIpAddress(newsId, ip)) return false;
             likeRepo.save(new NewsLikeEntity(newsId, userId, ip, sessionId, sessionDateTime));
             redis.opsForValue().increment(REDIS_LIKES_KEY + newsId);
-            log.debug("Recorded like for news {} from {}", newsId, ip);
             return true;
         } catch (Exception e) {
             log.error("Error recording like for news {}: {}", newsId, e.getMessage());
@@ -270,11 +276,8 @@ public class NewsService {
 
     public boolean hasLiked(Long newsId, String ip) {
         if (ip == null || ip.isBlank()) return false;
-        try {
-            return likeRepo.existsByNewsIdAndIpAddress(newsId, ip);
-        } catch (Exception e) {
-            return false;
-        }
+        try { return likeRepo.existsByNewsIdAndIpAddress(newsId, ip); }
+        catch (Exception e) { return false; }
     }
 
     // ─────────────────────── Count helpers (Redis-first) ────────────────────

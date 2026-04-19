@@ -3,6 +3,7 @@ package com.photo.act.photo_act.views;
 import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.dto.NewsCategoryDto;
 import com.photo.act.photo_act.dto.NewsDto;
+import com.photo.act.photo_act.dto.NewsPageResult;
 import com.photo.act.photo_act.services.NewsService;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
@@ -18,7 +19,6 @@ import com.vaadin.flow.component.popover.PopoverVariant;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
-import org.springframework.data.domain.Page;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -254,7 +254,7 @@ public class NewsView extends VerticalLayout {
         pagination.removeAll();
         newsFeed.addClassName("nv-feed");
 
-        Page<NewsDto> page;
+        NewsPageResult page;
         try {
             page = selectedCategoryId == null
                     ? newsService.getLatestNews(currentPage, PAGE_SIZE)

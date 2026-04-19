@@ -3,7 +3,6 @@ package com.photo.act.photo_act.config;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -48,7 +47,8 @@ public class RedisConfig {
     @Bean
     public ObjectMapper redisObjectMapper() {
         ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModule(new JavaTimeModule());
+        // Register all modules on the classpath (JavaTimeModule, Jdk8Module, etc.)
+        mapper.findAndRegisterModules();
         // Store class type info so Jackson can deserialize polymorphic DTOs
         mapper.activateDefaultTyping(
                 LaissezFaireSubTypeValidator.instance,
