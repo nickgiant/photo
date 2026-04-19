@@ -4,11 +4,9 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -30,16 +28,23 @@ import java.util.Map;
  *  og-meta          1 hour    — OG metadata (article, photo, album, etc.)
  *  og-meta-profile  24 hours  — Photographer profiles (change rarely)
  *  og-meta-event    15 min    — Events (update frequently near start date)
+ *  news-item        30 min    — Single NewsDto by id
+ *  news-list        10 min    — Paged news lists (by category / latest)
+ *  news-categories   5 min    — All categories with computed stats
  */
-/*@Configuration*/
-/*@EnableCaching*/
+@Configuration
+@EnableCaching
 public class RedisConfig {
 
     private static final Duration DEFAULT_TTL      = Duration.ofHours(1);
     private static final Duration PROFILE_TTL      = Duration.ofHours(24);
     private static final Duration EVENT_TTL        = Duration.ofMinutes(15);
 
-    /*@Primary*/
+    // News section TTLs
+    private static final Duration NEWS_ITEM_TTL    = Duration.ofMinutes(30);
+    private static final Duration NEWS_LIST_TTL    = Duration.ofMinutes(10);
+    private static final Duration NEWS_CAT_TTL     = Duration.ofMinutes(5);
+
     @Bean
     public ObjectMapper redisObjectMapper() {
         ObjectMapper mapper = new ObjectMapper();
@@ -93,7 +98,10 @@ public class RedisConfig {
         Map<String, RedisCacheConfiguration> cacheConfigs = Map.of(
                 "og-meta",         defaultConfig,
                 "og-meta-profile", defaultConfig.entryTtl(PROFILE_TTL),
-                "og-meta-event",   defaultConfig.entryTtl(EVENT_TTL)
+                "og-meta-event",   defaultConfig.entryTtl(EVENT_TTL),
+                "news-item",       defaultConfig.entryTtl(NEWS_ITEM_TTL),
+                "news-list",       defaultConfig.entryTtl(NEWS_LIST_TTL),
+                "news-categories", defaultConfig.entryTtl(NEWS_CAT_TTL)
         );
 
         return RedisCacheManager.builder(factory)
