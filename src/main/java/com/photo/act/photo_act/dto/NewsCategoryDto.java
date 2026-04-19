@@ -1,14 +1,18 @@
 package com.photo.act.photo_act.dto;
 
 import com.photo.act.photo_act.model.NewsCategoryEntity;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Value;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
-@Value
+@Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class NewsCategoryDto implements Serializable {
 
     Long          id;

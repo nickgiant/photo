@@ -11,7 +11,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -74,8 +73,7 @@ public class NewsService {
 
     // ──────────────────────────── Categories ────────────────────────────────
 
-    /** All categories with computed stats — cached as List (safe for Redis). */
-    @Cacheable("news-categories")
+    /** All categories with computed stats — always fresh from DB (small dataset). */
     public List<NewsCategoryDto> getAllCategories() {
         return categoryRepo.findAllByOrderByTitleAsc().stream()
                 .map(this::buildCategoryDto)
@@ -88,7 +86,6 @@ public class NewsService {
     }
 
     @Transactional
-    @CacheEvict(value = "news-categories", allEntries = true)
     public NewsCategoryDto createCategory(String title, String description) {
         if (categoryRepo.existsByTitle(title)) {
             throw new IllegalArgumentException("Category already exists: " + title);
@@ -98,7 +95,6 @@ public class NewsService {
     }
 
     @Transactional
-    @CacheEvict(value = "news-categories", allEntries = true)
     public Optional<NewsCategoryDto> updateCategory(Long id, String title, String description) {
         return categoryRepo.findById(id).map(cat -> {
             cat.setTitle(title);
@@ -173,10 +169,7 @@ public class NewsService {
     }
 
     @Transactional
-    @Caching(evict = {
-        @CacheEvict(value = "news-list",       allEntries = true),
-        @CacheEvict(value = "news-categories", allEntries = true)
-    })
+    @CacheEvict(value = "news-list", allEntries = true)
     public NewsDto createNews(NewsCreateDto dto, Integer userId) {
         NewsEntity news = newsRepo.save(new NewsEntity(
                 dto.getTitle(), dto.getDescription(), dto.getPhotoId(),
@@ -196,10 +189,7 @@ public class NewsService {
     }
 
     @Transactional
-    @Caching(evict = {
-        @CacheEvict(value = "news-list",       allEntries = true),
-        @CacheEvict(value = "news-categories", allEntries = true)
-    })
+    @CacheEvict(value = "news-list", allEntries = true)
     public Optional<NewsDto> updateNews(Long id, NewsCreateDto dto) {
         return newsRepo.findById(id).map(news -> {
             news.setTitle(dto.getTitle());
