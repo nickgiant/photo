@@ -1,5 +1,6 @@
-package com.photo.act.photo_act.model;
+package com.photo.act.photo_act.dto;
 
+import com.photo.act.photo_act.model.NewsEntity;
 import lombok.Builder;
 import lombok.Value;
 
@@ -11,19 +12,19 @@ import java.util.List;
 @Builder
 public class NewsDto implements Serializable {
 
-    Long             id;
-    String           title;
-    String           description;
-    Integer          photoId;
-    Integer          userId;
-    String           originalAuthor;
-    Long             categoryId;
-    String           categoryTitle;
-    LocalDateTime    createdAt;
-    LocalDateTime    updatedAt;
+    Long              id;
+    String            title;
+    String            description;
+    Integer           photoId;
+    Integer           userId;
+    String            originalAuthor;
+    Long              categoryId;
+    String            categoryTitle;
+    LocalDateTime     createdAt;
+    LocalDateTime     updatedAt;
     List<NewsItemDto> items;
-    long             viewCount;
-    long             likeCount;
+    long              viewCount;
+    long              likeCount;
 
     public static NewsDto from(NewsEntity e, String categoryTitle,
                                List<NewsItemDto> items, long views, long likes) {

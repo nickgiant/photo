@@ -33,6 +33,10 @@ public interface NewsCategoryRepository extends JpaRepository<NewsCategoryEntity
            "WHERE l.newsId IN (SELECT n.id FROM NewsEntity n WHERE n.categoryId = :categoryId)")
     long countLikesByCategoryId(@Param("categoryId") Long categoryId);
 
+    /** Count of distinct users who have authored news in a category. */
+    @Query("SELECT COUNT(DISTINCT n.userId) FROM NewsEntity n WHERE n.categoryId = :categoryId")
+    long countDistinctAuthorsByCategoryId(@Param("categoryId") Long categoryId);
+
     /** All categories ordered by title. */
     List<NewsCategoryEntity> findAllByOrderByTitleAsc();
 }

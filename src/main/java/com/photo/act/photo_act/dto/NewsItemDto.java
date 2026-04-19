@@ -1,5 +1,6 @@
-package com.photo.act.photo_act.model;
+package com.photo.act.photo_act.dto;
 
+import com.photo.act.photo_act.model.NewsItemEntity;
 import lombok.Builder;
 import lombok.Value;
 

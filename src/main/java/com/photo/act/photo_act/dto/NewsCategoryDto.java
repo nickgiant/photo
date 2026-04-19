@@ -1,5 +1,6 @@
-package com.photo.act.photo_act.model;
+package com.photo.act.photo_act.dto;
 
+import com.photo.act.photo_act.model.NewsCategoryEntity;
 import lombok.Builder;
 import lombok.Value;
 
@@ -27,12 +28,15 @@ public class NewsCategoryDto implements Serializable {
     /** Total view events logged across all news in this category. */
     long          totalViews;
 
-    /** Total distinct likes logged across all news in this category. */
+    /** Total distinct likers (by IP) across all news in this category. */
     long          totalLikes;
+
+    /** Count of distinct users who have authored news in this category. */
+    long          totalAuthors;
 
     public static NewsCategoryDto from(NewsCategoryEntity e, long newsCount,
                                        LocalDateTime lastNewsAt, String timeSinceLastNews,
-                                       long totalViews, long totalLikes) {
+                                       long totalViews, long totalLikes, long totalAuthors) {
         return NewsCategoryDto.builder()
                 .id(e.getId())
                 .title(e.getTitle())
@@ -43,6 +47,7 @@ public class NewsCategoryDto implements Serializable {
                 .timeSinceLastNews(timeSinceLastNews)
                 .totalViews(totalViews)
                 .totalLikes(totalLikes)
+                .totalAuthors(totalAuthors)
                 .build();
     }
 }

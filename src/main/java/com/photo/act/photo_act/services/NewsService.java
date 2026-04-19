@@ -1,5 +1,9 @@
 package com.photo.act.photo_act.services;
 
+import com.photo.act.photo_act.dto.NewsCategoryDto;
+import com.photo.act.photo_act.dto.NewsCreateDto;
+import com.photo.act.photo_act.dto.NewsDto;
+import com.photo.act.photo_act.dto.NewsItemDto;
 import com.photo.act.photo_act.model.*;
 import com.photo.act.photo_act.repository.*;
 import org.slf4j.Logger;
@@ -16,7 +20,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
@@ -67,7 +70,7 @@ public class NewsService {
 
     // ──────────────────────────── Categories ────────────────────────────────
 
-    /** All categories with computed stats (count, last date, views, likes). */
+    /** All categories with computed stats (count, last date, views, likes, authors). */
     @Cacheable("news-categories")
     public List<NewsCategoryDto> getAllCategories() {
         return categoryRepo.findAllByOrderByTitleAsc().stream()
@@ -101,12 +104,13 @@ public class NewsService {
     }
 
     private NewsCategoryDto buildCategoryDto(NewsCategoryEntity cat) {
-        long          count      = categoryRepo.countNewsByCategoryId(cat.getId());
-        LocalDateTime lastNewsAt = categoryRepo.findLastNewDateByCategoryId(cat.getId()).orElse(null);
-        long          views      = categoryRepo.countViewsByCategoryId(cat.getId());
-        long          likes      = categoryRepo.countLikesByCategoryId(cat.getId());
-        String        timeAgo    = lastNewsAt != null ? timeAgo(lastNewsAt) : "—";
-        return NewsCategoryDto.from(cat, count, lastNewsAt, timeAgo, views, likes);
+        long          count     = categoryRepo.countNewsByCategoryId(cat.getId());
+        LocalDateTime lastAt    = categoryRepo.findLastNewDateByCategoryId(cat.getId()).orElse(null);
+        long          views     = categoryRepo.countViewsByCategoryId(cat.getId());
+        long          likes     = categoryRepo.countLikesByCategoryId(cat.getId());
+        long          authors   = categoryRepo.countDistinctAuthorsByCategoryId(cat.getId());
+        String        timeAgo   = lastAt != null ? timeAgo(lastAt) : "—";
+        return NewsCategoryDto.from(cat, count, lastAt, timeAgo, views, likes, authors);
     }
 
     // ──────────────────────────────── News ──────────────────────────────────
@@ -244,7 +248,7 @@ public class NewsService {
 
     /**
      * Toggles like for a news entry by IP. Returns true if the like was added,
-     * false if it was already present (no duplicate likes per IP).
+     * false if already liked (no duplicate likes per IP).
      */
     @Transactional
     public boolean toggleLike(Long newsId, Integer userId, String ip,
@@ -264,20 +268,17 @@ public class NewsService {
         }
     }
 
-    /** True if the given IP has already liked this news. */
     public boolean hasLiked(Long newsId, String ip) {
         if (ip == null || ip.isBlank()) return false;
         try {
             return likeRepo.existsByNewsIdAndIpAddress(newsId, ip);
         } catch (Exception e) {
-            log.error("Error checking like for news {}: {}", newsId, e.getMessage());
             return false;
         }
     }
 
     // ─────────────────────── Count helpers (Redis-first) ────────────────────
 
-    /** View count: read from Redis if warm, otherwise query DB and warm Redis. */
     public long getViewCount(Long newsId) {
         try {
             String key   = REDIS_VIEWS_KEY + newsId;
@@ -292,7 +293,6 @@ public class NewsService {
         }
     }
 
-    /** Like count: read from Redis if warm, otherwise query DB and warm Redis. */
     public long getLikeCount(Long newsId) {
         try {
             String key   = REDIS_LIKES_KEY + newsId;
@@ -321,14 +321,14 @@ public class NewsService {
         LocalDateTime now     = LocalDateTime.now();
         long          minutes = ChronoUnit.MINUTES.between(dateTime, now);
         if (minutes < 1)   return "just now";
-        if (minutes < 60)  return minutes + " minute" + (minutes == 1 ? "" : "s") + " ago";
+        if (minutes < 60)  return minutes + " min" + (minutes == 1 ? "" : "s") + " ago";
         long hours = ChronoUnit.HOURS.between(dateTime, now);
-        if (hours < 24)    return hours + " hour" + (hours == 1 ? "" : "s") + " ago";
+        if (hours < 24)    return hours + " hr" + (hours == 1 ? "" : "s") + " ago";
         long days = ChronoUnit.DAYS.between(dateTime, now);
         if (days < 30)     return days + " day" + (days == 1 ? "" : "s") + " ago";
         long months = ChronoUnit.MONTHS.between(dateTime, now);
-        if (months < 12)   return months + " month" + (months == 1 ? "" : "s") + " ago";
+        if (months < 12)   return months + " mo" + (months == 1 ? "" : "s") + " ago";
         long years = ChronoUnit.YEARS.between(dateTime, now);
-        return years + " year" + (years == 1 ? "" : "s") + " ago";
+        return years + " yr" + (years == 1 ? "" : "s") + " ago";
     }
 }
