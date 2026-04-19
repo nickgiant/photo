@@ -45,22 +45,19 @@ public class RedisConfig {
     private static final Duration NEWS_CAT_TTL     = Duration.ofMinutes(5);
 
     @Bean
-    public ObjectMapper redisObjectMapper() {
+    public GenericJackson2JsonRedisSerializer redisSerializer() {
+        // ObjectMapper is created locally — NOT exposed as a Spring bean.
+        // Exposing it would make JacksonAutoConfiguration's @ConditionalOnMissingBean
+        // skip creating the primary ObjectMapper, causing all HTTP JSON serialization
+        // to use this Redis-specific mapper (with activateDefaultTyping).
         ObjectMapper mapper = new ObjectMapper();
-        // Register all modules on the classpath (JavaTimeModule, Jdk8Module, etc.)
         mapper.findAndRegisterModules();
-        // Store class type info so Jackson can deserialize polymorphic DTOs
         mapper.activateDefaultTyping(
                 LaissezFaireSubTypeValidator.instance,
                 ObjectMapper.DefaultTyping.NON_FINAL,
                 JsonTypeInfo.As.PROPERTY
         );
-        return mapper;
-    }
-
-    @Bean
-    public GenericJackson2JsonRedisSerializer redisSerializer(ObjectMapper redisObjectMapper) {
-        return new GenericJackson2JsonRedisSerializer(redisObjectMapper);
+        return new GenericJackson2JsonRedisSerializer(mapper);
     }
 
     @Bean
