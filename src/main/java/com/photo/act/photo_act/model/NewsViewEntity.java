@@ -15,8 +15,15 @@ public class NewsViewEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    /** Write-side FK column. */
     @Column(name = "news_id", nullable = false)
     private Long newsId;
+
+    /** Read-side FK — gives Hibernate the FK constraint in DDL. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "news_id", insertable = false, updatable = false,
+                foreignKey = @ForeignKey(name = "fk_news_views_news_id"))
+    private NewsEntity news;
 
     /** Null when viewer is a guest (not logged in). */
     @Column(name = "user_id")

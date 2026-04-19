@@ -10,24 +10,17 @@ public class NewsCreateDto {
     private String  description;
     private Integer photoId;
     private String  originalAuthor;
+    private String  originalUrl;
     private Long    categoryId;
     private List<NewsItemCreateDto> items = new ArrayList<>();
 
     public NewsCreateDto() {}
 
-    public NewsCreateDto(String title, String description, Integer photoId,
-                         String originalAuthor, Long categoryId) {
-        this.title          = title;
-        this.description    = description;
-        this.photoId        = photoId;
-        this.originalAuthor = originalAuthor;
-        this.categoryId     = categoryId;
-    }
-
     public String  getTitle()          { return title; }
     public String  getDescription()    { return description; }
     public Integer getPhotoId()        { return photoId; }
     public String  getOriginalAuthor() { return originalAuthor; }
+    public String  getOriginalUrl()    { return originalUrl; }
     public Long    getCategoryId()     { return categoryId; }
     public List<NewsItemCreateDto> getItems() { return items; }
 
@@ -35,6 +28,7 @@ public class NewsCreateDto {
     public void setDescription(String description)       { this.description = description; }
     public void setPhotoId(Integer photoId)              { this.photoId = photoId; }
     public void setOriginalAuthor(String originalAuthor) { this.originalAuthor = originalAuthor; }
+    public void setOriginalUrl(String originalUrl)       { this.originalUrl = originalUrl; }
     public void setCategoryId(Long categoryId)           { this.categoryId = categoryId; }
     public void setItems(List<NewsItemCreateDto> items)  { this.items = items; }
 

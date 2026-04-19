@@ -159,7 +159,7 @@ public class NewsService {
     public NewsDto createNews(NewsCreateDto dto, Integer userId) {
         NewsEntity news = newsRepo.save(new NewsEntity(
                 dto.getTitle(), dto.getDescription(), dto.getPhotoId(),
-                userId, dto.getOriginalAuthor(), dto.getCategoryId()));
+                userId, dto.getOriginalAuthor(), dto.getOriginalUrl(), dto.getCategoryId()));
 
         int order = 0;
         for (NewsCreateDto.NewsItemCreateDto itemDto : dto.getItems()) {
@@ -187,8 +187,8 @@ public class NewsService {
             news.setDescription(dto.getDescription());
             news.setPhotoId(dto.getPhotoId());
             news.setOriginalAuthor(dto.getOriginalAuthor());
+            news.setOriginalUrl(dto.getOriginalUrl());
             news.setCategoryId(dto.getCategoryId());
-            news.setUpdatedAt(LocalDateTime.now());
             return buildNewsDto(newsRepo.save(news));
         });
     }

@@ -1,6 +1,7 @@
 package com.photo.act.photo_act.model;
 
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "news_items",
@@ -11,8 +12,15 @@ public class NewsItemEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    /** Write-side FK column. */
     @Column(name = "news_id", nullable = false)
     private Long newsId;
+
+    /** Read-side FK — gives Hibernate the FK constraint in DDL. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "news_id", insertable = false, updatable = false,
+                foreignKey = @ForeignKey(name = "fk_news_items_news_id"))
+    private NewsEntity news;
 
     @Column(length = 255)
     private String title;
@@ -20,10 +28,10 @@ public class NewsItemEntity {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    /** FK → photo_meta.id (plain Integer matching app convention). */
     @Column(name = "photo_id")
     private Integer photoId;
 
-    /** YouTube video URL or video ID. */
     @Column(length = 255)
     private String video;
 
@@ -41,6 +49,9 @@ public class NewsItemEntity {
 
     @Column(name = "sort_order")
     private Integer sortOrder = 0;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 
     protected NewsItemEntity() {}
 
@@ -61,17 +72,23 @@ public class NewsItemEntity {
         this.sortOrder   = sortOrder != null ? sortOrder : 0;
     }
 
-    public Long    getId()          { return id; }
-    public Long    getNewsId()      { return newsId; }
-    public String  getTitle()       { return title; }
-    public String  getDescription() { return description; }
-    public Integer getPhotoId()     { return photoId; }
-    public String  getVideo()       { return video; }
-    public String  getUrlMore1()    { return urlMore1; }
-    public String  getUrlMore2()    { return urlMore2; }
-    public String  getUrlMore3()    { return urlMore3; }
-    public String  getUrlMore4()    { return urlMore4; }
-    public Integer getSortOrder()   { return sortOrder; }
+    @PrePersist
+    private void onPersist() {
+        if (createdAt == null) createdAt = LocalDateTime.now();
+    }
+
+    public Long          getId()          { return id; }
+    public Long          getNewsId()      { return newsId; }
+    public String        getTitle()       { return title; }
+    public String        getDescription() { return description; }
+    public Integer       getPhotoId()     { return photoId; }
+    public String        getVideo()       { return video; }
+    public String        getUrlMore1()    { return urlMore1; }
+    public String        getUrlMore2()    { return urlMore2; }
+    public String        getUrlMore3()    { return urlMore3; }
+    public String        getUrlMore4()    { return urlMore4; }
+    public Integer       getSortOrder()   { return sortOrder; }
+    public LocalDateTime getCreatedAt()   { return createdAt; }
 
     public void setTitle(String title)             { this.title = title; }
     public void setDescription(String description) { this.description = description; }

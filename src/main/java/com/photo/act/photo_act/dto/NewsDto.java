@@ -18,6 +18,7 @@ public class NewsDto implements Serializable {
     Integer           photoId;
     Integer           userId;
     String            originalAuthor;
+    String            originalUrl;
     Long              categoryId;
     String            categoryTitle;
     LocalDateTime     createdAt;
@@ -35,6 +36,7 @@ public class NewsDto implements Serializable {
                 .photoId(e.getPhotoId())
                 .userId(e.getUserId())
                 .originalAuthor(e.getOriginalAuthor())
+                .originalUrl(e.getOriginalUrl())
                 .categoryId(e.getCategoryId())
                 .categoryTitle(categoryTitle)
                 .createdAt(e.getCreatedAt())

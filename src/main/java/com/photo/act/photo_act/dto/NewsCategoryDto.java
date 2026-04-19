@@ -14,24 +14,14 @@ public class NewsCategoryDto implements Serializable {
     Long          id;
     String        title;
     String        description;
+    String        rssUrl;
     LocalDateTime createdAt;
 
-    /** Total news entries published in this category. */
     long          newsCount;
-
-    /** Timestamp of the most recently created news in this category. */
     LocalDateTime lastNewsAt;
-
-    /** Human-readable time since last news (e.g. "3 hours ago"). */
     String        timeSinceLastNews;
-
-    /** Total view events logged across all news in this category. */
     long          totalViews;
-
-    /** Total distinct likers (by IP) across all news in this category. */
     long          totalLikes;
-
-    /** Count of distinct users who have authored news in this category. */
     long          totalAuthors;
 
     public static NewsCategoryDto from(NewsCategoryEntity e, long newsCount,
@@ -41,6 +31,7 @@ public class NewsCategoryDto implements Serializable {
                 .id(e.getId())
                 .title(e.getTitle())
                 .description(e.getDescription())
+                .rssUrl(e.getRssUrl())
                 .createdAt(e.getCreatedAt())
                 .newsCount(newsCount)
                 .lastNewsAt(lastNewsAt)

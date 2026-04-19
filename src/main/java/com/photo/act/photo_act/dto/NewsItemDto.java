@@ -5,22 +5,24 @@ import lombok.Builder;
 import lombok.Value;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 
 @Value
 @Builder
 public class NewsItemDto implements Serializable {
 
-    Long    id;
-    Long    newsId;
-    String  title;
-    String  description;
-    Integer photoId;
-    String  video;
-    String  urlMore1;
-    String  urlMore2;
-    String  urlMore3;
-    String  urlMore4;
-    Integer sortOrder;
+    Long          id;
+    Long          newsId;
+    String        title;
+    String        description;
+    Integer       photoId;
+    String        video;
+    String        urlMore1;
+    String        urlMore2;
+    String        urlMore3;
+    String        urlMore4;
+    Integer       sortOrder;
+    LocalDateTime createdAt;
 
     public static NewsItemDto from(NewsItemEntity e) {
         return NewsItemDto.builder()
@@ -35,6 +37,7 @@ public class NewsItemDto implements Serializable {
                 .urlMore3(e.getUrlMore3())
                 .urlMore4(e.getUrlMore4())
                 .sortOrder(e.getSortOrder())
+                .createdAt(e.getCreatedAt())
                 .build();
     }
 }

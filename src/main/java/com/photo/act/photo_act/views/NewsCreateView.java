@@ -6,6 +6,8 @@ import com.photo.act.photo_act.dto.NewsCategoryDto;
 import com.photo.act.photo_act.dto.NewsCreateDto;
 import com.photo.act.photo_act.dto.NewsDto;
 import com.photo.act.photo_act.services.NewsService;
+import com.photo.act.photo_act.utils.NetUtils;
+import com.photo.act.photo_act.views.components.NewsPhotoUpload;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
@@ -15,21 +17,21 @@ import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
-import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
-import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.server.VaadinSession;
 import jakarta.annotation.security.PermitAll;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,17 +40,23 @@ import java.util.List;
 @PermitAll
 public class NewsCreateView extends VerticalLayout implements BeforeEnterObserver {
 
-    private final NewsService  newsService;
+    private final NewsService   newsService;
     private final RecordService recordService;
 
-    // Main form fields
-    private final TextField   fTitle          = new TextField("Title");
-    private final Select<NewsCategoryDto> fCategory = new Select<>();
-    private final TextField   fOriginalAuthor = new TextField("Original Author / Source");
-    private final IntegerField fPhotoId       = new IntegerField("Cover Photo ID");
-    private final TextArea    fDescription    = new TextArea("Description");
+    private String hostname  = "localhost";
+    private String publicIp  = "unknown";
+    private String sessionId = "";
 
-    // Items list
+    // Main form fields
+    private final TextField fTitle          = new TextField("Title");
+    private final Select<NewsCategoryDto> fCategory = new Select<>();
+    private final TextField fOriginalAuthor = new TextField("Original Author / Source");
+    private final TextField fOriginalUrl    = new TextField("Original Source URL");
+    private final TextArea  fDescription    = new TextArea("Description");
+
+    private NewsPhotoUpload coverPhotoUpload;
+    private Integer         coverPhotoId;
+
     private final VerticalLayout itemsContainer = new VerticalLayout();
     private final List<ItemRow>  itemRows       = new ArrayList<>();
     private int itemCounter = 1;
@@ -64,15 +72,32 @@ public class NewsCreateView extends VerticalLayout implements BeforeEnterObserve
 
     @Override
     public void beforeEnter(BeforeEnterEvent event) {
+        resolveNetInfo();
         buildUi();
+    }
+
+    private void resolveNetInfo() {
+        try { hostname = InetAddress.getLocalHost().getHostName(); } catch (Exception ignored) {}
+        try { publicIp = new NetUtils().getClientPublicIp(hostname); } catch (Exception ignored) {}
+        try { sessionId = VaadinSession.getCurrent().getSession().getId(); } catch (Exception ignored) {}
     }
 
     private void buildUi() {
         removeAll();
+        itemRows.clear();
+        itemsContainer.removeAll();
+        itemCounter = 1;
+
+        Integer userId = resolveUserId();
+        coverPhotoUpload = userId != null
+                ? new NewsPhotoUpload(recordService, userId, resolveUsername(),
+                        hostname, publicIp, sessionId, coverPhotoId, id -> coverPhotoId = id)
+                : null;
+
         add(buildHeader(), buildForm(), buildItemsSection(), buildActions());
     }
 
-    // ─────────────────────────── Header ─────────────────────────────────────
+    // ─────────────────────────── Header ──────────────────────────────────────
 
     private Component buildHeader() {
         Div header = new Div();
@@ -95,7 +120,7 @@ public class NewsCreateView extends VerticalLayout implements BeforeEnterObserve
         return header;
     }
 
-    // ─────────────────────────── Main form ──────────────────────────────────
+    // ─────────────────────────── Main form ───────────────────────────────────
 
     private Component buildForm() {
         Div section = new Div();
@@ -105,7 +130,6 @@ public class NewsCreateView extends VerticalLayout implements BeforeEnterObserve
         sectionTitle.addClassName("ncv-section-title");
         section.add(sectionTitle);
 
-        // Configure fields
         fTitle.setRequired(true);
         fTitle.setPlaceholder("Enter a compelling news title…");
         fTitle.addClassName("ncv-field-title");
@@ -121,12 +145,11 @@ public class NewsCreateView extends VerticalLayout implements BeforeEnterObserve
         fCategory.setPlaceholder("Select category");
         fCategory.setWidthFull();
 
-        fOriginalAuthor.setPlaceholder("Original author or news source");
+        fOriginalAuthor.setPlaceholder("Author name or news agency");
         fOriginalAuthor.setWidthFull();
 
-        fPhotoId.setPlaceholder("Photo ID (optional)");
-        fPhotoId.setMin(0);
-        fPhotoId.setWidthFull();
+        fOriginalUrl.setPlaceholder("https://source-site.com/article…");
+        fOriginalUrl.setWidthFull();
 
         fDescription.setPlaceholder("Write a short summary or introduction…");
         fDescription.setMinRows(4);
@@ -139,16 +162,25 @@ public class NewsCreateView extends VerticalLayout implements BeforeEnterObserve
             new FormLayout.ResponsiveStep("0",    1),
             new FormLayout.ResponsiveStep("600px", 2)
         );
-        form.add(fTitle, fCategory, fOriginalAuthor, fPhotoId);
+        form.add(fTitle);
         form.setColspan(fTitle, 2);
+        form.add(fCategory, fOriginalAuthor);
+        form.add(fOriginalUrl);
+        form.setColspan(fOriginalUrl, 2);
         form.add(fDescription);
         form.setColspan(fDescription, 2);
-
         section.add(form);
+
+        if (coverPhotoUpload != null) {
+            H4 photoLabel = new H4("Cover Photo");
+            photoLabel.addClassName("ncv-sub-label");
+            section.add(photoLabel, coverPhotoUpload);
+        }
+
         return section;
     }
 
-    // ─────────────────────── News items section ──────────────────────────────
+    // ──────────────────────── News items section ──────────────────────────────
 
     private Component buildItemsSection() {
         Div section = new Div();
@@ -169,7 +201,6 @@ public class NewsCreateView extends VerticalLayout implements BeforeEnterObserve
         btnAdd.addClickListener(e -> addItemRow());
 
         itemsHeader.add(title, hint, btnAdd);
-
         itemsContainer.addClassName("ncv-items-list");
         itemsContainer.setPadding(false);
         itemsContainer.setSpacing(false);
@@ -179,7 +210,12 @@ public class NewsCreateView extends VerticalLayout implements BeforeEnterObserve
     }
 
     private void addItemRow() {
-        ItemRow row = new ItemRow(itemCounter++, this::removeItemRow);
+        Integer userId = resolveUserId();
+        NewsPhotoUpload itemPhoto = userId != null
+                ? new NewsPhotoUpload(recordService, userId, resolveUsername(),
+                        hostname, publicIp, sessionId, null, id -> {})
+                : null;
+        ItemRow row = new ItemRow(itemCounter++, itemPhoto, this::removeItemRow);
         itemRows.add(row);
         itemsContainer.add(row);
     }
@@ -189,7 +225,7 @@ public class NewsCreateView extends VerticalLayout implements BeforeEnterObserve
         itemsContainer.remove(row);
     }
 
-    // ─────────────────────────── Actions bar ────────────────────────────────
+    // ─────────────────────────── Actions bar ─────────────────────────────────
 
     private Component buildActions() {
         Div bar = new Div();
@@ -209,7 +245,7 @@ public class NewsCreateView extends VerticalLayout implements BeforeEnterObserve
         return bar;
     }
 
-    // ─────────────────────────── Submit logic ───────────────────────────────
+    // ─────────────────────────── Submit logic ────────────────────────────────
 
     private void handleSubmit() {
         if (fTitle.isEmpty()) {
@@ -217,7 +253,6 @@ public class NewsCreateView extends VerticalLayout implements BeforeEnterObserve
             fTitle.focus();
             return;
         }
-
         Integer userId = resolveUserId();
         if (userId == null) {
             showError("Could not resolve user identity. Please log in again.");
@@ -228,11 +263,11 @@ public class NewsCreateView extends VerticalLayout implements BeforeEnterObserve
         dto.setTitle(fTitle.getValue().trim());
         dto.setDescription(fDescription.getValue().trim());
         dto.setOriginalAuthor(fOriginalAuthor.getValue().trim());
-        dto.setPhotoId(fPhotoId.getValue());
+        dto.setOriginalUrl(fOriginalUrl.getValue().trim());
+        dto.setPhotoId(coverPhotoId);
         if (fCategory.getValue() != null) {
             dto.setCategoryId(fCategory.getValue().getId());
         }
-
         for (int i = 0; i < itemRows.size(); i++) {
             dto.getItems().add(itemRows.get(i).toDto(i));
         }
@@ -246,22 +281,30 @@ public class NewsCreateView extends VerticalLayout implements BeforeEnterObserve
         }
     }
 
+    // ─────────────────────────── Auth helpers ────────────────────────────────
+
     private Integer resolveUserId() {
         try {
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             if (auth == null || auth instanceof AnonymousAuthenticationToken) return null;
-            String username = auth.getName();
-            String sql = "SELECT userId FROM dbuser WHERE username = '" + username + "'";
-            var records = recordService.findAll(sql, new String[]{"userId"});
+            String uname = auth.getName();
+            var records = recordService.findAll(
+                    "SELECT userId FROM dbuser WHERE username = '" + uname + "'",
+                    new String[]{"userId"});
             if (records.isEmpty()) return null;
             String id = records.get(0).getColumnData("userId");
             return id != null ? Integer.parseInt(id) : null;
-        } catch (Exception e) {
-            return null;
-        }
+        } catch (Exception e) { return null; }
     }
 
-    // ─────────────────────────── Notifications ──────────────────────────────
+    private String resolveUsername() {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            return auth != null ? auth.getName() : "unknown";
+        } catch (Exception e) { return "unknown"; }
+    }
+
+    // ─────────────────────────── Notifications ───────────────────────────────
 
     private void showError(String msg) {
         Notification n = Notification.show(msg, 4000, Notification.Position.MIDDLE);
@@ -273,55 +316,42 @@ public class NewsCreateView extends VerticalLayout implements BeforeEnterObserve
         n.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
     }
 
-    // ═══════════════════════ Inner — one news item row ═══════════════════════
+    // ═══════════════════════ Inner class — one news item row ══════════════════
 
     static class ItemRow extends Div {
 
-        private final TextField    fItemTitle  = new TextField("Item Title");
-        private final TextArea     fItemDesc   = new TextArea("Description");
-        private final IntegerField fItemPhoto  = new IntegerField("Photo ID");
-        private final TextField    fVideo      = new TextField("YouTube Video URL / ID");
-        private final TextField    fUrl1       = new TextField("URL 1");
-        private final TextField    fUrl2       = new TextField("URL 2");
-        private final TextField    fUrl3       = new TextField("URL 3");
-        private final TextField    fUrl4       = new TextField("URL 4");
+        private final TextField fItemTitle = new TextField("Item Title");
+        private final TextArea  fItemDesc  = new TextArea("Description");
+        private final TextField fVideo     = new TextField("YouTube Video URL / ID");
+        private final TextField fUrl1      = new TextField("URL 1");
+        private final TextField fUrl2      = new TextField("URL 2");
+        private final TextField fUrl3      = new TextField("URL 3");
+        private final TextField fUrl4      = new TextField("URL 4");
+        private final NewsPhotoUpload photoUpload;
 
-        ItemRow(int index, java.util.function.Consumer<ItemRow> onRemove) {
+        ItemRow(int index, NewsPhotoUpload photoUpload,
+                java.util.function.Consumer<ItemRow> onRemove) {
+            this.photoUpload = photoUpload;
             addClassName("ncv-item-row");
 
-            // Header bar
             Div rowHeader = new Div();
             rowHeader.addClassName("ncv-item-header");
-
             Span label = new Span("Item " + index);
             label.addClassName("ncv-item-label");
-
             Button btnRemove = new Button(VaadinIcon.CLOSE.create());
             btnRemove.addClassName("ncv-item-remove");
             btnRemove.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_ERROR);
             btnRemove.addClickListener(e -> onRemove.accept(this));
-
             rowHeader.add(label, btnRemove);
 
-            // Field grid
-            fItemTitle.setPlaceholder("Optional item title");
-            fItemTitle.setWidthFull();
-            fVideo.setPlaceholder("https://youtube.com/watch?v=... or video ID");
-            fVideo.setWidthFull();
-            fItemPhoto.setPlaceholder("Photo ID");
-            fItemPhoto.setMin(0);
-            fItemPhoto.setWidthFull();
+            fItemTitle.setPlaceholder("Optional item title");      fItemTitle.setWidthFull();
+            fVideo.setPlaceholder("https://youtube.com/watch?v=… or video ID"); fVideo.setWidthFull();
             fItemDesc.setPlaceholder("Item description / body text…");
-            fItemDesc.setMinRows(3);
-            fItemDesc.setWidthFull();
-            fUrl1.setPlaceholder("https://…");
-            fUrl1.setWidthFull();
-            fUrl2.setPlaceholder("https://…");
-            fUrl2.setWidthFull();
-            fUrl3.setPlaceholder("https://…");
-            fUrl3.setWidthFull();
-            fUrl4.setPlaceholder("https://…");
-            fUrl4.setWidthFull();
+            fItemDesc.setMinRows(3); fItemDesc.setWidthFull();
+            fUrl1.setPlaceholder("https://…"); fUrl1.setWidthFull();
+            fUrl2.setPlaceholder("https://…"); fUrl2.setWidthFull();
+            fUrl3.setPlaceholder("https://…"); fUrl3.setWidthFull();
+            fUrl4.setPlaceholder("https://…"); fUrl4.setWidthFull();
 
             FormLayout form = new FormLayout();
             form.addClassName("ncv-item-form");
@@ -330,27 +360,39 @@ public class NewsCreateView extends VerticalLayout implements BeforeEnterObserve
                 new FormLayout.ResponsiveStep("480px", 2),
                 new FormLayout.ResponsiveStep("800px", 3)
             );
-
-            form.add(fItemTitle, fVideo, fItemPhoto);
+            form.add(fItemTitle, fVideo);
             form.add(fItemDesc);
             form.setColspan(fItemDesc, 3);
+            add(rowHeader, form);
 
+            if (photoUpload != null) {
+                Div photoWrap = new Div();
+                photoWrap.addClassName("ncv-item-photo-wrap");
+                H5 photoLabel = new H5("Item Photo");
+                photoLabel.addClassName("ncv-item-urls-label");
+                photoWrap.add(photoLabel, photoUpload);
+                add(photoWrap);
+            }
+
+            FormLayout urlForm = new FormLayout();
+            urlForm.addClassName("ncv-item-urls-form");
+            urlForm.setResponsiveSteps(
+                new FormLayout.ResponsiveStep("0",     1),
+                new FormLayout.ResponsiveStep("480px", 2)
+            );
             H5 urlsLabel = new H5("Additional Links");
             urlsLabel.addClassName("ncv-item-urls-label");
-            form.add(urlsLabel);
-            form.setColspan(urlsLabel, 3);
-
-            form.add(fUrl1, fUrl2, fUrl3);
-            form.add(fUrl4);
-
-            add(rowHeader, form);
+            urlForm.add(urlsLabel);
+            urlForm.setColspan(urlsLabel, 2);
+            urlForm.add(fUrl1, fUrl2, fUrl3, fUrl4);
+            add(urlForm);
         }
 
         NewsCreateDto.NewsItemCreateDto toDto(int sortOrder) {
             NewsCreateDto.NewsItemCreateDto d = new NewsCreateDto.NewsItemCreateDto();
             d.setTitle(fItemTitle.getValue());
             d.setDescription(fItemDesc.getValue());
-            d.setPhotoId(fItemPhoto.getValue());
+            d.setPhotoId(photoUpload != null ? photoUpload.getCurrentPhotoId() : null);
             d.setVideo(fVideo.getValue().trim());
             d.setUrlMore1(fUrl1.getValue().trim());
             d.setUrlMore2(fUrl2.getValue().trim());
