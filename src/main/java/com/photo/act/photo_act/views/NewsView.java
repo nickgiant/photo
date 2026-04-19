@@ -11,7 +11,6 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.popover.Popover;
 import com.vaadin.flow.component.popover.PopoverPosition;
@@ -20,7 +19,6 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import org.springframework.data.domain.Page;
-import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,17 +28,27 @@ import java.util.List;
 @AnonymousAllowed
 public class NewsView extends VerticalLayout {
 
+    /* Gradient palette — each category cycles through these */
+    private static final String[] CAT_GRADIENTS = {
+        "news-cat--grape", "news-cat--ocean", "news-cat--teal",
+        "news-cat--rose",  "news-cat--amber", "news-cat--forest",
+        "news-cat--indigo","news-cat--coral"
+    };
+
     private static final int PAGE_SIZE = 12;
 
     private final NewsService newsService;
 
-    private Long selectedCategoryId = null;
-    private int  currentPage        = 0;
+    private Long selectedCategoryId   = null;
+    private NewsCategoryDto selectedCat = null;
+    private int  currentPage          = 0;
 
-    private final Div   categoryStrip  = new Div();
-    private final Div   newsFeed       = new Div();
-    private final Div   paginationRow  = new Div();
-    private final List<Div> chipDivs   = new ArrayList<>();
+    private final Div statBar      = new Div();
+    private final Div catStrip     = new Div();
+    private final Div newsFeed     = new Div();
+    private final Div pagination   = new Div();
+    private final List<Div> chips  = new ArrayList<>();
+    private List<NewsCategoryDto> allCategories = List.of();
 
     public NewsView(NewsService newsService) {
         this.newsService = newsService;
@@ -49,211 +57,193 @@ public class NewsView extends VerticalLayout {
         setSpacing(false);
         setSizeFull();
 
-        add(buildPageHeader(), buildCategoryStrip(), newsFeed, paginationRow);
+        add(buildPageHeader(), buildStatBar(), buildCategoryStrip(), newsFeed, pagination);
 
-        loadCategories();
-        loadNews();
+        loadAll();
     }
 
     // ─────────────────────────── Page header ────────────────────────────────
 
     private Component buildPageHeader() {
         Div header = new Div();
-        header.addClassName("news-page-header");
+        header.addClassName("nv-header");
 
         Div left = new Div();
-        left.addClassName("news-page-header-left");
-
-        Span icon = new Span();
-        icon.addClassName("news-page-icon");
-        icon.add(FontAwesome.Solid.NEWSPAPER.create());
-
+        left.addClassName("nv-header-left");
+        Span ico = new Span(FontAwesome.Solid.NEWSPAPER.create());
+        ico.addClassName("nv-header-icon");
         H2 title = new H2("News");
-        title.addClassName("news-page-title");
-
-        left.add(icon, title);
+        title.addClassName("nv-header-title");
+        left.add(ico, title);
 
         Button btnCreate = new Button("Write News", VaadinIcon.PLUS.create());
-        btnCreate.addClassName("news-btn-create");
+        btnCreate.addClassNames("nv-btn-create");
         btnCreate.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         btnCreate.addClickListener(e -> UI.getCurrent().navigate("news/create"));
-
-        boolean loggedIn = isLoggedIn();
-        btnCreate.setVisible(loggedIn);
+        btnCreate.setVisible(isLoggedIn());
 
         header.add(left, btnCreate);
         return header;
+    }
+
+    // ────────────────────────── Aggregate stat bar ───────────────────────────
+
+    private Component buildStatBar() {
+        statBar.addClassName("nv-stat-bar");
+        return statBar;
+    }
+
+    private void refreshStatBar() {
+        statBar.removeAll();
+        long news, views, likes, authors;
+        if (selectedCat != null) {
+            news    = selectedCat.getNewsCount();
+            views   = selectedCat.getTotalViews();
+            likes   = selectedCat.getTotalLikes();
+            authors = selectedCat.getTotalAuthors();
+        } else {
+            news    = allCategories.stream().mapToLong(NewsCategoryDto::getNewsCount).sum();
+            views   = allCategories.stream().mapToLong(NewsCategoryDto::getTotalViews).sum();
+            likes   = allCategories.stream().mapToLong(NewsCategoryDto::getTotalLikes).sum();
+            authors = allCategories.stream().mapToLong(NewsCategoryDto::getTotalAuthors).sum();
+        }
+        statBar.add(
+            statTile(news,    "News",         VaadinIcon.FILE_TEXT,  "nv-tile--purple"),
+            statTile(views,   "Views",         VaadinIcon.EYE,        "nv-tile--blue"),
+            statTile(likes,   "Likes",         VaadinIcon.HEART,      "nv-tile--pink"),
+            statTile(authors, "Contributors",  VaadinIcon.USERS,      "nv-tile--orange")
+        );
+    }
+
+    /** Single colored stat tile (matches screenshot design). */
+    private Div statTile(long value, String label, VaadinIcon iconType, String colorClass) {
+        Div tile = new Div();
+        tile.addClassNames("nv-tile", colorClass);
+
+        Span iconBox = new Span(iconType.create());
+        iconBox.addClassName("nv-tile-icon");
+
+        Div textCol = new Div();
+        textCol.addClassName("nv-tile-text");
+        Span num = new Span(fmtCount(value));
+        num.addClassName("nv-tile-value");
+        Span lbl = new Span(label);
+        lbl.addClassName("nv-tile-label");
+        textCol.add(num, lbl);
+
+        tile.add(iconBox, textCol);
+        return tile;
     }
 
     // ─────────────────────── Category strip ─────────────────────────────────
 
     private Component buildCategoryStrip() {
         Div wrapper = new Div();
-        wrapper.addClassName("news-category-strip-wrapper");
-        categoryStrip.addClassName("news-category-strip");
-        wrapper.add(categoryStrip);
+        wrapper.addClassName("nv-cat-wrapper");
+        catStrip.addClassName("nv-cat-strip");
+        wrapper.add(catStrip);
         return wrapper;
     }
 
-    private void loadCategories() {
-        categoryStrip.removeAll();
-        chipDivs.clear();
+    private void refreshCategoryStrip() {
+        catStrip.removeAll();
+        chips.clear();
 
         // "All" chip
-        Div allChip = buildAllChip();
-        chipDivs.add(allChip);
-        categoryStrip.add(allChip);
+        Div allChip = buildChip(null, "All", null, "nv-cat--all");
+        chips.add(allChip);
+        catStrip.add(allChip);
 
-        List<NewsCategoryDto> cats;
-        try {
-            cats = newsService.getAllCategories();
-        } catch (Exception e) {
-            cats = List.of();
+        int i = 0;
+        for (NewsCategoryDto cat : allCategories) {
+            String gradClass = CAT_GRADIENTS[i % CAT_GRADIENTS.length];
+            Div chip = buildChip(cat.getId(), cat.getTitle(), cat, gradClass);
+            chips.add(chip);
+            catStrip.add(chip);
+            i++;
         }
-
-        for (NewsCategoryDto cat : cats) {
-            Div chip = buildCategoryChip(cat);
-            chipDivs.add(chip);
-            categoryStrip.add(chip);
-        }
-
-        markActiveChip(null);
+        markActive(selectedCategoryId);
     }
 
-    private Div buildAllChip() {
+    private Div buildChip(Long catId, String name, NewsCategoryDto cat, String gradClass) {
         Div chip = new Div();
-        chip.addClassName("news-cat-chip");
-        chip.addClassName("news-cat-chip--all");
-        chip.getElement().setAttribute("data-cat-id", "all");
+        chip.addClassNames("nv-chip", gradClass);
+        chip.getElement().setAttribute("data-id", catId == null ? "all" : String.valueOf(catId));
 
-        Div label = new Div();
-        label.addClassName("news-cat-chip-label");
+        Span chipName = new Span(name);
+        chipName.addClassName("nv-chip-name");
+        chip.add(chipName);
 
-        Span iconWrap = new Span();
-        iconWrap.addClassName("news-cat-chip-icon");
-        iconWrap.add(FontAwesome.Solid.LAYER_GROUP.create());
-
-        Span name = new Span("All News");
-        name.addClassName("news-cat-chip-name");
-
-        label.add(iconWrap, name);
-        chip.add(label);
-
-        chip.addClickListener(e -> {
-            selectedCategoryId = null;
-            currentPage = 0;
-            markActiveChip(null);
-            loadNews();
-        });
-        return chip;
-    }
-
-    private Div buildCategoryChip(NewsCategoryDto cat) {
-        Div chip = new Div();
-        chip.addClassName("news-cat-chip");
-        chip.getElement().setAttribute("data-cat-id", String.valueOf(cat.getId()));
-
-        // Header row: icon + title
-        Div header = new Div();
-        header.addClassName("news-cat-chip-header");
-
-        Span iconWrap = new Span();
-        iconWrap.addClassName("news-cat-chip-icon");
-        iconWrap.add(FontAwesome.Solid.TAG.create());
-
-        Span name = new Span(cat.getTitle());
-        name.addClassName("news-cat-chip-name");
-
-        header.add(iconWrap, name);
-        chip.add(header);
-
-        // Stat cards row
-        Div statsRow = new Div();
-        statsRow.addClassName("news-cat-stats-row");
-        statsRow.add(
-            buildStatCard(cat.getNewsCount(),  "News",    "news-stat--purple", VaadinIcon.FILE_TEXT),
-            buildStatCard(cat.getTotalViews(), "Views",   "news-stat--blue",   VaadinIcon.EYE),
-            buildStatCard(cat.getTotalLikes(), "Likes",   "news-stat--pink",   VaadinIcon.HEART),
-            buildStatCard(cat.getTotalAuthors(),"Authors","news-stat--orange",  VaadinIcon.USER)
-        );
-        chip.add(statsRow);
-
-        // Last update label
-        if (cat.getTimeSinceLastNews() != null && !cat.getTimeSinceLastNews().equals("—")) {
-            Div lastUpdate = new Div("Updated " + cat.getTimeSinceLastNews());
-            lastUpdate.addClassName("news-cat-last-update");
-            chip.add(lastUpdate);
+        if (cat != null && cat.getNewsCount() > 0) {
+            Span badge = new Span(fmtCount(cat.getNewsCount()));
+            badge.addClassName("nv-chip-badge");
+            chip.add(badge);
         }
 
-        // Description popover
-        if (cat.getDescription() != null && !cat.getDescription().isBlank()) {
-            Popover pop = new Popover();
-            pop.setOpenOnClick(false);
-            pop.setOpenOnHover(true);
-            pop.setHoverDelay(400);
-            pop.setHideDelay(120);
-            pop.setWidth("260px");
-            pop.addThemeVariants(PopoverVariant.ARROW);
-            pop.setPosition(PopoverPosition.BOTTOM);
-
-            VerticalLayout popContent = new VerticalLayout();
-            popContent.addClassName("news-cat-popover-content");
-            popContent.setSpacing(false);
-            popContent.setPadding(false);
-
-            H4 popTitle = new H4(cat.getTitle());
-            popTitle.addClassName("news-cat-popover-title");
-            Paragraph popDesc = new Paragraph(cat.getDescription());
-            popDesc.addClassName("news-cat-popover-desc");
-
-            popContent.add(popTitle, popDesc);
-            pop.add(popContent);
+        if (cat != null && cat.getDescription() != null && !cat.getDescription().isBlank()) {
+            Popover pop = buildChipPopover(cat);
             pop.setTarget(chip);
             chip.add(pop);
         }
 
         chip.addClickListener(e -> {
-            selectedCategoryId = cat.getId();
-            currentPage = 0;
-            markActiveChip(cat.getId());
+            selectedCategoryId = catId;
+            selectedCat        = cat;
+            currentPage        = 0;
+            markActive(catId);
+            refreshStatBar();
             loadNews();
         });
-
         return chip;
     }
 
-    /** A single colored stat tile matching the screenshot design. */
-    private Div buildStatCard(long value, String label, String colorClass, VaadinIcon icon) {
-        Div card = new Div();
-        card.addClassName("news-stat-card");
-        card.addClassName(colorClass);
+    private Popover buildChipPopover(NewsCategoryDto cat) {
+        Popover pop = new Popover();
+        pop.setOpenOnClick(false);
+        pop.setOpenOnHover(true);
+        pop.setHoverDelay(350);
+        pop.setHideDelay(100);
+        pop.setWidth("240px");
+        pop.addThemeVariants(PopoverVariant.ARROW);
+        pop.setPosition(PopoverPosition.BOTTOM);
 
-        Span iconSpan = new Span();
-        iconSpan.addClassName("news-stat-icon");
-        iconSpan.add(icon.create());
+        VerticalLayout body = new VerticalLayout();
+        body.setSpacing(false);
+        body.setPadding(false);
+        body.addClassName("nv-chip-popover");
 
-        Div textCol = new Div();
-        textCol.addClassName("news-stat-text");
+        H4 pt = new H4(cat.getTitle());
+        pt.addClassName("nv-chip-popover-title");
+        Paragraph pd = new Paragraph(cat.getDescription());
+        pd.addClassName("nv-chip-popover-desc");
 
-        Span num = new Span(formatCount(value));
-        num.addClassName("news-stat-value");
+        Div stats = new Div();
+        stats.addClassName("nv-chip-popover-stats");
+        stats.add(popStat(VaadinIcon.FILE_TEXT, fmtCount(cat.getNewsCount()), "news"),
+                  popStat(VaadinIcon.EYE,       fmtCount(cat.getTotalViews()),  "views"),
+                  popStat(VaadinIcon.HEART,      fmtCount(cat.getTotalLikes()),  "likes"),
+                  popStat(VaadinIcon.USERS,      fmtCount(cat.getTotalAuthors()),"authors"));
 
-        Span lbl = new Span(label);
-        lbl.addClassName("news-stat-label");
-
-        textCol.add(num, lbl);
-        card.add(iconSpan, textCol);
-        return card;
+        body.add(pt, pd, stats);
+        pop.add(body);
+        return pop;
     }
 
-    private void markActiveChip(Long categoryId) {
-        chipDivs.forEach(chip -> {
-            chip.removeClassName("news-cat-chip--active");
-            String dataCatId = chip.getElement().getAttribute("data-cat-id");
-            boolean isActive = categoryId == null
-                    ? "all".equals(dataCatId)
-                    : String.valueOf(categoryId).equals(dataCatId);
-            if (isActive) chip.addClassName("news-cat-chip--active");
+    private Span popStat(VaadinIcon icon, String value, String label) {
+        Span s = new Span();
+        s.addClassName("nv-chip-popover-stat");
+        s.add(icon.create(), new Span(value + " " + label));
+        return s;
+    }
+
+    private void markActive(Long catId) {
+        chips.forEach(chip -> {
+            chip.removeClassName("nv-chip--active");
+            String dataId = chip.getElement().getAttribute("data-id");
+            boolean active = catId == null
+                    ? "all".equals(dataId)
+                    : String.valueOf(catId).equals(dataId);
+            if (active) chip.addClassName("nv-chip--active");
         });
     }
 
@@ -261,8 +251,8 @@ public class NewsView extends VerticalLayout {
 
     private void loadNews() {
         newsFeed.removeAll();
-        paginationRow.removeAll();
-        newsFeed.addClassName("news-feed");
+        pagination.removeAll();
+        newsFeed.addClassName("nv-feed");
 
         Page<NewsDto> page;
         try {
@@ -276,115 +266,115 @@ public class NewsView extends VerticalLayout {
 
         if (page.isEmpty()) {
             Div empty = new Div();
-            empty.addClassName("news-empty");
-            empty.add(new Span("No news in this category yet. Be the first to write one!"));
+            empty.addClassName("nv-empty");
+            empty.add(FontAwesome.Regular.NEWSPAPER.create());
+            empty.add(new Span("No news yet — be the first to write one!"));
             newsFeed.add(empty);
-            return;
-        }
+        } else {
+            Div grid = new Div();
+            grid.addClassName("nv-grid");
+            page.getContent().forEach(n -> grid.add(buildNewsCard(n)));
+            newsFeed.add(grid);
 
-        Div grid = new Div();
-        grid.addClassName("news-grid");
-        for (NewsDto news : page.getContent()) {
-            grid.add(buildNewsCard(news));
-        }
-        newsFeed.add(grid);
-
-        if (page.getTotalPages() > 1) {
-            buildPagination(page.getTotalPages());
+            if (page.getTotalPages() > 1) buildPagination(page.getTotalPages());
         }
     }
 
     private Div buildNewsCard(NewsDto news) {
         Div card = new Div();
-        card.addClassName("news-card");
-        card.addClickListener(e ->
-            UI.getCurrent().navigate("news/" + news.getId()));
+        card.addClassName("nv-card");
+        card.addClickListener(e -> UI.getCurrent().navigate("news/" + news.getId()));
 
-        // Category badge
         if (news.getCategoryTitle() != null) {
             Span badge = new Span(news.getCategoryTitle());
-            badge.addClassName("news-card-badge");
+            badge.addClassName("nv-card-badge");
             card.add(badge);
         }
 
-        // Title
         H3 title = new H3(news.getTitle());
-        title.addClassName("news-card-title");
+        title.addClassName("nv-card-title");
         card.add(title);
 
-        // Description excerpt
         if (news.getDescription() != null && !news.getDescription().isBlank()) {
-            String excerpt = news.getDescription().length() > 120
+            String ex = news.getDescription().length() > 120
                     ? news.getDescription().substring(0, 120) + "…"
                     : news.getDescription();
-            Paragraph desc = new Paragraph(excerpt);
-            desc.addClassName("news-card-desc");
+            Paragraph desc = new Paragraph(ex);
+            desc.addClassName("nv-card-desc");
             card.add(desc);
         }
 
-        // Footer: author + date + stats
         Div footer = new Div();
-        footer.addClassName("news-card-footer");
+        footer.addClassName("nv-card-footer");
 
-        Div authorLine = new Div();
-        authorLine.addClassName("news-card-author");
         String author = news.getOriginalAuthor() != null && !news.getOriginalAuthor().isBlank()
-                ? news.getOriginalAuthor()
-                : "User #" + news.getUserId();
-        authorLine.add(new Span(author));
+                ? news.getOriginalAuthor() : "Member #" + news.getUserId();
+        Span authorSpan = new Span(author);
+        authorSpan.addClassName("nv-card-author");
 
-        Div statsLine = new Div();
-        statsLine.addClassName("news-card-stats");
+        Div statsRow = new Div();
+        statsRow.addClassName("nv-card-stats");
+        statsRow.add(cardStat(VaadinIcon.EYE,   fmtCount(news.getViewCount())),
+                     cardStat(VaadinIcon.HEART,  fmtCount(news.getLikeCount())));
 
-        Span viewsStat = new Span();
-        viewsStat.addClassName("news-card-stat");
-        viewsStat.add(VaadinIcon.EYE.create(), new Span(formatCount(news.getViewCount())));
-
-        Span likesStat = new Span();
-        likesStat.addClassName("news-card-stat");
-        likesStat.add(VaadinIcon.HEART.create(), new Span(formatCount(news.getLikeCount())));
-
-        statsLine.add(viewsStat, likesStat);
-        footer.add(authorLine, statsLine);
+        footer.add(authorSpan, statsRow);
         card.add(footer);
-
         return card;
     }
 
+    private Span cardStat(VaadinIcon icon, String value) {
+        Span s = new Span();
+        s.addClassName("nv-card-stat");
+        s.add(icon.create(), new Span(value));
+        return s;
+    }
+
     private void buildPagination(int totalPages) {
-        paginationRow.addClassName("news-pagination");
+        pagination.addClassName("nv-pagination");
 
         Button prev = new Button(new Icon(VaadinIcon.ANGLE_LEFT));
-        prev.addClassName("news-page-btn");
+        prev.addClassName("nv-page-btn");
         prev.setEnabled(currentPage > 0);
         prev.addClickListener(e -> { currentPage--; loadNews(); });
 
-        Span pageInfo = new Span((currentPage + 1) + " / " + totalPages);
-        pageInfo.addClassName("news-page-info");
+        Span info = new Span((currentPage + 1) + " / " + totalPages);
+        info.addClassName("nv-page-info");
 
         Button next = new Button(new Icon(VaadinIcon.ANGLE_RIGHT));
-        next.addClassName("news-page-btn");
+        next.addClassName("nv-page-btn");
         next.setEnabled(currentPage < totalPages - 1);
         next.addClickListener(e -> { currentPage++; loadNews(); });
 
-        paginationRow.add(prev, pageInfo, next);
+        pagination.add(prev, info, next);
     }
 
-    // ─────────────────────────────── Util ───────────────────────────────────
+    // ─────────────────────────────── init ───────────────────────────────────
 
-    private String formatCount(long value) {
-        if (value >= 1_000_000) return (value / 1_000_000) + "M+";
-        if (value >= 1_000)     return (value / 1_000) + "K+";
-        return value + (value > 0 ? "+" : "");
+    private void loadAll() {
+        try {
+            allCategories = newsService.getAllCategories();
+        } catch (Exception e) {
+            allCategories = List.of();
+        }
+        refreshStatBar();
+        refreshCategoryStrip();
+        loadNews();
+    }
+
+    // ─────────────────────────────── util ───────────────────────────────────
+
+    private String fmtCount(long v) {
+        if (v >= 1_000_000) return (v / 1_000_000) + "M+";
+        if (v >= 1_000)     return (v / 1_000) + "K+";
+        return v + (v > 0 ? "+" : "");
     }
 
     private boolean isLoggedIn() {
         try {
-            var auth = SecurityContextHolder.getContext().getAuthentication();
-            return auth != null && auth.isAuthenticated()
-                    && !"anonymousUser".equals(auth.getPrincipal());
-        } catch (Exception e) {
-            return false;
-        }
+            var a = org.springframework.security.core.context.SecurityContextHolder
+                        .getContext().getAuthentication();
+            return a != null && a.isAuthenticated()
+                    && !"anonymousUser".equals(a.getPrincipal());
+        } catch (Exception e) { return false; }
     }
 }
