@@ -13,6 +13,39 @@
     background: #f0f2f5;
 }*/
 
+/* ---- Drawer width via CSS variable ---- */
+/* Default (phone / tablet): collapsed */
+vaadin-app-layout {
+    --vaadin-app-layout-drawer-width: 82px;
+}
+
+/* User manually locked the sidebar on a narrow screen */
+vaadin-app-layout.sidebar-locked {
+    --vaadin-app-layout-drawer-width: 290px;
+}
+
+/* Desktop: always fully expanded */
+@media (min-width: 1025px) {
+    vaadin-app-layout {
+        --vaadin-app-layout-drawer-width: 290px !important;
+    }
+    .sidebar {
+        width: 290px !important;
+    }
+    .sidebar .brand-text {
+        opacity: 0.9 !important;
+    }
+    .sidebar .lock-btn {
+        opacity: 1 !important;
+    }
+    .sidebar .profile-info {
+        opacity: 1 !important;
+    }
+    .sidebar .logout-btn {
+        opacity: 1 !important;
+    }
+}
+
 /* Allow the sidebar to visually overflow the Vaadin drawer panel */
 vaadin-app-layout::part(drawer) {
     overflow: visible;

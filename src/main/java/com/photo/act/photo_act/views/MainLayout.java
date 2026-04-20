@@ -830,9 +830,12 @@ public class MainLayout extends AppLayout {
                 }
                 });
 
-        // Lock button — pins sidebar open
+        // Lock button — CSS media query auto-expands on desktop
         Div lockBtn = new Div();
         lockBtn.addClassName("lock-btn");
+        Icon lockIcon = VaadinIcon.LOCK.create();
+        lockIcon.addClassName("lock-icon");
+        lockBtn.add(lockIcon);
 
         sidebarLayout = new VerticalLayout();
         sidebarLayout.setSizeFull();
@@ -840,39 +843,22 @@ public class MainLayout extends AppLayout {
         sidebarLayout.setSpacing(false);
         sidebarLayout.addClassName("sidebar");
 
-        // On screens wider than a tablet, start with the sidebar locked open
-        int screenWidth = VaadinSession.getCurrent().getBrowser().getScreenWidth();
-        locked = screenWidth > 1024;
-
-        if (locked) {
-            sidebarLayout.addClassName("locked");
-            Icon unlockedIcon = VaadinIcon.UNLOCK.create();
-            unlockedIcon.addClassName("lock-icon");
-            lockBtn.add(unlockedIcon);
-            getElement().getStyle().set("--vaadin-app-layout-drawer-width", "290px");
-        } else {
-            Icon lockIcon = VaadinIcon.LOCK.create();
-            lockIcon.addClassName("lock-icon");
-            lockBtn.add(lockIcon);
-            getElement().getStyle().set("--vaadin-app-layout-drawer-width", "82px");
-        }
-
         lockBtn.addClickListener(e -> {
             locked = !locked;
             if (locked) {
                 sidebarLayout.addClassName("locked");
+                getElement().getClassList().add("sidebar-locked");
                 lockBtn.removeAll();
                 Icon unlockedIcon = VaadinIcon.UNLOCK.create();
                 unlockedIcon.addClassName("lock-icon");
                 lockBtn.add(unlockedIcon);
-                getElement().getStyle().set("--vaadin-app-layout-drawer-width", "290px");
             } else {
                 sidebarLayout.removeClassName("locked");
+                getElement().getClassList().remove("sidebar-locked");
                 lockBtn.removeAll();
                 Icon lockedIcon2 = VaadinIcon.LOCK.create();
                 lockedIcon2.addClassName("lock-icon");
                 lockBtn.add(lockedIcon2);
-                getElement().getStyle().set("--vaadin-app-layout-drawer-width", "82px");
             }
         });
 
