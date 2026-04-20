@@ -24,22 +24,26 @@ vaadin-app-layout.sidebar-locked {
     --vaadin-app-layout-drawer-width: 290px;
 }
 
-/* Desktop: always fully expanded */
+/* Desktop: expanded by default; collapses when .sidebar-collapsed is added */
 @media (min-width: 1025px) {
-    vaadin-app-layout {
-        --vaadin-app-layout-drawer-width: 290px !important;
+    vaadin-app-layout:not(.sidebar-collapsed) {
+        --vaadin-app-layout-drawer-width: 290px;
     }
-    .sidebar {
-        width: 290px !important;
+    .sidebar:not(.collapsed) {
+        width: 290px;
     }
-    .sidebar .brand-text {
-        opacity: 0.9 !important;
+    .sidebar:not(.collapsed) .brand-text {
+        opacity: 0.9;
     }
-    .sidebar .profile-info {
-        opacity: 1 !important;
+    .sidebar:not(.collapsed) .profile-info {
+        opacity: 1;
     }
-    .sidebar .logout-btn {
-        opacity: 1 !important;
+    .sidebar:not(.collapsed) .logout-btn {
+        opacity: 1;
+    }
+    /* Ring on the logo while sidebar is expanded */
+    .sidebar:not(.collapsed) .logo-icon {
+        box-shadow: 0 0 0 3px rgba(139, 26, 26, 0.30), 1px 2px 6px var(--shadow-medium);
     }
 }
 

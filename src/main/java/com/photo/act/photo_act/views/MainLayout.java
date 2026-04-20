@@ -817,11 +817,11 @@ public class MainLayout extends AppLayout {
         divLogo.addClickListener(e -> {
             locked = !locked;
             if (locked) {
-                sidebarLayout.addClassName("locked");
-                getElement().getClassList().add("sidebar-locked");
+                sidebarLayout.addClassName("collapsed");
+                getElement().getClassList().add("sidebar-collapsed");
             } else {
-                sidebarLayout.removeClassName("locked");
-                getElement().getClassList().remove("sidebar-locked");
+                sidebarLayout.removeClassName("collapsed");
+                getElement().getClassList().remove("sidebar-collapsed");
             }
         });
 
