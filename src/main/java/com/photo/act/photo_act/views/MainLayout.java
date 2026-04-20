@@ -833,15 +833,29 @@ public class MainLayout extends AppLayout {
         // Lock button — pins sidebar open
         Div lockBtn = new Div();
         lockBtn.addClassName("lock-btn");
-        Icon lockIcon = VaadinIcon.LOCK.create();
-        lockIcon.addClassName("lock-icon");
-        lockBtn.add(lockIcon);
 
         sidebarLayout = new VerticalLayout();
         sidebarLayout.setSizeFull();
         sidebarLayout.setPadding(false);
         sidebarLayout.setSpacing(false);
         sidebarLayout.addClassName("sidebar");
+
+        // On screens wider than a tablet, start with the sidebar locked open
+        int screenWidth = VaadinSession.getCurrent().getBrowser().getScreenWidth();
+        locked = screenWidth > 1024;
+
+        if (locked) {
+            sidebarLayout.addClassName("locked");
+            Icon unlockedIcon = VaadinIcon.UNLOCK.create();
+            unlockedIcon.addClassName("lock-icon");
+            lockBtn.add(unlockedIcon);
+            getElement().getStyle().set("--vaadin-app-layout-drawer-width", "290px");
+        } else {
+            Icon lockIcon = VaadinIcon.LOCK.create();
+            lockIcon.addClassName("lock-icon");
+            lockBtn.add(lockIcon);
+            getElement().getStyle().set("--vaadin-app-layout-drawer-width", "82px");
+        }
 
         lockBtn.addClickListener(e -> {
             locked = !locked;
@@ -869,9 +883,6 @@ public class MainLayout extends AppLayout {
         scroller.addClassNames(Height.FULL);
 
         sidebarLayout.add(logoLayout, scroller);
-
-        // Start collapsed; CSS :hover expands it
-        getElement().getStyle().set("--vaadin-app-layout-drawer-width", "82px");
 
         addToDrawer(sidebarLayout);
 
