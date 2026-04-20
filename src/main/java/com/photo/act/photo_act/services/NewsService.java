@@ -9,8 +9,6 @@ import com.photo.act.photo_act.model.*;
 import com.photo.act.photo_act.repository.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -123,10 +121,7 @@ public class NewsService {
         return newsRepo.findById(id).map(this::buildNewsDto);
     }
 
-    /**
-     * Paged news for a category — cached as NewsPageResult (Jackson-safe).
-     */
-    @Cacheable(value = "news-list", key = "'cat-' + #categoryId + '-p' + #page")
+    /** Paged news for a category. */
     public NewsPageResult getNewsByCategory(Long categoryId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<NewsDto> p = newsRepo.findByCategoryIdOrderByCreatedAtDesc(categoryId, pageable)
@@ -134,8 +129,7 @@ public class NewsService {
         return toPageResult(p, page);
     }
 
-    /** Latest news across all categories — cached as NewsPageResult (Jackson-safe). */
-    @Cacheable(value = "news-list", key = "'latest-p' + #page")
+    /** Latest news across all categories. */
     public NewsPageResult getLatestNews(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<NewsDto> p = newsRepo.findAllByOrderByCreatedAtDesc(pageable)
@@ -169,7 +163,6 @@ public class NewsService {
     }
 
     @Transactional
-    @CacheEvict(value = "news-list", allEntries = true)
     public NewsDto createNews(NewsCreateDto dto, Integer userId) {
         NewsEntity news = newsRepo.save(new NewsEntity(
                 dto.getTitle(), dto.getDescription(), dto.getPhotoId(),
@@ -189,7 +182,6 @@ public class NewsService {
     }
 
     @Transactional
-    @CacheEvict(value = "news-list", allEntries = true)
     public Optional<NewsDto> updateNews(Long id, NewsCreateDto dto) {
         return newsRepo.findById(id).map(news -> {
             news.setTitle(dto.getTitle());
@@ -203,7 +195,6 @@ public class NewsService {
     }
 
     @Transactional
-    @CacheEvict(value = "news-list", allEntries = true)
     public void replaceItems(Long newsId, List<NewsCreateDto.NewsItemCreateDto> itemDtos) {
         itemRepo.deleteByNewsId(newsId);
         int order = 0;
