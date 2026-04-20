@@ -35,9 +35,6 @@ vaadin-app-layout.sidebar-locked {
     .sidebar .brand-text {
         opacity: 0.9 !important;
     }
-    .sidebar .lock-btn {
-        opacity: 1 !important;
-    }
     .sidebar .profile-info {
         opacity: 1 !important;
     }
@@ -103,6 +100,21 @@ vaadin-app-layout::part(drawer) {
     justify-content: center;
     flex-shrink: 0;
     box-shadow: 1px 2px 6px var(--shadow-medium);
+    cursor: pointer;
+    transition: box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+.logo-icon:hover {
+    box-shadow: 0 0 0 3px rgba(139, 26, 26, 0.25), 1px 2px 8px var(--shadow-medium);
+}
+
+.logo-icon:active {
+    transform: scale(0.92);
+}
+
+/* Ring indicator while sidebar is pinned open */
+.sidebar.locked .logo-icon {
+    box-shadow: 0 0 0 3px rgba(139, 26, 26, 0.45), 1px 2px 6px var(--shadow-medium);
 }
 
 .logo-icon vaadin-icon {
@@ -129,35 +141,6 @@ vaadin-app-layout::part(drawer) {
     opacity: 0.9;
 }
 
-.lock-btn {
-    min-width: 32px;
-    width: 32px;
-    height: 32px;
-    background: #f5f5f7;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    opacity: 0;
-    transition: opacity 0.25s ease, background 0.2s ease;
-    flex-shrink: 0;
-}
-
-.sidebar:hover .lock-btn,
-.sidebar.locked .lock-btn {
-    opacity: 1;
-}
-
-.lock-btn:hover {
-    background: #ebebed;
-}
-
-.lock-icon {
-    color: #999;
-    width: 16px !important;
-    height: 16px !important;
-}
 
 /* ---------- Nav Wrapper ---------- */
 .nav-wrapper {

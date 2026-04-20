@@ -814,28 +814,16 @@ public class MainLayout extends AppLayout {
         Div divLogo = new Div();
         divLogo.add(VaadinIcon.CAMERA.create());
         divLogo.addClassName("logo-icon");
-//        divLogo.addClassNames(FontSize.MEDIUM, FontWeight.BOLD, TextColor.SECONDARY,
-//                Padding.XSMALL, Margin.NONE);
-
-        toggleWidthButton = new Button(new Icon(VaadinIcon.COMPRESS_SQUARE));
-        toggleWidthButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-        toggleWidthButton.setTooltipText("Minimize/Expand drawer width");
-        toggleWidthButton.addClickListener(e -> {
-            drawerMinimized = !drawerMinimized;
-                toggleDrawerWidth(drawerMinimized);
-                if (drawerMinimized){
-                    appName.setText("");
-                }else{
-                    appName.setText(APP_NAME);
-                }
-                });
-
-        // Lock button — CSS media query auto-expands on desktop
-        Div lockBtn = new Div();
-        lockBtn.addClassName("lock-btn");
-        Icon lockIcon = VaadinIcon.LOCK.create();
-        lockIcon.addClassName("lock-icon");
-        lockBtn.add(lockIcon);
+        divLogo.addClickListener(e -> {
+            locked = !locked;
+            if (locked) {
+                sidebarLayout.addClassName("locked");
+                getElement().getClassList().add("sidebar-locked");
+            } else {
+                sidebarLayout.removeClassName("locked");
+                getElement().getClassList().remove("sidebar-locked");
+            }
+        });
 
         sidebarLayout = new VerticalLayout();
         sidebarLayout.setSizeFull();
@@ -843,26 +831,7 @@ public class MainLayout extends AppLayout {
         sidebarLayout.setSpacing(false);
         sidebarLayout.addClassName("sidebar");
 
-        lockBtn.addClickListener(e -> {
-            locked = !locked;
-            if (locked) {
-                sidebarLayout.addClassName("locked");
-                getElement().getClassList().add("sidebar-locked");
-                lockBtn.removeAll();
-                Icon unlockedIcon = VaadinIcon.UNLOCK.create();
-                unlockedIcon.addClassName("lock-icon");
-                lockBtn.add(unlockedIcon);
-            } else {
-                sidebarLayout.removeClassName("locked");
-                getElement().getClassList().remove("sidebar-locked");
-                lockBtn.removeAll();
-                Icon lockedIcon2 = VaadinIcon.LOCK.create();
-                lockedIcon2.addClassName("lock-icon");
-                lockBtn.add(lockedIcon2);
-            }
-        });
-
-        logoLayout.add(divLogo, appName, lockBtn);
+        logoLayout.add(divLogo, appName);
 
         layoutMenu.add(createSideMenu(true));
         Scroller scroller = new Scroller(layoutMenu);
