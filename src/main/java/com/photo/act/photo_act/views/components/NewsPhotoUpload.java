@@ -76,7 +76,7 @@ public class NewsPhotoUpload extends Div {
 
         // Upload component
         UploadHandler handler = UploadHandler.toTempFile((meta, tempFile) ->
-                getUI().ifPresent(ui -> ui.access(() -> processUpload(meta.getFileName(), tempFile))));
+                getUI().ifPresent(ui -> ui.access(() -> processUpload(meta.fileName(), tempFile))));
 
         Upload upload = new Upload(handler);
         upload.setMaxFiles(1);
