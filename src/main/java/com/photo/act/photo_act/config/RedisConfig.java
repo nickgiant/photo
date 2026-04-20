@@ -2,6 +2,7 @@ package com.photo.act.photo_act.config;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
@@ -52,6 +53,10 @@ public class RedisConfig {
         // to use this Redis-specific mapper (with activateDefaultTyping).
         ObjectMapper mapper = new ObjectMapper();
         mapper.findAndRegisterModules();
+        // Serialize dates as ISO strings ("2024-04-19T13:30:00"), not arrays.
+        // Arrays conflict with the @class wrapper that activateDefaultTyping adds
+        // for non-final types like LocalDateTime, breaking deserialization on cache hit.
+        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         mapper.activateDefaultTyping(
                 LaissezFaireSubTypeValidator.instance,
                 ObjectMapper.DefaultTyping.NON_FINAL,
