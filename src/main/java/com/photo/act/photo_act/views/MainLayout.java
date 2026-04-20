@@ -110,8 +110,8 @@ public class MainLayout extends AppLayout {
     private int userId;
     private String strUsername;
 
-    //private final Div sidebar;
-    //private boolean locked = false;
+    private VerticalLayout sidebarLayout;
+    private boolean locked = false;
 
     public MainLayout() {
 
@@ -830,25 +830,53 @@ public class MainLayout extends AppLayout {
                 }
                 });
 
-        VerticalLayout leftLayout = new VerticalLayout();
-        leftLayout.setSizeFull();
-        leftLayout.setPadding(false);
-        leftLayout.setSpacing(false);
-        leftLayout.addClassNames(
+        // Lock button — pins sidebar open
+        Div lockBtn = new Div();
+        lockBtn.addClassName("lock-btn");
+        Icon lockIcon = VaadinIcon.LOCK.create();
+        lockIcon.addClassName("lock-icon");
+        lockBtn.add(lockIcon);
+
+        sidebarLayout = new VerticalLayout();
+        sidebarLayout.setSizeFull();
+        sidebarLayout.setPadding(false);
+        sidebarLayout.setSpacing(false);
+        sidebarLayout.addClassNames(
                 AlignItems.CENTER, JustifyContent.CENTER,
                 Gap.XSMALL);
-//        leftLayout.addClassName("background");
-        leftLayout.addClassName("sidebar");
+        sidebarLayout.addClassName("sidebar");
 
-        logoLayout.add(divLogo, appName); //,toggleWidthButton);
+        lockBtn.addClickListener(e -> {
+            locked = !locked;
+            if (locked) {
+                sidebarLayout.addClassName("locked");
+                lockBtn.removeAll();
+                Icon unlockedIcon = VaadinIcon.UNLOCK.create();
+                unlockedIcon.addClassName("lock-icon");
+                lockBtn.add(unlockedIcon);
+                getElement().getStyle().set("--vaadin-app-layout-drawer-width", "290px");
+            } else {
+                sidebarLayout.removeClassName("locked");
+                lockBtn.removeAll();
+                Icon lockedIcon2 = VaadinIcon.LOCK.create();
+                lockedIcon2.addClassName("lock-icon");
+                lockBtn.add(lockedIcon2);
+                getElement().getStyle().set("--vaadin-app-layout-drawer-width", "82px");
+            }
+        });
+
+        logoLayout.add(divLogo, appName, lockBtn);
 
         layoutMenu.add(createSideMenu(true));
         Scroller scroller = new Scroller(layoutMenu);
         scroller.addClassNames(Height.FULL);
 
-        leftLayout.add(logoLayout, scroller);
+        sidebarLayout.add(logoLayout, scroller);
 
-        addToDrawer(leftLayout);
+        // Start collapsed; CSS :hover expands it
+        getElement().getStyle().set("--vaadin-app-layout-drawer-width", "82px");
+
+        addToDrawer(sidebarLayout);
 
     }
 
