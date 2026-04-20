@@ -13,13 +13,16 @@
     background: #f0f2f5;
 }*/
 
+/* Allow the sidebar to visually overflow the Vaadin drawer panel */
+vaadin-app-layout::part(drawer) {
+    overflow: visible;
+    z-index: 100;
+}
+
 /* =============  SIDEBAR  ============= */
 .sidebar {
-
     position: relative;
-/*    top: 0;
-    left: 0;
-    z-index: 100;*/
+    z-index: 100;
     width: 82px;
     height: 100vh;
     background: #ffffff;
@@ -125,7 +128,7 @@
 
 /* ---------- Nav Wrapper ---------- */
 .nav-wrapper {
-    align-items: start;
+    align-items: stretch;
     width: 100%;
     flex: 1;
     overflow-y: auto;
@@ -133,6 +136,12 @@
     padding: 7px 9px;
     scrollbar-width: none;
     gap: 1px;
+}
+
+/* Ensure the scroller inside the sidebar fills full width */
+.sidebar vaadin-scroller,
+.sidebar > * {
+    width: 100%;
 }
 
 .nav-wrapper::-webkit-scrollbar {
@@ -202,9 +211,7 @@ vaadin-side-nav-item[expanded]:hover{
 
 vaadin-side-nav-item{
 
-    width: 190px;
-    /*position: relative;*/
-    /*display: flex;*/
+    width: calc(100% - 18px);
     align-items: center;
     gap: 4px;
     padding: 0;

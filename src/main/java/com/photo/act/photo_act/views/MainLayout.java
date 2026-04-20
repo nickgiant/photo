@@ -841,9 +841,6 @@ public class MainLayout extends AppLayout {
         sidebarLayout.setSizeFull();
         sidebarLayout.setPadding(false);
         sidebarLayout.setSpacing(false);
-        sidebarLayout.addClassNames(
-                AlignItems.CENTER, JustifyContent.CENTER,
-                Gap.XSMALL);
         sidebarLayout.addClassName("sidebar");
 
         lockBtn.addClickListener(e -> {
