@@ -895,9 +895,9 @@ public class MainLayout extends AppLayout {
         nav.addItem(createSideNavItem("Home", divImageHome, "Introduction and Updates",
                 HomeView.class, drawerMinimized));
 
-        Div divImageNews = new Div(FontAwesome.Solid.NEWSPAPER.create());
+/*        Div divImageNews = new Div(FontAwesome.Solid.NEWSPAPER.create());
         nav.addItem(createSideNavItem("News", divImageNews, "Community news and updates",
-                NewsView.class, drawerMinimized));
+                NewsView.class, drawerMinimized));*/
 
         RouteParameters routeParametersDestination = new RouteParameters("destination-type", "Cities");
 
