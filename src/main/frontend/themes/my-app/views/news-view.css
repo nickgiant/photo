@@ -1,0 +1,451 @@
+/* ============================================================
+   NEWS VIEW  (class prefix: nv-)
+   Design: cinematic dark header · colorful category chips
+           · screenshot-style aggregate stat tiles
+   ============================================================ */
+
+.news-view {
+    --nv-bg:          #f4f2ef;
+    --nv-card-bg:     #ffffff;
+    --nv-border:      rgba(0,0,0,.07);
+    --nv-radius:      16px;
+    --nv-radius-sm:   10px;
+    --nv-shadow:      0 2px 12px rgba(0,0,0,.07);
+    --nv-shadow-lg:   0 6px 24px rgba(0,0,0,.13);
+    --nv-red:         #8b1a1a;
+    --nv-gold:        #d8ab41;
+    --nv-ease:        cubic-bezier(.4,0,.2,1);
+
+    background: var(--nv-bg);
+    min-height: 100vh;
+}
+
+/* ── Page header ─────────────────────────────────────────── */
+.nv-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 22px 32px 20px;
+    background: linear-gradient(135deg, #1c0808 0%, #2d1515 55%, #1c0808 100%);
+    border-bottom: 1px solid rgba(216,171,65,.22);
+    box-shadow: 0 4px 20px rgba(0,0,0,.28);
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.nv-header-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.nv-header-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 46px;
+    height: 46px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #8b1a1a, #c0392b);
+    box-shadow: 0 0 18px rgba(192,57,43,.5);
+    flex-shrink: 0;
+}
+
+.nv-header-icon vaadin-icon {
+    color: #fff;
+    width: 22px !important;
+    height: 22px !important;
+}
+
+.nv-header-title {
+    color: #f4eee1;
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin: 0;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    text-shadow: 0 0 28px rgba(216,171,65,.28);
+}
+
+.nv-btn-create {
+    background: linear-gradient(135deg, #d8ab41, #e6be5f) !important;
+    color: #1c0808 !important;
+    font-weight: 700 !important;
+    letter-spacing: .8px;
+    border: none !important;
+    border-radius: var(--nv-radius-sm) !important;
+    padding: 0 22px !important;
+    height: 40px !important;
+    transition: .2s var(--nv-ease) !important;
+    box-shadow: 0 2px 10px rgba(216,171,65,.4);
+    white-space: nowrap;
+}
+
+.nv-btn-create:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 18px rgba(216,171,65,.55) !important;
+}
+
+/* ── Aggregate stat bar (4 screenshot-style tiles) ──────── */
+.nv-stat-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    padding: 20px 32px;
+    background: #faf9f7;
+    border-bottom: 1px solid var(--nv-border);
+}
+
+.nv-tile {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border-radius: var(--nv-radius);
+    padding: 16px 18px;
+    color: #fff;
+    transition: .22s var(--nv-ease);
+    cursor: default;
+}
+
+.nv-tile:hover {
+    transform: translateY(-3px);
+    filter: brightness(1.06);
+}
+
+/* Screenshot colours */
+.nv-tile--purple { background: linear-gradient(135deg,#9b59b6,#7d3c98); box-shadow: 0 4px 14px rgba(155,89,182,.38); }
+.nv-tile--blue   { background: linear-gradient(135deg,#3498db,#1a6eb5); box-shadow: 0 4px 14px rgba(52,152,219,.38); }
+.nv-tile--pink   { background: linear-gradient(135deg,#e74c6f,#c0392b); box-shadow: 0 4px 14px rgba(231,76,60,.38); }
+.nv-tile--orange { background: linear-gradient(135deg,#e67e22,#d35400); box-shadow: 0 4px 14px rgba(230,126,34,.38); }
+
+.nv-tile-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: rgba(255,255,255,.2);
+    flex-shrink: 0;
+}
+
+.nv-tile-icon vaadin-icon {
+    color: #fff;
+    width: 20px !important;
+    height: 20px !important;
+}
+
+.nv-tile-text { display: flex; flex-direction: column; line-height: 1.2; }
+
+.nv-tile-value {
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: #fff;
+    white-space: nowrap;
+}
+
+.nv-tile-label {
+    font-size: .72rem;
+    color: rgba(255,255,255,.82);
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    margin-top: 2px;
+}
+
+/* ── Category strip ──────────────────────────────────────── */
+.nv-cat-wrapper {
+    background: #faf9f7;
+    border-bottom: 1px solid var(--nv-border);
+}
+
+.nv-cat-strip {
+    display: flex;
+    gap: 10px;
+    padding: 16px 32px 18px;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(139,26,26,.25) transparent;
+    flex-wrap: nowrap;
+}
+
+.nv-cat-strip::-webkit-scrollbar { height: 3px; }
+.nv-cat-strip::-webkit-scrollbar-thumb { background: rgba(139,26,26,.3); border-radius: 3px; }
+
+/* ── Category chip (colored pill) ────────────────────────── */
+.nv-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 18px;
+    border-radius: 50px;
+    color: #fff;
+    font-size: .82rem;
+    font-weight: 700;
+    letter-spacing: .4px;
+    white-space: nowrap;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: .22s var(--nv-ease);
+    user-select: none;
+    border: 2px solid transparent;
+    position: relative;
+}
+
+.nv-chip:hover {
+    transform: translateY(-3px);
+    filter: brightness(1.1);
+}
+
+.nv-chip:active { transform: scale(.97); }
+
+/* Active state — white border glow */
+.nv-chip--active {
+    border-color: rgba(255,255,255,.7) !important;
+    box-shadow: 0 0 0 3px rgba(255,255,255,.18), 0 6px 20px rgba(0,0,0,.2) !important;
+    transform: translateY(-2px) !important;
+}
+
+/* "All" chip */
+.nv-cat--all {
+    background: linear-gradient(135deg,#5a5a6e,#3d3d4f);
+    box-shadow: 0 3px 10px rgba(60,60,80,.35);
+}
+
+/* Category color gradients */
+.nv-cat--grape  { background: linear-gradient(135deg,#9b59b6,#7d3c98); box-shadow: 0 3px 10px rgba(155,89,182,.4); }
+.nv-cat--ocean  { background: linear-gradient(135deg,#3498db,#1a6eb5); box-shadow: 0 3px 10px rgba(52,152,219,.4); }
+.nv-cat--teal   { background: linear-gradient(135deg,#1abc9c,#148f77); box-shadow: 0 3px 10px rgba(26,188,156,.4); }
+.nv-cat--rose   { background: linear-gradient(135deg,#e74c6f,#c0392b); box-shadow: 0 3px 10px rgba(231,76,60,.4); }
+.nv-cat--amber  { background: linear-gradient(135deg,#e67e22,#d35400); box-shadow: 0 3px 10px rgba(230,126,34,.4); }
+.nv-cat--forest { background: linear-gradient(135deg,#27ae60,#1e8449); box-shadow: 0 3px 10px rgba(39,174,96,.4); }
+.nv-cat--indigo { background: linear-gradient(135deg,#5e4cdd,#3b2dbf); box-shadow: 0 3px 10px rgba(94,76,221,.4); }
+.nv-cat--coral  { background: linear-gradient(135deg,#fd9644,#e55039); box-shadow: 0 3px 10px rgba(229,80,57,.4); }
+
+/* News count badge on chip */
+.nv-chip-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    border-radius: 10px;
+    background: rgba(255,255,255,.28);
+    font-size: .68rem;
+    font-weight: 800;
+    padding: 0 6px;
+    color: #fff;
+}
+
+/* ── Chip popover ─────────────────────────────────────────── */
+.nv-chip-popover { gap: 6px; }
+
+.nv-chip-popover-title {
+    font-size: .92rem;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin: 0 0 4px;
+}
+
+.nv-chip-popover-desc {
+    font-size: .8rem;
+    color: #666;
+    line-height: 1.5;
+    margin: 0 0 8px;
+}
+
+.nv-chip-popover-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.nv-chip-popover-stat {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: .74rem;
+    color: #777;
+    background: #f4f2ef;
+    border-radius: 6px;
+    padding: 3px 8px;
+}
+
+.nv-chip-popover-stat vaadin-icon {
+    width: 11px !important;
+    height: 11px !important;
+    color: #8b1a1a;
+}
+
+/* ── News feed + grid ─────────────────────────────────────── */
+.nv-feed { padding: 28px 32px 0; }
+
+.nv-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+    gap: 20px;
+}
+
+/* ── News card ────────────────────────────────────────────── */
+.nv-card {
+    display: flex;
+    flex-direction: column;
+    background: var(--nv-card-bg);
+    border: 1px solid var(--nv-border);
+    border-radius: var(--nv-radius);
+    padding: 20px;
+    box-shadow: var(--nv-shadow);
+    cursor: pointer;
+    transition: .22s var(--nv-ease);
+    position: relative;
+    overflow: hidden;
+}
+
+.nv-card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--nv-red), var(--nv-gold));
+    opacity: 0;
+    transition: .22s var(--nv-ease);
+}
+
+.nv-card:hover {
+    border-color: rgba(139,26,26,.2);
+    box-shadow: var(--nv-shadow-lg);
+    transform: translateY(-4px);
+}
+
+.nv-card:hover::before { opacity: 1; }
+
+.nv-card-badge {
+    display: inline-block;
+    font-size: .66rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--nv-red);
+    background: rgba(139,26,26,.09);
+    border: 1px solid rgba(139,26,26,.18);
+    border-radius: 20px;
+    padding: 2px 10px;
+    margin-bottom: 10px;
+    width: fit-content;
+}
+
+.nv-card-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin: 0 0 10px;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.nv-card-desc {
+    font-size: .82rem;
+    color: #666;
+    line-height: 1.6;
+    flex: 1;
+    margin: 0 0 16px;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.nv-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: auto;
+    padding-top: 12px;
+    border-top: 1px solid rgba(0,0,0,.06);
+}
+
+.nv-card-author {
+    font-size: .74rem;
+    color: #999;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 55%;
+}
+
+.nv-card-stats { display: flex; align-items: center; gap: 10px; }
+
+.nv-card-stat {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: .73rem;
+    color: #aaa;
+    font-weight: 500;
+}
+
+.nv-card-stat vaadin-icon { width: 12px !important; height: 12px !important; color: #c0b8b0; }
+
+/* ── Empty state ──────────────────────────────────────────── */
+.nv-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 64px 32px;
+    color: #bbb;
+    font-size: .9rem;
+    text-align: center;
+    font-style: italic;
+}
+
+.nv-empty vaadin-icon { width: 40px !important; height: 40px !important; color: #ddd; }
+
+/* ── Pagination ───────────────────────────────────────────── */
+.nv-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    padding: 28px 32px 44px;
+}
+
+.nv-page-btn {
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 50% !important;
+    border: 1.5px solid var(--nv-border) !important;
+    background: var(--nv-card-bg) !important;
+    color: #777 !important;
+    transition: .2s var(--nv-ease) !important;
+}
+
+.nv-page-btn:hover:not([disabled]) {
+    border-color: var(--nv-red) !important;
+    color: var(--nv-red) !important;
+    box-shadow: 0 2px 8px rgba(139,26,26,.2) !important;
+}
+
+.nv-page-info { font-size: .82rem; color: #888; font-weight: 600; letter-spacing: .5px; }
+
+/* ── Responsive ───────────────────────────────────────────── */
+@media (max-width: 900px) {
+    .nv-stat-bar { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 560px) {
+    .nv-header { padding: 14px 16px; }
+    .nv-header-title { font-size: 1.15rem; }
+    .nv-stat-bar { grid-template-columns: repeat(2, 1fr); padding: 14px 16px; gap: 10px; }
+    .nv-cat-strip { padding: 12px 16px 14px; }
+    .nv-feed { padding: 16px 14px 0; }
+    .nv-grid { grid-template-columns: 1fr; gap: 14px; }
+    .nv-tile-value { font-size: 1.1rem; }
+    .nv-tile { padding: 12px 14px; gap: 10px; }
+    .nv-tile-icon { width: 34px; height: 34px; }
+    .nv-tile-icon vaadin-icon { width: 16px !important; height: 16px !important; }
+}

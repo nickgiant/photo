@@ -892,8 +892,12 @@ public class MainLayout extends AppLayout {
         nav.addClassName("label-text");
 
         Div divImageHome = new Div(FontAwesome.Solid.HOME.create());
-        nav.addItem(createSideNavItem("Home",divImageHome,"Introduction and Updates",
-                HomeView.class,drawerMinimized));
+        nav.addItem(createSideNavItem("Home", divImageHome, "Introduction and Updates",
+                HomeView.class, drawerMinimized));
+
+/*        Div divImageNews = new Div(FontAwesome.Solid.NEWSPAPER.create());
+        nav.addItem(createSideNavItem("News", divImageNews, "Community news and updates",
+                NewsView.class, drawerMinimized));*/
 
         RouteParameters routeParametersDestination = new RouteParameters("destination-type", "Cities");
 

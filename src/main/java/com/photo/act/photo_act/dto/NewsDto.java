@@ -1,0 +1,53 @@
+package com.photo.act.photo_act.dto;
+
+import com.photo.act.photo_act.model.NewsEntity;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.io.Serializable;
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class NewsDto implements Serializable {
+
+    Long              id;
+    String            title;
+    String            description;
+    Integer           photoId;
+    Integer           userId;
+    String            originalAuthor;
+    String            originalUrl;
+    Long              categoryId;
+    String            categoryTitle;
+    LocalDateTime     createdAt;
+    LocalDateTime     updatedAt;
+    List<NewsItemDto> items;
+    long              viewCount;
+    long              likeCount;
+
+    public static NewsDto from(NewsEntity e, String categoryTitle,
+                               List<NewsItemDto> items, long views, long likes) {
+        return NewsDto.builder()
+                .id(e.getId())
+                .title(e.getTitle())
+                .description(e.getDescription())
+                .photoId(e.getPhotoId())
+                .userId(e.getUserId())
+                .originalAuthor(e.getOriginalAuthor())
+                .originalUrl(e.getOriginalUrl())
+                .categoryId(e.getCategoryId())
+                .categoryTitle(categoryTitle)
+                .createdAt(e.getCreatedAt())
+                .updatedAt(e.getUpdatedAt())
+                .items(items)
+                .viewCount(views)
+                .likeCount(likes)
+                .build();
+    }
+}

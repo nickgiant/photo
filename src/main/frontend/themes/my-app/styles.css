@@ -1,4 +1,7 @@
 
+@import url('./views/news-view.css');
+@import url('./views/news-create-view.css');
+@import url('./views/news-detail-view.css');
 @import url('./views/like-button.css');
 @import url('./views/feed-view.css');
 /*@import url('./views/clubs-view.css');*/
