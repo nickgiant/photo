@@ -2,6 +2,9 @@ package com.photo.act.photo_act.views;
 
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
+import com.photo.act.photo_act.dto.PhotoAlbumCategoryDto;
+import com.photo.act.photo_act.dto.PhotoAlbumDto;
+import com.photo.act.photo_act.services.PhotoAlbumService;
 import com.photo.act.photo_act.services.PhotoRatingService;
 import com.photo.act.photo_act.services.PhotoViewService;
 import com.photo.act.photo_act.services.ShareMetricService;
@@ -70,6 +73,7 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
     private WeatherService weatherService;
     private PhotoRatingService photoRatingService;
     private PhotoViewService photoViewService;
+    private PhotoAlbumService photoAlbumService;
     private String strHeader;
 
     private String strUrlRequestToBeLogged;
@@ -213,17 +217,31 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
     private String sessionDateTime;
     private GenericView genericView;
 
-    public AlbumsView(RecordService recordService, ShareService shareService, ShareMetricService shareMetricService, WeatherService weatherService, PhotoRatingService photoRatingService, PhotoViewService photoViewService) {
-        this.recordService = recordService;
-        this.shareService = shareService;
+    public AlbumsView(RecordService recordService, ShareService shareService,
+                      ShareMetricService shareMetricService, WeatherService weatherService,
+                      PhotoRatingService photoRatingService, PhotoViewService photoViewService,
+                      PhotoAlbumService photoAlbumService) {
+        this.recordService      = recordService;
+        this.shareService       = shareService;
         this.shareMetricService = shareMetricService;
-        this.weatherService = weatherService;
+        this.weatherService     = weatherService;
         this.photoRatingService = photoRatingService;
-        this.photoViewService = photoViewService;
-        utilsDate = new UtilsDate();
-        genericView = new GenericView(recordService);
+        this.photoViewService   = photoViewService;
+        this.photoAlbumService  = photoAlbumService;
+        utilsDate    = new UtilsDate();
+        genericView  = new GenericView(recordService);
 
         constructUI();
+    }
+
+    /** Returns album categories via JPA service (used by UI category strip). */
+    public java.util.List<PhotoAlbumCategoryDto> getAlbumCategories() {
+        return photoAlbumService.getAllCategories();
+    }
+
+    /** Returns paginated public albums via JPA service. */
+    public org.springframework.data.domain.Page<PhotoAlbumDto> getPublicAlbums(int page, int size) {
+        return photoAlbumService.getPublicAlbums(page, size);
     }
 
     @Override
