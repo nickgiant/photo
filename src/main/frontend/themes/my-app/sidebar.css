@@ -13,13 +13,50 @@
     background: #f0f2f5;
 }*/
 
+/* ---- Drawer width via CSS variable ---- */
+/* Default (phone / tablet): collapsed */
+vaadin-app-layout {
+    --vaadin-app-layout-drawer-width: 82px;
+}
+
+/* User manually locked the sidebar on a narrow screen */
+vaadin-app-layout.sidebar-locked {
+    --vaadin-app-layout-drawer-width: 290px;
+}
+
+/* Desktop: expanded by default; collapses when .sidebar-collapsed is added */
+@media (min-width: 1025px) {
+    vaadin-app-layout:not(.sidebar-collapsed) {
+        --vaadin-app-layout-drawer-width: 290px;
+    }
+    .sidebar:not(.collapsed) {
+        width: 290px;
+    }
+    .sidebar:not(.collapsed) .brand-text {
+        opacity: 0.9;
+    }
+    .sidebar:not(.collapsed) .profile-info {
+        opacity: 1;
+    }
+    .sidebar:not(.collapsed) .logout-btn {
+        opacity: 1;
+    }
+    /* Ring on the logo while sidebar is expanded */
+    .sidebar:not(.collapsed) .logo-icon {
+        box-shadow: 0 0 0 3px rgba(139, 26, 26, 0.30), 1px 2px 6px var(--shadow-medium);
+    }
+}
+
+/* Allow the sidebar to visually overflow the Vaadin drawer panel */
+vaadin-app-layout::part(drawer) {
+    overflow: visible;
+    z-index: 100;
+}
+
 /* =============  SIDEBAR  ============= */
 .sidebar {
-
     position: relative;
-/*    top: 0;
-    left: 0;
-    z-index: 100;*/
+    z-index: 100;
     width: 82px;
     height: 100vh;
     background: #ffffff;
@@ -67,6 +104,21 @@
     justify-content: center;
     flex-shrink: 0;
     box-shadow: 1px 2px 6px var(--shadow-medium);
+    cursor: pointer;
+    transition: box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+.logo-icon:hover {
+    box-shadow: 0 0 0 3px rgba(139, 26, 26, 0.25), 1px 2px 8px var(--shadow-medium);
+}
+
+.logo-icon:active {
+    transform: scale(0.92);
+}
+
+/* Ring indicator while sidebar is pinned open */
+.sidebar.locked .logo-icon {
+    box-shadow: 0 0 0 3px rgba(139, 26, 26, 0.45), 1px 2px 6px var(--shadow-medium);
 }
 
 .logo-icon vaadin-icon {
@@ -76,54 +128,27 @@
 }
 
 .brand-text {
+    flex: 1;
     color: #1a1a2e;
     font-size: 1.15rem;
     font-weight: 700;
     white-space: nowrap;
-    opacity: 0.9;
+    opacity: 0;
     transition: opacity 0.3s ease 0.1s;
     letter-spacing: 0.2px;
     text-shadow: 1px 2px 6px var(--shadow-medium);
+    overflow: hidden;
 }
 
 .sidebar:hover .brand-text,
 .sidebar.locked .brand-text {
-    opacity: 1;
+    opacity: 0.9;
 }
 
-.lock-btn {
-    min-width: 32px;
-    width: 32px;
-    height: 32px;
-    background: #f5f5f7;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    opacity: 0;
-    transition: opacity 0.25s ease, background 0.2s ease;
-    flex-shrink: 0;
-}
-
-.sidebar:hover .lock-btn,
-.sidebar.locked .lock-btn {
-    opacity: 1;
-}
-
-.lock-btn:hover {
-    background: #ebebed;
-}
-
-.lock-icon {
-    color: #999;
-    width: 16px !important;
-    height: 16px !important;
-}
 
 /* ---------- Nav Wrapper ---------- */
 .nav-wrapper {
-    align-items: start;
+    align-items: stretch;
     width: 100%;
     flex: 1;
     overflow-y: auto;
@@ -131,6 +156,12 @@
     padding: 7px 9px;
     scrollbar-width: none;
     gap: 1px;
+}
+
+/* Ensure the scroller inside the sidebar fills full width */
+.sidebar vaadin-scroller,
+.sidebar > * {
+    width: 100%;
 }
 
 .nav-wrapper::-webkit-scrollbar {
@@ -200,9 +231,7 @@ vaadin-side-nav-item[expanded]:hover{
 
 vaadin-side-nav-item{
 
-    width: 190px;
-    /*position: relative;*/
-    /*display: flex;*/
+    width: calc(100% - 18px);
     align-items: center;
     gap: 4px;
     padding: 0;

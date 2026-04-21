@@ -110,8 +110,8 @@ public class MainLayout extends AppLayout {
     private int userId;
     private String strUsername;
 
-    //private final Div sidebar;
-    //private boolean locked = false;
+    private VerticalLayout sidebarLayout;
+    private boolean locked = false;
 
     public MainLayout() {
 
@@ -814,41 +814,32 @@ public class MainLayout extends AppLayout {
         Div divLogo = new Div();
         divLogo.add(VaadinIcon.CAMERA.create());
         divLogo.addClassName("logo-icon");
-//        divLogo.addClassNames(FontSize.MEDIUM, FontWeight.BOLD, TextColor.SECONDARY,
-//                Padding.XSMALL, Margin.NONE);
+        divLogo.addClickListener(e -> {
+            locked = !locked;
+            if (locked) {
+                sidebarLayout.addClassName("collapsed");
+                getElement().getClassList().add("sidebar-collapsed");
+            } else {
+                sidebarLayout.removeClassName("collapsed");
+                getElement().getClassList().remove("sidebar-collapsed");
+            }
+        });
 
-        toggleWidthButton = new Button(new Icon(VaadinIcon.COMPRESS_SQUARE));
-        toggleWidthButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-        toggleWidthButton.setTooltipText("Minimize/Expand drawer width");
-        toggleWidthButton.addClickListener(e -> {
-            drawerMinimized = !drawerMinimized;
-                toggleDrawerWidth(drawerMinimized);
-                if (drawerMinimized){
-                    appName.setText("");
-                }else{
-                    appName.setText(APP_NAME);
-                }
-                });
+        sidebarLayout = new VerticalLayout();
+        sidebarLayout.setSizeFull();
+        sidebarLayout.setPadding(false);
+        sidebarLayout.setSpacing(false);
+        sidebarLayout.addClassName("sidebar");
 
-        VerticalLayout leftLayout = new VerticalLayout();
-        leftLayout.setSizeFull();
-        leftLayout.setPadding(false);
-        leftLayout.setSpacing(false);
-        leftLayout.addClassNames(
-                AlignItems.CENTER, JustifyContent.CENTER,
-                Gap.XSMALL);
-//        leftLayout.addClassName("background");
-        leftLayout.addClassName("sidebar");
-
-        logoLayout.add(divLogo, appName); //,toggleWidthButton);
+        logoLayout.add(divLogo, appName);
 
         layoutMenu.add(createSideMenu(true));
         Scroller scroller = new Scroller(layoutMenu);
         scroller.addClassNames(Height.FULL);
 
-        leftLayout.add(logoLayout, scroller);
+        sidebarLayout.add(logoLayout, scroller);
 
-        addToDrawer(leftLayout);
+        addToDrawer(sidebarLayout);
 
     }
 
