@@ -250,7 +250,7 @@ vaadin-side-nav-item{
 
     white-space: nowrap;
     opacity: 1;
-    transition: opacity 0.25s ease 0.08s, color 0.3s ease, text-shadow 0.3s ease;
+    transition: opacity 0.25s ease 0.08s, color 0.3s ease;
     padding-left: 4px;
     color: #5a5a6e;
     transition: all 0.3s ease;
@@ -259,17 +259,9 @@ vaadin-side-nav-item{
 vaadin-side-nav-item:hover{
 
     border: 1px solid #8b1a1a;
-    background: linear-gradient(135deg, rgba(139, 26, 26, 0.08), rgba(192, 57, 43, 0.05));
+    background: transparent;
     color: #8b1a1a;
-    text-shadow:
-/*        0 0 8px rgba(200, 50, 50, 0.50),*/
-        0 0 22px rgba(200, 50, 50, 0.25),
-        0 0 44px rgba(200, 50, 50, 0.10);
 
-    color: #9b1b1b;
-   filter:
-        drop-shadow(0 0 24px rgba(200, 50, 50, 0.15))
-         drop-shadow(0 0 12px rgba(200, 50, 50, 0.4));
 
       /*  drop-shadow(0 0 5px rgba(200, 50, 50, 0.7))
         drop-shadow(0 0 12px rgba(200, 50, 50, 0.4))*/
@@ -279,16 +271,6 @@ vaadin-side-nav-item:hover{
 
 vaadin-side-nav-item:active{
     color: #8b1a1a;
-    text-shadow:
-     /*   0 0 8px rgba(200, 50, 50, 0.30),*/
-/*        0 0 22px rgba(200, 50, 50, 0.25),*/
-        0 0 44px rgba(200, 50, 50, 0.10);
-
-    color: #9b1b1b;
-    filter:
-        drop-shadow(0 0 5px rgba(200, 50, 50, 0.3))
-        /*drop-shadow(0 0 11px rgba(200, 50, 50, 0.4))*/
-        drop-shadow(0 0 20px rgba(200, 50, 50, 0.15));
 
         scale: 0.98;
 
