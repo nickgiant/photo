@@ -53,6 +53,7 @@ public class SecurityConfiguration {
                         "/static/**",       // static images, favicon
                         "/uploads/**",      // media files
                         "/actuator/health", // load balancer health check
+                        "/actuator/**", // load balancer health check
                         "/og/ping",
                         "/admin/cache/**"
                 ).permitAll()
