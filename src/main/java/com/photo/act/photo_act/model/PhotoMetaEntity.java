@@ -37,7 +37,7 @@ public class PhotoMetaEntity {
     @Column(name = "creator", length = 100)
     private String creator;
 
-    @Column(name = "visible_to", length = 15)
+    @Column(name = "visible_to", length = 17)
     private String visibleTo;
 
     @Column(name = "meta_date")

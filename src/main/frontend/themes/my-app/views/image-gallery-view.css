@@ -24,14 +24,14 @@
     color: #466ca8;
     border: #c7d8f1 1px solid;
     box-shadow: 1px 1px 5px var(--lumo-contrast-10pct);
-    border-radius: 6px;
+    border-radius: 12px;
 
     transition: all 0.3s ease;
 
     &:hover {
         text-decoration: none;
         transition: all 0.3s ease;
-
+        border: 1px solid #466ca8;
         color: #466ca8;
         background-color: #edf4fd;
         box-shadow: 1px 1px 8px var(--lumo-contrast-20pct);
