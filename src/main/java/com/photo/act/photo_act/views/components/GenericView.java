@@ -740,9 +740,9 @@ public class GenericView {
         imageLarge.addClassNames(LumoUtility.Width.FULL, LumoUtility.Height.FULL);
 
         if (strMetaOrientation.equalsIgnoreCase("8")) {
-            imageLarge.getStyle().set("rotate", "-90deg");
+//            imageLarge.getStyle().set("rotate", "-90deg");
         } else if (strMetaOrientation.equalsIgnoreCase("6")) {
-            imageLarge.getStyle().set("rotate", "90deg");
+//            imageLarge.getStyle().set("rotate", "90deg");
         }
         imageLarge.getStyle().set("object-fit", "contain");
         imageLarge.addClassName("image-to-show");
@@ -1716,7 +1716,7 @@ public class GenericView {
 
 
         if (strMetaOrientation.equalsIgnoreCase("8")) {
-            image.getStyle().set("rotate", "-90deg");
+//            image.getStyle().set("rotate", "-90deg");
         }
 
         return image;
