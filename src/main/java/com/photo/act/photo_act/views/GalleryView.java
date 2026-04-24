@@ -291,17 +291,14 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
             // This is your own method that you may do something with the url.
             // Note that this method runs asynchronously
             strUrlRequestToBeLogged = currentUrl.toExternalForm();
-
         });
 
         NetUtils netUtils = new NetUtils();
         publicIp = netUtils.getClientPublicIp(hostname);
 
-
         if (strDestination.isEmpty()) {
             logger.error(" empty strDestination: " + strDestination);
         }
-
         intPage = 1;
         VerticalLayout layoutHeaderParameters = null;
         verticalLayout.removeAll();
@@ -312,19 +309,16 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         logger.info("---  " + strMember + " " + strDestination + " " + strDestinationType + "  " + strUploadedMonth);
         if (!strPhotoId.isEmpty()) {
             filter(divGallery, "", VIEW_ONE_PHOTO);
-
             layoutHeaderParameters = loadHeader("Photos", "Uploaded by our members", "", "");
             filtersContainer.removeAll();
             //   layoutHeaderParameters.add(loadFiltersHeader(sqlReadDestinationCat + sqlReadDestinationCatGroupby, arrDestinationCatNames, "Locations"));
             // String sqlOrderBy = " ORDER BY pm.date_inserted DESC, pm.title ASC, meta_date DESC ";
-
             filter(divGallery, "", VIEW_PHOTO_GRID);
         } else if (!strUploadedMonth.isEmpty() && (strDestination.isEmpty() || strDestination.equalsIgnoreCase(STR_ALL_DESTINATIONS) && (strDestinationType.isEmpty() || strDestinationType.equalsIgnoreCase(STR_ALL_DESTINATION_TYPES)))) {
             layoutHeaderParameters = loadHeader("Photos", "Uploaded by our members", "Month Uploaded", strUploadedMonth);
 
             filtersContainer.removeAll();
             filtersContainer.add(loadFiltersHeader(sqlUploadedPeriodCat + sqlUploadedPeriodCatGroupby, arrUploadedPeriodCatNames, "month-uploaded", "Photos"));
-
             if(!strUploadedMonth.equalsIgnoreCase(STR_ALL_MONTHS)) {
                 String sqlWhereSubClause = " AND  DATE_FORMAT(pm.date_inserted, '%M %Y') LIKE '" + strUploadedMonth + "'  ";
                 filter(divGallery, sqlWhereSubClause, VIEW_PHOTO_GRID);
@@ -346,7 +340,6 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
             filtersContainer.add(loadFiltersHeader(sqlReadDestinationCat + sqlReadDestinationCatGroupby, arrDestinationCatNames, "destination-type", "Locations"));
 
             String sqlWhereSubClause = sqlReadDestination + " AND dc.dest_cat_title LIKE '" + strDestinationType + "'  " + sqlReadDestinationGroupby;
-
             layoutHeaderParameters.add(loadDestinationCards(sqlWhereSubClause, arrDestinationNames, "city_name"));
 
         } else if (strMember.equalsIgnoreCase(STR_ALL_MEMBERS) && !strDestination.equalsIgnoreCase(STR_ALL_DESTINATIONS) && !strDestination.isEmpty()) {
@@ -354,7 +347,6 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
 
             filtersContainer.removeAll();
             filtersContainer.add(loadFiltersHeader(sqlReadDestinationCat + sqlReadDestinationCatGroupby, arrDestinationCatNames, "destination-type", "Locations"));
-
             String sqlWhere = " AND city_name LIKE '"+sanitizeLocation(strDestination)+"' ";
 
             String strForMap = "";
@@ -383,7 +375,6 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
             layoutHeaderParameters = loadHeader("Photos", "Uploaded by our members", "", "");
 
             String sqlWhere = " AND city_name LIKE "+strDestination+" ";
-
             String strForMap = "";
             String strForWeather = "";
             String strCountry = "";
@@ -394,7 +385,6 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
                 strForWeather = lstLocationRecs.get(0).getColumnData("name_for_weather");
                 strCountry = lstLocationRecs.get(0).getColumnData("country");
             }
-
             HorizontalLayout layoutWeatherMap = new HorizontalLayout();
             layoutWeatherMap.setAlignItems(FlexComponent.Alignment.CENTER);
             layoutWeatherMap.setJustifyContentMode(FlexComponent.JustifyContentMode.AROUND);
@@ -403,12 +393,9 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
                     loadWeatherSmall(strDestination, strForWeather, strCountry),
                     loadMapSmall(strDestination, strForMap, strCountry));
             layoutHeaderParameters.add(layoutWeatherMap);
-
             filtersContainer.removeAll();
-
             filter(divGallery, "", VIEW_PHOTO_GRID);
         } else {
-
             layoutHeaderParameters = loadHeader("Photos", "Uploaded by our members", "", "");
             filtersContainer.removeAll();
 
@@ -421,7 +408,6 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         }
 
         this.removeAll();
-
         this.add(layoutHeaderParameters);
 
         if (isMobile) {
@@ -431,7 +417,6 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
                     Padding.MEDIUM, Margin.NONE,
                     Gap.XSMALL
             );
-
             layoutMobileContent.add(verticalLayout);
             this.add(layoutMobileContent);
         } else {
@@ -445,10 +430,8 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
             layoutContent.add(verticalLayout);
             this.add(layoutContent);
         }
-
         this.add(genericView.loadFooter(isMobile));
         logVisitorToDb();
-
     }
 
     @Override
@@ -686,7 +669,6 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
     //   }
 
     private VerticalLayout loadDestinationCards(String sqlRead, String[] arrColumnNames, String columnName) {
-
 
         VerticalLayout headerContainer = new VerticalLayout();
         if (isMobile) {

@@ -14,23 +14,24 @@
     --ndv-gold:     #d8ab41;
     --ndv-ease:     cubic-bezier(.4,0,.2,1);
 
-    background: var(--ndv-bg);
+    /*background: var(--ndv-bg);*/
     min-height: 100vh;
 }
 
 /* ── Top header bar ──────────────────────────────────────── */
 .ndv-header {
+    width: 100%;
     display: flex;
     align-items: center;
     gap: 12px;
     padding: 16px 32px;
-    background: linear-gradient(135deg, #1c0808 0%, #2d1515 55%, #1c0808 100%);
+    /*background: linear-gradient(135deg, #1c0808 0%, #2d1515 55%, #1c0808 100%);*/
     border-bottom: 1px solid rgba(216,171,65,.22);
     box-shadow: 0 4px 16px rgba(0,0,0,.28);
 }
 
 .ndv-back-btn {
-    color: rgba(244,238,225,.75) !important;
+    /*color: rgba(244,238,225,.75) !important;*/
     border-radius: 8px !important;
     transition: .18s var(--ndv-ease) !important;
     flex-shrink: 0;

@@ -23,7 +23,7 @@
 
 .like-btn:hover {
     background: var(--lumo-contrast-5pct);
-    color: var(--lumo-primary-color);
+    color: #466ca8;
 }
 
 /* ── Icon wrapper — hover rotates 30 deg ────────────────────────────────────── */

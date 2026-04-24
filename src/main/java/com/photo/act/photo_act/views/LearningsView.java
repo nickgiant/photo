@@ -13,6 +13,7 @@ import com.photo.act.photo_act.services.CacheService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.photo.act.photo_act.views.components.AvatarItem;
+import com.photo.act.photo_act.views.components.FilterDestinationTypeCard;
 import com.photo.act.photo_act.views.components.GenericView;
 import com.vaadin.flow.component.*;
 import com.vaadin.flow.component.button.Button;
@@ -69,7 +70,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
     private String strColorOfIcons = "#a62f03"; //"#f9943b";//"#a62c5c";//"#7d1e32";
 
 
-    String[] arrColumnsLearningTypes = {"id", "cat_title", "cat_title_type", "cat_type", "cat_location_count", "cat_title_count", "cat_description_min", "cat_description_big"};
+
     private static final Logger logger = LoggerFactory.getLogger(LearningsView.class);
 
     private VerticalLayout verticalLayout;
@@ -140,25 +141,29 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
             "  pm.location_by_user, pm.location_area, pm.location_country_code, pm.location_lat, pm.location_lon " +
             //, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description, DATE_FORMAT(f.dateInsert , '%D %M %Y') AS formatedDateUpdated  " +
             " FROM  photo_meta pm LEFT JOIN destination d ON pm.destination_Id = d.id ";
-    String[] arrColumnsLearning = {"id", "title", "picture", "cat_title", "cat_title_genre", "cat_title_type", "cat_title_type_genre", "cat_type", "format", "url", "artists_ref", "description", "duration", "pages", "published", "year_published",
+    String[] arrColumnsLearning = {"id", "title", "cat_title_count", "picture", "cat_title", "cat_title_genre", "cat_title_type", "cat_title_type_genre", "cat_type", "format", "url", "artists_ref", "description", "duration", "pages", "published", "year_published",
             "category_id", "tutor_name", "website", "url_fb", "url_yt", "url_insta", "url_flickr", "url_wikipedia", "url_ref1", "url_ref2", "url_ref3",
             "dateInsert", "date_created",
             "username", "username", "avatar_path", "member_since"};
 
+
+    String[] arrColumnsLearningTypes = {"id", "cat_title", "cat_title_count", "cat_title_type", "cat_type", "cat_location_count", "cat_description_min", "cat_description_big"};
+
     String sqlLearningTypes =
-            " SELECT l.id, lc.id, lc.cat_title, lc.cat_title_type, lc.cat_type, cat_description_min, cat_description_big, " +
-                    " count(lc.cat_title) AS cat_title_count, lc.cat_order " +
-                    " FROM learnings l LEFT JOIN learnings_categories lc ON l.category_id = lc.id " +
+            " SELECT l.id,  lc.cat_title, count(lc.cat_title) AS cat_title_count, lc.cat_title_type, lc.cat_type, cat_description_min, cat_description_big, lc.id," +
+                    " lc.cat_order " +
+                    " FROM learnings l , learnings_categories lc " +
                     " WHERE 1 = 1 " +
-                    " AND lc.cat_type not LIKE '%genre%' " +
+                    " AND l.category_id = lc.id "+
+/*                    " AND lc.cat_type not LIKE '%genre%' " + */
                     " AND lc.cat_type not LIKE 'not show' " +
-                    " GROUP BY lc.cat_type " +
+                    " GROUP BY lc.cat_title " +
                     " ORDER BY lc.cat_order ASC";
     @Autowired
     private CacheService cacheService;
 
     String sqlLearningCategoriesRead = //f.nameShort, f.location, f.country, f.periodOfYear, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description  " +
-            " SELECT lc.id, lc.cat_title, lc.cat_title_type, lc.cat_type, l.cat_genre_id, count(lc.cat_title) AS cat_title_count, cat_description_min, cat_description_big " +
+            " SELECT lc.id, lc.cat_title, count(lc.cat_title) AS cat_title_count, lc.cat_title_type, lc.cat_type, l.cat_genre_id, cat_description_min, cat_description_big " +
                     " FROM learnings l LEFT JOIN learnings_categories lc ON l.cat_genre_id = lc.id " +
                     " WHERE 1 = 1 " +
                     " AND lc.cat_type LIKE '%genre%' " +
@@ -192,8 +197,8 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
     // learnings: l.id, l.title, l.picture, l.section , l.category, l.format, l.url, l.parent_id, l.child_index, l.tutor_id, l.artists_ref, l.description, l.duration, l.pages, l.published, l.userIdInsert, l.username, l.dateInsert
 // learnings_tutor:  lt.id, lt.tutor_name, lt.learnings_team_id, lt.website, lt.url_fb, lt.url_yt, lt.url_insta, lt.url_flickr, lt.url_wikipedia, lt.url_ref1, lt.url_ref2, lt.url_ref3, lt.url_flckr, lt.city_base, lt.country_base, lt.userIdInsert, lt.username, lt.date_inserted
     String sqlLearningsRead = //f.nameShort, f.location, f.country, f.periodOfYear, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description  " +
-            "SELECT lc.cat_title , lc2.cat_title AS cat_title_genre,  lc.cat_type , lc.cat_title_type, " +
-                    " lc2.cat_title_type AS cat_title_type_genre " +
+            "SELECT lc.cat_title ,  lc.cat_type , lc.cat_title_type " +
+                    /*" , lc2.cat_title_type AS cat_title_type_genre " +*/
                     " , l.id, l.title, l.picture, l.format, l.url, l.tutor_id, l.artists_ref, l.description, l.duration, l.pages, l.published " +
                     " , DATE_FORMAT(l.published, '%Y') AS year_published " +
                     " , l.dateInsert " +
@@ -202,10 +207,12 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
                     " , t.url_ref2, t.url_ref3, t.city_base, t.country_base, t.userIdInsert, t.username, t.date_inserted " +
                     " , l.userId_post " +
                     " , usr.username, usr.username, usr.avatar_path, DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since " +
-                    "  FROM learnings_categories lc, learnings l LEFT JOIN learnings_categories lc2 ON lc2.id = l.cat_genre_id, tutor t, dbuser usr " +
+                    "  FROM learnings_categories lc, learnings l, tutor t, dbuser usr " +
                     "  WHERE 1 = 1 " +
                     " AND l.userId_post = usr.userId " +
                     " AND lc.id = l.category_id AND l.tutor_id = t.id ";
+
+    // LEFT JOIN learnings_categories lc2 ON lc2.id = l.cat_genre_id
 
     String sqlLearningsReadOrderBy;
 
@@ -218,9 +225,9 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
     private String strBrowser;
     private int intDefRecsOnPage = 20;
 
-    private CheckboxGroup<String> checkboxCheckboxGroup;
+/*    private CheckboxGroup<String> checkboxCheckboxGroup;
     private CheckboxGroup<String> checkboxGenres;
-    private CheckboxGroup<String> checkboxFormat;
+    private CheckboxGroup<String> checkboxFormat;*/
     private Select<String> cmbCount;
     private Select<String> cmbSortBy;
 
@@ -228,6 +235,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
     private String[] arrOrderByItemsSql = {" ORDER BY l.dateInsert DESC", " ORDER BY l.dateInsert ASC", " ORDER BY l.dateInsert ASC", " ORDER BY l.dateInsert DESC"};
     private String sqlOrderBy = " ORDER BY pm.date_inserted DESC";
     private String strDefOrderBy = arrOrderByItems[0];
+    private VerticalLayout filtersContainer;
 
     public LearningsView(RecordService recordService) {
         this.recordService = recordService;
@@ -258,23 +266,23 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         verticalLayout.removeAll();
 
         if (!category.equalsIgnoreCase(STR_ALL_CATEGORIES)) {
-            layoutHeaderParameters = loadHeader("Learnings", "Lessons to improve our photography skills", category);
+            layoutHeaderParameters = loadHeader("Learnings", "Lessons to improve our photography skills", "Learning Category", category);
             VerticalLayout layoutResults = loadResults(0);
             verticalLayout.add(layoutResults);
         } else if (!genre.equalsIgnoreCase(STR_ALL_GENRES)) {
-            layoutHeaderParameters = loadHeader("Learnings", "Lessons to improve our photography skills", genre);
+            layoutHeaderParameters = loadHeader("Learnings", "Lessons to improve our photography skills", "Photo Genre", genre);
             VerticalLayout layoutResults = loadResults(0);
             verticalLayout.add(layoutResults);
         } else if (!title.equalsIgnoreCase(STR_ALL_TITLES)) {
-            layoutHeaderParameters = loadHeader("Learnings", "Lessons to improve our photography skills", "");
+            layoutHeaderParameters = loadHeader("Learnings", "Lessons to improve our photography skills", "","");
             VerticalLayout layoutResults = loadResults(0);
             verticalLayout.add(layoutResults);
         } else if (category.equalsIgnoreCase(STR_ALL_CATEGORIES) || genre.equalsIgnoreCase(STR_ALL_GENRES)) {
-            layoutHeaderParameters = loadHeader("Learnings", "Lessons to improve our photography skills", "");
+            layoutHeaderParameters = loadHeader("Learnings", "Lessons to improve our photography skills", "","");
             VerticalLayout layoutResults = loadResults(25);
             verticalLayout.add(layoutResults);
         } else {
-            layoutHeaderParameters = loadHeader("Learnings", "Lessons to improve our photography skills", "");
+            layoutHeaderParameters = loadHeader("Learnings", "Lessons to improve our photography skills", "","");
             logger.warn(category + "  " + tutor + "  " + genre);
         }
 
@@ -339,6 +347,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
 
         DIR_PHOTOS_SERVER = genericView.getAppProps(PROP_PHOTOS);
 
+        filtersContainer = new VerticalLayout();
 
         verticalLayout = new VerticalLayout();
         verticalLayout.setId("verticalLayout");
@@ -386,9 +395,9 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         } else if (!tutor.isEmpty() && !tutor.equalsIgnoreCase(STR_ALL_TUTORS)) {
             strWhereSubClause = strWhereSubClause + " AND t.tutor_name LIKE '" + tutor + "' ";
         } else if (!category.isEmpty() && !category.equalsIgnoreCase(STR_ALL_CATEGORIES)) {
-            strWhereSubClause = strWhereSubClause + " AND ( lc.cat_type LIKE '" + category + "' OR lc2.cat_type LIKE '" + category + "') ";
+            strWhereSubClause = strWhereSubClause + " AND lc.cat_title LIKE '" + category + "' "; // ( lc.cat_title LIKE '" + category + "' OR lc2.cat_title LIKE '" + category + "') ";
         } else if (!genre.isEmpty() && !genre.equalsIgnoreCase(STR_ALL_GENRES)) {
-            strWhereSubClause = strWhereSubClause + " AND ( lc.cat_title LIKE '" + genre + "' OR lc2.cat_title LIKE '" + genre + "') ";
+            strWhereSubClause = strWhereSubClause + " AND lc.cat_title LIKE '" + genre + " '" ;// ( lc.cat_title LIKE '" + genre + "' OR lc2.cat_title LIKE '" + genre + "') ";
         }
 
         sqlLearningsReadOrderBy = " ORDER BY l.dateInsert DESC";
@@ -469,7 +478,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         return layoutLearnings;
     }
 
-    private VerticalLayout loadHeader(String strHeader, String strSubHeader, String strSection) {
+    private VerticalLayout loadHeader(String strHeader, String strSubHeader, String strSectionCaption, String strSection) {
 
         this.strHeader = strHeader;
 
@@ -519,25 +528,6 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
             );
         }
 
-//        VerticalLayout headerTextContainer = new VerticalLayout();
-//        headerTextContainer.addClassNames(
-//                AlignItems.CENTER, JustifyContent.START,
-//                Margin.NONE, Padding.NONE,
-//                Gap.XSMALL);
-//
-//        H2 header = new H2(strHeader);
-//        header.addClassNames(
-//                AlignItems.CENTER, JustifyContent.START,
-//                Margin.Bottom.NONE, Margin.Top.NONE, FontSize.LARGE, FontWeight.BOLD, TextColor.SECONDARY);
-////        header.getStyle().set("font-family", "Times-New-Roman, serif");
-//
-//        Div subheader = new Div(strSubHeader);
-//        subheader.addClassNames(
-//                AlignItems.CENTER, JustifyContent.START,
-//                Margin.Bottom.NONE, Margin.Top.NONE, FontSize.SMALL, TextColor.SECONDARY);
-//
-//
-//        headerTextContainer.add(header, subheader);
 
         cmbCount = new Select<>();
         cmbCount.setLabel("Count of Learnings");
@@ -585,12 +575,6 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         layoutHeaderHorizontal.addClassName("header-layout-panel");
 
 
-        H3 headerSection = new H3(strSection);
-        headerSection.addClassNames(
-                LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER,
-                LumoUtility.Margin.Bottom.MEDIUM, LumoUtility.Margin.Top.MEDIUM,
-                LumoUtility.Padding.NONE
-        );
 
         VerticalLayout layoutSortNCommands = new VerticalLayout();
         layoutSortNCommands.addClassNames(
@@ -619,26 +603,12 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
                 TextAlignment.CENTER
         );
 
-        Div layoutFilters = new Div();
-        checkboxCheckboxGroup = loadFiltersHeader(sqlLearningTypes, arrColumnsLearningTypes, "cat_type");
-        checkboxCheckboxGroup.addClassNames(Gap.MEDIUM, Padding.SMALL);
-        layoutFilters.add(checkboxCheckboxGroup);
-        layoutFilters.addClassNames(Width.FULL, Height.FULL);
-
-        Div layoutFilterGenres = new Div();
-        checkboxGenres = loadFiltersHeader(sqlLearningCategoriesRead, arrColLearningCategories, "cat_title");
-        checkboxGenres.addClassNames(Gap.MEDIUM, Padding.SMALL);
-        layoutFilterGenres.add(checkboxGenres);
-        layoutFilterGenres.addClassNames(Width.FULL, Height.FULL);
-
-        Div layoutFilterFormat = new Div();
-        checkboxFormat = loadFiltersHeader(sqlLearningsFormatRead, arrColumnsLearningFormat, "format");
-        checkboxFormat.addClassNames(Gap.MEDIUM, Padding.SMALL);
-        layoutFilterFormat.add(checkboxFormat);
-        layoutFilterFormat.addClassNames(Width.FULL, Height.FULL);
+//        Div layoutFilters = new Div();
 
 
-        Div layoutGenres = new Div("mmm");
+
+
+/*        Div layoutGenres = new Div("mmm");
         layoutGenres.addClassNames(Width.FULL, Height.FULL);
 
         Span tab1Icon = new Span();
@@ -658,19 +628,20 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         tab3Icon.add(FontAwesome.Solid.BOOK_READER.create());
         Span tab3 = new Span("Format");
         tab3.addClassNames(FontWeight.BOLD, Padding.MEDIUM);
-        tab3Icon.add(tab3);
+        tab3Icon.add(tab3);*/
 //        Span tab3 = new Span("Time");
 //        tab3.addClassNames(FontWeight.BOLD);
 
-        TabSheet tabSheet = new TabSheet();
+/*        TabSheet tabSheet = new TabSheet();
         tabSheet.add(tab1Icon, layoutFilters);
         tabSheet.add(tab2Icon, layoutFilterGenres);
         tabSheet.add(tab3Icon, layoutFilterFormat);
 
         tabSheet.setMinHeight("180px");
         tabSheet.addThemeVariants(TabSheetVariant.LUMO_BORDERED);
-        tabSheet.addClassNames(Width.FULL, Height.FULL);
+        tabSheet.addClassNames(Width.FULL, Height.FULL);*/
 
+/*
         Div divFiltersTitle = new Div("Filter by");
         layoutFiltersAll.add(divFiltersTitle, tabSheet);
 
@@ -682,18 +653,58 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
             filter(null);
         });
 
-        layoutSortNCommands.add(cmbCount, cmbSortBy, btnFilter);
+
+*/
+
+        filtersContainer.removeAll();
+
+        filtersContainer.add(loadFiltersHeader(sqlLearningTypes, arrColumnsLearningTypes, "category", "Learnings"));
+/*        checkboxCheckboxGroup.addClassNames(Gap.MEDIUM, Padding.SMALL);
+        layoutFilters.add(checkboxCheckboxGroup);
+        layoutFilters.addClassNames(Width.FULL, Height.FULL);*/
+
+//        filtersContainer.add(loadFiltersHeader(sqlLearningCategoriesRead, arrColLearningCategories, "genre","Learnings"));
+
+
+
+//        filtersContainer.add(loadFiltersHeader(sqlLearningsFormatRead, arrColumnsLearningFormat, "format", "Learning Format"));
+
+
+
+        layoutSortNCommands.add(cmbCount, cmbSortBy);
         layoutHeaderHorizontal.add(layoutFiltersAll, layoutSortNCommands);
 
         if (title.equalsIgnoreCase(STR_ALL_TITLES)) {
             headerContainerMaster.add(layoutHeaderHorizontal);
         }
 
+        H2 headerSection = new H2(strSection);
+        headerSection.addClassNames(
+                FontSize.XLARGE
+        );
+        if (strSection.isEmpty()) {
+            headerSection.setVisible(false);
+        }
+
+        Div headerSectionCaption = new Div(strSectionCaption);
+        headerSectionCaption.addClassNames(
+                AlignItems.CENTER, JustifyContent.START,
+                Margin.NONE, Margin.Top.NONE,
+                FontSize.SMALL, TextColor.SECONDARY);
+        if (strSectionCaption.isEmpty()) {
+            headerSectionCaption.setVisible(false);
+        }
+
         Div divLine = new Div();
         divLine.addClassNames(Border.BOTTOM, Width.FULL);
 
-        headerContainer.add(header, subheader, divLine, headerContainerMaster);
 
+        Div divLineB = new Div();
+        divLineB.addClassNames(Border.BOTTOM, Width.FULL);
+
+        headerContainer.add(header, subheader, divLine);
+        headerContainer.add(filtersContainer);
+        headerContainer.add(headerSection, headerSectionCaption, divLineB);
 
         return headerContainer;
     }
@@ -742,6 +753,25 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
 //        }
 //        return layoutLearnings;
 //    }
+
+
+    private Div loadFiltersHeader(String sqlRead, String[] arrColumnNames, String nameUrlVariable, String strCaptionsCount) {
+        Div filtersPanel = new Div();
+        filtersPanel.addClassName("top-tall-layout-filters");
+
+        List<Record> lstLearningCategoriesRecs = getRecordsFromDb(sqlRead, arrColumnNames);
+
+        for (int r = 0; r < lstLearningCategoriesRecs.size(); r++) {
+            FilterDestinationTypeCard filterDestinationTypeCard = new FilterDestinationTypeCard(lstLearningCategoriesRecs.get(r), arrColumnNames, nameUrlVariable, strPath, isMobile, userId, sessionCreation, publicIp,
+                    strCaptionsCount, this);
+            filterDestinationTypeCard.addClassName("top-tall-filters");
+            filtersPanel.add(filterDestinationTypeCard);
+        }
+
+        return filtersPanel;
+    }
+
+
     public VerticalLayout getLearningItem(Record record, boolean isTeam) {
 
         String strTitle = record.getColumnData("title");
@@ -1585,13 +1615,13 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
 
         String strWhereSubClause = "";
 
-        Set<String> setSelectedGenres = checkboxGenres.getSelectedItems();
+        Set<String> setSelectedGenres = null; //checkboxGenres.getSelectedItems();
         List<String> lstSelectedGenres = setSelectedGenres.stream().toList();
 
-        Set<String> setSelected = checkboxCheckboxGroup.getSelectedItems();
+        Set<String> setSelected = null; //checkboxCheckboxGroup.getSelectedItems();
         List<String> lstSelected = setSelected.stream().toList();
 
-        Set<String> setSelectedFormat = checkboxFormat.getSelectedItems();
+        Set<String> setSelectedFormat = null; //checkboxFormat.getSelectedItems();
         List<String> lstSelectedFormat = setSelectedFormat.stream().toList();
 
         if (!lstSelected.isEmpty() || !lstSelectedGenres.isEmpty()) {
@@ -1611,13 +1641,13 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
                     strWhereSubClause = strWhereSubClause + " OR ";
                 }
 
-                for (int s = 0; s < lstSelectedGenres.size(); s++) {
+/*                for (int s = 0; s < lstSelectedGenres.size(); s++) {
                     String strCategory = lstSelectedGenres.get(s); //  lc.cat_type LIKE '" + strCategory + "' OR
                     strWhereSubClause = strWhereSubClause + "   lc2.cat_title LIKE '" + strCategory + "' ";
                     if (s < lstSelectedGenres.size() - 1) {
                         strWhereSubClause = strWhereSubClause + " OR ";
                     }
-                }
+                }*/
             }
             strWhereSubClause = strWhereSubClause + " ) ";
         }
@@ -1712,7 +1742,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         verticalLayout.add(layoutResults);
     }
 
-    private CheckboxGroup<String> loadFiltersHeader(String sqlRead, String[] arrColumnNames, String columnName) {
+/*    private CheckboxGroup<String> loadFiltersHeader(String sqlRead, String[] arrColumnNames, String columnName) {
 
 
         List<Record> lstLearningCategoriesRecs = getRecordsFromDb(sqlRead, arrColumnNames);
@@ -1728,7 +1758,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         chkGroup.setItems(lstCategories);
 
         return chkGroup;
-    }
+    }*/
 
     private HorizontalLayout getActions() {
 

@@ -17,6 +17,7 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.RouteParam;
 import com.vaadin.flow.router.RouteParameters;
+import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.theme.lumo.LumoUtility.*;
 import org.slf4j.Logger;
@@ -56,6 +57,7 @@ public class StoryViewCard extends VerticalLayout {
 
         String strFileName = record.getColumnData("name_new");
         String strTitle = record.getColumnData("title");
+        String strSlug = record.getColumnData("slug");
         String strDescription = record.getColumnData("description");
 
         String strStoryPhotoCount = record.getColumnData("story_photo_count");
@@ -65,7 +67,7 @@ public class StoryViewCard extends VerticalLayout {
         String strPhotoUrl = record.getColumnData("name_new");
 
         String strCategory = record.getColumnData("cat_title");
-        String strCategoryGr = record.getColumnData("cat_title_gr");
+        String strCategoryGr = record.getColumnData("cat_title");
 
         String strDateCreated = record.getColumnData("datetime_story_created");
         String strPhoto1 = record.getColumnData("photo_1");
@@ -73,8 +75,8 @@ public class StoryViewCard extends VerticalLayout {
 
         String strDateAlbumCreated = record.getColumnData("datetime_album_created");
 
-        String strAlbumUserName = record.getColumnData("username");
-        String strAlbumNameOfUser = record.getColumnData("username");
+        String strStoryUserName = record.getColumnData("username");
+        String strStoryNameOfUser = record.getColumnData("name") +" "+ record.getColumnData("surname");
         String strUserResident = record.getColumnData("resident");
         String strAvatarPath = record.getColumnData("avatar_path");
         String strUserJoined = record.getColumnData("date_joined");
@@ -119,18 +121,8 @@ public class StoryViewCard extends VerticalLayout {
         image.setSrc(imageResource);
         divImage.add(image);
 
-
-//        VerticalLayout divPhotoInfo = new VerticalLayout();
-//        divPhotoInfo.addClassNames(Overflow.HIDDEN, TextColor.TERTIARY,
-//                AlignItems.CENTER, JustifyContent.CENTER,
-//                Padding.NONE, Margin.NONE, //Margin.Top.LARGE,
-//                Gap.XSMALL,
-//                BorderRadius.LARGE
-//        );
-
-
-        Div divTextDescription = new Div();
-        divTextDescription.addClassNames(Width.FULL, JustifyContent.CENTER, AlignItems.CENTER, Padding.NONE, Margin.NONE);
+//        Div divTextDescription = new Div();
+//        divTextDescription.addClassNames(Width.FULL, JustifyContent.CENTER, AlignItems.CENTER, Padding.NONE, Margin.NONE);
 
         H3 header = new H3();
         header.addClassNames(FontSize.LARGE, FontWeight.SEMIBOLD,
@@ -144,7 +136,6 @@ public class StoryViewCard extends VerticalLayout {
             header.setHeight("1px");
             header.setVisible(false);
         }
-
 
         HorizontalLayout layoutCategoryAll = new HorizontalLayout();
         layoutCategoryAll.addClassNames(
@@ -239,18 +230,12 @@ public class StoryViewCard extends VerticalLayout {
         divSubHeaderAll.add(layoutCategoryAll, layoutPhotoCountAll, layoutDateAll);
 
         Paragraph subtitle = new Paragraph();
-//        subtitle.addClassNames(FontSize.SMALL,
-//                Width.FULL, TextAlignment.CENTER, AlignItems.CENTER, JustifyContent.CENTER,
-//                Padding.NONE,
-//                Margin.NONE
-//        );
 
         if (!strDescription.trim().isEmpty() && !strDescription.equalsIgnoreCase("null")) {
             subtitle.setText(strDescription);
         } else {
 
         }
-        divTextDescription.add(subtitle);
 
         HorizontalLayout layoutPhotosInfo = new HorizontalLayout();
         layoutPhotosInfo.addClassNames(
@@ -348,11 +333,11 @@ public class StoryViewCard extends VerticalLayout {
                 //   Background.CONTRAST_5,
                 BorderRadius.NONE
         );
-        Div divLocations = new Div("1");
+/*        Div divLocations = new Div("1");
         layoutLocationsCount.add(FontAwesome.Regular.COMPASS.create(), divLocations);
         Span divLocationsLabel = new Span("Locations");
         divLocationsLabel.addClassNames(FontSize.XXSMALL);
-        layoutLocationsCountAll.add(layoutLocationsCount, divLocationsLabel);
+        layoutLocationsCountAll.add(layoutLocationsCount, divLocationsLabel);*/
 
 //        VerticalLayout layoutDateAlbumCreatedAll = new VerticalLayout();
 //        layoutDateAlbumCreatedAll.addClassNames(
@@ -446,19 +431,19 @@ public class StoryViewCard extends VerticalLayout {
 //        userAvatarLarge.addThemeVariants(AvatarVariant.LUMO_XLARGE);
 
 
-        Image imgAvatarSmall = genericView.getAvatarThumbImage(strAvatarPath, strAlbumNameOfUser, "40px", "40px");
+        Image imgAvatarSmall = genericView.getAvatarThumbImage(strAvatarPath, strStoryNameOfUser, "40px", "40px");
         //Image imgAvatarSmall = getAvatarImage(strAvatar, strAlbumUserName, "40px", "40px");
 
-        Image imgAvatarMedium = genericView.getAvatarThumbImage(strAvatarPath, strAlbumNameOfUser, "70px", "70px");
+        Image imgAvatarMedium = genericView.getAvatarThumbImage(strAvatarPath, strStoryNameOfUser, "70px", "70px");
 //        Image imgAvatarMedium = getAvatarImage(strAvatar, strAlbumUserName, "70px", "70px");
 
-        AvatarItem avatarItemMe = new AvatarItem(strAlbumNameOfUser, "", imgAvatarSmall);
+        AvatarItem avatarItemMe = new AvatarItem(strStoryNameOfUser, "", imgAvatarSmall);
         Details detailsMember = new Details();
         detailsMember.addClassNames(Width.FULL, BorderRadius.SMALL);
 //        detailsMember.addThemeVariants(DetailsVariant.FILLED);
         detailsMember.addClassName("member-small");
         detailsMember.setSummary(avatarItemMe);
-        AvatarItem avatarLargeItemMe = new AvatarItem(strAlbumNameOfUser, "@" + strAlbumUserName, imgAvatarMedium);
+        AvatarItem avatarLargeItemMe = new AvatarItem(strStoryNameOfUser, "@" + strStoryUserName, imgAvatarMedium);
 
         HorizontalLayout layoutMemberInfo = new HorizontalLayout();
         layoutMemberInfo.addClassNames(
@@ -532,20 +517,18 @@ public class StoryViewCard extends VerticalLayout {
 
         layoutPhotosInfo.add(layoutRateAll, layoutViewCountAll, layoutLocationsCountAll, detailsMember);
 
-        RouteParam routeMember = new RouteParam("member", strAlbumUserName);
-        RouteParam routeStory = new RouteParam("title", strTitle);
+        RouteParam routeMember = new RouteParam("member", strStoryUserName);
+        RouteParam routeStory = new RouteParam("story", strSlug);
 
         Button btnMore = new Button("View Story");
         btnMore.setIcon(VaadinIcon.ARROW_RIGHT.create());
-//        btnMore.addClassName("btn-more");
         btnMore.addClickListener(click -> {
             btnMore.getUI().ifPresent(ui ->
                     ui.navigate(StoriesView.class, new RouteParameters(routeMember, routeStory))
             );
         });
 
-//        this.addClassNames(Border.NONE, Padding.NONE, Margin.NONE);
-        this.add(divImage, header, divSubHeaderAll, layoutPhotosInfo, subtitle, getActions(btnMore));
+        this.add(divImage, header, subtitle, divSubHeaderAll, layoutPhotosInfo, getActions(btnMore));
 
     }
 

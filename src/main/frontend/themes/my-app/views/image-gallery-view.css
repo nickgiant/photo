@@ -1,89 +1,5 @@
 
 
-.image-gallery-view .top-tall-layout-filters {
-
-    position: relative;
-    overflow: hidden;
-    width: 100%;
-    align-items: center;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(148px, 190px)); /*  repeat(auto-fit, minmax(410px, 1fr)); */
-    grid-gap: 14px;
-
-    margin: 0;
-    padding: 14px;
-
-}
-
-.image-gallery-view .top-tall-filters{
-    min-width: 180px;
-    padding: 0px;
-    margin: 1px;
-    background-color: #ffffff;
-    text-decoration: none;
-    color: #466ca8;
-    border: #c7d8f1 1px solid;
-    box-shadow: 1px 1px 5px var(--lumo-contrast-10pct);
-    border-radius: 11px;
-
-    transition: all 0.3s ease;
-
-    &:hover {
-        text-decoration: none;
-        transition: all 0.3s ease;
-        border: 1px solid #466ca8;
-        color: #466ca8;
-        background-color: #edf4fd;
-        box-shadow: 1px 1px 8px var(--lumo-contrast-20pct);
-        cursor: pointer;
-        &h5{
-            transition: all 0.3s ease;
-            letter-spacing: 2px;
-        }
-
-    }
-    &:active{
-        scale: 0.95;
-    }
-}
-
-.image-gallery-view .top-tall-filters h3{
-    font-family: "Lucida Console", "Lucida Sans Typewriter", sans-serif;
-    font-weight: 600;
-    font-size: 12pt;
-    text-align: center;
-    letter-spacing: 1px;
-    padding-top: 1px;
-    padding-bottom: 2px;
-    color: var(--lumo-header-text-color);
-    border-bottom: var(--lumo-contrast-10pct) 1px solid; /* do not remove */
-    transition: all 0.3s ease;
-
-    text-shadow: 1px 2px 6px var(--shadow-medium);
-}
-
-.image-gallery-view .top-tall-filters div{
-    font-family: 'Raleway', sans-serif;
-    font-weight: 100;
-    font-size: var(--lumo-font-size-s);
-    text-align: center;
-    text-wrap: balance;
-    letter-spacing: 1px;
-    padding: 0px;
-    color: var(--lumo-contrast-50pct);
-}
-
-.image-gallery-view .top-tall-filters h5{
-    padding: 2px;
-    color: var(--lumo-contrast-80pct);
-    font-size: var(--lumo-font-size-s);
-    letter-spacing: 1px;
-    text-align: center;
-    font-weight: 400;
-    justify-content: center;
-    transition: all 0.3s ease;
-}
-
 .image-gallery-view .layout-destination-filters{
     position: relative;
     overflow: hidden;
@@ -268,7 +184,6 @@
     text-decoration: none;
 
     .image-container {
-
         width: 100%;
          height: auto;
         /*max-height: 680px;*/
