@@ -101,9 +101,6 @@ public class MainLayout extends AppLayout {
     public String strNameOfUser = "My Self";
 
     private boolean drawerMinimized = false;
-    private Button toggleWidthButton;
-    private static final String DRAWER_NORMAL_WIDTH = "280px";
-    private static final String DRAWER_MIN_WIDTH = "80px";
 
     VerticalLayout layoutMenu;
 
@@ -111,7 +108,6 @@ public class MainLayout extends AppLayout {
     private String strUsername;
 
     private VerticalLayout sidebarLayout;
-    private boolean locked = false;
 
     public MainLayout() {
 
@@ -800,28 +796,28 @@ public class MainLayout extends AppLayout {
 
         Div logoLayout = new Div();
         logoLayout.addClassName("sidebar-header");
-//        logoLayout.addClassNames(Display.FLEX, AlignItems.CENTER, JustifyContent.CENTER,
-//                Gap.SMALL,
-//                Margin.NONE,
-//                Padding.NONE);
 
         H1 appName = new H1(APP_NAME);
         appName.addClassName("brand-text");
-//        appName.addClassNames(FontSize.MEDIUM, FontWeight.SEMIBOLD, TextColor.TERTIARY,
-//                Padding.NONE, Margin.NONE);
         appName.getStyle().set("font-stretch", "semi-expanded");
 
         Div divLogo = new Div();
         divLogo.add(VaadinIcon.CAMERA.create());
         divLogo.addClassName("logo-icon");
-        divLogo.addClickListener(e -> {
-            locked = !locked;
-            if (locked) {
+
+        Div toggleBtn = new Div();
+        toggleBtn.addClassName("sidebar-toggle-btn");
+        toggleBtn.add(FontAwesome.Solid.BARS.create());
+        toggleBtn.addClickListener(e -> {
+            drawerMinimized = !drawerMinimized;
+            if (drawerMinimized) {
                 sidebarLayout.addClassName("collapsed");
                 getElement().getClassList().add("sidebar-collapsed");
+                getElement().getStyle().set("--vaadin-app-layout-drawer-width", "82px");
             } else {
                 sidebarLayout.removeClassName("collapsed");
                 getElement().getClassList().remove("sidebar-collapsed");
+                getElement().getStyle().set("--vaadin-app-layout-drawer-width", "260px");
             }
         });
 
@@ -831,9 +827,9 @@ public class MainLayout extends AppLayout {
         sidebarLayout.setSpacing(false);
         sidebarLayout.addClassName("sidebar");
 
-        logoLayout.add(divLogo, appName);
+        logoLayout.add(divLogo, appName, toggleBtn);
 
-        layoutMenu.add(createSideMenu(true));
+        layoutMenu.add(createSideMenu());
         Scroller scroller = new Scroller(layoutMenu);
         scroller.addClassNames(Height.FULL);
 
@@ -843,7 +839,7 @@ public class MainLayout extends AppLayout {
 
     }
 
-    private VerticalLayout createSideMenu(boolean drawerMinimized) {
+    private VerticalLayout createSideMenu() {
 
         VerticalLayout leftLayout = new VerticalLayout();
         leftLayout.setSizeFull();
@@ -851,11 +847,7 @@ public class MainLayout extends AppLayout {
         leftLayout.setSpacing(false);
         leftLayout.addClassName("nav-wrapper");
 
-        if(drawerMinimized) {
-            getElement().getStyle().set("--vaadin-app-layout-drawer-width", DRAWER_NORMAL_WIDTH);
-        }else{
-            getElement().getStyle().set("--vaadin-app-layout-drawer-width", DRAWER_MIN_WIDTH);
-        }
+        getElement().getStyle().set("--vaadin-app-layout-drawer-width", "260px");
 
 
         StreamResource imageResourceMember = new StreamResource("user-profile-icon.svg",
@@ -884,223 +876,103 @@ public class MainLayout extends AppLayout {
 
         Div divImageHome = new Div(FontAwesome.Solid.HOME.create());
         nav.addItem(createSideNavItem("Home", divImageHome, "Introduction and Updates",
-                HomeView.class, drawerMinimized));
-
-/*        Div divImageNews = new Div(FontAwesome.Solid.NEWSPAPER.create());
-        nav.addItem(createSideNavItem("News", divImageNews, "Community news and updates",
-                NewsView.class, drawerMinimized));*/
+                HomeView.class));
 
         RouteParameters routeParametersDestination = new RouteParameters("destination-type", "Cities");
-
-        RouteParameters routeParametersMonth = new RouteParameters("month-uploaded",STR_ALL_MONTHS);
+        RouteParameters routeParametersMonth = new RouteParameters("month-uploaded", STR_ALL_MONTHS);
 
         Div divImage = new Div(FontAwesome.Solid.IMAGE.create());
-        SideNavItem itemPhotos = createSideNavItem("Photos",divImage,null,
-                GalleryView.class, drawerMinimized);
+        SideNavItem itemPhotos = createSideNavItem("Photos", divImage, null, GalleryView.class);
         itemPhotos.setExpanded(true);
 
         Div divImageLocation = new Div(FontAwesome.Solid.LOCATION_DOT.create());
-        SideNavItem itemPhotosLocation = createSideNavItem("by Location",divImageLocation,"Photos about a Location",
-                GalleryView.class, routeParametersDestination, drawerMinimized);
+        SideNavItem itemPhotosLocation = createSideNavItem("by Location", divImageLocation, "Photos about a Location",
+                GalleryView.class, routeParametersDestination);
         itemPhotos.addItem(itemPhotosLocation);
 
         Div divImageMonth = new Div(FontAwesome.Solid.CALENDAR_WEEK.create());
-        SideNavItem itemPhotosMonth = createSideNavItem("by Month",divImageMonth,"Photos Uploaded over a Month",
-                GalleryView.class, routeParametersMonth, drawerMinimized);
+        SideNavItem itemPhotosMonth = createSideNavItem("by Month", divImageMonth, "Photos Uploaded over a Month",
+                GalleryView.class, routeParametersMonth);
         itemPhotos.addItem(itemPhotosMonth);
 
         nav.addItem(itemPhotos);
 
- /*       Popover popoverPhotos = new Popover();
-        popoverPhotos.setOpenOnClick(false);
-        popoverPhotos.setOpenOnHover(true);
-        popoverPhotos.setHoverDelay(500);
-        popoverPhotos.setHideDelay(100);
-        popoverPhotos.setWidth("300px");
-        popoverPhotos.addThemeVariants(PopoverVariant.ARROW);
-        popoverPhotos.setPosition(PopoverPosition.END);
-        popoverPhotos.setModal(true);
-        popoverPhotos.setAriaLabelledBy("menu-popup");
-        VerticalLayout popoverPhotosLayout = new VerticalLayout();
-        popoverPhotosLayout.addClassName("menu-popover-content");
-        H4 h4Photos = new H4("Photos");
-        Div divTextPhotos = new Div("Uploaded by our members");
-        popoverPhotosLayout.add(VaadinIcon.PICTURE.create(),h4Photos,divTextPhotos);
-        popoverPhotos.addClassName("menu-popover-content");
-        popoverPhotos.add(popoverPhotosLayout);
-        leftLayout.add(popoverPhotos);
-
-
-
-        Div divImageGallery = new Div();
-//        divImageGallery.getStyle().setColor(strColorOfMenuIcons);
-        divImageGallery.add(VaadinIcon.PICTURE.create());
-//        new RouteParameters("member", SECTION_GALLERY),    new RouteParameters("member", STR_ALL_MEMBERS),
-        SideNavItem navItemPhotoGallery = new SideNavItem("Photos", GalleryView.class, divImageGallery);
-        nav.addItem(navItemPhotoGallery);
-        popoverPhotos.setTarget(navItemPhotoGallery);*/
-
-//        Div divAlbums = new Div();
-//        divAlbums.add(FontAwesome.Solid.PHOTO_FILM.create());
-//        SideNavItem navItemAlbums = new SideNavItem("Albums", AlbumsView.class, divAlbums);
-//        nav.addItem(navItemAlbums);
         Div divAlbums = new Div(FontAwesome.Solid.PHOTO_FILM.create());
-        nav.addItem(createSideNavItem("Albums",divAlbums,"Collections of photos from members",
-                AlbumsView.class, drawerMinimized));
+        nav.addItem(createSideNavItem("Albums", divAlbums, "Collections of photos from members",
+                AlbumsView.class));
 
-//        Div divImageLearnings = new Div();
-//        divImageLearnings.add(FontAwesome.Solid.BOOK.create());
-//        SideNavItem navItemPhotoLearnings = new SideNavItem("Learnings", LearningsView.class, divImageLearnings);
-//        nav.addItem(navItemPhotoLearnings);
         Div divImageLearnings = new Div(FontAwesome.Solid.BOOK.create());
-        nav.addItem(createSideNavItem("Learnings",divImageLearnings,"Lessons to improve our photography skills",
-                LearningsView.class, drawerMinimized));
-
-//        Div divImageFestivals = new Div();
-//        divImageFestivals.add(VaadinIcon.CALENDAR_USER.create());
-//        SideNavItem navItemPhotoFestivals = new SideNavItem("Events", FestivalsView.class, divImageFestivals);
-//        nav.addItem(navItemPhotoFestivals);
+        nav.addItem(createSideNavItem("Learnings", divImageLearnings, "Lessons to improve our photography skills",
+                LearningsView.class));
 
         Div divImageFestivals = new Div(VaadinIcon.CALENDAR_USER.create());
-        nav.addItem(createSideNavItem("Events",divImageFestivals,"Photo events around the globe",
-                FestivalsView.class, drawerMinimized));
-
+        nav.addItem(createSideNavItem("Events", divImageFestivals, "Photo events around the globe",
+                FestivalsView.class));
 
         Div divImagePhotographers = new Div(svgGroup);
-        nav.addItem(createSideNavItem("Photographers",divImagePhotographers,"Photographer Information",
-                PhotographersView.class, drawerMinimized));
-
+        nav.addItem(createSideNavItem("Photographers", divImagePhotographers, "Photographer Information",
+                PhotographersView.class));
 
         SideNav navUser = new SideNav();
         navUser.setWidthFull();
         navUser.addClassName("label-text");
 
         Div divMemberPhotos = new Div(FontAwesome.Solid.CAMERA_ALT.create());
-//        divUserPhotos.getStyle().setColor(strColorOfMenuIcons);
-//        divMemberPhotos.add(FontAwesome.Solid.CAMERA_ALT.create());
-//        SideNavItem navItemMemberPhotos = new SideNavItem("My Photos", MemberPhotosView.class, divMemberPhotos);
-//        navUser.addItem(navItemMemberPhotos);
-
-        navUser.addItem(createSideNavItem("My Photos",divMemberPhotos,"Manage my photos",
-                MemberPhotosView.class, drawerMinimized));
-
+        navUser.addItem(createSideNavItem("My Photos", divMemberPhotos, "Manage my photos",
+                MemberPhotosView.class));
 
         Div divMembers = new Div(FontAwesome.Solid.UPLOAD.create());
-//        divUserUpload.getStyle().setColor(strColorOfMenuIcons);
-//        divMembers.add(FontAwesome.Solid.UPLOAD.create());
-//        new RouteParameters("member", strUsername),
-//        SideNavItem navItemMembers = new SideNavItem("Upload", UploadView.class, divMembers);
-//        navUser.addItem(navItemMembers);
-
-        navUser.addItem(createSideNavItem("Upload",divMembers,"Upload photos",
-                UploadView.class, drawerMinimized));
+        navUser.addItem(createSideNavItem("Upload", divMembers, "Upload photos",
+                UploadView.class));
 
         Div divMe = new Div(FontAwesome.Solid.USER.create());
-//        divUserUpload.getStyle().setColor(strColorOfMenuIcons);
-//        divMe.add(FontAwesome.Solid.USER.create());
-//        new RouteParameters("member", strUsername),
-//        SideNavItem navItemMe = new SideNavItem("Me", MeView.class, divMe);
-//        navUser.addItem(navItemMe);
-
-        navUser.addItem(createSideNavItem("Me",divMe,"Manage my account",
-                MeView.class, drawerMinimized));
-
-//        if (drawerMinimized){
-            //navItemHome.setLabel("Home");
-//            navItemAlbums.setLabel("Albums");
-//            navItemPhotoGallery.setLabel("Photos");
-//            navItemPhotoLearnings.setLabel("Learnings");
-//            navItemPhotoFestivals.setLabel("Events");
-//            navItemPhotographers.setLabel("Photographers");
-
-//            navItemMemberPhotos.setLabel("My Photos");
-//            navItemMembers.setLabel("Upload");
-//            navItemMe.setLabel("Me");
-//        }else {
-
-            //navItemHome.setLabel("");
-//            navItemAlbums.setLabel("");
-////            navItemPhotoGallery.setLabel("");
-//            navItemPhotoLearnings.setLabel("");
-//            navItemPhotoFestivals.setLabel("");
-//            navItemPhotographers.setLabel("");
-
-//            navItemMemberPhotos.setLabel("");
-//            navItemMembers.setLabel("");
-//            navItemMe.setLabel("");
-//        }
-
-//        Div divUserFeed = new Div();
-////        divUserFeed.getStyle().setColor(strColorOfMenuIcons);
-//        divUserFeed.add(VaadinIcon.LIST.create());
-//        SideNavItem navItemUserFeed = new SideNavItem("Feed", FeedView.class, divUserFeed);
-////        navItemUserFeed.addClassName("left-menu");
-//        navItemUserFeed.addClassNames(
-//                Overflow.HIDDEN, //Width.FULL,
-//                Margin.Horizontal.SMALL, Margin.Vertical.NONE,
-////                Padding.MEDIUM
-////                Padding.Horizontal.MEDIUM,
-//                FontWeight.SEMIBOLD,TextColor.SECONDARY,
-//                Padding.Vertical.SMALL
-//        );
-//
-//        navUser.addItem(navItemUserFeed);
-
+        navUser.addItem(createSideNavItem("Me", divMe, "Manage my account",
+                MeView.class));
 
         nav.setLabel("Sections");
         navUser.setLabel("Members");
 
-        leftLayout.add( nav, navUser);
+        leftLayout.add(nav, navUser);
 
         return leftLayout;
     }
 
-    private SideNavItem createSideNavItem(String strTitle, Div menuIcon, String strSubTitle, Class<?> classToDirect,
-                                          boolean drawerMinimized) {
-           return createSideNavItem(strTitle,menuIcon,strSubTitle, classToDirect, null, drawerMinimized);
+    private SideNavItem createSideNavItem(String strTitle, Div menuIcon, String strSubTitle, Class<?> classToDirect) {
+        return createSideNavItem(strTitle, menuIcon, strSubTitle, classToDirect, null);
 
     }
 
-    private SideNavItem createSideNavItem(String strTitle, Div menuIcon, String strSubTitle, Class<?> classToDirect, RouteParameters routeParameters,
-                                          boolean drawerMinimized) {
-
-
-//        leftLayout.add(popover);
-
+    private SideNavItem createSideNavItem(String strTitle, Div menuIcon, String strSubTitle, Class<?> classToDirect,
+                                          RouteParameters routeParameters) {
 
         SideNavItem navItemHome;
         if (routeParameters == null) {
             navItemHome = new SideNavItem(strTitle, (Class<? extends Component>) classToDirect, menuIcon);
-        } else{
+        } else {
             navItemHome = new SideNavItem(strTitle, (Class<? extends Component>) classToDirect, routeParameters, menuIcon);
         }
 
-        Popover popover = new Popover();
-        popover.setOpenOnClick(false);
-        popover.setOpenOnHover(true);
-        popover.setHoverDelay(500);
-        popover.setHideDelay(100);
-        popover.setWidth("300px");
-        popover.addThemeVariants(PopoverVariant.ARROW);
-        popover.setPosition(PopoverPosition.END);
-        popover.setModal(true);
-        popover.setAriaLabelledBy("menu-popup");
-        VerticalLayout popoverLayout = new VerticalLayout();
-        popoverLayout.addClassName("menu-popover-content");
-        popover.addClassName("menu-popover-content");
-        H4 h4Home = new H4(strTitle);
-        Div divText = new Div(strSubTitle);
-        popoverLayout.add(h4Home, divText);
-        popover.add(popoverLayout);
+        navItemHome.setLabel(strTitle);
 
-        if(strSubTitle != null && !strSubTitle.isEmpty()) {
+        if (strSubTitle != null && !strSubTitle.isEmpty()) {
+            Popover popover = new Popover();
+            popover.setOpenOnClick(false);
+            popover.setOpenOnHover(true);
+            popover.setHoverDelay(500);
+            popover.setHideDelay(100);
+            popover.setWidth("300px");
+            popover.addThemeVariants(PopoverVariant.ARROW);
+            popover.setPosition(PopoverPosition.END);
+            popover.setModal(true);
+            popover.setAriaLabelledBy("menu-popup");
+            VerticalLayout popoverLayout = new VerticalLayout();
+            popoverLayout.addClassName("menu-popover-content");
+            popover.addClassName("menu-popover-content");
+            H4 h4Home = new H4(strTitle);
+            Div divText = new Div(strSubTitle);
+            popoverLayout.add(h4Home, divText);
+            popover.add(popoverLayout);
             popover.setTarget(navItemHome);
-        }
-
-        if (drawerMinimized) {
-            navItemHome.setLabel(strTitle);
-        }else {
-            navItemHome.setLabel("");
         }
 
         return navItemHome;
@@ -1117,25 +989,6 @@ public class MainLayout extends AppLayout {
 
 
 
-    /**
-     * Toggle the drawer width between normal and minimized
-     */
-    private void toggleDrawerWidth(boolean drawerMinimized) {
-        layoutMenu.removeAll();
-        layoutMenu.add(createSideMenu(!drawerMinimized));
-
-        if (drawerMinimized) {
-            getElement().getStyle().set("--vaadin-app-layout-drawer-width", DRAWER_MIN_WIDTH);
-            toggleWidthButton.setIcon(new Icon(VaadinIcon.EXPAND_SQUARE));
-            toggleWidthButton.setTooltipText("Expand drawer width");
-
-        } else {
-            getElement().getStyle().set("--vaadin-app-layout-drawer-width", DRAWER_NORMAL_WIDTH);
-            toggleWidthButton.setIcon(new Icon(VaadinIcon.COMPRESS_SQUARE));
-            toggleWidthButton.setTooltipText("Minimize drawer width");
-
-        }
-    }
 
 
 

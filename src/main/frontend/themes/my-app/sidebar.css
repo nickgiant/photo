@@ -1,98 +1,67 @@
 /* ============================================================
-   Hoverable Sidebar Menu — Vaadin 24
-   White background, dark gray icons/text,
-   dark red glow on BOTH icon and text on hover,
-   logo always visible even when collapsed.
+   Sidebar — CodingNepal-style expand/collapse with button
+   Starts expanded (260px), collapses to 82px on button click.
    ============================================================ */
 
+/* Register the drawer-width variable so it can be transitioned */
+@property --vaadin-app-layout-drawer-width {
+    syntax: '<length>';
+    initial-value: 260px;
+    inherits: false;
+}
 
-/*.app-container {
-    display: flex;
-    width: 100%;
-    min-height: 100vh;
-    background: #f0f2f5;
-}*/
-
-/* ---- Drawer width via CSS variable ---- */
-/* Default (phone / tablet): collapsed */
+/* ---- Drawer width ---- */
 vaadin-app-layout {
+    --vaadin-app-layout-drawer-width: 260px;
+    transition: --vaadin-app-layout-drawer-width 0.5s ease;
+}
+
+vaadin-app-layout.sidebar-collapsed {
     --vaadin-app-layout-drawer-width: 82px;
 }
 
-/* User manually locked the sidebar on a narrow screen */
-vaadin-app-layout.sidebar-locked {
-    --vaadin-app-layout-drawer-width: 290px;
-}
-
-/* Desktop: expanded by default; collapses when .sidebar-collapsed is added */
-@media (min-width: 1025px) {
-    vaadin-app-layout:not(.sidebar-collapsed) {
-        --vaadin-app-layout-drawer-width: 290px;
-    }
-    .sidebar:not(.collapsed) {
-        width: 290px;
-    }
-    .sidebar:not(.collapsed) .brand-text {
-        opacity: 0.9;
-    }
-    .sidebar:not(.collapsed) .profile-info {
-        opacity: 1;
-    }
-    .sidebar:not(.collapsed) .logout-btn {
-        opacity: 1;
-    }
-    /* Ring on the logo while sidebar is expanded */
-    .sidebar:not(.collapsed) .logo-icon {
-        box-shadow: 0 0 0 3px rgba(139, 26, 26, 0.30), 1px 2px 6px var(--shadow-medium);
-    }
-}
-
-/* Allow the sidebar to visually overflow the Vaadin drawer panel */
 vaadin-app-layout::part(drawer) {
-    overflow: visible;
+    overflow: hidden;
     z-index: 100;
+    transition: width 0.5s ease;
+}
+
+vaadin-app-layout::part(content) {
+    transition: padding-inline-start 0.5s ease;
 }
 
 /* =============  SIDEBAR  ============= */
 .sidebar {
     position: relative;
     z-index: 100;
-    width: 82px;
+    width: 260px;
     height: 100vh;
     background: #ffffff;
     border-right: 1px solid rgba(0, 0, 0, 0.06);
     display: flex;
     flex-direction: column;
-    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: width 0.5s ease;
     overflow: hidden;
     box-shadow: 2px 0 20px rgba(0, 0, 0, 0.04);
 }
 
-.sidebar:hover,
-.sidebar.locked {
-    width: 290px;
+.sidebar.collapsed {
+    width: 82px;
 }
 
 /* ---------- Header ---------- */
 .sidebar-header {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    position: relative;
     padding: 7px 18px 9px 18px;
     min-height: 70px;
     flex-shrink: 0;
-        gap: 12px;
+    gap: 12px;
     border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
-/*.logo-group {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    overflow: hidden;
-    min-width: 0;
-}*/
-
+/* ---------- Logo icon ---------- */
 .logo-icon {
     min-width: 44px;
     width: 44px;
@@ -103,22 +72,22 @@ vaadin-app-layout::part(drawer) {
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    box-shadow: 1px 2px 6px var(--shadow-medium);
+    box-shadow: 1px 2px 6px rgba(0,0,0,0.15);
     cursor: pointer;
-    transition: box-shadow 0.2s ease, transform 0.15s ease;
+    transition: box-shadow 0.3s ease, transform 0.15s ease;
+}
+
+/* Ring shadow when sidebar is expanded */
+.sidebar:not(.collapsed) .logo-icon {
+    box-shadow: 0 0 0 3px rgba(139, 26, 26, 0.30), 1px 2px 6px rgba(0,0,0,0.15);
 }
 
 .logo-icon:hover {
-    box-shadow: 0 0 0 3px rgba(139, 26, 26, 0.25), 1px 2px 8px var(--shadow-medium);
+    box-shadow: 0 0 0 3px rgba(139, 26, 26, 0.40), 1px 2px 10px rgba(0,0,0,0.2);
 }
 
 .logo-icon:active {
     transform: scale(0.92);
-}
-
-/* Ring indicator while sidebar is pinned open */
-.sidebar.locked .logo-icon {
-    box-shadow: 0 0 0 3px rgba(139, 26, 26, 0.45), 1px 2px 6px var(--shadow-medium);
 }
 
 .logo-icon vaadin-icon {
@@ -127,24 +96,69 @@ vaadin-app-layout::part(drawer) {
     height: 22px !important;
 }
 
+/* ---------- Brand text (title) ---------- */
 .brand-text {
     flex: 1;
     color: #1a1a2e;
     font-size: 1.15rem;
     font-weight: 700;
     white-space: nowrap;
-    opacity: 0;
-    transition: opacity 0.3s ease 0.1s;
-    letter-spacing: 0.2px;
-    text-shadow: 1px 2px 6px var(--shadow-medium);
     overflow: hidden;
+    letter-spacing: 0.2px;
+    text-shadow: 1px 1px 4px rgba(0,0,0,0.08);
+    /* Visible by default; fades + slides left when collapsed */
+    opacity: 1;
+    transform: translateX(0);
+    transition: opacity 0.3s ease 0.05s, transform 0.3s ease 0.05s;
 }
 
-.sidebar:hover .brand-text,
-.sidebar.locked .brand-text {
-    opacity: 0.9;
+.sidebar.collapsed .brand-text {
+    opacity: 0;
+    transform: translateX(-10px);
+    pointer-events: none;
 }
 
+/* ---------- Toggle button ---------- */
+.sidebar-toggle-btn {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    cursor: pointer;
+    color: #5a5a6e;
+    transition: background 0.2s ease, color 0.2s ease;
+    flex-shrink: 0;
+}
+
+.sidebar-toggle-btn:hover {
+    background: rgba(139, 26, 26, 0.08);
+    color: #8b1a1a;
+}
+
+.sidebar-toggle-btn:active {
+    background: rgba(139, 26, 26, 0.14);
+}
+
+/* Rotate the bars icon when sidebar is expanded to hint "collapse" direction */
+.sidebar-toggle-btn svg,
+.sidebar-toggle-btn vaadin-icon,
+.sidebar-toggle-btn [class*="fa-"] {
+    width: 18px;
+    height: 18px;
+    transition: transform 0.4s ease;
+}
+
+.sidebar.collapsed .sidebar-toggle-btn svg,
+.sidebar.collapsed .sidebar-toggle-btn vaadin-icon,
+.sidebar.collapsed .sidebar-toggle-btn [class*="fa-"] {
+    transform: rotate(180deg);
+}
 
 /* ---------- Nav Wrapper ---------- */
 .nav-wrapper {
@@ -158,7 +172,6 @@ vaadin-app-layout::part(drawer) {
     gap: 1px;
 }
 
-/* Ensure the scroller inside the sidebar fills full width */
 .sidebar vaadin-scroller,
 .sidebar > * {
     width: 100%;
@@ -173,145 +186,81 @@ vaadin-app-layout::part(drawer) {
     margin-bottom: 4px;
 }
 
-.separator-line {
-    min-width: 20px;
-    height: 1px;
-    background: rgba(0, 0, 0, 0.08);
-    border-radius: 2px;
-    flex-shrink: 0;
-    transition: all 0.3s ease;
-}
-
-.sidebar:hover .separator-line,
-.sidebar.locked .separator-line {
-    opacity: 0;
-    min-width: 0;
-    width: 0;
-}
-
-
-
-/*
-.sidebar:hover .label-text,
-.sidebar.locked .label-text {
-    opacity: 1;
-}*/
-
-
+/* ---------- Section labels (Sections / Members) ---------- */
 vaadin-side-nav::part(label) {
-
     align-items: center;
     padding: 8px 10px 2px 10px;
     gap: 10px;
     overflow: hidden;
-
     color: #aaa;
     font-size: 0.66rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 1.9px;
     white-space: nowrap;
-    opacity: 0.5;
-    transition: opacity 0.3s ease 0.1s;
-
+    opacity: 0.6;
+    transition: opacity 0.3s ease 0.05s;
 }
 
-vaadin-side-nav-item::part(link){
-        width: 100%;
+/* Section labels fade out when collapsed */
+.sidebar.collapsed vaadin-side-nav::part(label) {
+    opacity: 0;
+}
+
+/* ---------- Nav items ---------- */
+vaadin-side-nav-item::part(link) {
+    width: 100%;
     gap: 15px;
 }
 
-vaadin-side-nav-item[expanded]:hover{
-
-    border: 1px solid transparent;
-    background: transparent;
-    color: #8b1a1a;
-    transition: all 0.8s ease;
-}
-
-vaadin-side-nav-item{
-
+vaadin-side-nav-item {
     width: calc(100% - 18px);
     align-items: center;
     gap: 4px;
     padding: 0;
     margin: 9px;
-
     border-radius: 6px;
     border: 1px solid transparent;
     cursor: pointer;
-
     overflow: visible;
-
-     text-transform: none;
+    text-transform: none;
     font-size: 0.86rem;
     font-weight: 650;
     letter-spacing: 1px;
-
     white-space: nowrap;
-    opacity: 1;
-    transition: opacity 0.25s ease 0.08s, color 0.3s ease;
-    padding-left: 4px;
     color: #5a5a6e;
-    transition: all 0.3s ease;
+    transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+    padding-left: 4px;
 }
 
-vaadin-side-nav-item:hover{
-
+vaadin-side-nav-item:hover {
     border: 1px solid #8b1a1a;
     background: transparent;
     color: #8b1a1a;
-
-
-      /*  drop-shadow(0 0 5px rgba(200, 50, 50, 0.7))
-        drop-shadow(0 0 12px rgba(200, 50, 50, 0.4))*/
-
-    transition: all 0.2s ease;
 }
 
-vaadin-side-nav-item:active{
+vaadin-side-nav-item[expanded]:hover {
+    border: 1px solid transparent;
+    background: transparent;
     color: #8b1a1a;
-
-        scale: 0.98;
-
 }
 
-.menu-popover-content{
-  left-padding: 35px;
-  opacity: 0.86;
-
-    h4{
-        font-weight: 700;
-    }
-}
-
-/* --- Active state --- */
-/*
-.nav-link.active {
-    background: linear-gradient(135deg, rgba(139, 26, 26, 0.10), rgba(192, 57, 43, 0.07));
-    box-shadow:
-        0 0 18px 5px rgba(200, 50, 50, 0.10),
-        0 0 44px 14px rgba(200, 50, 50, 0.05);
-}
-
-.nav-link.active .nav-icon {
-    color: #9b1b1b;
-    filter:
-        drop-shadow(0 0 5px rgba(200, 50, 50, 0.7))
-        drop-shadow(0 0 12px rgba(200, 50, 50, 0.4))
-        drop-shadow(0 0 24px rgba(200, 50, 50, 0.15));
-}
-
-.nav-link.active .nav-label {
+vaadin-side-nav-item:active {
     color: #8b1a1a;
-    text-shadow:
-        0 0 8px rgba(200, 50, 50, 0.50),
-        0 0 22px rgba(200, 50, 50, 0.25),
-        0 0 44px rgba(200, 50, 50, 0.10);
+    scale: 0.98;
 }
-*/
 
-/* --- Tooltip --- */
+/* ---------- Popover content ---------- */
+.menu-popover-content {
+    left-padding: 35px;
+    opacity: 0.86;
+}
+
+.menu-popover-content h4 {
+    font-weight: 700;
+}
+
+/* ---------- Tooltip (fallback) ---------- */
 .nav-tooltip {
     position: absolute;
     left: calc(100% + 12px);
@@ -342,7 +291,7 @@ vaadin-side-nav-item:active{
     border-left: none;
 }
 
-.sidebar:not(:hover):not(.locked) .nav-link:hover .nav-tooltip {
+.sidebar.collapsed .nav-link:hover .nav-tooltip {
     opacity: 1;
     transform: translateY(-50%) translateX(0);
 }
@@ -380,13 +329,12 @@ vaadin-side-nav-item:active{
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    opacity: 0;
-    transition: opacity 0.3s ease 0.1s;
+    opacity: 1;
+    transition: opacity 0.3s ease 0.05s;
 }
 
-.sidebar:hover .profile-info,
-.sidebar.locked .profile-info {
-    opacity: 1;
+.sidebar.collapsed .profile-info {
+    opacity: 0;
 }
 
 .profile-name {
@@ -412,14 +360,13 @@ vaadin-side-nav-item:active{
     justify-content: center;
     border-radius: 8px;
     cursor: pointer;
-    opacity: 0;
+    opacity: 1;
     transition: opacity 0.25s ease, background 0.2s ease;
     flex-shrink: 0;
 }
 
-.sidebar:hover .logout-btn,
-.sidebar.locked .logout-btn {
-    opacity: 1;
+.sidebar.collapsed .logout-btn {
+    opacity: 0;
 }
 
 .logout-btn:hover {
@@ -439,15 +386,15 @@ vaadin-side-nav-item:active{
 
 /* =============  MAIN CONTENT  ============= */
 .main-content {
-    margin-left: 82px;
+    margin-left: 260px;
     flex: 1;
     min-height: 100vh;
     padding: 44px 52px;
-    transition: margin-left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: margin-left 0.5s ease;
 }
 
-.sidebar.locked ~ .main-content {
-    margin-left: 264px;
+.sidebar.collapsed ~ .main-content {
+    margin-left: 82px;
 }
 
 .content-inner {
@@ -455,13 +402,18 @@ vaadin-side-nav-item:active{
 }
 
 @media (max-width: 768px) {
+    vaadin-app-layout {
+        --vaadin-app-layout-drawer-width: 82px;
+    }
+    vaadin-app-layout.sidebar-collapsed {
+        --vaadin-app-layout-drawer-width: 82px;
+    }
     .sidebar {
         width: 0;
         border-right: none;
     }
-    .sidebar:hover,
-    .sidebar.locked {
-        width: 264px;
+    .sidebar.collapsed {
+        width: 0;
     }
     .main-content {
         margin-left: 0;
