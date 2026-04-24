@@ -159,7 +159,7 @@ header p {
         /*color: #666666; /* #466ca8; /* #6c9494;*/
        /* min-height: 180px;*/
         background-color: #ffffff; /* #e3ebf7; /* #ffffff;/*#d9e5f7;*/
-        border-radius: 4px;
+        border-radius: 20px;
         border: 1px solid #c7d8f1;
         padding: 18px 10px 12px;
         margin: 12px;
@@ -168,7 +168,6 @@ header p {
         display: block;
         position: relative;
         box-shadow: 1px 1px 6px lightgrey;
-        /*transition: 0.5s ease in out;*/
         transition: all 0.3s ease;
 
         &:hover {

@@ -30,8 +30,8 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  *   Vaadin UI runs on Vaadin's session-scoped thread pool.
  *   The two thread models never interfere.
  */
-@Configuration
-@EnableVaadin("com.photo.act.photo_act")   // Restrict Vaadin scanning to views package
+//@Configuration
+@EnableVaadin("com.photo.act.photo_act.views")   // Restrict Vaadin scanning to views package
 public class WebConfig implements WebMvcConfigurer {
 
     /**

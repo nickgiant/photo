@@ -266,7 +266,7 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
         if (strAlbumTitle == null || strAlbumTitle.isEmpty() || strAlbumTitle.equalsIgnoreCase(STR_ALL_ALBUMS)) {
 
             if (!strCategory.isEmpty() && !strCategory.equalsIgnoreCase(STR_ALL_CATEGORIES)) {
-                layoutHeaderParameters = loadHeader("Albums", "Collections of photos from members", "Category", strCategory);
+                layoutHeaderParameters = loadHeader("Albums", "Collections of photos from members", "Albums Category", strCategory);
 
                 String sqlAlbums = sqlAlbumsAll + " AND ac.cat_type = '" + strCategory + "' " + sqlAlbumsGroupBy + sqlAlbumsOrderBy;
                 loadAlbums(sqlAlbums, arrColumnsAlbums, 1);
@@ -296,7 +296,7 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
 
         } else if (!strCategory.isEmpty() && !strCategory.equalsIgnoreCase(STR_ALL_CATEGORIES)) {
 //            logger.info("if3 strCategory: " + strCategory + " strMember: " + strMember + " strAlbumTitle: " + strAlbumTitle);
-            layoutHeaderParameters = loadHeader("Albums", "Collections of photos from members", "Category", strCategory);
+            layoutHeaderParameters = loadHeader("Albums", "Collections of photos from members", "Albums Category", strCategory);
 
             String sqlAlbums = sqlAlbumsAll + " AND ac.cat_type = '" + strCategory + "' " + sqlAlbumsGroupBy + sqlAlbumsOrderBy;
             loadAlbums(sqlAlbums, arrColumnsAlbums, 1);

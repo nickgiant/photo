@@ -53,7 +53,7 @@ public class StoryItemViewCard extends Div {
         this.strImagePath = strImagePath;
 
 
-        this.addClassName("gallery-view-card");
+        this.addClassName("story-view-card");
 
         genericView = new GenericView(recordService);
 
@@ -130,7 +130,6 @@ public class StoryItemViewCard extends Div {
 
         image.setSrc(imageResource);
         divImage.add(image);
-
         layoutImage.add(divImage);
 
         VerticalLayout divPhotoInfo = new VerticalLayout();
@@ -138,8 +137,6 @@ public class StoryItemViewCard extends Div {
                 AlignItems.CENTER, JustifyContent.BETWEEN,
                 Padding.NONE, Margin.NONE, //Margin.Top.LARGE,
                 Gap.XSMALL
-//                BorderRadius.LARGE
-//                BoxShadow.SMALL
         );
 
         if (isMobile) {
@@ -235,7 +232,6 @@ public class StoryItemViewCard extends Div {
         layoutDate.add(VaadinIcon.CALENDAR.create(), divDate);
 
         layoutPhotosInfo.add(layoutViewCount, layoutLocationCount, layoutSpot, layoutDate);
-
 
         Details detailsPhotoInfo = new Details();
         detailsPhotoInfo.addClassNames(Width.FULL);

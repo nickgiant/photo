@@ -15,24 +15,25 @@
     --ncv-gold:      #d8ab41;
     --ncv-ease:      cubic-bezier(.4,0,.2,1);
 
-    background: var(--ncv-bg);
+    /*background: var(--ncv-bg);*/
     min-height: 100vh;
 }
 
 /* ── Page header ─────────────────────────────────────────── */
 .ncv-header {
+    width: 100%;
     display: flex;
     align-items: center;
     gap: 14px;
     padding: 20px 32px 18px;
-    background: linear-gradient(135deg, #1c0808 0%, #2d1515 55%, #1c0808 100%);
+    /*background: linear-gradient(135deg, #1c0808 0%, #2d1515 55%, #1c0808 100%);*/
     border-bottom: 1px solid rgba(216,171,65,.22);
     box-shadow: 0 4px 20px rgba(0,0,0,.28);
     flex-wrap: wrap;
 }
 
 .ncv-back-btn {
-    color: rgba(244,238,225,.7) !important;
+    /*color: rgba(244,238,225,.7) !important;*/
     border-radius: var(--ncv-radius-sm) !important;
     transition: .2s var(--ncv-ease) !important;
     flex-shrink: 0;
@@ -65,7 +66,7 @@
 }
 
 .ncv-header-title {
-    color: #f4eee1;
+    /*color: #f4eee1;*/
     font-size: 1.35rem;
     font-weight: 800;
     margin: 0;

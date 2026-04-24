@@ -38,6 +38,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import static com.helger.commons.locale.LocaleHelper.STR_ALL;
 import static com.photo.act.photo_act.views.LearningsView.STR_ALL_CATEGORIES;
 import static com.photo.act.photo_act.views.LearningsView.STR_ALL_TITLES;
 import static com.photo.act.photo_act.views.MainLayout.*;
@@ -47,8 +48,9 @@ import static com.photo.act.photo_act.views.MainLayout.*;
 //@PageTitle("Image Gallery")
 @Route(value = "stories") //":category?")
 //@RouteAlias(value = "albums/title/:title?", layout = MainLayout.class)
+
+@RouteAlias(value = "stories/member/:member?/story/:slug?", layout = MainLayout.class)
 @RouteAlias(value = "stories/category/:category?", layout = MainLayout.class)
-@RouteAlias(value = "stories/member/:member?/title/:title?", layout = MainLayout.class)
 
 //@RouteAlias(value = "gallery/location/:destination?", layout = MainLayout.class)
 
@@ -62,9 +64,9 @@ public class StoriesView extends Main implements HasUrlParameter<String>, Before
     public static String subPathShow = "photo-show";
     public static String DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
     String[] arrColumnsMemberStories = {"stories_count"
-            , "username", "username", "resident", "date_joined", "member_since", "avatar_path"
+            , "username", "surname", "name", "resident", "date_joined", "member_since", "avatar_path"
     };
-    String sqlMemberOfStories = "SELECT usr.username, usr.username, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined " +
+    String sqlMemberOfStories = "SELECT usr.username, usr.name, usr.surname,  usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined " +
             " , DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since " +
             " , usr.avatar_path " +
             " , count(usr.userId) AS stories_count " +
@@ -74,18 +76,17 @@ public class StoriesView extends Main implements HasUrlParameter<String>, Before
     String sqlMemberOfStoriesGroupBy =
             " GROUP BY usr.userId " +
                     " ORDER BY usr.username ASC ";
-    String[] arrColumnsStories = {"title", "description", "story_visible_to", "user_id", "date_inserted", "story_photo_count", "story_photo_size",
+    String[] arrColumnsStories = {"title", "slug", "description", "story_visible_to", "user_id", "date_inserted", "story_photo_count", "story_photo_size",
             "name_new", "photo_1", "photo_2", "datetime_story_created"
-            , "cat_title", "cat_title_gr"
-            , "username", "username", "resident", "date_joined", "avatar_path"
+            , "cat_title", "cat_title"
+            , "username", "surname", "name", "resident", "date_joined", "avatar_path"
     };
-    String sqlStoriesAll = "SELECT s.title, s.`description`, s.story_visible_to, s.user_id, s.date_inserted " +
+    String sqlStoriesAll = "SELECT s.title, s.slug,  s.`description`, s.story_visible_to, s.user_id, s.date_inserted " +
             " , count(sp.story_id) AS story_photo_count, SUM(pm.space_size) AS story_photo_size " +
             " , pm.name_new , s.photo_id1, p1.name_new AS photo_1 ,  s.photo_id2, p2.name_new  AS photo_2 " +
             " , getDateDiffFromNow(s.date_inserted) AS datetime_story_created " +
-            " , sc.cat_title, sc.cat_title_gr " +
-            " , usr.username, usr.username, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined, usr.avatar_path " +
-            //     "--  , pa.inc, pm.title, pm.id, pm.name_new, pm.title, pm.subtitle, pm.space_size, pm.location_by_user\\n\" +\n" +
+            " , sc.cat_title, sc.cat_title " +
+            " , usr.username, usr.name, usr.surname, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined, usr.avatar_path " +
             " FROM photo_stories_photo sp , photo_meta pm, photo_stories_categories sc, dbuser usr, photo_stories s LEFT JOIN photo_meta p1 ON s.photo_id1 = p1.id " +
             " LEFT JOIN photo_meta p2 ON s.photo_id2 = p2.id " +
             " WHERE s.id = sp.story_id AND sp.photo_id = pm.id AND s.user_id = usr.userId " +
@@ -94,11 +95,11 @@ public class StoriesView extends Main implements HasUrlParameter<String>, Before
     String sqlStoriesGroupBy =
             " GROUP BY sp.story_id " +
                     " ORDER BY s.date_inserted DESC ";
-    String[] arrColStoriesCategories = {"cat_title", "cat_title_gr", "cat_type", "cat_description_min", "cat_description_min_gr", "cat_description_big", "cat_description_big_gr", "cat_count"};
+    String[] arrColStoriesCategories = {"cat_title", "cat_title", "cat_type", "cat_description_min", "cat_description_min", "cat_description_big", "cat_description_big", "cat_count"};
     String sqlStoriesCategoriesRead = "SELECT  " //f.nameShort, f.location, f.country, f.periodOfYear, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description  " +
-            + " sc.cat_title, sc.cat_title_gr, sc.cat_type, sc.cat_description_min, sc.cat_description_min_gr, count (sc.id) AS cat_count, "
-            + " s.title, s.title_gr, s.description, s.description_gr, s.category_id "
-            // + " lc.cat_title, lc.cat_title_gr, lc.cat_type, lc.cat_description_min. lc.cat_description_min_gr, count (lc.cat_title) AS cat_count "
+            + " sc.cat_title, sc.cat_title, sc.cat_type, sc.cat_description_min, sc.cat_description_min, count (sc.id) AS cat_count, "
+            + " s.title, s.title, s.description, s.description, s.category_id "
+            // + " lc.cat_title, lc.cat_title, lc.cat_type, lc.cat_description_min. lc.cat_description_min, count (lc.cat_title) AS cat_count "
 //            + " l.id, l.title, l.picture, l.section , l.category, l.format, l.url, l.parent_id, l.child_index, l.tutor_id, l.artists_ref, l.description, l.duration, l.pages, l.published, l.userIdInsert, l.username, l.dateInsert "
 //            + ", l.tutor_id, l.tutor_id_team, t.tutor_name, t.website, t.url_fb, t.url_yt, t.url_insta, t.url_flickr, t.url_wikipedia, t.url_ref1, t.url_ref2, t.url_ref3, t.city_base, t.country_base, t.userIdInsert, t.username, t.date_inserted "
             + " FROM photo_stories s LEFT JOIN photo_stories_categories sc ON sc.id = s.category_id "
@@ -116,6 +117,7 @@ public class StoriesView extends Main implements HasUrlParameter<String>, Before
     private String section = SECTION_ALBUMS;
     private String strMember;
     private String strTitle;
+    private String strSlug;
     private String strCategory;
     private RecordService recordService;
     private String strHeader;
@@ -132,7 +134,7 @@ public class StoriesView extends Main implements HasUrlParameter<String>, Before
     private String strUsername;
     private ArrayList<String> lstAlbums;
     private String strColorExternalweb = "#9fafd5";
-    private String[] arrColumnNamesStoryPhotos = {"story_title", "story_visible_to", "description"
+    private String[] arrColumnNamesStoryPhotos = {"story_title", "slug", "story_visible_to", "description"
             , "name_new", "title", "subtitle", "photo_type", "uploader", "creator", "visible_to", "city_name", "meta_date", "photo_date", "photo_time_shot"
             , "space_size", "space_size_medium", "space_size_thumb", "meta_camera_make", "meta_camera_model", "meta_lens_make", "meta_lens_model"
             , "meta_focal_length", "meta_focal_length_ff", "meta_iso", "meta_aperture", "meta_shutter_speed"
@@ -141,7 +143,7 @@ public class StoriesView extends Main implements HasUrlParameter<String>, Before
             , "date_inserted"
             , "username", "username", "resident", "date_joined", "avatar_path"
     };
-    private String sqlReadStoryPhotos = "SELECT s.title AS story_title, s.user_id, s.story_visible_to, s.description, " +
+    private String sqlReadStoryPhotos = "SELECT s.title AS story_title, s.slug, s.user_id, s.story_visible_to, s.description, " +
             " pm.name_new, pm.title, pm.subtitle, pm.photo_type, pm.uploader, pm.creator, pm.visible_to,  " +
             " DATE_FORMAT(pm.meta_date, '%W %D %M %Y %H:%i %p') AS meta_date, DATE_FORMAT(pm.meta_date, '%M %Y') AS photo_date, DATE_FORMAT(pm.meta_date, '%d/%m/%Y - %H:%i:%S') AS photo_time_shot " +
             " , pm.space_size, pm.space_size_medium, pm.space_size_thumb, pm.meta_camera_make, pm.meta_camera_model, pm.meta_lens_make, pm.meta_lens_model " +
@@ -172,7 +174,7 @@ public class StoriesView extends Main implements HasUrlParameter<String>, Before
     @Override
     public void beforeEnter(@OptionalParameter BeforeEnterEvent event) {
         strMember = event.getRouteParameters().get("member").orElse(STR_ALL_MEMBERS);
-        strTitle = event.getRouteParameters().get("title").orElse(STR_ALL_TITLES);
+        strSlug = event.getRouteParameters().get("slug").orElse(STR_ALL_TITLES);
         strCategory = event.getRouteParameters().get("category").orElse(STR_ALL_CATEGORIES);
 
         getUserClientInfo();
@@ -185,20 +187,39 @@ public class StoriesView extends Main implements HasUrlParameter<String>, Before
         verticalLayout.removeAll();
 
         verticalLayout.removeAll();
-        if (strTitle == null || strTitle.isEmpty()) {
-            verticalLayout.add(loadHeader("Stories", "", strTitle));
-            logger.error(" empty strTitle:" + strTitle);
-        } else if (strTitle.equalsIgnoreCase(STR_ALL_TITLES)) {
+
+         if (strSlug == null || strSlug.isEmpty() || strSlug.equalsIgnoreCase(STR_ALL_TITLES)) {
             verticalLayout.add(loadHeader("Stories", "", ""));
             if (strMember == null || strMember.isEmpty() || strMember.equalsIgnoreCase(STR_ALL_MEMBERS)) {
                 String sqlStories = sqlStoriesAll + sqlStoriesGroupBy;
                 loadStoriesFromDb(sqlStories, arrColumnsStories, false);
+            }else{
+                String sqlMember = sqlMemberOfStories + " AND usr.username = '" + strMember + "' " + sqlMemberOfStoriesGroupBy;
+                loadMemberOfStoriesFromDb(sqlMember, arrColumnsMemberStories, false);
+                String sqlAlbums = sqlStoriesAll + " AND usr.username = '" + strMember + "' " + sqlStoriesGroupBy;
+                loadStoriesFromDb(sqlAlbums, arrColumnsStories, false);
+            }
+        } else if (!strSlug.equalsIgnoreCase(STR_ALL_TITLES)) {
+            verticalLayout.add(loadHeader("Stories", "", ""));
+            if (strMember == null || strMember.isEmpty() || strMember.equalsIgnoreCase(STR_ALL_MEMBERS)) {
+                H3 titleAlbum = new H3(strTitle);
+                titleAlbum.addClassNames(Width.FULL, TextAlignment.CENTER);
+                verticalLayout.add(titleAlbum);
+                String sqlAlbumsPhotoAll = sqlReadStoryPhotos + " ";
+                sqlAlbumsPhotoAll = sqlAlbumsPhotoAll + " AND s.slug LIKE '" + strSlug + "' ";
+                sqlAlbumsPhotoAll = sqlAlbumsPhotoAll + " ORDER BY sp.inc ASC, sp.date_inserted ASC ";
+                loadStoryItemsFromDb(sqlAlbumsPhotoAll, arrColumnNamesStoryPhotos, false);
             } else {
                 String sqlMember = sqlMemberOfStories + " AND usr.username = '" + strMember + "' " + sqlMemberOfStoriesGroupBy;
                 loadMemberOfStoriesFromDb(sqlMember, arrColumnsMemberStories, false);
 
-                String sqlAlbums = sqlStoriesAll + " AND usr.username = '" + strMember + "' " + sqlStoriesGroupBy;
-                loadStoriesFromDb(sqlAlbums, arrColumnsStories, false);
+                H3 titleAlbum = new H3(strTitle);
+                titleAlbum.addClassNames(Width.FULL, TextAlignment.CENTER);
+                verticalLayout.add(titleAlbum);
+                String sqlStoriesAll = sqlReadStoryPhotos + " ";
+                sqlStoriesAll = sqlStoriesAll + " AND s.slug LIKE '" + strSlug + "' ";
+                sqlStoriesAll = sqlStoriesAll + " ORDER BY sp.inc ASC, sp.date_inserted ASC ";
+                loadStoryItemsFromDb(sqlStoriesAll, arrColumnNamesStoryPhotos, false);
             }
         } else if (!strCategory.equalsIgnoreCase(STR_ALL_CATEGORIES)) {
             verticalLayout.add(loadHeader("Stories", strCategory, ""));
@@ -211,39 +232,9 @@ public class StoriesView extends Main implements HasUrlParameter<String>, Before
             sqlAlbumsPhotoAll = sqlAlbumsPhotoAll + sqlStoriesGroupBy;
             //sqlAlbumsPhotoAll = sqlAlbumsPhotoAll + " ORDER BY  s.date_inserted DESC ";
             loadStoriesFromDb(sqlAlbumsPhotoAll, arrColumnsStories, false);
-
-        } else if (!strTitle.equalsIgnoreCase(STR_ALL_TITLES)) {
-
-            verticalLayout.add(loadHeader("Stories", "", ""));
-            if (strMember == null || strMember.isEmpty() || strMember.equalsIgnoreCase(STR_ALL_MEMBERS)) {
-                H3 titleAlbum = new H3(strTitle);
-                titleAlbum.addClassNames(Width.FULL, TextAlignment.CENTER);
-                verticalLayout.add(titleAlbum);
-
-                String sqlAlbumsPhotoAll = sqlReadStoryPhotos + " ";
-                sqlAlbumsPhotoAll = sqlAlbumsPhotoAll + " AND s.title LIKE '" + strTitle + "' ";
-                sqlAlbumsPhotoAll = sqlAlbumsPhotoAll + " ORDER BY sp.inc ASC, sp.date_inserted ASC ";
-                loadStoryItemsFromDb(sqlAlbumsPhotoAll, arrColumnNamesStoryPhotos, false);
-            } else {
-                String sqlMember = sqlMemberOfStories + " AND usr.username = '" + strMember + "' " + sqlMemberOfStoriesGroupBy;
-                loadMemberOfStoriesFromDb(sqlMember, arrColumnsMemberStories, false);
-
-                H3 titleAlbum = new H3(strTitle);
-                titleAlbum.addClassNames(Width.FULL, TextAlignment.CENTER);
-                verticalLayout.add(titleAlbum);
-
-                String sqlStoriesAll = sqlReadStoryPhotos + " ";
-                sqlStoriesAll = sqlStoriesAll + " AND s.title LIKE '" + strTitle + "' ";
-                sqlStoriesAll = sqlStoriesAll + " ORDER BY sp.inc ASC, sp.date_inserted ASC ";
-                loadStoryItemsFromDb(sqlStoriesAll, arrColumnNamesStoryPhotos, false);
-            }
-
         } else {
             verticalLayout.add(loadHeader("Stories", "else", ""));
-
             String sqlStoriesAll = sqlReadStoryPhotos + " ";
-            //sqlStroriesAll = sqlStroriesAll + " AND a.title LIKE '" + strTitle + "' ";
-
             sqlStoriesAll = sqlStoriesAll + " ORDER BY sp.inc ASC, sp.date_inserted ASC ";
             loadStoryItemsFromDb(sqlStoriesAll, arrColumnNamesStoryPhotos, false);
         }
@@ -557,7 +548,7 @@ public class StoriesView extends Main implements HasUrlParameter<String>, Before
         Div divMemberViews = new Div("1");
         layoutMemberViewCount.add(FontAwesome.Regular.EYE.create(), divMemberViews);
 
-        HorizontalLayout layoutLocationsCount = new HorizontalLayout();
+/*        HorizontalLayout layoutLocationsCount = new HorizontalLayout();
         layoutLocationsCount.addClassNames(
 //                Overflow.HIDDEN, Width.FULL,
                 AlignItems.CENTER, JustifyContent.CENTER,
@@ -569,7 +560,7 @@ public class StoriesView extends Main implements HasUrlParameter<String>, Before
                 BorderRadius.NONE
         );
         Div divLocations = new Div(strPhotoUserResident);
-        layoutLocationsCount.add(FontAwesome.Regular.COMPASS.create(), divLocations);
+        layoutLocationsCount.add(FontAwesome.Regular.COMPASS.create(), divLocations);*/
 
         HorizontalLayout layoutDateJoined = new HorizontalLayout();
         layoutDateJoined.addClassNames(
@@ -584,7 +575,7 @@ public class StoriesView extends Main implements HasUrlParameter<String>, Before
         );
         Div divDateJoined = new Div(strPhotoUserJoined);
         layoutDateJoined.add(VaadinIcon.CALENDAR_CLOCK.create(), divDateJoined); // FontAwesome.Regular.CALENDAR.create()
-        layoutMemberInfo.add(layoutMemberPhotoCount, layoutMemberViewCount, layoutLocationsCount, layoutDateJoined);
+        layoutMemberInfo.add(layoutMemberPhotoCount, layoutMemberViewCount, layoutDateJoined);
         detailsMember.add(avatarLargeItemMe, layoutMemberInfo);
 
         return detailsMember;

@@ -134,7 +134,6 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
                     " ORDER BY lc.cat_order ASC " +
                     " LIMIT 6 ";
 
-
     String[] arrColLearningGenres = {"cat_title", "cat_title_type", "cat_type", "cat_location_count", "cat_title_count", "cat_description_min", "cat_description_big"};
 
     String sqlLearningGenres = //f.nameShort, f.location, f.country, f.periodOfYear, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description  " +

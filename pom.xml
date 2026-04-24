@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.6</version>
+        <version>3.5.13</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.photo.act</groupId>
@@ -29,7 +29,7 @@
 	</scm>
 	<properties>
 		<java.version>17</java.version>
-        <vaadin.version>24.9.4</vaadin.version>
+        <vaadin.version>24.9.7</vaadin.version>
 	</properties>
 
 	<repositories>
@@ -264,6 +264,11 @@
 			<artifactId>spring-boot-starter-webflux</artifactId>
 			<groupId>org.springframework.boot</groupId>
 			<version>3.5.9</version>
+		</dependency>
+		<dependency>
+			<artifactId>checker-qual</artifactId>
+			<groupId>org.checkerframework</groupId>
+			<version>3.52.0</version>
 		</dependency>
 
 	</dependencies>
