@@ -9,13 +9,13 @@
 /* Register the drawer-width custom property so it can be transitioned */
 @property --vaadin-app-layout-drawer-width {
     syntax: '<length>';
-    initial-value: 270px;
+    initial-value: 280px;
     inherits: false;
 }
 
 /* ---- Drawer width + content shift ---- */
 vaadin-app-layout {
-    --vaadin-app-layout-drawer-width: 270px;
+    --vaadin-app-layout-drawer-width: 280px;
     transition: --vaadin-app-layout-drawer-width 0.4s ease;
 }
 
@@ -65,14 +65,14 @@ vaadin-app-layout::part(content) {
     min-width: 46px;
     width: 46px;
     height: 46px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #4070f4 0%, #265df2 100%);
+    border-radius: 12px;
+    background: linear-gradient(135deg, #8b1a1a 0%, #c0392b 100%);
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    cursor: pointer;
-    transition: transform 0.2s ease;
+    transition: box-shadow 0.3s ease, transform 0.15s ease;
+    box-shadow: 1px 1px 4px rgba(0,0,0,0.3);
 }
 
 .logo-icon:active {
@@ -90,12 +90,13 @@ vaadin-app-layout::part(content) {
     flex: 1;
     color: #151a2d;
     font-size: 1.25rem;
-    font-weight: 600;
+    font-weight: 800;
     white-space: nowrap;
     overflow: hidden;
     margin: 0;
     letter-spacing: 0.2px;
     opacity: 1;
+    text-shadow: 1px 1px 4px rgba(0,0,0,0.3);
     transition: opacity 0.3s ease;
 }
 
@@ -191,7 +192,7 @@ vaadin-side-nav {
 vaadin-side-nav::part(label) {
     display: flex;
     align-items: center;
-    padding: 14px 14px 6px 14px;
+    padding: 1px;
     color: #8a8a96;
     font-size: 0.7rem;
     font-weight: 600;
@@ -200,6 +201,9 @@ vaadin-side-nav::part(label) {
     white-space: nowrap;
     opacity: 0.8;
     transition: opacity 0.3s ease;
+
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    margin-top: 12px;
 }
 
 .sidebar.collapsed vaadin-side-nav::part(label) {
@@ -210,39 +214,35 @@ vaadin-side-nav::part(label) {
 /* ---------- Nav items ---------- */
 vaadin-side-nav-item {
     width: 100%;
-    margin: 2px 0;
-    padding: 0;
     border-radius: 8px;
     border: none;
     overflow: visible;
     text-transform: none;
-    font-size: 0.94rem;
-    font-weight: 500;
-    letter-spacing: 0.2px;
+    font-size: 0.84rem;
+    font-weight: 800;
+    letter-spacing: 1px;
     white-space: nowrap;
-    color: #151a2d;
+    color: #34406F; /* #151a2d;*/
     background: transparent;
     transition: background 0.3s ease, color 0.3s ease;
 }
 
 vaadin-side-nav-item::part(item) {
-    border-radius: 8px;
-    padding: 12px 14px;
-    gap: 14px;
+    border-radius: 7px;
     color: inherit;
     transition: background 0.3s ease, color 0.3s ease;
 }
 
 vaadin-side-nav-item::part(link) {
     width: 100%;
-    gap: 14px;
-    padding: 0;
+    gap: 10px;
+    padding: 11px; /*not change. when shrinked keeps icons in center*/
     color: inherit;
 }
 
 vaadin-side-nav-item:hover {
-    background: #151a2d;
-    color: #fff;
+    color: #151a2d;
+    background: whitesmoke;
 }
 
 vaadin-side-nav-item:hover::part(item) {
@@ -269,7 +269,7 @@ vaadin-side-nav-item vaadin-icon,
 vaadin-side-nav-item svg {
     width: 22px !important;
     height: 22px !important;
-    flex-shrink: 0;
+    /*flex-shrink: 0;*/
 }
 
 /* Hide label text when collapsed */
@@ -285,7 +285,7 @@ vaadin-side-nav-item svg {
 }
 
 .sidebar.collapsed vaadin-side-nav-item::part(item) {
-    padding: 12px;
+    /*padding: 12px;*/
     justify-content: center;
 }
 
@@ -302,8 +302,16 @@ vaadin-side-nav-item::part(toggle-button) {
 
 /* Nested sub-items: indent and slim them down */
 vaadin-side-nav-item[has-children] vaadin-side-nav-item {
-    margin-left: 6px;
+    margin-left: 16px;
+    padding: 3px;
     font-size: 0.88rem;
+    /*margin-bottom: 3px;*/
+}
+
+vaadin-side-nav-item[current]::part(content) {
+    background-color: whitesmoke;
+    /*color: #151a2d;*/
+    text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.27);
 }
 
 /* ---------- Popover content ---------- */
