@@ -1240,6 +1240,22 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
                     linkTutorYt.setVisible(true);
                 }
 
+
+
+                // linkTutorWikipedia.getStyle().setColor(strColorExternalweb);
+                //   linkTutorWikipedia.setClassName("lazy-result-line-button");
+//            linkTutorFacebook.setVisible(false);
+                Button btnProfile = new Button(FontAwesome.Solid.USER_ALT.create());
+                btnProfile.setTooltipText("View Profile");
+
+                RouteParam routeTitle = new RouteParam("member", strUsername);
+                btnProfile.addClickListener(click -> {
+                    btnProfile.getUI().ifPresent(ui ->
+                            ui.navigate(PhotographersView.class, new RouteParameters(routeTitle)));
+                });
+
+
+
                 Anchor linkTutorFacebook = new Anchor();
                 linkTutorFacebook.add(FontAwesome.Brands.FACEBOOK_F.create());
                 // linkTutorWikipedia.getStyle().setColor(strColorExternalweb);
@@ -1335,7 +1351,7 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
                 layoutCounts.addClassNames(AlignItems.STRETCH, JustifyContent.AROUND,
                         Padding.LARGE, LumoUtility.Margin.NONE,
                         Gap.XLARGE);
-                layoutCounts.add(layoutStories, layoutPhotos);
+                layoutCounts.add(btnProfile,layoutStories, layoutPhotos);
                 layoutCounts.addClassName("member-count-panel");
 
                 Div divResident = new Div("Lives at " + strResident);

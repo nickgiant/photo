@@ -470,6 +470,21 @@
     font-weight: 1000;
 }
 
+.member-profile .member-count-panel vaadin-button{
+    border-radius: 11px;
+    border: 2px solid transparent;
+    color: var(--lumo-primary-text-color);
+    font-size: 44pt;
+    height: 100%;
+    width: 140px;
+}
+
+.member-profile .member-count-panel vaadin-button:hover{
+    border: 2px solid var(--lumo-primary-text-color);
+    color: var(--lumo-primary-text-color);
+    background: transparent;
+}
+
 .member-photos-count{
 
     padding: 8px;
@@ -678,7 +693,7 @@
 
 }
 
-.me-view vaadin-button{
+.member-profile vaadin-button{
     color: var(--lumo-shade-70pct);
     display: block;
     padding-left: 22px;
