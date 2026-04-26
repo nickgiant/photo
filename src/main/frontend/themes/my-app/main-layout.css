@@ -471,16 +471,18 @@
 }
 
 .member-profile .member-count-panel vaadin-button{
-    border: 1px solid transparent;
+    border-radius: 11px;
+    border: 2px solid transparent;
     color: var(--lumo-primary-text-color);
     font-size: 44pt;
     height: 100%;
-    width: 110px;
+    width: 140px;
 }
 
 .member-profile .member-count-panel vaadin-button:hover{
-    border: 1px solid transparent;
+    border: 2px solid var(--lumo-primary-text-color);
     color: var(--lumo-primary-text-color);
+    background: transparent;
 }
 
 .member-photos-count{
