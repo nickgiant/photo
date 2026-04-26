@@ -813,11 +813,11 @@ public class MainLayout extends AppLayout {
             if (drawerMinimized) {
                 sidebarLayout.addClassName("collapsed");
                 getElement().getClassList().add("sidebar-collapsed");
-                getElement().getStyle().set("--vaadin-app-layout-drawer-width", "82px");
+                getElement().getStyle().set("--vaadin-app-layout-drawer-width", "85px");
             } else {
                 sidebarLayout.removeClassName("collapsed");
                 getElement().getClassList().remove("sidebar-collapsed");
-                getElement().getStyle().set("--vaadin-app-layout-drawer-width", "260px");
+                getElement().getStyle().set("--vaadin-app-layout-drawer-width", "270px");
             }
         });
 
@@ -847,7 +847,7 @@ public class MainLayout extends AppLayout {
         leftLayout.setSpacing(false);
         leftLayout.addClassName("nav-wrapper");
 
-        getElement().getStyle().set("--vaadin-app-layout-drawer-width", "260px");
+        getElement().getStyle().set("--vaadin-app-layout-drawer-width", "270px");
 
 
         StreamResource imageResourceMember = new StreamResource("user-profile-icon.svg",
