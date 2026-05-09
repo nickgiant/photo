@@ -348,6 +348,9 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         DIR_PHOTOS_SERVER = genericView.getAppProps(PROP_PHOTOS);
 
         filtersContainer = new VerticalLayout();
+        filtersContainer.addClassNames(Width.FULL,
+                Margin.NONE, Padding.NONE,
+        Gap.XSMALL);
 
         verticalLayout = new VerticalLayout();
         verticalLayout.setId("verticalLayout");

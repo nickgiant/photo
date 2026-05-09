@@ -223,8 +223,9 @@ public class MainLayout extends AppLayout{
         //appName.addClassNames(Margin.Vertical.MEDIUM, AlignItems.CENTER, Margin.End.AUTO, FontSize.LARGE, FontWeight.BOLD, TextColor.TERTIARY);
         appName.addClassNames(FontSize.MEDIUM, FontWeight.SEMIBOLD, TextColor.TERTIARY,
                 Padding.NONE, Margin.NONE);
-        appName.getStyle().set("font-family", "Times-New-Roman, serif");
-        appName.getStyle().set("font-stretch", "semi-expanded");
+//        appName.getStyle().set("font-family", "Times-New-Roman, serif");
+//        appName.getStyle().set("font-stretch", "semi-expanded");
+        appName.setClassName("brand-text");
         // appName.getStyle().setColor("#d64f00");//"#f9943b");//""#bd3450");
 
         Div divLogo = new Div();
@@ -315,7 +316,9 @@ public class MainLayout extends AppLayout{
         H1 appName = new H1(APP_NAME);
         appName.addClassNames(FontSize.MEDIUM, FontWeight.SEMIBOLD, TextColor.TERTIARY,
                 Padding.NONE, Margin.NONE);
-        appName.getStyle().set("font-family", "Times-New-Roman, serif");
+//        appName.getStyle().set("font-family", "Times-New-Roman, serif");
+//        appName.getStyle().set("font-stretch", "semi-expanded");
+        appName.setClassName("brand-text");
 
         header.add(toggle, divLogo, appName);
         return header;
@@ -403,8 +406,9 @@ public class MainLayout extends AppLayout{
         //appName.addClassNames(Margin.Vertical.MEDIUM, AlignItems.CENTER, Margin.End.AUTO, FontSize.LARGE, FontWeight.BOLD, TextColor.TERTIARY);
         appName.addClassNames(FontSize.MEDIUM, FontWeight.SEMIBOLD, TextColor.TERTIARY,
                 Padding.NONE, Margin.NONE);
-        appName.getStyle().set("font-family", "Times-New-Roman, serif");
-        appName.getStyle().set("font-stretch", "semi-expanded");
+//        appName.getStyle().set("font-family", "Times-New-Roman, serif");
+//        appName.getStyle().set("font-stretch", "semi-expanded");
+        appName.setClassName("brand-text");
         // appName.getStyle().setColor("#d64f00");//"#f9943b");//""#bd3450");
 
         Div divLogo = new Div();
@@ -824,7 +828,7 @@ public class MainLayout extends AppLayout{
 
         H1 appName = new H1(APP_NAME);
         appName.addClassName("brand-text");
-        appName.getStyle().set("font-stretch", "semi-expanded");
+//        appName.getStyle().set("font-stretch", "semi-expanded");
 
         Div divLogo = new Div();
         divLogo.add(VaadinIcon.CAMERA.create());
@@ -838,11 +842,11 @@ public class MainLayout extends AppLayout{
             if (drawerMinimized) {
                 sidebarLayout.addClassName("collapsed");
                 getElement().getClassList().add("sidebar-collapsed");
-                getElement().getStyle().set("--vaadin-app-layout-drawer-width", "85px");
+                getElement().getStyle().set("--vaadin-app-layout-drawer-width", "90px");
             } else {
                 sidebarLayout.removeClassName("collapsed");
                 getElement().getClassList().remove("sidebar-collapsed");
-                getElement().getStyle().set("--vaadin-app-layout-drawer-width", "270px");
+                getElement().getStyle().set("--vaadin-app-layout-drawer-width", "290px");
             }
         });
 
@@ -856,7 +860,8 @@ public class MainLayout extends AppLayout{
 
         layoutMenu.add(createSideMenu());
         Scroller scroller = new Scroller(layoutMenu);
-        scroller.addClassNames(Height.FULL);
+        scroller.addClassNames(AlignItems.CENTER, JustifyContent.CENTER,
+                Padding.NONE, Margin.NONE,Height.FULL);
 
         sidebarLayout.add(logoLayout, scroller);
 
@@ -872,7 +877,7 @@ public class MainLayout extends AppLayout{
         leftLayout.setSpacing(false);
         leftLayout.addClassName("nav-wrapper");
 
-        getElement().getStyle().set("--vaadin-app-layout-drawer-width", "270px");
+//        getElement().getStyle().set("--vaadin-app-layout-drawer-width", "278px");
 
 
         StreamResource imageResourceMember = new StreamResource("user-profile-icon.svg",

@@ -37,6 +37,7 @@ vaadin-app-layout::part(content) {
 
 /* =============  SIDEBAR CONTAINER  ============= */
 .sidebar {
+    padding: 11px;
     position: relative;
     z-index: 100;
     width: 100%;
@@ -55,8 +56,9 @@ vaadin-app-layout::part(content) {
     display: flex;
     align-items: center;
     justify-content: flex-start;
-    padding: 18px 20px;
-    gap: 12px;
+    padding: 10px;
+    padding-left: 20px;
+    gap: 6px;
     flex-shrink: 0;
 }
 
@@ -87,15 +89,16 @@ vaadin-app-layout::part(content) {
 
 /* ---------- Brand text ---------- */
 .brand-text {
-    flex: 1;
-    color: #151a2d;
-    font-size: 1.25rem;
-    font-weight: 800;
+    padding: 2px;
+   /* font-family: Times-New-Roman, serif;*/
+    color: darkred;
+    font-size: 1.27rem;
+    font-weight: 900;
     white-space: nowrap;
     overflow: hidden;
     margin: 0;
-    letter-spacing: 0.2px;
-    opacity: 1;
+    letter-spacing: 0.2rem;
+    opacity: 0.8;
     text-shadow: 1px 1px 4px rgba(0,0,0,0.3);
     transition: opacity 0.3s ease;
 }
@@ -166,7 +169,8 @@ vaadin-app-layout::part(content) {
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
-    padding: 8px 12px 16px 12px;
+    padding: 0;
+    /*padding: 8px 12px 16px 12px;*/
     scrollbar-width: none;
     gap: 4px;
 }

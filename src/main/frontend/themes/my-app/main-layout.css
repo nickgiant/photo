@@ -7,18 +7,19 @@
     width: 100%;
     align-items: center;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(148px, 210px));
-    grid-gap: 14px;
+    grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+    grid-gap: 12px;
 
     margin: 0;
-    padding: 14px;
+    padding: 2px;
 }
 
 .top-tall-filters{
-    min-width: 184px;
-    padding: 0px;
+    min-width: 123px;
+    padding: 1px;
     margin: 1px;
-    background-color: #ffffff;
+    /*background-color: #ffffff;*/
+    background-color: #edf4fd;
     text-decoration: none;
     color: #466ca8;
     border: #c7d8f1 1px solid;
@@ -31,7 +32,7 @@
         transition: all 0.3s ease;
         border: 1px solid #466ca8;
         color: #466ca8;
-        background-color: #edf4fd;
+        background-color: #ffffff ;
         box-shadow: 1px 1px 8px var(--lumo-contrast-20pct);
         cursor: pointer;
         &h5{

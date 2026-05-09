@@ -295,6 +295,10 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         verticalLayout.add(siteHeader);
 
         Div divMainImage = new Div();
+        divMainImage.setWidthFull();
+        divMainImage.setHeight("auto");
+        divMainImage.setMaxWidth("47rem");
+        divMainImage.setMaxHeight("24rem");
         Image mainImage = new Image();
         String strMainImagePath = DIR_PHOTOS_SERVER + dirChar + "photographerM.jpg";
 
@@ -304,8 +308,9 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
         mainImage.setSrc(DownloadHandler.forFile(file));
         mainImage.setAlt("sketch image of a photographer");
-        mainImage.setHeight("24rem");
-        mainImage.setWidth("auto");
+        mainImage.setSizeFull();
+//        mainImage.setHeight("24rem");
+//        mainImage.setWidth("auto");
         mainImage.getStyle().setBorderRadius("20px");
         mainImage.getStyle().setPadding("10px");
 
