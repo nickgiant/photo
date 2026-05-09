@@ -118,7 +118,7 @@ public class MemberPhotosView extends Main implements HasUrlParameter<String>, B
             " FROM dbuser usr, photo_album a " +
             " WHERE a.user_id = usr.userId " +
             " AND a.album_visible_to = 'ALL' ";
-    String sqlMemberOfAlbumsOrderBy = " ORDER BY a.title ASC";
+    String sqlMemberOfAlbumsOrderBy = " ORDER BY a.date_inserted DESC, a.title ASC ";
     String[] arrAlbumCategoriesColumns = {"id", "cat_title", "cat_description_min"};
     String sqlAlbumCategories = "SELECT id, cat_title, cat_description_min " +
             " FROM photo_album_categories pc " +
@@ -1089,6 +1089,9 @@ public class MemberPhotosView extends Main implements HasUrlParameter<String>, B
                     placeholders.append("?");
                     fieldValue[3] = strMemberId;
                     fieldValueType[3] = "java.lang.Integer";
+
+                    strInsert.append(", album_visible_to ");
+                    placeholders.append(", 'ALL' ");
 
                     strInsert.append(") VALUES ");
                     placeholders.append(")");

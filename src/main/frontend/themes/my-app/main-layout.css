@@ -445,6 +445,12 @@
     max-width: 790px;
     min-width: 350px;
     align-items: start;
+    color: var(--lumo-shade-60pct);
+    h3{
+        text-align: center;
+        color: var(--lumo-shade-80pct);
+        padding: 5px;
+    }
 }
 
 .member-edit-profile{
@@ -733,7 +739,7 @@ nav a:any-link { /* :any-link */
 
     text-align: center;
 
-    font-size: 16;
+    font-size: 16pt;
     font-weight: 600;
     color: var(--lumo-contrast-70pct);
     font-family:  "Lucida Console", "Lucida Sans Typewriter", sans-serif;
@@ -841,8 +847,7 @@ nav ul:hover li:hover ~ li:before {
 
 .actions{
     gap: 10px;
-    padding-left: 10px;
-    padding-right: 10px;
+    padding: 18px;
 }
 
 .actions-mobile{

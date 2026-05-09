@@ -4,6 +4,8 @@ import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.views.StoriesView;
+import com.photo.act.photo_act.views.StoryView;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.details.Details;
@@ -81,12 +83,14 @@ public class StoryViewCard extends VerticalLayout {
         String strAvatarPath = record.getColumnData("avatar_path");
         String strUserJoined = record.getColumnData("date_joined");
 
+        String strItemTitle = record.getColumnData("item_title");
+        String strItemDescr = record.getColumnData("descr");
+
 
         String strCity = "";
         if (!record.getColumnData("city_name").isEmpty()) {
             strCity = record.getColumnData("city_name");
         }
-
 
         if (strPhoto1 != null && !strPhoto1.isEmpty() && !strPhoto1.equalsIgnoreCase("null")) {
             strPhotoUrl = strPhoto1;
@@ -165,7 +169,6 @@ public class StoryViewCard extends VerticalLayout {
 
         layoutCategoryAll.add(layoutCategory);
 
-
         HorizontalLayout layoutPhotoCountAll = new HorizontalLayout();
         layoutPhotoCountAll.addClassNames(
                 //  Overflow.HIDDEN, Width.FULL,
@@ -194,7 +197,6 @@ public class StoryViewCard extends VerticalLayout {
 //        divCountLabel.addClassNames(FontSize.XXSMALL);
         layoutPhotoCountAll.add(layoutPhotoCount, divCountLabel);
 
-
         HorizontalLayout layoutDateAll = new HorizontalLayout();
         layoutDateAll.addClassNames(
                 //  Overflow.HIDDEN, Width.FULL,
@@ -222,7 +224,6 @@ public class StoryViewCard extends VerticalLayout {
         layoutDate.add(FontAwesome.Solid.CALENDAR_DAY.create(), divDateCreated);
 
         layoutDateAll.add(layoutDate);
-
 
         HorizontalLayout divSubHeaderAll = new HorizontalLayout();
         divSubHeaderAll.addClassNames(Width.FULL, AlignItems.END,
@@ -377,6 +378,7 @@ public class StoryViewCard extends VerticalLayout {
 //        routerLinkAlbum.addClassNames(AlignItems.CENTER, JustifyContent.START, TextAlignment.CENTER);
 
 
+
         HorizontalLayout layoutUserActions = new HorizontalLayout();
         layoutUserActions.addClassNames(
                 Overflow.HIDDEN, Width.FULL,
@@ -438,11 +440,12 @@ public class StoryViewCard extends VerticalLayout {
 //        Image imgAvatarMedium = getAvatarImage(strAvatar, strAlbumUserName, "70px", "70px");
 
         AvatarItem avatarItemMe = new AvatarItem(strStoryNameOfUser, "", imgAvatarSmall);
-        Details detailsMember = new Details();
+        avatarItemMe.setWidthFull();
+/*        Details detailsMember = new Details();
         detailsMember.addClassNames(Width.FULL, BorderRadius.SMALL);
 //        detailsMember.addThemeVariants(DetailsVariant.FILLED);
         detailsMember.addClassName("member-small");
-        detailsMember.setSummary(avatarItemMe);
+        detailsMember.setSummary(avatarItemMe);*/
         AvatarItem avatarLargeItemMe = new AvatarItem(strStoryNameOfUser, "@" + strStoryUserName, imgAvatarMedium);
 
         HorizontalLayout layoutMemberInfo = new HorizontalLayout();
@@ -513,22 +516,27 @@ public class StoryViewCard extends VerticalLayout {
         Div divDateJoined = new Div(strUserJoined);
         layoutDateJoined.add(VaadinIcon.CALENDAR_CLOCK.create(), divDateJoined); // FontAwesome.Regular.CALENDAR.create()
         layoutMemberInfo.add(layoutMemberPhotoCount, layoutMemberViewCount, layoutMemberLocationsCount, layoutDateJoined);
-        detailsMember.add(avatarLargeItemMe, layoutMemberInfo);
+//        detailsMember.add(avatarLargeItemMe, layoutMemberInfo);
 
-        layoutPhotosInfo.add(layoutRateAll, layoutViewCountAll, layoutLocationsCountAll, detailsMember);
+        layoutPhotosInfo.add(layoutRateAll, layoutViewCountAll, layoutLocationsCountAll, avatarItemMe);
 
         RouteParam routeMember = new RouteParam("member", strStoryUserName);
         RouteParam routeStory = new RouteParam("story", strSlug);
 
         Button btnMore = new Button("View Story");
-        btnMore.setIcon(VaadinIcon.ARROW_RIGHT.create());
+        btnMore.setIcon(FontAwesome.Solid.ARROW_RIGHT.create());
+        btnMore.setIconAfterText(true);
+
+//        card.addClickListener(e -> UI.getCurrent().navigate("news/" + news.getId()));
+
         btnMore.addClickListener(click -> {
             btnMore.getUI().ifPresent(ui ->
                     ui.navigate(StoriesView.class, new RouteParameters(routeMember, routeStory))
             );
         });
 
-        this.add(divImage, header, subtitle, divSubHeaderAll, layoutPhotosInfo, getActions(btnMore));
+
+            this.add(divImage, header, subtitle, divSubHeaderAll, layoutPhotosInfo, getActions(btnMore));
 
     }
 
@@ -578,7 +586,7 @@ public class StoryViewCard extends VerticalLayout {
                     //   Background.CONTRAST_5,
 //                    BorderRadius.LARGE
             );
-            layoutActions.addClassName("actions");// AlignItems.STRETCH, JustifyContent.EVENLY ,LumoUtility.Gap.Column.XSMALL);
+           // layoutActions.addClassName("actions");// AlignItems.STRETCH, JustifyContent.EVENLY ,LumoUtility.Gap.Column.XSMALL);
             layoutActions.addClassName("actions-mobile");// AlignItems.STRETCH, JustifyContent.EVENLY ,LumoUtility.Gap.Column.XSMALL);
         } else {
             layoutActions.addClassNames(
@@ -591,7 +599,7 @@ public class StoryViewCard extends VerticalLayout {
                     //   Background.CONTRAST_5,
 //                    BorderRadius.LARGE
             );
-            layoutActions.addClassName("actions");// AlignItems.STRETCH, JustifyContent.EVENLY ,LumoUtility.Gap.Column.XSMALL);
+           // layoutActions.addClassName("actions");// AlignItems.STRETCH, JustifyContent.EVENLY ,LumoUtility.Gap.Column.XSMALL);
         }
         //layoutActions.setWidthFull();
 

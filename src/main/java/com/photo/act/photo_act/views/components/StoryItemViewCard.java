@@ -8,6 +8,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.H4;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
@@ -53,7 +54,7 @@ public class StoryItemViewCard extends Div {
         this.strImagePath = strImagePath;
 
 
-        this.addClassName("story-view-card");
+        this.addClassName("story-item-panel");
 
         genericView = new GenericView(recordService);
 
@@ -72,7 +73,7 @@ public class StoryItemViewCard extends Div {
         String strPhotoTime = record.getColumnData("photo_time_shot");
         String strCreator = record.getColumnData("creator");
         String strVisibleTo = record.getColumnData("visible_to");
-
+        String strItemType = record.getColumnData("item_type");
         String strSpotName = record.getColumnData("spot_name");
         String strSpotType = record.getColumnData("spot_type");
 
@@ -92,7 +93,10 @@ public class StoryItemViewCard extends Div {
         String strAvatarPath = record.getColumnData("avatar_path");
         String strPhotoUserJoined = record.getColumnData("date_joined");
 
-        String strDescr = record.getColumnData("descr");
+
+
+        String strItemTitle = record.getColumnData("item_title");
+        String strItemDescr = record.getColumnData("descr");
 
         String strCity = record.getColumnData("city_name");
         if (strCity == null || strCity.equalsIgnoreCase("null") || strCity.isEmpty()) {
@@ -321,7 +325,20 @@ public class StoryItemViewCard extends Div {
             header.setVisible(false);
         }
 
-        Div description = new Div();
+//        VerticalLayout layoutTextItem = new VerticalLayout();
+        H4 divTitle = new H4(strItemTitle);
+        Div divDescr = new Div(strItemDescr);
+        divTextDescription.add(divTitle,divDescr);
+
+        if(strItemTitle == null || strItemTitle.isEmpty()) {
+            divTitle.setVisible(false);
+        }
+
+        if(strItemDescr == null || strItemDescr.isEmpty()) {
+            divDescr.setVisible(false);
+        }
+
+/*        Div description = new Div();
         description.addClassNames(FontSize.SMALL, Width.FULL, AlignItems.CENTER, JustifyContent.CENTER,
                 TextAlignment.CENTER,
                 Padding.XSMALL,
@@ -330,7 +347,7 @@ public class StoryItemViewCard extends Div {
         description.setText(strDescr);
         if (!strDescr.trim().isEmpty() && !strDescr.equalsIgnoreCase("null")) {
             divTextDescription.add(description);
-        }
+        }*/
 
         Span badgePhotoType = new Span();
 //        badgePhotoType.getElement().setAttribute("theme", "badge");
@@ -367,26 +384,45 @@ public class StoryItemViewCard extends Div {
             layoutImage.setVisible(false);
         }
 
-        // badgeDateTime,linkDestination,
-        if (!isEditable) {
-            //anyone logged in
-            if (isMobile) {
-                divPhotoInfo.add(header, divTextDescription, detailsPhotoInfo);
-            } else {
-                divPhotoInfo.add(header, divTextDescription);
-            }
-            this.addClassNames(JustifyContent.EVENLY);
-            this.add(layoutImage, divPhotoInfo);
+
+        if (strItemType.contains("Header")) {
+            divTextDescription.addClassName("header-item");
+        } else if (strItemType.contains("Summary")) {
+            divTextDescription.addClassName("footer-item");
+        } else if (strItemType.contains("Tip")) {
+            divTextDescription.addClassName("tip-item");
+        } else if (strItemType.contains("Photo")) {
+            divTextDescription.addClassName("photo-text-item");
+        }else if(strItemType.equalsIgnoreCase("YouTube")){
+            divTextDescription.addClassName("video-descr");
         } else {
-            // user himself
-            if (isMobile) {
-                divPhotoInfo.add(header, divTextDescription, detailsPhotoInfo, layoutUserActions);
-            } else {
-                divPhotoInfo.add(header, divTextDescription, layoutUserActions);
-            }
-            this.addClassNames(JustifyContent.EVENLY);
-            this.add(layoutImage, divPhotoInfo);
+            divTextDescription.addClassName("text-item");
         }
+
+        if(!strItemTitle.isEmpty() || !strItemDescr.isEmpty()) {
+            this.add(divTextDescription);
+        }
+            // badgeDateTime,linkDestination,
+            if (!isEditable) {
+                //anyone logged in
+                if (isMobile) {
+                    divPhotoInfo.add(header, divTextDescription, detailsPhotoInfo);
+                } else {
+                    divPhotoInfo.add(header, divTextDescription);
+                }
+                this.addClassNames(JustifyContent.EVENLY);
+                this.add(layoutImage, divPhotoInfo);
+            } else {
+                // user himself
+                if (isMobile) {
+                    divPhotoInfo.add(header, divTextDescription, detailsPhotoInfo, layoutUserActions);
+                } else {
+                    divPhotoInfo.add(header, divTextDescription, layoutUserActions);
+                }
+                this.addClassNames(JustifyContent.EVENLY);
+                this.add(layoutImage, divPhotoInfo);
+            }
+
     }
 
     public StoryItemViewCard(String strUsername, String url, boolean isMobile) {

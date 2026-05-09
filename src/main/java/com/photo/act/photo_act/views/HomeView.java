@@ -45,6 +45,9 @@ import com.vaadin.flow.theme.lumo.LumoUtility.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.vaadin.addons.taefi.component.ToggleButtonGroup;
+import org.vaadin.googleanalytics.tracking.EnableGoogleAnalytics;
+import org.vaadin.googleanalytics.tracking.TrackerConfiguration;
+import org.vaadin.googleanalytics.tracking.TrackerConfigurator;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -62,6 +65,12 @@ import java.util.Locale;
 
 import static com.photo.act.photo_act.views.MainLayout.*;
 
+
+
+
+
+@EnableGoogleAnalytics(value="G-NQH7NZ6JJL", devLogging = EnableGoogleAnalytics.LogLevel.NONE, sendMode = EnableGoogleAnalytics.SendMode.ALWAYS)
+
 @AnonymousAllowed
 
 @Route(value = "") //":category?")
@@ -73,7 +82,7 @@ import static com.photo.act.photo_act.views.MainLayout.*;
 //@RouteAlias(value = "learnings/category/:category/tutor/:tutor?", layout = MainLayout.class)
 
 //@Menu(order = 0, icon = "line-awesome/svg/th-list-solid.svg")
-public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnterObserver, HasComponents, HasDynamicTitle, HasStyle {
+public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnterObserver, HasComponents, HasDynamicTitle, HasStyle, TrackerConfigurator {
 
     private String strColorOfIcons = "#a62f03"; //"#f9943b";//"#a62c5c";//"#7d1e32";
 
@@ -201,6 +210,13 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
     }
 
+
+    @Override
+    public void configureTracker(TrackerConfiguration configuration) {
+        configuration.setCreateField("send_page_view", Boolean.FALSE);
+        configuration.setInitialValue("transport_type", "beacon");
+        configuration.setCookieDomain("none");
+    }
 
     @Override
     public String getPageTitle() {

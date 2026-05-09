@@ -38,6 +38,9 @@ import com.vaadin.flow.theme.lumo.LumoUtility.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.vaadin.googleanalytics.tracking.EnableGoogleAnalytics;
+import org.vaadin.googleanalytics.tracking.TrackerConfiguration;
+import org.vaadin.googleanalytics.tracking.TrackerConfigurator;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -47,7 +50,9 @@ import java.net.UnknownHostException;
  */
 @Layout
 @AnonymousAllowed
-public class MainLayout extends AppLayout {
+//@EnableGoogleAnalytics(value = "G-NQH7NZ6JJL")
+
+public class MainLayout extends AppLayout{
 
     public static final String APP_VERSION = "2026.04.1.14";
     public static final String APP_NAME = "PhotoAct.net";
@@ -68,6 +73,7 @@ public class MainLayout extends AppLayout {
     public static final String SECTION_HOME = "home";
     public static final String SECTION_GALLERY = "gallery";
     public static final String SECTION_ALBUMS = "albums";
+    public static final String SECTION_STORIES = "stories";
     public static final String SECTION_FESTIVALS = "festivals"; // clubs festivals exhibitions photowalks schools
     public static final String SECTION_WEBSITES = "websites"; // clubs festivals exhibitions photowalks schools
     public static final String SECTION_LEARNINGS = "learnings";
@@ -190,10 +196,8 @@ public class MainLayout extends AppLayout {
 //        addToDrawer(sidebar);
 //
 
-
-
-
     }
+
 
     private Component createHeaderContent() {
         Header header = new Header();
@@ -878,6 +882,12 @@ public class MainLayout extends AppLayout {
         nav.addItem(createSideNavItem("Home", divImageHome, "Introduction and Updates",
                 HomeView.class));
 
+
+
+        Div divStories = new Div(FontAwesome.Solid.PHOTO_FILM.create());
+        nav.addItem(createSideNavItem("Photo-Stories", divStories, "Collections of photos from members",
+                StoriesView.class));
+
         RouteParameters routeParametersDestination = new RouteParameters("destination-type", "Cities");
         RouteParameters routeParametersMonth = new RouteParameters("month-uploaded", STR_ALL_MONTHS);
 
@@ -897,9 +907,11 @@ public class MainLayout extends AppLayout {
 
         nav.addItem(itemPhotos);
 
+/*
         Div divAlbums = new Div(FontAwesome.Solid.PHOTO_FILM.create());
         nav.addItem(createSideNavItem("Albums", divAlbums, "Collections of photos from members",
                 AlbumsView.class));
+*/
 
         Div divImageLearnings = new Div(FontAwesome.Solid.BOOK.create());
         nav.addItem(createSideNavItem("Learnings", divImageLearnings, "Lessons to improve our photography skills",
@@ -917,12 +929,16 @@ public class MainLayout extends AppLayout {
         navUser.setWidthFull();
         navUser.addClassName("label-text");
 
+        Div divMemberStories = new Div(FontAwesome.Solid.PHOTO_FILM.create());
+        navUser.addItem(createSideNavItem("My Photo-Stories", divMemberStories, "Manage my photo-stories",
+                MemberStoriesView.class));
+
         Div divMemberPhotos = new Div(FontAwesome.Solid.CAMERA_ALT.create());
         navUser.addItem(createSideNavItem("My Photos", divMemberPhotos, "Manage my photos",
                 MemberPhotosView.class));
 
         Div divMembers = new Div(FontAwesome.Solid.UPLOAD.create());
-        navUser.addItem(createSideNavItem("Upload", divMembers, "Upload photos",
+        navUser.addItem(createSideNavItem("Upload My Photos", divMembers, "Upload photos",
                 UploadView.class));
 
         Div divMe = new Div(FontAwesome.Solid.USER.create());

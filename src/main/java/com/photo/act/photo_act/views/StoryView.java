@@ -23,6 +23,7 @@ import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
+import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.theme.lumo.LumoUtility.*;
 import jakarta.annotation.security.PermitAll;
 import org.slf4j.Logger;
@@ -43,15 +44,15 @@ import java.util.Locale;
 import static com.photo.act.photo_act.views.LearningsView.STR_ALL_TITLES;
 import static com.photo.act.photo_act.views.MainLayout.*;
 
-@PermitAll
+@AnonymousAllowed
 
 //@RouteAlias("") // empty on homepage
 @Route(value = "story") //":category?")
-@RouteAlias(value = "story/member/:member?/title/:title?", layout = MainLayout.class)
+@RouteAlias(value = "story/member/:member?/story/:story?", layout = MainLayout.class)
 
 
 //@Menu(order = 0, icon = "line-awesome/svg/th-list-solid.svg")
-public class StoryView extends Main implements HasUrlParameter<String>, BeforeEnterObserver, HasComponents, HasDynamicTitle, HasStyle {
+public class StoryView extends Main implements BeforeEnterObserver, HasComponents, HasDynamicTitle, HasStyle {
 
     private static final Logger logger = LoggerFactory.getLogger(StoryView.class);
     public static String subPathThumbs = "photo-thumbs";
@@ -146,7 +147,10 @@ public class StoryView extends Main implements HasUrlParameter<String>, BeforeEn
     @Override
     public void beforeEnter(@OptionalParameter BeforeEnterEvent event) {
         strMember = event.getRouteParameters().get("member").orElse(STR_ALL_MEMBERS);
-        strTitle = event.getRouteParameters().get("title").orElse(STR_ALL_TITLES);
+        strTitle = event.getRouteParameters().get("story").orElse(STR_ALL_TITLES);
+
+
+        logger.info("strMember:"+strMember+" story:"+strTitle);
 
         getUserClientInfo();
 
@@ -187,14 +191,14 @@ public class StoryView extends Main implements HasUrlParameter<String>, BeforeEn
 
             String sqlGalleryAll = sqlReadGallery + " AND pm.visible_to = 'ALL' ";
 
-            sqlGalleryAll = sqlGalleryAll + " AND d.city_name LIKE '" + strTitle + "' ";
+            sqlGalleryAll = sqlGalleryAll + " AND s.slug LIKE '" + strTitle + "' ";
 
             sqlGalleryAll = sqlGalleryAll + " ORDER BY pm.date_inserted DESC, pm.title ASC, meta_date DESC ";
 
 //            verticalLayout.add(loadCarouselWithThumbnails(sqlGalleryAll, arrColumnNamesGallery));
 
             verticalLayout.add(loadStoryItemsFromDb(sqlGalleryAll, arrColumnNamesGallery, false));
-        } else if (!strMember.equalsIgnoreCase(STR_ALL_MEMBERS)) {
+        } else if (!strMember.equalsIgnoreCase(STR_ALL_MEMBERS) && !strTitle.equalsIgnoreCase(STR_ALL_TITLES))  {
             verticalLayout.add(loadHeader("My Story", "and how to manage them.", ""));
 //            verticalLayout.add(loadWeather(strTitle, ""));
             String sqlGalleryUser = sqlReadGallery +
@@ -212,10 +216,6 @@ public class StoryView extends Main implements HasUrlParameter<String>, BeforeEn
         logVisitorToDb();
     }
 
-    @Override
-    public void setParameter(BeforeEvent beforeEvent, @OptionalParameter String o) {
-//        strMember = o;//beforeEvent.getRouteParameters().get("member").orElse("pictures");
-    }
 
     private void constructUI() {
 

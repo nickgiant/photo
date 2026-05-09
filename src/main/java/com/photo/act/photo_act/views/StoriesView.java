@@ -29,6 +29,7 @@ import com.vaadin.flow.theme.lumo.LumoUtility;
 import com.vaadin.flow.theme.lumo.LumoUtility.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.File;
 import java.net.InetAddress;
@@ -47,15 +48,14 @@ import static com.photo.act.photo_act.views.MainLayout.*;
 
 //@PageTitle("Image Gallery")
 @Route(value = "stories") //":category?")
-//@RouteAlias(value = "albums/title/:title?", layout = MainLayout.class)
-
-@RouteAlias(value = "stories/member/:member?/story/:slug?", layout = MainLayout.class)
 @RouteAlias(value = "stories/category/:category?", layout = MainLayout.class)
+@RouteAlias(value = "stories/member/:member?/story/:story?", layout = MainLayout.class)
+
 
 //@RouteAlias(value = "gallery/location/:destination?", layout = MainLayout.class)
 
 //@Menu(order = 0, icon = "line-awesome/svg/th-list-solid.svg")
-public class StoriesView extends Main implements HasUrlParameter<String>, BeforeEnterObserver, HasComponents, HasDynamicTitle, HasStyle {
+public class StoriesView extends Main implements BeforeEnterObserver, HasComponents, HasDynamicTitle, HasStyle {
 
     private static final Logger logger = LoggerFactory.getLogger(StoriesView.class);
     public static String subPathThumbs = "photo-thumbs";
@@ -64,11 +64,12 @@ public class StoriesView extends Main implements HasUrlParameter<String>, Before
     public static String subPathShow = "photo-show";
     public static String DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
     String[] arrColumnsMemberStories = {"stories_count"
-            , "username", "surname", "name", "resident", "date_joined", "member_since", "avatar_path"
+            , "username", "surname", "name", "resident", "date_joined", "member_since", "avatar_path", "short_bio"
     };
+
     String sqlMemberOfStories = "SELECT usr.username, usr.name, usr.surname,  usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined " +
             " , DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since " +
-            " , usr.avatar_path " +
+            " , usr.avatar_path, usr.short_bio " +
             " , count(usr.userId) AS stories_count " +
             " FROM dbuser usr LEFT JOIN photo_stories s ON s.user_id = usr.userId " +
             " WHERE  1 = 1 " +
@@ -83,13 +84,13 @@ public class StoriesView extends Main implements HasUrlParameter<String>, Before
     };
     String sqlStoriesAll = "SELECT s.title, s.slug,  s.`description`, s.story_visible_to, s.user_id, s.date_inserted " +
             " , count(sp.story_id) AS story_photo_count, SUM(pm.space_size) AS story_photo_size " +
-            " , pm.name_new , s.photo_id1, p1.name_new AS photo_1 ,  s.photo_id2, p2.name_new  AS photo_2 " +
+            " , pm.name_new , s.photo_id1,  pm.name_new "+ //, p1.name_new AS photo_1 ,p2.name_new  AS photo_2 " +
             " , getDateDiffFromNow(s.date_inserted) AS datetime_story_created " +
             " , sc.cat_title, sc.cat_title " +
             " , usr.username, usr.name, usr.surname, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined, usr.avatar_path " +
-            " FROM photo_stories_photo sp , photo_meta pm, photo_stories_categories sc, dbuser usr, photo_stories s LEFT JOIN photo_meta p1 ON s.photo_id1 = p1.id " +
-            " LEFT JOIN photo_meta p2 ON s.photo_id2 = p2.id " +
-            " WHERE s.id = sp.story_id AND sp.photo_id = pm.id AND s.user_id = usr.userId " +
+            " FROM photo_stories_photo sp , photo_meta pm, photo_stories_categories sc, dbuser usr, photo_stories s " +//LEFT JOIN photo_meta p1 ON s.photo_id1 = p1.id " +
+          //  " LEFT JOIN photo_meta p2 ON s.photo_id2 = p2.id " +
+            " WHERE s.id = sp.story_id AND s.user_id = usr.userId AND sp.user_id = usr.userId AND s.photo_id1 = pm.id "+
             " AND s.story_visible_to = 'ALL' AND pm.visible_to  = 'ALL' " +
             " AND sc.id = s.category_id ";
     String sqlStoriesGroupBy =
@@ -114,7 +115,7 @@ public class StoriesView extends Main implements HasUrlParameter<String>, Before
     private String timeZoneId;
     private String locale;
     private String localeName;
-    private String section = SECTION_ALBUMS;
+    private String section = SECTION_STORIES;
     private String strMember;
     private String strTitle;
     private String strSlug;
@@ -135,21 +136,23 @@ public class StoriesView extends Main implements HasUrlParameter<String>, Before
     private ArrayList<String> lstAlbums;
     private String strColorExternalweb = "#9fafd5";
     private String[] arrColumnNamesStoryPhotos = {"story_title", "slug", "story_visible_to", "description"
+            , "item_title", "descr", "item_type"
             , "name_new", "title", "subtitle", "photo_type", "uploader", "creator", "visible_to", "city_name", "meta_date", "photo_date", "photo_time_shot"
             , "space_size", "space_size_medium", "space_size_thumb", "meta_camera_make", "meta_camera_model", "meta_lens_make", "meta_lens_model"
             , "meta_focal_length", "meta_focal_length_ff", "meta_iso", "meta_aperture", "meta_shutter_speed"
             , "location_by_user", "location_area", "location_country_code", "location_lat", "location_lon"
-            , "inc", "descr"
+            , "inc"
             , "date_inserted"
             , "username", "username", "resident", "date_joined", "avatar_path"
     };
     private String sqlReadStoryPhotos = "SELECT s.title AS story_title, s.slug, s.user_id, s.story_visible_to, s.description, " +
+            " sp.item_title, sp.descr, sp.item_type, " +
             " pm.name_new, pm.title, pm.subtitle, pm.photo_type, pm.uploader, pm.creator, pm.visible_to,  " +
             " DATE_FORMAT(pm.meta_date, '%W %D %M %Y %H:%i %p') AS meta_date, DATE_FORMAT(pm.meta_date, '%M %Y') AS photo_date, DATE_FORMAT(pm.meta_date, '%d/%m/%Y - %H:%i:%S') AS photo_time_shot " +
             " , pm.space_size, pm.space_size_medium, pm.space_size_thumb, pm.meta_camera_make, pm.meta_camera_model, pm.meta_lens_make, pm.meta_lens_model " +
             " , pm.meta_focal_length, pm.meta_focal_length_ff, pm.meta_iso, meta_aperture,  meta_shutter_speed " +
             " , pm.location_by_user, pm.location_area, pm.location_country_code, pm.location_lat, pm.location_lon " +
-            " , sp.inc, sp.descr " +
+            " , sp.inc "+
             " , usr.username, usr.username, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined, usr.avatar_path " +
             //, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description, DATE_FORMAT(f.dateInsert , '%D %M %Y') AS formatedDateUpdated  " +
             " FROM dbuser usr, photo_stories s , photo_stories_photo sp LEFT JOIN photo_meta pm ON sp.photo_id = pm.id " +
@@ -174,8 +177,11 @@ public class StoriesView extends Main implements HasUrlParameter<String>, Before
     @Override
     public void beforeEnter(@OptionalParameter BeforeEnterEvent event) {
         strMember = event.getRouteParameters().get("member").orElse(STR_ALL_MEMBERS);
-        strSlug = event.getRouteParameters().get("slug").orElse(STR_ALL_TITLES);
+        strSlug = event.getRouteParameters().get("story").orElse(STR_ALL_TITLES);
         strCategory = event.getRouteParameters().get("category").orElse(STR_ALL_CATEGORIES);
+
+
+        logger.info("strMember:"+strMember+" story:"+strSlug+" strCategory:"+strCategory);
 
         getUserClientInfo();
 
@@ -189,7 +195,7 @@ public class StoriesView extends Main implements HasUrlParameter<String>, Before
         verticalLayout.removeAll();
 
          if (strSlug == null || strSlug.isEmpty() || strSlug.equalsIgnoreCase(STR_ALL_TITLES)) {
-            verticalLayout.add(loadHeader("Stories", "", ""));
+            verticalLayout.add(loadHeader("Photo-Stories", "", ""));
             if (strMember == null || strMember.isEmpty() || strMember.equalsIgnoreCase(STR_ALL_MEMBERS)) {
                 String sqlStories = sqlStoriesAll + sqlStoriesGroupBy;
                 loadStoriesFromDb(sqlStories, arrColumnsStories, false);
@@ -199,9 +205,10 @@ public class StoriesView extends Main implements HasUrlParameter<String>, Before
                 String sqlAlbums = sqlStoriesAll + " AND usr.username = '" + strMember + "' " + sqlStoriesGroupBy;
                 loadStoriesFromDb(sqlAlbums, arrColumnsStories, false);
             }
-        } else if (!strSlug.equalsIgnoreCase(STR_ALL_TITLES)) {
-            verticalLayout.add(loadHeader("Stories", "", ""));
-            if (strMember == null || strMember.isEmpty() || strMember.equalsIgnoreCase(STR_ALL_MEMBERS)) {
+        } else if (!strSlug.equalsIgnoreCase(STR_ALL_TITLES) && (strMember != null || !strMember.isEmpty() || !strMember.equalsIgnoreCase(STR_ALL_MEMBERS))) {
+             logger.info("A strMember:"+strMember+" story:"+strSlug+" strCategory:"+strCategory);
+            verticalLayout.add(loadHeader("Photo-Stories", "", ""));
+/*            if (strMember == null || strMember.isEmpty() || strMember.equalsIgnoreCase(STR_ALL_MEMBERS)) {
                 H3 titleAlbum = new H3(strTitle);
                 titleAlbum.addClassNames(Width.FULL, TextAlignment.CENTER);
                 verticalLayout.add(titleAlbum);
@@ -209,9 +216,8 @@ public class StoriesView extends Main implements HasUrlParameter<String>, Before
                 sqlAlbumsPhotoAll = sqlAlbumsPhotoAll + " AND s.slug LIKE '" + strSlug + "' ";
                 sqlAlbumsPhotoAll = sqlAlbumsPhotoAll + " ORDER BY sp.inc ASC, sp.date_inserted ASC ";
                 loadStoryItemsFromDb(sqlAlbumsPhotoAll, arrColumnNamesStoryPhotos, false);
-            } else {
-                String sqlMember = sqlMemberOfStories + " AND usr.username = '" + strMember + "' " + sqlMemberOfStoriesGroupBy;
-                loadMemberOfStoriesFromDb(sqlMember, arrColumnsMemberStories, false);
+            } else {*/
+
 
                 H3 titleAlbum = new H3(strTitle);
                 titleAlbum.addClassNames(Width.FULL, TextAlignment.CENTER);
@@ -220,9 +226,9 @@ public class StoriesView extends Main implements HasUrlParameter<String>, Before
                 sqlStoriesAll = sqlStoriesAll + " AND s.slug LIKE '" + strSlug + "' ";
                 sqlStoriesAll = sqlStoriesAll + " ORDER BY sp.inc ASC, sp.date_inserted ASC ";
                 loadStoryItemsFromDb(sqlStoriesAll, arrColumnNamesStoryPhotos, false);
-            }
+            //}
         } else if (!strCategory.equalsIgnoreCase(STR_ALL_CATEGORIES)) {
-            verticalLayout.add(loadHeader("Stories", strCategory, ""));
+            verticalLayout.add(loadHeader("Photo-Stories", strCategory, ""));
             H3 titleCategory = new H3(strCategory);
             titleCategory.addClassNames(Width.FULL, TextAlignment.CENTER);
             verticalLayout.add(titleCategory);
@@ -233,7 +239,7 @@ public class StoriesView extends Main implements HasUrlParameter<String>, Before
             //sqlAlbumsPhotoAll = sqlAlbumsPhotoAll + " ORDER BY  s.date_inserted DESC ";
             loadStoriesFromDb(sqlAlbumsPhotoAll, arrColumnsStories, false);
         } else {
-            verticalLayout.add(loadHeader("Stories", "else", ""));
+            verticalLayout.add(loadHeader("Photo-Stories", "else", ""));
             String sqlStoriesAll = sqlReadStoryPhotos + " ";
             sqlStoriesAll = sqlStoriesAll + " ORDER BY sp.inc ASC, sp.date_inserted ASC ";
             loadStoryItemsFromDb(sqlStoriesAll, arrColumnNamesStoryPhotos, false);
@@ -247,10 +253,6 @@ public class StoriesView extends Main implements HasUrlParameter<String>, Before
         logVisitorToDb();
     }
 
-    @Override
-    public void setParameter(BeforeEvent beforeEvent, @OptionalParameter String o) {
-        strMember = o;//beforeEvent.getRouteParameters().get("member").orElse("pictures");
-    }
 
     private void constructUI() {
         addClassNames(Overflow.HIDDEN, Width.FULL,
@@ -381,10 +383,17 @@ public class StoriesView extends Main implements HasUrlParameter<String>, Before
         VerticalLayout layoutMember = new VerticalLayout();
         layoutMember.addClassNames(Width.FULL,
                 AlignItems.CENTER, JustifyContent.CENTER,
-                TextColor.TERTIARY,
-                Padding.LARGE,
-                Gap.SMALL
+                TextAlignment.CENTER
         );
+
+
+        HorizontalLayout horizontalLayout = new HorizontalLayout();
+        horizontalLayout.addClassNames(Width.FULL,
+                AlignItems.CENTER, JustifyContent.CENTER,
+                TextAlignment.CENTER
+        );
+        horizontalLayout.addClassName("member-profile");
+
 
         List<Record> lstRecords = getRecordsFromDb(sqlRead, arrColumnNames);
 
@@ -393,23 +402,34 @@ public class StoriesView extends Main implements HasUrlParameter<String>, Before
         } else if (lstRecords.size() == 1) {
             Record rec = lstRecords.get(0);
             String strNameOfUser = rec.getColumnData("username");
+            String strName = rec.getColumnData("name");
+            String strSurname = rec.getColumnData("surname");
             String strCountOfAlbums = rec.getColumnData("stories_count");
 //            String strCountOfPhotosOfAlbums = rec.getColumnData("album_photo_count");
             String strMemberSince = rec.getColumnData("member_since");
             String strAvatarPath = rec.getColumnData("avatar_path");
+            String strShortBio = rec.getColumnData("short_bio");
+
+            Div divBio = new Div(strShortBio);
+            divBio.addClassNames(Width.FULL,
+                    AlignItems.CENTER, JustifyContent.CENTER,
+                    Padding.LARGE
+            );
 
 
             Image imgAvatar = genericView.getAvatarThumbImage(strAvatarPath, strNameOfUser, "120px", "120px");
 
-            H3 objMember = new H3(strNameOfUser);
+            H3 objMember = new H3(strName+" "+strSurname);
+            Div divUserName = new Div(strNameOfUser);
             Div divMemberSince = new Div("Member since " + strMemberSince);
             Div divAlbumsAndPhotos = new Div("Has " + strCountOfAlbums + " stories");
-            layoutMember.add(imgAvatar, objMember, divMemberSince, divAlbumsAndPhotos);
+            layoutMember.add(imgAvatar, objMember,divUserName,  divMemberSince, divAlbumsAndPhotos);
+            horizontalLayout.add(layoutMember,divBio);
         } else {
 
         }
 
-        verticalLayout.add(layoutMember);
+        verticalLayout.add(horizontalLayout);
     }
 
     private void loadStoriesFromDb(String sqlRead, String[] arrColumnNames, boolean isEditable) {
@@ -442,6 +462,7 @@ public class StoriesView extends Main implements HasUrlParameter<String>, Before
         strPath = DIR_PHOTOS_SERVER + dirChar;
 
         Div divGallery = new Div();
+        divGallery.addClassName("stories-view");
 
         List<Record> lstRecords = getRecordsFromDb(sqlRead, arrColumnNames);
         for (int r = 0; r < lstRecords.size(); r++) {
@@ -449,9 +470,12 @@ public class StoriesView extends Main implements HasUrlParameter<String>, Before
             Record rec = lstRecords.get(r);
             divGallery.add(getStoryItemsFromDb(rec, isEditable));
         }
-        divGallery.add(getStoryMemberInfo(lstRecords.get(0)));
+
         divGallery.add(getActions());
         verticalLayout.add(divGallery);
+
+        String sqlMember = sqlMemberOfStories + " AND usr.username = '" + strMember + "' " + sqlMemberOfStoriesGroupBy;
+        loadMemberOfStoriesFromDb(sqlMember, arrColumnsMemberStories, false);
     }
 
     private StoryItemViewCard getStoryItemsFromDb(Record record, boolean isEditable) {
@@ -469,10 +493,10 @@ public class StoriesView extends Main implements HasUrlParameter<String>, Before
 
 //        RouteParam routeUploaderAll = new RouteParam("member", STR_ALL_MEMBERS);
 
-        RouteParam routeAlbum = new RouteParam("title", strStoryTitle);
+/*        RouteParam routeAlbum = new RouteParam("title", strStoryTitle);
         RouteParam routeUploader = new RouteParam("member", strUploader);
         RouterLink linkUploader = new RouterLink(strUploader, StoriesView.class, new RouteParameters(routeUploader, routeAlbum));
-        RouterLink linkAlbum = new RouterLink(strStoryTitle, StoriesView.class, new RouteParameters(routeUploader, routeAlbum));
+        RouterLink linkAlbum = new RouterLink(strStoryTitle, StoriesView.class, new RouteParameters(routeUploader, routeAlbum));*/
 
         String strImagePath = strPath + dirChar + strFileName;
         logger.info(" strImagePath " + strImagePath);
@@ -854,6 +878,7 @@ public class StoriesView extends Main implements HasUrlParameter<String>, Before
         if (strPath == null || strPath.isEmpty()) {
             strPath = "NULL";
         } else {
+            strPath = strPath.replaceAll("'","");
             strPath = "'" + strPath + "'";
         }
 

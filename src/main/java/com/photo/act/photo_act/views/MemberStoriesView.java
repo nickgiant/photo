@@ -237,7 +237,7 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
             " WHERE s.user_id = usr.userId " +
              " AND s.is_article = 0 " +
             " AND s.story_visible_to = 'ALL' ";
-    String sqlMemberOfAlbumsOrderBy = " ORDER BY s.title ASC";
+    String sqlMemberOfAlbumsOrderBy =                   " ORDER BY s.date_inserted DESC ";
     private String sessionDateTime;
 
     private String strOS;
@@ -387,7 +387,7 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
 
         HorizontalLayout layoutControls = new HorizontalLayout();
         layoutControls.addClassNames(AlignItems.CENTER, JustifyContent.CENTER);
-        Button btnSelectStory = new Button("Επιλογή");
+        Button btnSelectStory = new Button("Select");
         btnSelectStory.setIcon(FontAwesome.Regular.CHECK_SQUARE.create());
         btnSelectStory.addClickListener(clickEvent -> {
 
@@ -978,8 +978,8 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
                 query -> photoStoryService.count(sqlAllStoryItems)
         );
 
-        Div dvStoryTitle = new Div();
-        dvStoryTitle.addClassNames(Width.FULL, FontWeight.EXTRABOLD, TextAlignment.CENTER, TextColor.BODY, Padding.SMALL);
+        H4 dvStoryTitle = new H4();
+        dvStoryTitle.setWidthFull();
         dvStoryTitle.setText(strStoryTitle);
 
         Button btnSelectStory = new Button("Select a Photo-Story");
