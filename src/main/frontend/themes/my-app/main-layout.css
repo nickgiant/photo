@@ -723,12 +723,12 @@
     }
 }
 
-vaadin-app-layout::part(navbar) {
-    /*background-color: darkseagreen; !* #8ca775; !*var(--lumo-shade-20pct);*!*/
-    /*opacity: 0.3;*/
-    background: linear-gradient(transparent, #f2f1f0); /* var(--lumo-contrast-10pct)); /*#81ac91*/
-    padding: 0px;
-    margin: 0px;
+@media (max-width: 768px) {
+    vaadin-app-layout::part(navbar) {
+        background: linear-gradient(transparent, #f2f1f0);
+        padding: 0;
+        margin: 0;
+    }
 }
 
 nav a:any-link { /* :any-link */

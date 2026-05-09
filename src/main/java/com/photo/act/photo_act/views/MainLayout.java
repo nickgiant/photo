@@ -135,11 +135,9 @@ public class MainLayout extends AppLayout{
         logger.info("hostname:" + hostname + " isMobile:" + isMobile);
         this.addClassName("background");
 
-        if (isMobile) {
-            addToNavbar(createHeaderContent());
-        } else {
-            createDrawer();
-        }
+        createDrawer();
+        addToNavbar(createMobileHeader());
+        getElement().executeJs("this.drawerOpened = window.innerWidth > 768;");
 
 //        addClassName("app-container");
 //
@@ -297,6 +295,30 @@ public class MainLayout extends AppLayout{
 
 
         return headerLayout;
+    }
+
+    private Component createMobileHeader() {
+        Header header = new Header();
+        header.addClassNames(BoxSizing.BORDER, Display.FLEX, FlexDirection.ROW, Width.FULL,
+                AlignItems.CENTER, Gap.SMALL,
+                Padding.Horizontal.SMALL, Padding.Vertical.XSMALL);
+
+        DrawerToggle toggle = new DrawerToggle();
+        toggle.setAriaLabel("Menu toggle");
+
+        Div divLogo = new Div();
+        divLogo.add(VaadinIcon.CAMERA.create());
+        divLogo.addClassName("logo-icon");
+        divLogo.addClassNames(FontSize.MEDIUM, FontWeight.BOLD, TextColor.TERTIARY,
+                Padding.NONE, Margin.NONE);
+
+        H1 appName = new H1(APP_NAME);
+        appName.addClassNames(FontSize.MEDIUM, FontWeight.SEMIBOLD, TextColor.TERTIARY,
+                Padding.NONE, Margin.NONE);
+        appName.getStyle().set("font-family", "Times-New-Roman, serif");
+
+        header.add(toggle, divLogo, appName);
+        return header;
     }
 
     private MenuItemInfo[] createMenuItems() {
@@ -586,8 +608,7 @@ public class MainLayout extends AppLayout{
     @Override
     protected void afterNavigation() {
         super.afterNavigation();
-//        viewTitle.removeAll();
-//        viewTitle.setText(getCurrentPageTitle());
+        getElement().executeJs("if (window.innerWidth <= 768) { this.drawerOpened = false; }");
     }
 
     private String getCurrentPageTitle() {
