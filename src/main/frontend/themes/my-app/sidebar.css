@@ -26,7 +26,7 @@ vaadin-app-layout.sidebar-collapsed {
 vaadin-app-layout::part(drawer) {
     overflow: hidden;
     z-index: 100;
-    transition: width 0.4s ease;
+    transition: width 0.4s ease, transform 0.3s ease;
     background: #fff;
     border-right: 1px solid #e6e5e5;
 }
@@ -37,6 +37,7 @@ vaadin-app-layout::part(content) {
 
 /* =============  SIDEBAR CONTAINER  ============= */
 .sidebar {
+    padding: 11px;
     position: relative;
     z-index: 100;
     width: 100%;
@@ -55,8 +56,9 @@ vaadin-app-layout::part(content) {
     display: flex;
     align-items: center;
     justify-content: flex-start;
-    padding: 18px 20px;
-    gap: 12px;
+    padding: 10px;
+    padding-left: 20px;
+    gap: 6px;
     flex-shrink: 0;
 }
 
@@ -87,15 +89,16 @@ vaadin-app-layout::part(content) {
 
 /* ---------- Brand text ---------- */
 .brand-text {
-    flex: 1;
-    color: #151a2d;
-    font-size: 1.25rem;
-    font-weight: 800;
+    padding: 2px;
+   /* font-family: Times-New-Roman, serif;*/
+    color: darkred;
+    font-size: 1.27rem;
+    font-weight: 900;
     white-space: nowrap;
     overflow: hidden;
     margin: 0;
-    letter-spacing: 0.2px;
-    opacity: 1;
+    letter-spacing: 0.2rem;
+    opacity: 0.8;
     text-shadow: 1px 1px 4px rgba(0,0,0,0.3);
     transition: opacity 0.3s ease;
 }
@@ -166,7 +169,8 @@ vaadin-app-layout::part(content) {
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
-    padding: 8px 12px 16px 12px;
+    padding: 0;
+    /*padding: 8px 12px 16px 12px;*/
     scrollbar-width: none;
     gap: 4px;
 }
@@ -332,14 +336,39 @@ vaadin-side-nav-item[current]::part(content) {
 }
 
 /* =============  RESPONSIVE  ============= */
+
+/* ---- Desktop: hide the mobile top navbar ---- */
+@media (min-width: 769px) {
+    vaadin-app-layout::part(navbar) {
+        display: none;
+        height: 0;
+        overflow: hidden;
+        padding: 0;
+    }
+}
+
+/* ---- Mobile / tablet: overlay drawer, show top navbar ---- */
 @media (max-width: 768px) {
     vaadin-app-layout {
-        --vaadin-app-layout-drawer-width: 85px;
+        --vaadin-app-layout-drawer-width: 270px;
     }
-    vaadin-app-layout.sidebar-collapsed {
-        --vaadin-app-layout-drawer-width: 0px;
+
+    /* Drawer is full-width and slides over content */
+    vaadin-app-layout::part(drawer) {
+        width: 270px;
     }
+
+    /* Restore sidebar to full width on mobile (no collapsed/85px state) */
     .sidebar.collapsed {
-        width: 0;
+        width: 270px;
+    }
+
+    vaadin-app-layout.sidebar-collapsed {
+        --vaadin-app-layout-drawer-width: 270px;
+    }
+
+    /* Hide the sidebar's own toggle button; the top navbar DrawerToggle handles it */
+    .sidebar-toggle-btn {
+        display: none;
     }
 }

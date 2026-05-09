@@ -455,6 +455,9 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         DIR_PHOTOS_SERVER = genericView.getAppProps(PROP_PHOTOS);
 
         filtersContainer = new VerticalLayout();
+        filtersContainer.addClassNames(Width.FULL,
+                Margin.NONE, Padding.NONE,
+                Gap.XSMALL);
 
         verticalLayout = new VerticalLayout();
         if (isMobile) {

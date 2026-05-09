@@ -7,18 +7,19 @@
     width: 100%;
     align-items: center;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(148px, 210px));
-    grid-gap: 14px;
+    grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+    grid-gap: 12px;
 
     margin: 0;
-    padding: 14px;
+    padding: 2px;
 }
 
 .top-tall-filters{
-    min-width: 184px;
-    padding: 0px;
+    min-width: 123px;
+    padding: 1px;
     margin: 1px;
-    background-color: #ffffff;
+    /*background-color: #ffffff;*/
+    background-color: #edf4fd;
     text-decoration: none;
     color: #466ca8;
     border: #c7d8f1 1px solid;
@@ -31,7 +32,7 @@
         transition: all 0.3s ease;
         border: 1px solid #466ca8;
         color: #466ca8;
-        background-color: #edf4fd;
+        background-color: #ffffff ;
         box-shadow: 1px 1px 8px var(--lumo-contrast-20pct);
         cursor: pointer;
         &h5{
@@ -723,12 +724,12 @@
     }
 }
 
-vaadin-app-layout::part(navbar) {
-    /*background-color: darkseagreen; !* #8ca775; !*var(--lumo-shade-20pct);*!*/
-    /*opacity: 0.3;*/
-    background: linear-gradient(transparent, #f2f1f0); /* var(--lumo-contrast-10pct)); /*#81ac91*/
-    padding: 0px;
-    margin: 0px;
+@media (max-width: 768px) {
+    vaadin-app-layout::part(navbar) {
+        background: linear-gradient(transparent, #f2f1f0);
+        padding: 0;
+        margin: 0;
+    }
 }
 
 nav a:any-link { /* :any-link */
