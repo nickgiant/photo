@@ -3,6 +3,8 @@ package com.photo.act.photo_act.views.components;
 import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
+import com.photo.act.photo_act.model.ShareType;
+import com.photo.act.photo_act.model.ShareableResource;
 import com.photo.act.photo_act.services.PhotoStoryViewService;
 import com.photo.act.photo_act.services.ShareMetricService;
 import com.photo.act.photo_act.services.ShareService;
@@ -114,7 +116,15 @@ public class StoryViewCard extends VerticalLayout {
         String strItemTitle = record.getColumnData("item_title");
         String strItemDescr = record.getColumnData("descr");
 
-
+        String storyPublicUrl = baseUrl + "/stories/member/" + strStoryUserName + "/story/" + strSlug;
+        ShareableResource storyResource = new ShareableResource(
+                ShareType.PHOTO_STORY,
+                String.valueOf(storyId),
+                strTitle.isBlank() || strTitle.equalsIgnoreCase("null") ? "Photo Story" : strTitle,
+                strDescription.isBlank() || strDescription.equalsIgnoreCase("null") ? "" : strDescription,
+                "",
+                storyPublicUrl
+        );
 
         String strCity = "";
         if (!record.getColumnData("city_name").isEmpty()) {
@@ -540,57 +550,36 @@ public class StoryViewCard extends VerticalLayout {
         RouteParam routeMember = new RouteParam("member", strStoryUserName);
         RouteParam routeStory = new RouteParam("story", strSlug);
 
-        Button btnMore = new Button("View Story");
-        btnMore.setIcon(FontAwesome.Solid.ARROW_RIGHT.create());
-        btnMore.setIconAfterText(true);
-
-        btnMore.addClickListener(click -> {
-            btnMore.getUI().ifPresent(ui ->
-                    ui.navigate(StoriesView.class, new RouteParameters(routeMember, routeStory))
-            );
-        });
-
-        // Info button for the action bar row
-        ButtonBar infoBar = new ButtonBar();
+        // ── Compose the single action bar ────────────────────────────────────
+        ShareBottomBar shareBar = new ShareBottomBar(storyResource, shareService, shareMetricService);
+        shareBar.addComponent(layoutViewCountAll);
+        shareBar.addComponent(layoutRateAll);
+        shareBar.addButton("View Story",
+                FontAwesome.Solid.ARROW_RIGHT.create(),
+                () -> getUI().ifPresent(ui ->
+                        ui.navigate(StoriesView.class, new RouteParameters(routeMember, routeStory))),
+                "btn-bar-view");
+        shareBar.addShareItemMenu();
         final String infoText = (strDescription != null && !strDescription.isBlank()
                 && !strDescription.equalsIgnoreCase("null")) ? strDescription : strTitle;
-        infoBar.addButton("Info", VaadinIcon.INFO_CIRCLE_O.create(), () -> {
+        shareBar.addButton("Info", VaadinIcon.INFO_CIRCLE_O.create(), () -> {
             if (infoText != null && !infoText.isBlank()) {
                 Notification.show(infoText, 5000, Notification.Position.BOTTOM_CENTER);
             }
         }, "btn-bar-info");
 
         this.add(divImage, header, subtitle, divSubHeaderAll, layoutPhotosInfo,
-                buildActionBar(btnMore, layoutRateAll, layoutViewCountAll, infoBar));
+                buildActionBar(shareBar));
 
     }
 
-    /**
-     * Action bar layout for the story list card:
-     * [left: viewsLayout + likeSection] | [center: View Story] | [right: infoBar]
-     *
-     * Both viewsLayout (VerticalLayout with eye+count) and likeSection (VerticalLayout
-     * with LikeButton+label) are pre-composed in the constructor; passing them here
-     * avoids duplicate-parent errors (Vaadin components have exactly one parent).
-     */
-    private HorizontalLayout buildActionBar(Button btnViewStory,
-                                            VerticalLayout likeSection,
-                                            VerticalLayout viewsLayout,
-                                            ButtonBar infoBar) {
-        HorizontalLayout leftGroup = new HorizontalLayout();
-        leftGroup.addClassNames(AlignItems.CENTER, JustifyContent.START, Gap.XSMALL,
-                Margin.NONE, Padding.NONE);
-        leftGroup.add(viewsLayout, likeSection);
-
-        HorizontalLayout rightGroup = new HorizontalLayout();
-        rightGroup.addClassNames(AlignItems.CENTER, JustifyContent.END, Gap.XSMALL,
-                Margin.NONE, Padding.NONE);
-        rightGroup.add(infoBar);
-
+    /** Wraps the composed ShareBottomBar in a full-width action bar row. */
+    private HorizontalLayout buildActionBar(ShareBottomBar shareBar) {
         HorizontalLayout bar = new HorizontalLayout();
-        bar.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.BETWEEN,
+        bar.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.START,
                 Padding.XSMALL, Margin.NONE);
-        bar.add(leftGroup, btnViewStory, rightGroup);
+        bar.addClassName("story-bottom-bar");
+        bar.add(shareBar);
         return bar;
     }
 

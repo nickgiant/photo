@@ -3,6 +3,8 @@ package com.photo.act.photo_act.views.components;
 import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
+import com.photo.act.photo_act.model.ShareType;
+import com.photo.act.photo_act.model.ShareableResource;
 import com.photo.act.photo_act.services.PhotoRatingService;
 import com.photo.act.photo_act.services.PhotoViewService;
 import com.photo.act.photo_act.services.ShareMetricService;
@@ -737,21 +739,15 @@ public class GalleryImageViewCard extends Div {
 
 
 
-        ButtonBar infoBar = new ButtonBar();
-        infoBar.addButton("Info", VaadinIcon.INFO_CIRCLE_O.create(), () -> {
-            StringBuilder info = new StringBuilder();
-            if (strSubTitle != null && !strSubTitle.isBlank()
-                    && !strSubTitle.equalsIgnoreCase("null")) {
-                info.append(strSubTitle);
-            }
-            if (strCity != null && !strCity.isBlank()) {
-                if (info.length() > 0) info.append(" · ");
-                info.append(strCity);
-            }
-            if (info.length() > 0) {
-                Notification.show(info.toString(), 4000, Notification.Position.BOTTOM_CENTER);
-            }
-        }, "btn-bar-info");
+        ShareableResource photo = new ShareableResource(
+                ShareType.PHOTO,
+                strPhotoId,
+                strSubTitle,
+                "",
+                baseUrl + "/photo/" + strFileName,
+                baseUrl + "/photo/" + strPhotoId
+        );
+        ShareBottomBar shareBottomBar = new ShareBottomBar(photo, shareService, shareMetricService);
 
 
 
@@ -808,124 +804,34 @@ public class GalleryImageViewCard extends Div {
             }
         });
 
-        Div divLists = new Div();
-        divLists.addClassName("tooltip-container");
-
-        Div tooltipLists = new Div("Save to list");
-        tooltipLists.addClassName("tooltip-top");
-
-        Div divListsInfo = new Div("");
-        divListsInfo.addClassName(TextColor.DISABLED);
-        Button btnLists = new Button(VaadinIcon.BOOKMARK.create());//svgAction);
-        //btnLists.setTooltipText("Save to list");
-        btnLists.setSuffixComponent(divListsInfo);
-        divLists.add(btnLists, tooltipLists);
-
-
-        Div divShare = new Div();
-        divShare.addClassName("tooltip-container");
-
-        Div tooltipShare = new Div("Share it");
-        tooltipShare.addClassName("tooltip-top");
-
-//        Div divSharesInfo = new Div("");
-//        divSharesInfo.addClassName(TextColor.DISABLED);
-//        SvgIcon svgShare = new SvgIcon(DownloadHandler.forClassResource(GalleryImageViewCard.class, "/icons/share-line-icon.svg"));
-//        Button btnShare = new Button(svgShare);
-//        //btnShare.setTooltipText("Share it");
-//        btnShare.setSuffixComponent(divSharesInfo);
-//        divShare.add(btnShare, tooltipShare);
-
-        Div divRate = new Div();
-        divRate.addClassName("tooltip-container");
-
-/*        Div tooltipRate = new Div("Rate it");
-        tooltipRate.addClassName("tooltip-top");
-        Div divRatesInfo = new Div("");
-        divRatesInfo.addClassName(TextColor.DISABLED);
-        SvgIcon svgStar = new SvgIcon(DownloadHandler.forClassResource(GalleryImageViewCard.class, "/icons/star-empty-icon.svg"));
-        Button btnRate = new Button(svgStar);
-        //btnRate.setTooltipText("Rate it");
-        btnRate.setSuffixComponent(divRatesInfo);
-        divRate.add(btnRate, tooltipRate);
-
-        btnRate.addClickListener(click -> {
-                    showDialogWithCarousel(isType, strSelection, strPhotoId, strAlbumUsername, true);
-//            click.getSource().getParent()
-//            btnMore.getUI().ifPresent(//ui ->
-//                //    ui.navigate(LearningsView.class, new RouteParameters(routeTitle))
-//           // );
-                }
-        );*/
-
-
-
-        Div divFullView = new Div();
-        divFullView.addClassName("tooltip-container");
-        Div tooltipFullView = new Div("View Larger");
-        tooltipFullView.addClassName("tooltip-top");
-        Button btnMore = new Button("Full View");
-        btnMore.setIcon(VaadinIcon.VIEWPORT.create());
-//        if (strSelection == null || strSelection.equalsIgnoreCase("null") || strSelection.isEmpty()) {
-//            // btnMore.setTooltipText("Larger Photo View");
-//            tooltipFullView.setText("Larger Photo View");
-//        } else {
-//            if (isType == 1) {
-//                tooltipFullView.setText("Photos from album: " + strSelection + " by: " + strAlbumUsername);
-//            } else if (isType == 2) {
-//                tooltipFullView.setText("Photos from location: " + strSelection);
-//            } else if (isType == 3) {
-//                tooltipFullView.setText("Photos with subject:" + strSelection);
-//            }
-//        }
-        divFullView.add(btnMore, tooltipFullView);
-
-        btnMore.addClickListener(click -> {
-                    showDialogWithCarousel(isType, strSelection, strPhotoId, strAlbumUsername, false);
-//            click.getSource().getParent()
-//            btnMore.getUI().ifPresent(//ui ->
-//                //    ui.navigate(LearningsView.class, new RouteParameters(routeTitle))
-//           // );
-                }
-        );
-
+        // ── Compose the single action bar ────────────────────────────────────
+        shareBottomBar.addComponent(likeButton);
+        shareBottomBar.addComponent(rateButton);
+        shareBottomBar.addButton("View Larger",
+                VaadinIcon.VIEWPORT.create(),
+                () -> showDialogWithCarousel(isType, strSelection, strPhotoId, strAlbumUsername, false),
+                "btn-bar-view");
+        shareBottomBar.addShareItemMenu();
+        shareBottomBar.addButton("Info", VaadinIcon.INFO_CIRCLE_O.create(), () -> {
+            StringBuilder info = new StringBuilder();
+            if (strSubTitle != null && !strSubTitle.isBlank()
+                    && !strSubTitle.equalsIgnoreCase("null")) {
+                info.append(strSubTitle);
+            }
+            if (strCity != null && !strCity.isBlank()) {
+                if (info.length() > 0) info.append(" · ");
+                info.append(strCity);
+            }
+            if (info.length() > 0) {
+                Notification.show(info.toString(), 4000, Notification.Position.BOTTOM_CENTER);
+            }
+        }, "btn-bar-info");
 
         HorizontalLayout layoutActions = new HorizontalLayout();
-        if (isMobile) {
-            layoutActions.addClassNames(
-                    AlignItems.CENTER, JustifyContent.EVENLY,
-                    Margin.NONE,
-                    Padding.SMALL
-//                    Gap.XSMALL,
-                    //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                    //   Background.CONTRAST_5,
-//                    BorderRadius.LARGE
-            );
-            layoutActions.addClassName("actions");// AlignItems.STRETCH, JustifyContent.EVENLY ,LumoUtility.Gap.Column.XSMALL);
-            layoutActions.addClassName("actions-mobile");// AlignItems.STRETCH, JustifyContent.EVENLY ,LumoUtility.Gap.Column.XSMALL);
-        } else {
-            layoutActions.addClassNames(
-                    AlignItems.CENTER, JustifyContent.BETWEEN,
-                    Margin.NONE,
-                    Padding.SMALL
-//                    Gap.LARGE,
-                    //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                    //   Background.CONTRAST_5,
-//                    BorderRadius.LARGE
-            );
-            layoutActions.addClassName("actions");// AlignItems.STRETCH, JustifyContent.EVENLY ,LumoUtility.Gap.Column.XSMALL);
-        }
-        //layoutActions.setWidthFull();
-
-        if (isMobile) {
-            layoutActions.add(likeButton);
-        } else {
-            if (strImagePath.contains(subPathLarge)) {
-                layoutActions.add(likeButton);
-            } else {
-                layoutActions.add(likeButton, rateButton, infoBar);
-            }
-        }
+        layoutActions.addClassNames(AlignItems.CENTER, JustifyContent.START,
+                Margin.NONE, Padding.SMALL);
+        layoutActions.addClassName("actions");
+        layoutActions.add(shareBottomBar);
         return layoutActions;
     }
 

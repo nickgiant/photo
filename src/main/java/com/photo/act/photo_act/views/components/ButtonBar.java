@@ -31,6 +31,14 @@ public class ButtonBar extends Div {
     }
 
     /**
+     * Adds any Vaadin component directly to the bar (e.g. LikeButton, RateButton, a Button).
+     * The component renders with its own styling, inline in the flex container.
+     */
+    public void addComponent(Component component) {
+        add(component);
+    }
+
+    /**
      * Adds a button to the bar.
      *
      * @param tooltipLabel text shown in the tooltip on hover

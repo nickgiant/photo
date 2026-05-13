@@ -3,15 +3,17 @@ package com.photo.act.photo_act.views;
 import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
+import com.photo.act.photo_act.model.ShareType;
+import com.photo.act.photo_act.model.ShareableResource;
 import com.photo.act.photo_act.services.PhotoStoryViewService;
 import com.photo.act.photo_act.services.ShareMetricService;
 import com.photo.act.photo_act.services.ShareService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.photo.act.photo_act.views.components.AvatarItem;
-import com.photo.act.photo_act.views.components.ButtonBar;
 import com.photo.act.photo_act.views.components.GenericView;
 import com.photo.act.photo_act.views.components.LikeButton;
+import com.photo.act.photo_act.views.components.ShareBottomBar;
 import com.photo.act.photo_act.views.components.StoryItemViewCard;
 import com.photo.act.photo_act.views.components.StoryViewCard;
 import com.vaadin.flow.component.HasComponents;
@@ -786,32 +788,43 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
         likeLabel.addClassNames(FontSize.XXSMALL);
         likeLayout.add(btnLike, likeLabel);
 
-        // Info button
-        ButtonBar infoBar = new ButtonBar();
+        // ── Compose the single action bar ────────────────────────────────────
+        String storyPublicUrl = baseUrl + "/stories/member/" + username + "/story/" + slug;
+        ShareableResource storyResource = new ShareableResource(
+                ShareType.PHOTO_STORY,
+                String.valueOf(storyId),
+                (title == null || title.isBlank()) ? "Photo Story" : title,
+                (description == null || description.isBlank()) ? "" : description,
+                "",
+                storyPublicUrl
+        );
+        ShareBottomBar shareBar = new ShareBottomBar(storyResource, shareService, shareMetricService);
+
+        shareBar.addComponent(viewsLayout);
+        shareBar.addComponent(likeLayout);
+
+        RouteParam routeMember = new RouteParam("member", username);
+        RouteParam routeStory  = new RouteParam("story",  slug);
+        shareBar.addButton("View Story",
+                FontAwesome.Solid.ARROW_RIGHT.create(),
+                () -> shareBar.getUI().ifPresent(ui ->
+                        ui.navigate(StoriesView.class, new RouteParameters(routeMember, routeStory))),
+                "btn-bar-view");
+
+        shareBar.addShareItemMenu();
+
         final String infoText = (description != null && !description.isBlank()) ? description : title;
-        infoBar.addButton("Info", VaadinIcon.INFO_CIRCLE_O.create(), () -> {
+        shareBar.addButton("Info", VaadinIcon.INFO_CIRCLE_O.create(), () -> {
             if (infoText != null && !infoText.isBlank()) {
                 Notification.show(infoText, 5000, Notification.Position.BOTTOM_CENTER);
             }
         }, "btn-bar-info");
 
-        // Left group: views + like
-        HorizontalLayout leftGroup = new HorizontalLayout();
-        leftGroup.addClassNames(AlignItems.CENTER, JustifyContent.START, Gap.SMALL,
-                Margin.NONE, Padding.NONE);
-        leftGroup.add(viewsLayout, likeLayout);
-
-        // Right group: info
-        HorizontalLayout rightGroup = new HorizontalLayout();
-        rightGroup.addClassNames(AlignItems.CENTER, JustifyContent.END,
-                Margin.NONE, Padding.NONE);
-        rightGroup.add(infoBar);
-
         HorizontalLayout layoutActions = new HorizontalLayout();
-        layoutActions.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.BETWEEN,
+        layoutActions.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.START,
                 Padding.SMALL, Margin.NONE);
         layoutActions.addClassName("story-bottom-bar");
-        layoutActions.add(leftGroup, rightGroup);
+        layoutActions.add(shareBar);
 
         return layoutActions;
     }
