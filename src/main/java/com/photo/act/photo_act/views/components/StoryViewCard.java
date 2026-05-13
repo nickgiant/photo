@@ -21,6 +21,7 @@ import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.menubar.MenuBarVariant;
+import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.RouteParam;
@@ -115,17 +116,15 @@ public class StoryViewCard extends VerticalLayout {
         String strItemTitle = record.getColumnData("item_title");
         String strItemDescr = record.getColumnData("descr");
 
-        // Build shareable resource for this story (requires strStoryUserName resolved above)
         String storyPublicUrl = baseUrl + "/stories/member/" + strStoryUserName + "/story/" + strSlug;
         ShareableResource storyResource = new ShareableResource(
                 ShareType.PHOTO_STORY,
                 String.valueOf(storyId),
                 strTitle.isBlank() || strTitle.equalsIgnoreCase("null") ? "Photo Story" : strTitle,
                 strDescription.isBlank() || strDescription.equalsIgnoreCase("null") ? "" : strDescription,
-                "",  // no CDN image yet
+                "",
                 storyPublicUrl
         );
-
 
         String strCity = "";
         if (!record.getColumnData("city_name").isEmpty()) {
@@ -291,17 +290,21 @@ public class StoryViewCard extends VerticalLayout {
         );
         layoutPhotosInfo.addClassName("summary");
 
-        LikeButton likeButton = new LikeButton(likeCount);
-        likeButton.setTooltipText("Like It");
-        likeButton.addLikeClickListener(e -> {
+
+
+
+        LikeButton btnLike = new LikeButton(likeCount);
+//        likeButton.setTooltipText("Like It");
+        /*likeButton.addLikeClickListener(e -> {
             if (photoStoryViewService != null && finalStoryId > 0) {
                 Integer likeUserId = userId > 0 ? userId : null;
                 photoStoryViewService.recordLike(finalStoryId, finalSlug, likeUserId, clientIp,
                         sessionId, sessionDateTime);
                 likeButton.setCount(photoStoryViewService.getLikeCount(finalStoryId));
             }
-        });
+        });*/
 
+/*
         VerticalLayout layoutRateAll = new VerticalLayout();
         layoutRateAll.addClassNames(
                 AlignItems.CENTER, JustifyContent.CENTER,
@@ -310,9 +313,10 @@ public class StoryViewCard extends VerticalLayout {
         Span divRateLabel = new Span("Like");
         divRateLabel.addClassNames(FontSize.XXSMALL);
         layoutRateAll.add(likeButton, divRateLabel);
+*/
 
 
-        VerticalLayout layoutViewCountAll = new VerticalLayout();
+/*        VerticalLayout layoutViewCountAll = new VerticalLayout();
         layoutViewCountAll.addClassNames(
                 //   Overflow.HIDDEN, Width.FULL,
                 AlignItems.CENTER, JustifyContent.CENTER,
@@ -322,7 +326,7 @@ public class StoryViewCard extends VerticalLayout {
                 //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
                 //   Background.CONTRAST_5,
                 BorderRadius.NONE
-        );
+        );*/
         HorizontalLayout layoutViewCount = new HorizontalLayout();
         layoutViewCount.addClassNames(
 //                Overflow.HIDDEN, Width.FULL,
@@ -334,13 +338,13 @@ public class StoryViewCard extends VerticalLayout {
                 //   Background.CONTRAST_5,
                 BorderRadius.NONE
         );
-        Div divViews = new Div(viewCount > 0 ? String.valueOf(viewCount) : "");
-        layoutViewCount.add(FontAwesome.Regular.EYE.create(), divViews);
-        Span divViewsLabel = new Span("Views");
-        divViewsLabel.addClassNames(FontSize.XXSMALL);
-        layoutViewCountAll.add(layoutViewCount, divViewsLabel);
+        Span divViews = new Span(viewCount > 0 ? String.valueOf(viewCount) : "");
+//        layoutViewCount.add(FontAwesome.Regular.EYE.create(), divViews);
+//        Span divViewsLabel = new Span("Views");
+//        divViewsLabel.addClassNames(FontSize.XXSMALL);
+        layoutViewCount.add(FontAwesome.Regular.EYE.create(),divViews);
 
-        VerticalLayout layoutLocationsCountAll = new VerticalLayout();
+/*        VerticalLayout layoutLocationsCountAll = new VerticalLayout();
         layoutLocationsCountAll.addClassNames(
                 // Overflow.HIDDEN, Width.FULL,
                 AlignItems.CENTER, JustifyContent.CENTER,
@@ -350,8 +354,8 @@ public class StoryViewCard extends VerticalLayout {
                 //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
                 //   Background.CONTRAST_5,
                 BorderRadius.NONE
-        );
-        HorizontalLayout layoutLocationsCount = new HorizontalLayout();
+        );*/
+/*        HorizontalLayout layoutLocationsCount = new HorizontalLayout();
         layoutLocationsCount.addClassNames(
 //                Overflow.HIDDEN, Width.FULL,
                 AlignItems.CENTER, JustifyContent.CENTER,
@@ -361,7 +365,7 @@ public class StoryViewCard extends VerticalLayout {
                 //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
                 //   Background.CONTRAST_5,
                 BorderRadius.NONE
-        );
+        );*/
 /*        Div divLocations = new Div("1");
         layoutLocationsCount.add(FontAwesome.Regular.COMPASS.create(), divLocations);
         Span divLocationsLabel = new Span("Locations");
@@ -407,7 +411,7 @@ public class StoryViewCard extends VerticalLayout {
 
 
 
-        HorizontalLayout layoutUserActions = new HorizontalLayout();
+/*        HorizontalLayout layoutUserActions = new HorizontalLayout();
         layoutUserActions.addClassNames(
                 Overflow.HIDDEN, Width.FULL,
                 AlignItems.CENTER, JustifyContent.CENTER,
@@ -417,7 +421,7 @@ public class StoryViewCard extends VerticalLayout {
                 //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
                 //   Background.CONTRAST_5,
                 BorderRadius.LARGE
-        );
+        );*/
 
 
 //        if (strUploader.trim().isEmpty() || strUploader.equalsIgnoreCase("null")) {
@@ -433,7 +437,7 @@ public class StoryViewCard extends VerticalLayout {
 //        }
 
 
-        Button btnMoreAction = new Button(VaadinIcon.EDIT.create());//svgAction);
+/*        Button btnMoreAction = new Button(VaadinIcon.EDIT.create());//svgAction);
         btnMoreAction.setTooltipText("Edit");
         btnMoreAction.addClassName("btn-actions");
 
@@ -443,7 +447,7 @@ public class StoryViewCard extends VerticalLayout {
         Button btnMoreInfo = new Button(VaadinIcon.INFO.create());//svgAction);
         btnMoreInfo.setTooltipText("More info");
 
-        layoutUserActions.add(btnMoreAction, btnComment, btnMoreInfo);
+        layoutUserActions.add(btnMoreAction, btnComment, btnMoreInfo);*/
 
 
         //     divPhotoInfo.add(layoutPhotosInfo); //, layoutUserActions);
@@ -546,56 +550,50 @@ public class StoryViewCard extends VerticalLayout {
         layoutMemberInfo.add(layoutMemberPhotoCount, layoutMemberViewCount, layoutMemberLocationsCount, layoutDateJoined);
 //        detailsMember.add(avatarLargeItemMe, layoutMemberInfo);
 
-        layoutPhotosInfo.add(layoutLocationsCountAll, avatarItemMe);
+        layoutPhotosInfo.add( avatarItemMe);
 
         RouteParam routeMember = new RouteParam("member", strStoryUserName);
         RouteParam routeStory = new RouteParam("story", strSlug);
 
-        Button btnMore = new Button("View Story");
-        btnMore.setIcon(FontAwesome.Solid.ARROW_RIGHT.create());
-        btnMore.setIconAfterText(true);
-
-        btnMore.addClickListener(click -> {
-            btnMore.getUI().ifPresent(ui ->
-                    ui.navigate(StoriesView.class, new RouteParameters(routeMember, routeStory))
-            );
-        });
-
-        // Share bar for the action bar row
+        // ── Compose the single action bar ────────────────────────────────────
         ShareBottomBar shareBar = new ShareBottomBar(storyResource, shareService, shareMetricService);
+        shareBar.addComponent(layoutViewCount);
+        shareBar.addButton("Like it!",btnLike,
+                ()-> {
+                    if (photoStoryViewService != null && finalStoryId > 0) {
+                        Integer likeUserId = userId > 0 ? userId : null;
+                        photoStoryViewService.recordLike(finalStoryId, finalSlug, likeUserId, clientIp,
+                                sessionId, sessionDateTime);
+                        btnLike.setCount(photoStoryViewService.getLikeCount(finalStoryId));
+                    }
+                }
+                ,"btn-bar-share");
+        shareBar.addButton("View Story",
+                FontAwesome.Solid.ARROW_RIGHT.create(),
+                () -> getUI().ifPresent(ui ->
+                        ui.navigate(StoriesView.class, new RouteParameters(routeMember, routeStory))),
+                "btn-bar-view");
         shareBar.addShareItemMenu();
+        final String infoText = (strDescription != null && !strDescription.isBlank()
+                && !strDescription.equalsIgnoreCase("null")) ? strDescription : strTitle;
+        shareBar.addButton("Info", VaadinIcon.INFO_CIRCLE_O.create(), () -> {
+            if (infoText != null && !infoText.isBlank()) {
+                Notification.show(infoText, 5000, Notification.Position.BOTTOM_CENTER);
+            }
+        }, "btn-bar-info");
 
         this.add(divImage, header, subtitle, divSubHeaderAll, layoutPhotosInfo,
-                buildActionBar(btnMore, layoutRateAll, layoutViewCountAll, shareBar));
+                buildActionBar(shareBar));
 
     }
 
-    /**
-     * Action bar layout for the story list card:
-     * [left: viewsLayout + likeSection] | [center: View Story] | [right: shareBar]
-     *
-     * Both viewsLayout (VerticalLayout with eye+count) and likeSection (VerticalLayout
-     * with LikeButton+label) are pre-composed in the constructor; passing them here
-     * avoids duplicate-parent errors (Vaadin components have exactly one parent).
-     */
-    private HorizontalLayout buildActionBar(Button btnViewStory,
-                                            VerticalLayout likeSection,
-                                            VerticalLayout viewsLayout,
-                                            ShareBottomBar shareBar) {
-        HorizontalLayout leftGroup = new HorizontalLayout();
-        leftGroup.addClassNames(AlignItems.CENTER, JustifyContent.START, Gap.XSMALL,
-                Margin.NONE, Padding.NONE);
-        leftGroup.add(viewsLayout, likeSection);
-
-        HorizontalLayout rightGroup = new HorizontalLayout();
-        rightGroup.addClassNames(AlignItems.CENTER, JustifyContent.END, Gap.XSMALL,
-                Margin.NONE, Padding.NONE);
-        rightGroup.add(shareBar);
-
+    /** Wraps the composed ShareBottomBar in a full-width action bar row. */
+    private HorizontalLayout buildActionBar(ShareBottomBar shareBar) {
         HorizontalLayout bar = new HorizontalLayout();
-        bar.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.BETWEEN,
+        bar.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER,
                 Padding.XSMALL, Margin.NONE);
-        bar.add(leftGroup, btnViewStory, rightGroup);
+        bar.addClassName("story-bottom-bar");
+        bar.add(shareBar);
         return bar;
     }
 

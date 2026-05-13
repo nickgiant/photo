@@ -6,6 +6,8 @@
 }
 
 .stories-view .story-list-card{
+    align-items: center;
+    justify-content: center;
     color: #868686;
     border-radius: 8px;
     border-bottom-left-radius: 16px;
@@ -17,15 +19,6 @@
     box-shadow: 0px 0px 30px 2px var(--lumo-shade-10pct);
     img{
         border-radius: 10px;
-    }
-    vaadin-button{
-        cursor: pointer;
-        padding: 20px;
-        font-weight: 700;
-        color:  #466ca8;
-        &:hover{
-            background-color: #e3ebf7;
-        }
     }
 }
 

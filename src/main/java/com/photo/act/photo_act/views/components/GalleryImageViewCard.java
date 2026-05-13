@@ -744,35 +744,10 @@ public class GalleryImageViewCard extends Div {
                 strPhotoId,
                 strSubTitle,
                 "",
-                baseUrl+"/photo/"+strFileName,
-                baseUrl+"/photo/"+strPhotoId
+                baseUrl + "/photo/" + strFileName,
+                baseUrl + "/photo/" + strPhotoId
         );
-
-        ShareBottomBar shareBottomBar = new ShareBottomBar(photo,shareService,shareMetricService);
-
-        MenuItem viewLarger = createIconItem(shareBottomBar, VaadinIcon.VIEWPORT.create(), "View Larger", "View Larger");
-        viewLarger.addClickListener(click->{
-            showDialogWithCarousel(isType, strSelection, strPhotoId, strAlbumUsername, false);
-        });
-
-//        SvgIcon svgRate = new SvgIcon(DownloadHandler.forClassResource(GalleryImageViewCard.class, "/icons/star-empty-icon.svg"));
-
-/*        MenuItem viewRate = createIconItem(shareBottomBar, svgRate, "Rate it", "rate it");
-        viewRate.addClickListener(click->{*/
-//            showDialogWithCarousel(isType, strSelection, strPhotoId, strAlbumUsername, true);
-        /*});*/
-
-
-        if (strCity!= null && !strCity.isEmpty()) {
-            MenuItem viewCityInfo = createIconItem(shareBottomBar, VaadinIcon.LOCATION_ARROW_CIRCLE_O.create(), "", null);
-            viewCityInfo.addClickListener(click -> {
-                Dialog dialog = showDialogWeatherForCity(strCity, "");
-                dialog.open();
-            });
-        }
-
-
-        shareBottomBar.addShareItemMenu();
+        ShareBottomBar shareBottomBar = new ShareBottomBar(photo, shareService, shareMetricService);
 
 
 
@@ -788,8 +763,8 @@ public class GalleryImageViewCard extends Div {
 
         final int photoIdLikeFinal = photoIdForLike;
         LikeButton likeButton = new LikeButton(initialLikeCount);
-        likeButton.setTitle("Like it!");
-        likeButton.addLikeClickListener(e -> {
+//        likeButton.setTitle("Like it!");
+/*        likeButton.addLikeClickListener(e -> {
             if (photoViewService != null) {
                 Integer likeUserId = null;
                 if (strAvailableAlbumsMemberId != null && !strAvailableAlbumsMemberId.isBlank()) {
@@ -800,7 +775,7 @@ public class GalleryImageViewCard extends Div {
                         cardPublicIp, cardSessionId, cardSessionDateTime);
                 likeButton.setCount(photoViewService.getLikeCount(photoIdLikeFinal));
             }
-        });
+        });*/
 
 
         // ── Rate button ───────────────────────────────────────────────────────
@@ -815,8 +790,8 @@ public class GalleryImageViewCard extends Div {
 
         final int photoIdRateFinal = photoIdForRate;
         RateButton rateButton = new RateButton(initialRateCount);
-        rateButton.setTitle("Rate it!");
-        rateButton.addRateClickListener(e -> {
+//        rateButton.setTitle("Rate it!");
+/*        rateButton.addRateClickListener(e -> {
             if (photoViewService != null) {
                 Integer rateUserId = null;
                 if (strAvailableAlbumsMemberId != null && !strAvailableAlbumsMemberId.isBlank()) {
@@ -827,126 +802,69 @@ public class GalleryImageViewCard extends Div {
                 showDialogWithCarousel(isType, strSelection, strPhotoId, strAlbumUsername, true);
                 rateButton.setCount(photoRatingService.getRatingCount(photoIdRateFinal));
             }
-        });
+        });*/
 
-        Div divLists = new Div();
-        divLists.addClassName("tooltip-container");
-
-        Div tooltipLists = new Div("Save to list");
-        tooltipLists.addClassName("tooltip-top");
-
-        Div divListsInfo = new Div("");
-        divListsInfo.addClassName(TextColor.DISABLED);
-        Button btnLists = new Button(VaadinIcon.BOOKMARK.create());//svgAction);
-        //btnLists.setTooltipText("Save to list");
-        btnLists.setSuffixComponent(divListsInfo);
-        divLists.add(btnLists, tooltipLists);
-
-
-        Div divShare = new Div();
-        divShare.addClassName("tooltip-container");
-
-        Div tooltipShare = new Div("Share it");
-        tooltipShare.addClassName("tooltip-top");
-
-//        Div divSharesInfo = new Div("");
-//        divSharesInfo.addClassName(TextColor.DISABLED);
-//        SvgIcon svgShare = new SvgIcon(DownloadHandler.forClassResource(GalleryImageViewCard.class, "/icons/share-line-icon.svg"));
-//        Button btnShare = new Button(svgShare);
-//        //btnShare.setTooltipText("Share it");
-//        btnShare.setSuffixComponent(divSharesInfo);
-//        divShare.add(btnShare, tooltipShare);
-
-        Div divRate = new Div();
-        divRate.addClassName("tooltip-container");
-
-/*        Div tooltipRate = new Div("Rate it");
-        tooltipRate.addClassName("tooltip-top");
-        Div divRatesInfo = new Div("");
-        divRatesInfo.addClassName(TextColor.DISABLED);
-        SvgIcon svgStar = new SvgIcon(DownloadHandler.forClassResource(GalleryImageViewCard.class, "/icons/star-empty-icon.svg"));
-        Button btnRate = new Button(svgStar);
-        //btnRate.setTooltipText("Rate it");
-        btnRate.setSuffixComponent(divRatesInfo);
-        divRate.add(btnRate, tooltipRate);
-
-        btnRate.addClickListener(click -> {
-                    showDialogWithCarousel(isType, strSelection, strPhotoId, strAlbumUsername, true);
-//            click.getSource().getParent()
-//            btnMore.getUI().ifPresent(//ui ->
-//                //    ui.navigate(LearningsView.class, new RouteParameters(routeTitle))
-//           // );
+        // ── Compose the single action bar ────────────────────────────────────
+        shareBottomBar.addButton("Like it!",likeButton,
+                ()->
+                {
+                    if (photoViewService != null) {
+                        Integer likeUserId = null;
+                        if (strAvailableAlbumsMemberId != null && !strAvailableAlbumsMemberId.isBlank()) {
+                            try {
+                                likeUserId = Integer.parseInt(strAvailableAlbumsMemberId);
+                            } catch (NumberFormatException ignored) {
+                            }
+                        }
+                        String nameNew = (record != null) ? record.getColumnData("name_new") : "";
+                        photoViewService.recordLike(photoIdLikeFinal, nameNew, likeUserId,
+                                cardPublicIp, cardSessionId, cardSessionDateTime);
+                        likeButton.setCount(photoViewService.getLikeCount(photoIdLikeFinal));
+                    }
                 }
-        );*/
-
-
-
-        Div divFullView = new Div();
-        divFullView.addClassName("tooltip-container");
-        Div tooltipFullView = new Div("View Larger");
-        tooltipFullView.addClassName("tooltip-top");
-        Button btnMore = new Button("Full View");
-        btnMore.setIcon(VaadinIcon.VIEWPORT.create());
-//        if (strSelection == null || strSelection.equalsIgnoreCase("null") || strSelection.isEmpty()) {
-//            // btnMore.setTooltipText("Larger Photo View");
-//            tooltipFullView.setText("Larger Photo View");
-//        } else {
-//            if (isType == 1) {
-//                tooltipFullView.setText("Photos from album: " + strSelection + " by: " + strAlbumUsername);
-//            } else if (isType == 2) {
-//                tooltipFullView.setText("Photos from location: " + strSelection);
-//            } else if (isType == 3) {
-//                tooltipFullView.setText("Photos with subject:" + strSelection);
-//            }
-//        }
-        divFullView.add(btnMore, tooltipFullView);
-
-        btnMore.addClickListener(click -> {
-                    showDialogWithCarousel(isType, strSelection, strPhotoId, strAlbumUsername, false);
-//            click.getSource().getParent()
-//            btnMore.getUI().ifPresent(//ui ->
-//                //    ui.navigate(LearningsView.class, new RouteParameters(routeTitle))
-//           // );
+                ,"btn-bar-share");
+        shareBottomBar.addButton("Rate it!",rateButton,
+                ()-> {
+                    if (photoViewService != null) {
+                        Integer rateUserId = null;
+                        if (strAvailableAlbumsMemberId != null && !strAvailableAlbumsMemberId.isBlank()) {
+                            try {
+                                rateUserId = Integer.parseInt(strAvailableAlbumsMemberId);
+                            } catch (NumberFormatException ignored) {
+                            }
+                        }
+                        String nameNew = (record != null) ? record.getColumnData("name_new") : "";
+//                photoViewService.recordRate(photoIdRateFinal, nameNew, rateUserId, cardPublicIp, cardSessionId, cardSessionDateTime);
+                        showDialogWithCarousel(isType, strSelection, strPhotoId, strAlbumUsername, true);
+                        rateButton.setCount(photoRatingService.getRatingCount(photoIdRateFinal));
+                    }
                 }
-        );
-
+                ,"btn-bar-share");
+        shareBottomBar.addButton("View Larger",
+                VaadinIcon.VIEWPORT.create(),
+                () -> showDialogWithCarousel(isType, strSelection, strPhotoId, strAlbumUsername, false),
+                "btn-bar-view");
+        shareBottomBar.addShareItemMenu();
+        shareBottomBar.addButton("Info", VaadinIcon.INFO_CIRCLE_O.create(), () -> {
+            StringBuilder info = new StringBuilder();
+            if (strSubTitle != null && !strSubTitle.isBlank()
+                    && !strSubTitle.equalsIgnoreCase("null")) {
+                info.append(strSubTitle);
+            }
+            if (strCity != null && !strCity.isBlank()) {
+                if (info.length() > 0) info.append(" · ");
+                info.append(strCity);
+            }
+            if (info.length() > 0) {
+                Notification.show(info.toString(), 4000, Notification.Position.BOTTOM_CENTER);
+            }
+        }, "btn-bar-info");
 
         HorizontalLayout layoutActions = new HorizontalLayout();
-        if (isMobile) {
-            layoutActions.addClassNames(
-                    AlignItems.CENTER, JustifyContent.EVENLY,
-                    Margin.NONE,
-                    Padding.SMALL
-//                    Gap.XSMALL,
-                    //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                    //   Background.CONTRAST_5,
-//                    BorderRadius.LARGE
-            );
-            layoutActions.addClassName("actions");// AlignItems.STRETCH, JustifyContent.EVENLY ,LumoUtility.Gap.Column.XSMALL);
-            layoutActions.addClassName("actions-mobile");// AlignItems.STRETCH, JustifyContent.EVENLY ,LumoUtility.Gap.Column.XSMALL);
-        } else {
-            layoutActions.addClassNames(
-                    AlignItems.CENTER, JustifyContent.BETWEEN,
-                    Margin.NONE,
-                    Padding.SMALL
-//                    Gap.LARGE,
-                    //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                    //   Background.CONTRAST_5,
-//                    BorderRadius.LARGE
-            );
-            layoutActions.addClassName("actions");// AlignItems.STRETCH, JustifyContent.EVENLY ,LumoUtility.Gap.Column.XSMALL);
-        }
-        //layoutActions.setWidthFull();
-
-        if (isMobile) {
-            layoutActions.add(likeButton);
-        } else {
-            if (strImagePath.contains(subPathLarge)) {
-                layoutActions.add(likeButton);
-            } else {
-                layoutActions.add(likeButton, rateButton, shareBottomBar);
-            }
-        }
+        layoutActions.addClassNames(AlignItems.CENTER, JustifyContent.START,
+                Margin.NONE, Padding.SMALL);
+        layoutActions.addClassName("actions");
+        layoutActions.add(shareBottomBar);
         return layoutActions;
     }
 

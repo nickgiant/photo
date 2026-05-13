@@ -25,6 +25,7 @@ import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.*;
@@ -748,29 +749,34 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
 
     /**
      * Bottom bar for the full story view (shown after all story items):
-     * [left: viewCount + likeButton] | [right: shareBar (social share + copy URL)]
+     * [left: viewCount + likeButton] | [right: infoBar]
      */
     private HorizontalLayout getActions(long likeCount, long viewCount, int storyId, String slug,
                                         String username, String title, String description) {
 
         // Views display
-        HorizontalLayout viewsRow = new HorizontalLayout();
+/*        HorizontalLayout viewsRow = new HorizontalLayout();
         viewsRow.addClassNames(AlignItems.CENTER, JustifyContent.CENTER, Gap.XSMALL,
                 Margin.NONE, Padding.NONE);
         Div divViewCount = new Div(viewCount > 0 ? String.valueOf(viewCount) : "");
         viewsRow.add(FontAwesome.Regular.EYE.create(), divViewCount);
 
-        VerticalLayout viewsLayout = new VerticalLayout();
+ */
+
+        Span divViewCount = new Span(viewCount > 0 ? String.valueOf(viewCount) : "");
+//        viewsRow.add(FontAwesome.Regular.EYE.create(), divViewCount);
+
+        HorizontalLayout viewsLayout = new HorizontalLayout();
         viewsLayout.addClassNames(AlignItems.CENTER, JustifyContent.CENTER,
                 Margin.NONE, Padding.NONE, Gap.XSMALL);
-        Span viewsLabel = new Span("Views");
-        viewsLabel.addClassNames(FontSize.XXSMALL);
-        viewsLayout.add(viewsRow, viewsLabel);
+//        Span viewsLabel = new Span("Views");
+        viewsLayout.addClassNames(FontSize.XXSMALL);
+        viewsLayout.add(FontAwesome.Regular.EYE.create(),divViewCount);
 
         // Like button
         LikeButton btnLike = new LikeButton(likeCount);
-        btnLike.setTooltipText("Like It");
-        btnLike.addLikeClickListener(e -> {
+//        btnLike.setTooltipText("Like It");
+/*        btnLike.addLikeClickListener(e -> {
             if (photoStoryViewService != null && storyId > 0) {
                 Integer likeUserId = userId > 0 ? userId : null;
                 LocalDateTime sdt = new UtilsDate().calcDateTimeFromLongInLDT(sessionCreation, "UTC");
@@ -778,45 +784,63 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
                         VaadinSession.getCurrent().getSession().getId(), sdt);
                 btnLike.setCount(photoStoryViewService.getLikeCount(storyId));
             }
-        });
+        });*/
 
-        VerticalLayout likeLayout = new VerticalLayout();
+/*        VerticalLayout likeLayout = new VerticalLayout();
         likeLayout.addClassNames(AlignItems.CENTER, JustifyContent.CENTER,
                 Margin.NONE, Padding.NONE, Gap.XSMALL);
         Span likeLabel = new Span("Like");
         likeLabel.addClassNames(FontSize.XXSMALL);
-        likeLayout.add(btnLike, likeLabel);
+        likeLayout.add(btnLike, likeLabel);*/
 
-        // Share bar
+        // ── Compose the single action bar ────────────────────────────────────
         String storyPublicUrl = baseUrl + "/stories/member/" + username + "/story/" + slug;
         ShareableResource storyResource = new ShareableResource(
                 ShareType.PHOTO_STORY,
                 String.valueOf(storyId),
                 (title == null || title.isBlank()) ? "Photo Story" : title,
                 (description == null || description.isBlank()) ? "" : description,
-                "",  // no CDN image yet
+                "",
                 storyPublicUrl
         );
         ShareBottomBar shareBar = new ShareBottomBar(storyResource, shareService, shareMetricService);
+
+        shareBar.addComponent(viewsLayout);
+
+        shareBar.addButton("Like", btnLike,
+                () -> {
+                    if (photoStoryViewService != null && storyId > 0) {
+                        Integer likeUserId = userId > 0 ? userId : null;
+                        LocalDateTime sdt = new UtilsDate().calcDateTimeFromLongInLDT(sessionCreation, "UTC");
+                        photoStoryViewService.recordLike(storyId, slug, likeUserId, publicIp,
+                                VaadinSession.getCurrent().getSession().getId(), sdt);
+                        btnLike.setCount(photoStoryViewService.getLikeCount(storyId));
+                    }
+                }
+                ,"btn-bar-share");
+
+        RouteParam routeMember = new RouteParam("member", username);
+        RouteParam routeStory  = new RouteParam("story",  slug);
+        shareBar.addButton("View Story",
+                FontAwesome.Solid.ARROW_RIGHT.create(),
+                () -> shareBar.getUI().ifPresent(ui ->
+                        ui.navigate(StoriesView.class, new RouteParameters(routeMember, routeStory))),
+                "btn-bar-view");
+
         shareBar.addShareItemMenu();
 
-        // Left group: views + like
-        HorizontalLayout leftGroup = new HorizontalLayout();
-        leftGroup.addClassNames(AlignItems.CENTER, JustifyContent.START, Gap.SMALL,
-                Margin.NONE, Padding.NONE);
-        leftGroup.add(viewsLayout, likeLayout);
-
-        // Right group: share bar
-        HorizontalLayout rightGroup = new HorizontalLayout();
-        rightGroup.addClassNames(AlignItems.CENTER, JustifyContent.END,
-                Margin.NONE, Padding.NONE);
-        rightGroup.add(shareBar);
+        final String infoText = (description != null && !description.isBlank()) ? description : title;
+        shareBar.addButton("Info", VaadinIcon.INFO_CIRCLE_O.create(), () -> {
+            if (infoText != null && !infoText.isBlank()) {
+                Notification.show(infoText, 5000, Notification.Position.BOTTOM_CENTER);
+            }
+        }, "btn-bar-info");
 
         HorizontalLayout layoutActions = new HorizontalLayout();
-        layoutActions.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.BETWEEN,
+        layoutActions.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER,
                 Padding.SMALL, Margin.NONE);
         layoutActions.addClassName("story-bottom-bar");
-        layoutActions.add(leftGroup, rightGroup);
+        layoutActions.add(shareBar);
 
         return layoutActions;
     }

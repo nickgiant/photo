@@ -460,21 +460,16 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
                 Gap.XSMALL);
 
         verticalLayout = new VerticalLayout();
-        if (isMobile) {
+        if (isMobile){
             verticalLayout.addClassNames(
                     Overflow.HIDDEN, Width.FULL,// not full width
-                    // Margin.LARGE, //.Left.MEDIUM, Margin.Right.MEDIUM,
-                    //  Padding.Left.MEDIUM, Padding.Left.MEDIUM,
-                    // Margin.Horizontal.SMALL,
                     Margin.NONE,
                     Padding.NONE,
                     Padding.Top.XSMALL,
                     Gap.SMALL,
-                    //  Padding.NONE, //.Left.MEDIUM, Padding.Right.MEDIUM,
-                    //Margin.Vertical.MEDIUM, Padding.Vertical.NONE,
                     AlignItems.CENTER, JustifyContent.CENTER
             );
-        } else {
+        }else{
             verticalLayout.addClassNames(
                     Overflow.HIDDEN, Width.FULL,// not full width
                     // Margin.LARGE, //.Left.MEDIUM, Margin.Right.MEDIUM,
