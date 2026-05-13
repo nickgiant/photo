@@ -3,8 +3,6 @@ package com.photo.act.photo_act.views.components;
 import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
-import com.photo.act.photo_act.model.ShareType;
-import com.photo.act.photo_act.model.ShareableResource;
 import com.photo.act.photo_act.services.PhotoRatingService;
 import com.photo.act.photo_act.services.PhotoViewService;
 import com.photo.act.photo_act.services.ShareMetricService;
@@ -739,30 +737,21 @@ public class GalleryImageViewCard extends Div {
 
 
 
-        ShareableResource photo = new ShareableResource(
-                ShareType.PHOTO,
-                strPhotoId,
-                strSubTitle,
-                "",
-                baseUrl+"/photo/"+strFileName,
-                baseUrl+"/photo/"+strPhotoId
-        );
-
-        ShareBottomBar shareBottomBar = new ShareBottomBar(photo,shareService,shareMetricService);
-
-        shareBottomBar.addButton("View Larger",
-                VaadinIcon.VIEWPORT.create(),
-                () -> showDialogWithCarousel(isType, strSelection, strPhotoId, strAlbumUsername, false),
-                "btn-bar-view");
-
-        if (strCity != null && !strCity.isEmpty()) {
-            shareBottomBar.addButton("Location",
-                    VaadinIcon.LOCATION_ARROW_CIRCLE_O.create(),
-                    () -> showDialogWeatherForCity(strCity, "").open(),
-                    "btn-bar-location");
-        }
-
-        shareBottomBar.addShareItemMenu();
+        ButtonBar infoBar = new ButtonBar();
+        infoBar.addButton("Info", VaadinIcon.INFO_CIRCLE_O.create(), () -> {
+            StringBuilder info = new StringBuilder();
+            if (strSubTitle != null && !strSubTitle.isBlank()
+                    && !strSubTitle.equalsIgnoreCase("null")) {
+                info.append(strSubTitle);
+            }
+            if (strCity != null && !strCity.isBlank()) {
+                if (info.length() > 0) info.append(" · ");
+                info.append(strCity);
+            }
+            if (info.length() > 0) {
+                Notification.show(info.toString(), 4000, Notification.Position.BOTTOM_CENTER);
+            }
+        }, "btn-bar-info");
 
 
 
@@ -934,7 +923,7 @@ public class GalleryImageViewCard extends Div {
             if (strImagePath.contains(subPathLarge)) {
                 layoutActions.add(likeButton);
             } else {
-                layoutActions.add(likeButton, rateButton, shareBottomBar);
+                layoutActions.add(likeButton, rateButton, infoBar);
             }
         }
         return layoutActions;

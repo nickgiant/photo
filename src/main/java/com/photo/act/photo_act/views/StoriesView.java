@@ -3,17 +3,15 @@ package com.photo.act.photo_act.views;
 import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
-import com.photo.act.photo_act.model.ShareType;
-import com.photo.act.photo_act.model.ShareableResource;
 import com.photo.act.photo_act.services.PhotoStoryViewService;
 import com.photo.act.photo_act.services.ShareMetricService;
 import com.photo.act.photo_act.services.ShareService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.photo.act.photo_act.views.components.AvatarItem;
+import com.photo.act.photo_act.views.components.ButtonBar;
 import com.photo.act.photo_act.views.components.GenericView;
 import com.photo.act.photo_act.views.components.LikeButton;
-import com.photo.act.photo_act.views.components.ShareBottomBar;
 import com.photo.act.photo_act.views.components.StoryItemViewCard;
 import com.photo.act.photo_act.views.components.StoryViewCard;
 import com.vaadin.flow.component.HasComponents;
@@ -25,6 +23,7 @@ import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.*;
@@ -748,7 +747,7 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
 
     /**
      * Bottom bar for the full story view (shown after all story items):
-     * [left: viewCount + likeButton] | [right: shareBar (social share + copy URL)]
+     * [left: viewCount + likeButton] | [right: infoBar]
      */
     private HorizontalLayout getActions(long likeCount, long viewCount, int storyId, String slug,
                                         String username, String title, String description) {
@@ -787,18 +786,14 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
         likeLabel.addClassNames(FontSize.XXSMALL);
         likeLayout.add(btnLike, likeLabel);
 
-        // Share bar
-        String storyPublicUrl = baseUrl + "/stories/member/" + username + "/story/" + slug;
-        ShareableResource storyResource = new ShareableResource(
-                ShareType.PHOTO_STORY,
-                String.valueOf(storyId),
-                (title == null || title.isBlank()) ? "Photo Story" : title,
-                (description == null || description.isBlank()) ? "" : description,
-                "",  // no CDN image yet
-                storyPublicUrl
-        );
-        ShareBottomBar shareBar = new ShareBottomBar(storyResource, shareService, shareMetricService);
-        shareBar.addShareItemMenu();
+        // Info button
+        ButtonBar infoBar = new ButtonBar();
+        final String infoText = (description != null && !description.isBlank()) ? description : title;
+        infoBar.addButton("Info", VaadinIcon.INFO_CIRCLE_O.create(), () -> {
+            if (infoText != null && !infoText.isBlank()) {
+                Notification.show(infoText, 5000, Notification.Position.BOTTOM_CENTER);
+            }
+        }, "btn-bar-info");
 
         // Left group: views + like
         HorizontalLayout leftGroup = new HorizontalLayout();
@@ -806,11 +801,11 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
                 Margin.NONE, Padding.NONE);
         leftGroup.add(viewsLayout, likeLayout);
 
-        // Right group: share bar
+        // Right group: info
         HorizontalLayout rightGroup = new HorizontalLayout();
         rightGroup.addClassNames(AlignItems.CENTER, JustifyContent.END,
                 Margin.NONE, Padding.NONE);
-        rightGroup.add(shareBar);
+        rightGroup.add(infoBar);
 
         HorizontalLayout layoutActions = new HorizontalLayout();
         layoutActions.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.BETWEEN,

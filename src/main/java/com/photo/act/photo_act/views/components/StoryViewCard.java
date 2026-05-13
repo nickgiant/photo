@@ -3,8 +3,6 @@ package com.photo.act.photo_act.views.components;
 import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
-import com.photo.act.photo_act.model.ShareType;
-import com.photo.act.photo_act.model.ShareableResource;
 import com.photo.act.photo_act.services.PhotoStoryViewService;
 import com.photo.act.photo_act.services.ShareMetricService;
 import com.photo.act.photo_act.services.ShareService;
@@ -21,6 +19,7 @@ import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.menubar.MenuBarVariant;
+import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.RouteParam;
@@ -115,16 +114,6 @@ public class StoryViewCard extends VerticalLayout {
         String strItemTitle = record.getColumnData("item_title");
         String strItemDescr = record.getColumnData("descr");
 
-        // Build shareable resource for this story (requires strStoryUserName resolved above)
-        String storyPublicUrl = baseUrl + "/stories/member/" + strStoryUserName + "/story/" + strSlug;
-        ShareableResource storyResource = new ShareableResource(
-                ShareType.PHOTO_STORY,
-                String.valueOf(storyId),
-                strTitle.isBlank() || strTitle.equalsIgnoreCase("null") ? "Photo Story" : strTitle,
-                strDescription.isBlank() || strDescription.equalsIgnoreCase("null") ? "" : strDescription,
-                "",  // no CDN image yet
-                storyPublicUrl
-        );
 
 
         String strCity = "";
@@ -561,18 +550,24 @@ public class StoryViewCard extends VerticalLayout {
             );
         });
 
-        // Share bar for the action bar row
-        ShareBottomBar shareBar = new ShareBottomBar(storyResource, shareService, shareMetricService);
-        shareBar.addShareItemMenu();
+        // Info button for the action bar row
+        ButtonBar infoBar = new ButtonBar();
+        final String infoText = (strDescription != null && !strDescription.isBlank()
+                && !strDescription.equalsIgnoreCase("null")) ? strDescription : strTitle;
+        infoBar.addButton("Info", VaadinIcon.INFO_CIRCLE_O.create(), () -> {
+            if (infoText != null && !infoText.isBlank()) {
+                Notification.show(infoText, 5000, Notification.Position.BOTTOM_CENTER);
+            }
+        }, "btn-bar-info");
 
         this.add(divImage, header, subtitle, divSubHeaderAll, layoutPhotosInfo,
-                buildActionBar(btnMore, layoutRateAll, layoutViewCountAll, shareBar));
+                buildActionBar(btnMore, layoutRateAll, layoutViewCountAll, infoBar));
 
     }
 
     /**
      * Action bar layout for the story list card:
-     * [left: viewsLayout + likeSection] | [center: View Story] | [right: shareBar]
+     * [left: viewsLayout + likeSection] | [center: View Story] | [right: infoBar]
      *
      * Both viewsLayout (VerticalLayout with eye+count) and likeSection (VerticalLayout
      * with LikeButton+label) are pre-composed in the constructor; passing them here
@@ -581,7 +576,7 @@ public class StoryViewCard extends VerticalLayout {
     private HorizontalLayout buildActionBar(Button btnViewStory,
                                             VerticalLayout likeSection,
                                             VerticalLayout viewsLayout,
-                                            ShareBottomBar shareBar) {
+                                            ButtonBar infoBar) {
         HorizontalLayout leftGroup = new HorizontalLayout();
         leftGroup.addClassNames(AlignItems.CENTER, JustifyContent.START, Gap.XSMALL,
                 Margin.NONE, Padding.NONE);
@@ -590,7 +585,7 @@ public class StoryViewCard extends VerticalLayout {
         HorizontalLayout rightGroup = new HorizontalLayout();
         rightGroup.addClassNames(AlignItems.CENTER, JustifyContent.END, Gap.XSMALL,
                 Margin.NONE, Padding.NONE);
-        rightGroup.add(shareBar);
+        rightGroup.add(infoBar);
 
         HorizontalLayout bar = new HorizontalLayout();
         bar.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.BETWEEN,
