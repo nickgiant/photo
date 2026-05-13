@@ -3,12 +3,17 @@ package com.photo.act.photo_act.views;
 import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
+import com.photo.act.photo_act.model.ShareType;
+import com.photo.act.photo_act.model.ShareableResource;
 import com.photo.act.photo_act.services.PhotoStoryViewService;
+import com.photo.act.photo_act.services.ShareMetricService;
+import com.photo.act.photo_act.services.ShareService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.photo.act.photo_act.views.components.AvatarItem;
 import com.photo.act.photo_act.views.components.GenericView;
 import com.photo.act.photo_act.views.components.LikeButton;
+import com.photo.act.photo_act.views.components.ShareBottomBar;
 import com.photo.act.photo_act.views.components.StoryItemViewCard;
 import com.photo.act.photo_act.views.components.StoryViewCard;
 import com.vaadin.flow.component.HasComponents;
@@ -32,6 +37,7 @@ import com.vaadin.flow.theme.lumo.LumoUtility.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.io.File;
 import java.net.InetAddress;
@@ -127,6 +133,9 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
     private String strCategory;
     private RecordService recordService;
     private PhotoStoryViewService photoStoryViewService;
+    @Autowired private ShareService shareService;
+    @Autowired private ShareMetricService shareMetricService;
+    @Value("${app.base-url}") private String baseUrl;
     private String strHeader;
     private String strUrlRequestToBeLogged;
     private String dirChar = FileSystems.getDefault().getSeparator();
@@ -462,7 +471,8 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
         StoryViewCard storyViewCard = new StoryViewCard(record, strImagePath, isMobile, userId, strUsername, sessionCreation, hostname, publicIp, isEditable,
                 recordService, photoStoryViewService, publicIp,
                 VaadinSession.getCurrent().getSession().getId(),
-                new UtilsDate().calcDateTimeFromLongInLDT(sessionCreation, "UTC"));
+                new UtilsDate().calcDateTimeFromLongInLDT(sessionCreation, "UTC"),
+                shareService, shareMetricService, baseUrl);
         return storyViewCard;
     }
 
@@ -488,16 +498,24 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
             } catch (NumberFormatException ignored) {}
         }
 
-        // Compute like count for the story action bar
+        // Gather story metadata from the first row for the bottom action bar
         long likeCount = 0;
+        long viewCount = 0;
         int detailStoryId = 0;
-        String detailSlug = "";
+        String detailSlug     = "";
+        String detailUsername = "";
+        String detailTitle    = "";
+        String detailDesc     = "";
         if (!lstRecords.isEmpty()) {
             try {
-                detailStoryId = Integer.parseInt(lstRecords.get(0).getColumnData("story_id"));
-                detailSlug    = lstRecords.get(0).getColumnData("slug");
+                detailStoryId  = Integer.parseInt(lstRecords.get(0).getColumnData("story_id"));
+                detailSlug     = lstRecords.get(0).getColumnData("slug");
+                detailUsername = lstRecords.get(0).getColumnData("username");
+                detailTitle    = lstRecords.get(0).getColumnData("story_title");
+                detailDesc     = lstRecords.get(0).getColumnData("description");
                 if (photoStoryViewService != null) {
                     likeCount = photoStoryViewService.getLikeCount(detailStoryId);
+                    viewCount = photoStoryViewService.getViewCount(detailStoryId);
                 }
             } catch (NumberFormatException ignored) {}
         }
@@ -507,9 +525,13 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
             divGallery.add(getStoryItemsFromDb(rec, isEditable));
         }
 
-        final int finalStoryId  = detailStoryId;
-        final String finalSlug  = detailSlug;
-        divGallery.add(getActions(likeCount, finalStoryId, finalSlug));
+        final int    finalStoryId  = detailStoryId;
+        final String finalSlug     = detailSlug;
+        final String finalUsername = detailUsername;
+        final String finalTitle    = detailTitle;
+        final String finalDesc     = detailDesc;
+        divGallery.add(getActions(likeCount, viewCount, finalStoryId, finalSlug,
+                finalUsername, finalTitle, finalDesc));
         verticalLayout.add(divGallery);
 
         String sqlMember = sqlMemberOfStories + " AND usr.username = '" + strMember + "' " + sqlMemberOfStoriesGroupBy;
@@ -724,8 +746,28 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
     }
 
 
-    private HorizontalLayout getActions(long likeCount, int storyId, String slug) {
+    /**
+     * Bottom bar for the full story view (shown after all story items):
+     * [left: viewCount + likeButton] | [right: shareBar (social share + copy URL)]
+     */
+    private HorizontalLayout getActions(long likeCount, long viewCount, int storyId, String slug,
+                                        String username, String title, String description) {
 
+        // Views display
+        HorizontalLayout viewsRow = new HorizontalLayout();
+        viewsRow.addClassNames(AlignItems.CENTER, JustifyContent.CENTER, Gap.XSMALL,
+                Margin.NONE, Padding.NONE);
+        Div divViewCount = new Div(viewCount > 0 ? String.valueOf(viewCount) : "");
+        viewsRow.add(FontAwesome.Regular.EYE.create(), divViewCount);
+
+        VerticalLayout viewsLayout = new VerticalLayout();
+        viewsLayout.addClassNames(AlignItems.CENTER, JustifyContent.CENTER,
+                Margin.NONE, Padding.NONE, Gap.XSMALL);
+        Span viewsLabel = new Span("Views");
+        viewsLabel.addClassNames(FontSize.XXSMALL);
+        viewsLayout.add(viewsRow, viewsLabel);
+
+        // Like button
         LikeButton btnLike = new LikeButton(likeCount);
         btnLike.setTooltipText("Like It");
         btnLike.addLikeClickListener(e -> {
@@ -738,37 +780,43 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
             }
         });
 
-        Button btnMoreAction = new Button(VaadinIcon.BOOKMARK.create());
-        btnMoreAction.setTooltipText("Save to list");
+        VerticalLayout likeLayout = new VerticalLayout();
+        likeLayout.addClassNames(AlignItems.CENTER, JustifyContent.CENTER,
+                Margin.NONE, Padding.NONE, Gap.XSMALL);
+        Span likeLabel = new Span("Like");
+        likeLabel.addClassNames(FontSize.XXSMALL);
+        likeLayout.add(btnLike, likeLabel);
 
-        Button btnComment = new Button(VaadinIcon.COMMENT.create());
-        btnComment.setTooltipText("Comment on it");
+        // Share bar
+        String storyPublicUrl = baseUrl + "/stories/member/" + username + "/story/" + slug;
+        ShareableResource storyResource = new ShareableResource(
+                ShareType.PHOTO_STORY,
+                String.valueOf(storyId),
+                (title == null || title.isBlank()) ? "Photo Story" : title,
+                (description == null || description.isBlank()) ? "" : description,
+                "",  // no CDN image yet
+                storyPublicUrl
+        );
+        ShareBottomBar shareBar = new ShareBottomBar(storyResource, shareService, shareMetricService);
+        shareBar.addShareItemMenu();
 
-        StreamResource iconShare = new StreamResource("share-line-icon.svg",
-                () -> getClass().getResourceAsStream("/icons/share-line-icon.svg"));
-        SvgIcon svgShare = new SvgIcon(iconShare);
-        Button btnShare = new Button(svgShare);
-        btnShare.setTooltipText("Share it");
+        // Left group: views + like
+        HorizontalLayout leftGroup = new HorizontalLayout();
+        leftGroup.addClassNames(AlignItems.CENTER, JustifyContent.START, Gap.SMALL,
+                Margin.NONE, Padding.NONE);
+        leftGroup.add(viewsLayout, likeLayout);
+
+        // Right group: share bar
+        HorizontalLayout rightGroup = new HorizontalLayout();
+        rightGroup.addClassNames(AlignItems.CENTER, JustifyContent.END,
+                Margin.NONE, Padding.NONE);
+        rightGroup.add(shareBar);
 
         HorizontalLayout layoutActions = new HorizontalLayout();
-        if (isMobile) {
-            layoutActions.addClassNames(
-                    Overflow.HIDDEN,
-                    AlignItems.CENTER, JustifyContent.CENTER,
-                    Margin.SMALL, Padding.NONE
-            );
-            layoutActions.addClassName("actions");
-            layoutActions.addClassName("actions-mobile");
-        } else {
-            layoutActions.addClassNames(
-                    Overflow.HIDDEN,
-                    AlignItems.CENTER, JustifyContent.CENTER,
-                    Margin.SMALL, Padding.NONE
-            );
-            layoutActions.addClassName("actions");
-        }
-
-        layoutActions.add(btnLike, btnComment, btnMoreAction, btnShare);
+        layoutActions.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.BETWEEN,
+                Padding.SMALL, Margin.NONE);
+        layoutActions.addClassName("story-bottom-bar");
+        layoutActions.add(leftGroup, rightGroup);
 
         return layoutActions;
     }
