@@ -1,0 +1,107 @@
+/* ============================================================
+   UIverse-style social share button bar
+   Circular icon buttons with sliding tooltip on hover.
+   Tooltip uses cubic-bezier spring animation.
+   Brand colors are set per-item via CSS custom properties.
+   ============================================================ */
+
+.btn-bar-wrapper {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 0;
+    font-family: "Poppins", sans-serif;
+}
+
+/* ── Individual button ── */
+.btn-bar-item {
+    position: relative;
+    background: #ffffff;
+    border-radius: 50%;
+    margin: 6px;
+    width: 46px;
+    height: 46px;
+    font-size: 18px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    box-shadow: 0 10px 10px rgba(0, 0, 0, 0.10);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    color: #333333;
+    user-select: none;
+
+    /* Brand color variables – overridden per brand class below */
+    --brand-bg: #51459f;
+    --brand-color: #ffffff;
+}
+
+.btn-bar-item:hover {
+    background: var(--brand-bg);
+    color: var(--brand-color);
+}
+
+/* ── Tooltip ── */
+.btn-bar-tooltip {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 13px;
+    font-weight: 500;
+    background: #ffffff;
+    color: #333333;
+    padding: 5px 8px;
+    border-radius: 5px;
+    box-shadow: 0 10px 10px rgba(0, 0, 0, 0.10);
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    white-space: nowrap;
+    z-index: 1000;
+}
+
+/* tooltip caret */
+.btn-bar-tooltip::before {
+    position: absolute;
+    content: "";
+    height: 8px;
+    width: 8px;
+    background: #ffffff;
+    bottom: -3px;
+    left: 50%;
+    transform: translate(-50%) rotate(45deg);
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* Slide tooltip up on hover */
+.btn-bar-item:hover .btn-bar-tooltip {
+    top: -48px;
+    opacity: 1;
+}
+
+/* Tooltip picks up the brand color on hover */
+.btn-bar-item:hover .btn-bar-tooltip,
+.btn-bar-item:hover .btn-bar-tooltip::before {
+    background: var(--brand-bg);
+    color: var(--brand-color);
+}
+
+/* Icon gets a subtle text shadow */
+.btn-bar-item:hover .btn-bar-icon-span {
+    text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.10);
+}
+
+/* ── Brand color overrides ── */
+
+.btn-bar-facebook  { --brand-bg: #1877F2; --brand-color: #ffffff; }
+.btn-bar-pinterest { --brand-bg: #E60023; --brand-color: #ffffff; }
+.btn-bar-linkedin  { --brand-bg: #0A66C2; --brand-color: #ffffff; }
+.btn-bar-twitter   { --brand-bg: #1DA1F2; --brand-color: #ffffff; }
+.btn-bar-instagram { --brand-bg: #E1306C; --brand-color: #ffffff; }
+.btn-bar-youtube   { --brand-bg: #FF0000; --brand-color: #ffffff; }
+.btn-bar-github    { --brand-bg: #181717; --brand-color: #ffffff; }
+.btn-bar-copy      { --brand-bg: #374151; --brand-color: #ffffff; }
+.btn-bar-share     { --brand-bg: #6366F1; --brand-color: #ffffff; }
+.btn-bar-view      { --brand-bg: #10B981; --brand-color: #ffffff; }
+.btn-bar-location  { --brand-bg: #F59E0B; --brand-color: #ffffff; }

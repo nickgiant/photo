@@ -750,27 +750,17 @@ public class GalleryImageViewCard extends Div {
 
         ShareBottomBar shareBottomBar = new ShareBottomBar(photo,shareService,shareMetricService);
 
-        MenuItem viewLarger = createIconItem(shareBottomBar, VaadinIcon.VIEWPORT.create(), "View Larger", "View Larger");
-        viewLarger.addClickListener(click->{
-            showDialogWithCarousel(isType, strSelection, strPhotoId, strAlbumUsername, false);
-        });
+        shareBottomBar.addButton("View Larger",
+                VaadinIcon.VIEWPORT.create(),
+                () -> showDialogWithCarousel(isType, strSelection, strPhotoId, strAlbumUsername, false),
+                "btn-bar-view");
 
-//        SvgIcon svgRate = new SvgIcon(DownloadHandler.forClassResource(GalleryImageViewCard.class, "/icons/star-empty-icon.svg"));
-
-/*        MenuItem viewRate = createIconItem(shareBottomBar, svgRate, "Rate it", "rate it");
-        viewRate.addClickListener(click->{*/
-//            showDialogWithCarousel(isType, strSelection, strPhotoId, strAlbumUsername, true);
-        /*});*/
-
-
-        if (strCity!= null && !strCity.isEmpty()) {
-            MenuItem viewCityInfo = createIconItem(shareBottomBar, VaadinIcon.LOCATION_ARROW_CIRCLE_O.create(), "", null);
-            viewCityInfo.addClickListener(click -> {
-                Dialog dialog = showDialogWeatherForCity(strCity, "");
-                dialog.open();
-            });
+        if (strCity != null && !strCity.isEmpty()) {
+            shareBottomBar.addButton("Location",
+                    VaadinIcon.LOCATION_ARROW_CIRCLE_O.create(),
+                    () -> showDialogWeatherForCity(strCity, "").open(),
+                    "btn-bar-location");
         }
-
 
         shareBottomBar.addShareItemMenu();
 
