@@ -3,8 +3,10 @@ package com.photo.act.photo_act.views.components;
 import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
+import com.photo.act.photo_act.services.PhotoStoryViewService;
 import com.photo.act.photo_act.views.StoriesView;
 import com.photo.act.photo_act.views.StoryView;
+import com.photo.act.photo_act.views.components.LikeButton;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.contextmenu.MenuItem;
@@ -31,6 +33,7 @@ import java.io.FileNotFoundException;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
 
 public class StoryViewCard extends VerticalLayout {
 
@@ -42,7 +45,9 @@ public class StoryViewCard extends VerticalLayout {
     private String dirChar = FileSystems.getDefault().getSeparator();
 
     public StoryViewCard(Record record, String strImagePath, boolean isMobile, int userId, String strUserName, long sessionCreation,
-                         String hostname, String publicIp, boolean isEditable, RecordService recordService) {
+                         String hostname, String publicIp, boolean isEditable, RecordService recordService,
+                         PhotoStoryViewService photoStoryViewService, String clientIp,
+                         String sessionId, LocalDateTime sessionDateTime) {
         this.recordService = recordService;
         this.isMobile = isMobile;
 
@@ -61,6 +66,25 @@ public class StoryViewCard extends VerticalLayout {
         String strTitle = record.getColumnData("title");
         String strSlug = record.getColumnData("slug");
         String strDescription = record.getColumnData("description");
+        String strStoryId = record.getColumnData("story_id");
+
+        // Parse story id and record a List view
+        int storyId = 0;
+        try { storyId = Integer.parseInt(strStoryId); } catch (NumberFormatException ignored) {}
+        if (photoStoryViewService != null && storyId > 0) {
+            Integer viewUserId = userId > 0 ? userId : null;
+            photoStoryViewService.recordView(storyId, strSlug, viewUserId, clientIp,
+                    PhotoStoryViewService.TYPE_LIST, sessionId, sessionDateTime);
+        }
+
+        // Fetch real counts
+        long viewCount = photoStoryViewService != null && storyId > 0
+                ? photoStoryViewService.getViewCount(storyId) : 0;
+        long likeCount = photoStoryViewService != null && storyId > 0
+                ? photoStoryViewService.getLikeCount(storyId) : 0;
+
+        final int finalStoryId = storyId;
+        final String finalSlug  = strSlug;
 
         String strStoryPhotoCount = record.getColumnData("story_photo_count");
 
@@ -251,37 +275,25 @@ public class StoryViewCard extends VerticalLayout {
         );
         layoutPhotosInfo.addClassName("summary");
 
-        StreamResource iconRate = new StreamResource("star-empty-icon.svg",
-                () -> getClass().getResourceAsStream("/icons/star-empty-icon.svg"));
-        SvgIcon svgRate = new SvgIcon(iconRate);
+        LikeButton likeButton = new LikeButton(likeCount);
+        likeButton.setTooltipText("Like It");
+        likeButton.addLikeClickListener(e -> {
+            if (photoStoryViewService != null && finalStoryId > 0) {
+                Integer likeUserId = userId > 0 ? userId : null;
+                photoStoryViewService.recordLike(finalStoryId, finalSlug, likeUserId, clientIp,
+                        sessionId, sessionDateTime);
+                likeButton.setCount(photoStoryViewService.getLikeCount(finalStoryId));
+            }
+        });
 
         VerticalLayout layoutRateAll = new VerticalLayout();
         layoutRateAll.addClassNames(
-                //  Overflow.HIDDEN, Width.FULL,
                 AlignItems.CENTER, JustifyContent.CENTER,
-                Margin.NONE,
-                Padding.NONE,
-                Gap.XSMALL,
-                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                //   Background.CONTRAST_5,
-                BorderRadius.NONE
+                Margin.NONE, Padding.NONE, Gap.XSMALL, BorderRadius.NONE
         );
-        HorizontalLayout layoutRate = new HorizontalLayout();
-        layoutRate.addClassNames(
-//                Overflow.HIDDEN, Width.FULL,
-                AlignItems.CENTER, JustifyContent.CENTER,
-                Margin.NONE,
-                Padding.NONE,
-                Gap.XSMALL,
-                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                //   Background.CONTRAST_5,
-                BorderRadius.NONE
-        );
-        Div divRate = new Div("1");
-        layoutRate.add(svgRate, divRate);
-        Span divRateLabel = new Span("Rate");
+        Span divRateLabel = new Span("Like");
         divRateLabel.addClassNames(FontSize.XXSMALL);
-        layoutRateAll.add(layoutRate, divRateLabel);
+        layoutRateAll.add(likeButton, divRateLabel);
 
 
         VerticalLayout layoutViewCountAll = new VerticalLayout();
@@ -306,7 +318,7 @@ public class StoryViewCard extends VerticalLayout {
                 //   Background.CONTRAST_5,
                 BorderRadius.NONE
         );
-        Div divViews = new Div("1");
+        Div divViews = new Div(viewCount > 0 ? String.valueOf(viewCount) : "");
         layoutViewCount.add(FontAwesome.Regular.EYE.create(), divViews);
         Span divViewsLabel = new Span("Views");
         divViewsLabel.addClassNames(FontSize.XXSMALL);
