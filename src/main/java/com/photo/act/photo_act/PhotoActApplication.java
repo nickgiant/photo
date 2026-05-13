@@ -30,7 +30,7 @@ public class PhotoActApplication implements AppShellConfigurator {
      */
     @Override
     public void configurePage(AppShellSettings settings) {
-        settings.addFavIcon("icon", "/static/favicon.ico", "32x32");
+//        settings.addFavIcon("icon", "/static/favicon.ico", "32x32");
 
         // Default OG image — shown when no specific content meta is set
         settings.addMetaTag("og:image", "https://www.photoact.net/static/photographerM.jpg");

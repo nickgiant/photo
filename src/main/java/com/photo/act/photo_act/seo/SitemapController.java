@@ -59,7 +59,7 @@ public class SitemapController {
 
 
 
-    private List<String> URLS = List.of("/", "/home", "/albums", "/photos", "/events", "/learnings", "/members");
+    private List<String> URLS = List.of("/", "/home", "/stories", "/photos", "/events", "/learnings", "/photographers");
 
 
     // ─────────────────────────────────────────────────────────────────
@@ -105,7 +105,7 @@ public class SitemapController {
 
         // Add more static pages here as your site grows:
          appendUrl(xml, baseUrl + "/photos",   today, "weekly", "0.7", null, null, null);
-         appendUrl(xml, baseUrl + "/albums", today, "monthly", "0.6", null, null, null);
+         appendUrl(xml, baseUrl + "/stories", today, "monthly", "0.6", null, null, null);
         appendUrl(xml, baseUrl + "/learnings", today, "weekly", "0.7", null, null, null);
         appendUrl(xml, baseUrl + "/photographers", today, "monthly", "0.6", null, null, null);
         appendUrl(xml, baseUrl + "/events", today, "monthly", "0.5", null, null, null);

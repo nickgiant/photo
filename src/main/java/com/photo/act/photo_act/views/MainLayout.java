@@ -1,6 +1,7 @@
 package com.photo.act.photo_act.views;
 
 import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
+import com.photo.act.photo_act.views.components.GoogleAnalytics;
 import com.vaadin.flow.component.*;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
@@ -38,9 +39,6 @@ import com.vaadin.flow.theme.lumo.LumoUtility.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.vaadin.googleanalytics.tracking.EnableGoogleAnalytics;
-import org.vaadin.googleanalytics.tracking.TrackerConfiguration;
-import org.vaadin.googleanalytics.tracking.TrackerConfigurator;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -50,7 +48,8 @@ import java.net.UnknownHostException;
  */
 @Layout
 @AnonymousAllowed
-//@EnableGoogleAnalytics(value = "G-NQH7NZ6JJL")
+
+
 
 public class MainLayout extends AppLayout{
 
@@ -116,6 +115,16 @@ public class MainLayout extends AppLayout{
     private VerticalLayout sidebarLayout;
 
     public MainLayout() {
+
+        GoogleAnalytics analytics = new GoogleAnalytics("G-NQH7NZ6JJL"); // Your measurement ID
+        addToDrawer(analytics);
+
+        // Track page views when route changes
+        UI.getCurrent().addBeforeEnterListener(event -> {
+            analytics.sendPageView(event.getLocation().getPath());
+        });
+
+
 
         InetAddress inetAddress = null;
         try {
