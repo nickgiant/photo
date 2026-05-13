@@ -85,6 +85,10 @@ public class LikeButton extends Div {
         }
     }
 
+    public void setTooltipText(String tooltip) {
+        //setTooltipText(tooltip);
+    }
+
     /**
      * Adds a server-side click listener that fires after the animation JS is sent.
      * Use this to record the like and refresh the count.

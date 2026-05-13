@@ -3,12 +3,12 @@ package com.photo.act.photo_act.views;
 import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
-import com.photo.act.photo_act.services.ShareMetricService;
-import com.photo.act.photo_act.services.ShareService;
+import com.photo.act.photo_act.services.PhotoStoryViewService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.photo.act.photo_act.views.components.AvatarItem;
 import com.photo.act.photo_act.views.components.GenericView;
+import com.photo.act.photo_act.views.components.LikeButton;
 import com.photo.act.photo_act.views.components.StoryItemViewCard;
 import com.photo.act.photo_act.views.components.StoryViewCard;
 import com.vaadin.flow.component.HasComponents;
@@ -37,6 +37,7 @@ import java.io.File;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.FileSystems;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -125,8 +126,7 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
     private String strSlug;
     private String strCategory;
     private RecordService recordService;
-    private ShareService shareService;
-    private ShareMetricService shareMetricService;
+    private PhotoStoryViewService photoStoryViewService;
     private String strHeader;
     private String strUrlRequestToBeLogged;
     private String dirChar = FileSystems.getDefault().getSeparator();
@@ -150,8 +150,9 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
             , "inc"
             , "date_inserted"
             , "username", "username", "resident", "date_joined", "avatar_path"
+            , "story_id"
     };
-    private String sqlReadStoryPhotos = "SELECT s.title AS story_title, s.slug, s.user_id, s.story_visible_to, s.description, " +
+    private String sqlReadStoryPhotos = "SELECT s.id AS story_id, s.title AS story_title, s.slug, s.user_id, s.story_visible_to, s.description, " +
             " sp.item_title, sp.descr, sp.item_type, " +
             " pm.name_new, pm.title, pm.subtitle, pm.photo_type, pm.uploader, pm.creator, pm.visible_to,  " +
             " DATE_FORMAT(pm.meta_date, '%W %D %M %Y %H:%i %p') AS meta_date, DATE_FORMAT(pm.meta_date, '%M %Y') AS photo_date, DATE_FORMAT(pm.meta_date, '%d/%m/%Y - %H:%i:%S') AS photo_time_shot " +
@@ -167,10 +168,9 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
     private String sessionDateTime;
     private GenericView genericView;
 
-    public StoriesView(RecordService recordService, ShareService shareService, ShareMetricService shareMetricService) {
+    public StoriesView(RecordService recordService, PhotoStoryViewService photoStoryViewService) {
         this.recordService = recordService;
-        this.shareService = shareService;
-        this.shareMetricService = shareMetricService;
+        this.photoStoryViewService = photoStoryViewService;
         utilsDate = new UtilsDate();
         genericView = new GenericView(recordService);
 
@@ -456,14 +456,14 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
     private StoryViewCard getStoriesFromDb(Record record, boolean isEditable) {
         strPath = DIR_PHOTOS_SERVER + dirChar + subPathMedium;
 
-
-        String strImagePath = strPath; // + strFileName;
+        String strImagePath = strPath;
         logger.info(" strImagePath " + strImagePath);
 
         StoryViewCard storyViewCard = new StoryViewCard(record, strImagePath, isMobile, userId, strUsername, sessionCreation, hostname, publicIp, isEditable,
-                recordService, shareService, shareMetricService);
+                recordService, photoStoryViewService, publicIp,
+                VaadinSession.getCurrent().getSession().getId(),
+                new UtilsDate().calcDateTimeFromLongInLDT(sessionCreation, "UTC"));
         return storyViewCard;
-
     }
 
     private void loadStoryItemsFromDb(String sqlRead, String[] arrColumnNames, boolean isEditable) {
@@ -473,13 +473,43 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
         divGallery.addClassName("stories-view");
 
         List<Record> lstRecords = getRecordsFromDb(sqlRead, arrColumnNames);
-        for (int r = 0; r < lstRecords.size(); r++) {
 
+        // Record a Full view for this story using data from the first item row
+        if (!lstRecords.isEmpty() && photoStoryViewService != null) {
+            try {
+                String rawId = lstRecords.get(0).getColumnData("story_id");
+                String slug  = lstRecords.get(0).getColumnData("slug");
+                int storyId  = Integer.parseInt(rawId);
+                Integer viewUserId = userId > 0 ? userId : null;
+                LocalDateTime sdt = new UtilsDate().calcDateTimeFromLongInLDT(sessionCreation, "UTC");
+                photoStoryViewService.recordView(storyId, slug, viewUserId, publicIp,
+                        PhotoStoryViewService.TYPE_FULL,
+                        VaadinSession.getCurrent().getSession().getId(), sdt);
+            } catch (NumberFormatException ignored) {}
+        }
+
+        // Compute like count for the story action bar
+        long likeCount = 0;
+        int detailStoryId = 0;
+        String detailSlug = "";
+        if (!lstRecords.isEmpty()) {
+            try {
+                detailStoryId = Integer.parseInt(lstRecords.get(0).getColumnData("story_id"));
+                detailSlug    = lstRecords.get(0).getColumnData("slug");
+                if (photoStoryViewService != null) {
+                    likeCount = photoStoryViewService.getLikeCount(detailStoryId);
+                }
+            } catch (NumberFormatException ignored) {}
+        }
+
+        for (int r = 0; r < lstRecords.size(); r++) {
             Record rec = lstRecords.get(r);
             divGallery.add(getStoryItemsFromDb(rec, isEditable));
         }
 
-        divGallery.add(getActions());
+        final int finalStoryId  = detailStoryId;
+        final String finalSlug  = detailSlug;
+        divGallery.add(getActions(likeCount, finalStoryId, finalSlug));
         verticalLayout.add(divGallery);
 
         String sqlMember = sqlMemberOfStories + " AND usr.username = '" + strMember + "' " + sqlMemberOfStoriesGroupBy;
@@ -694,32 +724,25 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
     }
 
 
-    private HorizontalLayout getActions() {
+    private HorizontalLayout getActions(long likeCount, int storyId, String slug) {
 
-        StreamResource iconLike = new StreamResource("star-empty-icon.svg",
-                () -> getClass().getResourceAsStream("/icons/star-empty-icon.svg"));
-        SvgIcon svgLike = new SvgIcon(iconLike);
-        Button btnLike = new Button(svgLike);
-
-        Div divInfo = new Div("1");
-        divInfo.addClassName(TextColor.DISABLED);
-
-        btnLike.setSuffixComponent(divInfo);
+        LikeButton btnLike = new LikeButton(likeCount);
         btnLike.setTooltipText("Like It");
+        btnLike.addLikeClickListener(e -> {
+            if (photoStoryViewService != null && storyId > 0) {
+                Integer likeUserId = userId > 0 ? userId : null;
+                LocalDateTime sdt = new UtilsDate().calcDateTimeFromLongInLDT(sessionCreation, "UTC");
+                photoStoryViewService.recordLike(storyId, slug, likeUserId, publicIp,
+                        VaadinSession.getCurrent().getSession().getId(), sdt);
+                btnLike.setCount(photoStoryViewService.getLikeCount(storyId));
+            }
+        });
 
-
-//        StreamResource iconAction = new StreamResource("stories.svg",
-//                () -> getClass().getResourceAsStream("/icons/stories.svg"));
-//        SvgIcon svgAction = new SvgIcon(iconAction);
-        Button btnMoreAction = new Button(VaadinIcon.BOOKMARK.create());//svgAction);
+        Button btnMoreAction = new Button(VaadinIcon.BOOKMARK.create());
         btnMoreAction.setTooltipText("Save to list");
-
 
         Button btnComment = new Button(VaadinIcon.COMMENT.create());
         btnComment.setTooltipText("Comment on it");
-
-//        Button btnUpload = new Button(VaadinIcon.UPLOAD.create());
-//        btnUpload.setTooltipText("Upload your related photos");
 
         StreamResource iconShare = new StreamResource("share-line-icon.svg",
                 () -> getClass().getResourceAsStream("/icons/share-line-icon.svg"));
@@ -727,33 +750,22 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
         Button btnShare = new Button(svgShare);
         btnShare.setTooltipText("Share it");
 
-
         HorizontalLayout layoutActions = new HorizontalLayout();
         if (isMobile) {
             layoutActions.addClassNames(
-                    Overflow.HIDDEN, //Width.FULL,
+                    Overflow.HIDDEN,
                     AlignItems.CENTER, JustifyContent.CENTER,
-                    Margin.SMALL,
-                    Padding.NONE
-//                    Gap.XSMALL,
-                    //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                    //   Background.CONTRAST_5,
-//                    BorderRadius.LARGE
+                    Margin.SMALL, Padding.NONE
             );
-            layoutActions.addClassName("actions");// AlignItems.STRETCH, JustifyContent.EVENLY ,LumoUtility.Gap.Column.XSMALL);
-            layoutActions.addClassName("actions-mobile");// AlignItems.STRETCH, JustifyContent.EVENLY ,LumoUtility.Gap.Column.XSMALL);
+            layoutActions.addClassName("actions");
+            layoutActions.addClassName("actions-mobile");
         } else {
             layoutActions.addClassNames(
-                    Overflow.HIDDEN, //Width.FULL,
+                    Overflow.HIDDEN,
                     AlignItems.CENTER, JustifyContent.CENTER,
-                    Margin.SMALL,
-                    Padding.NONE
-//                    Gap.LARGE,
-                    //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                    //   Background.CONTRAST_5,
-//                    BorderRadius.LARGE
+                    Margin.SMALL, Padding.NONE
             );
-            layoutActions.addClassName("actions");// AlignItems.STRETCH, JustifyContent.EVENLY ,LumoUtility.Gap.Column.XSMALL);
+            layoutActions.addClassName("actions");
         }
 
         layoutActions.add(btnLike, btnComment, btnMoreAction, btnShare);
