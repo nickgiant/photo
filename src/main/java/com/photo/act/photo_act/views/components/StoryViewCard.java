@@ -3,7 +3,11 @@ package com.photo.act.photo_act.views.components;
 import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
+import com.photo.act.photo_act.model.ShareType;
+import com.photo.act.photo_act.model.ShareableResource;
 import com.photo.act.photo_act.services.PhotoStoryViewService;
+import com.photo.act.photo_act.services.ShareMetricService;
+import com.photo.act.photo_act.services.ShareService;
 import com.photo.act.photo_act.views.StoriesView;
 import com.photo.act.photo_act.views.StoryView;
 import com.photo.act.photo_act.views.components.LikeButton;
@@ -47,7 +51,8 @@ public class StoryViewCard extends VerticalLayout {
     public StoryViewCard(Record record, String strImagePath, boolean isMobile, int userId, String strUserName, long sessionCreation,
                          String hostname, String publicIp, boolean isEditable, RecordService recordService,
                          PhotoStoryViewService photoStoryViewService, String clientIp,
-                         String sessionId, LocalDateTime sessionDateTime) {
+                         String sessionId, LocalDateTime sessionDateTime,
+                         ShareService shareService, ShareMetricService shareMetricService, String baseUrl) {
         this.recordService = recordService;
         this.isMobile = isMobile;
 
@@ -109,6 +114,17 @@ public class StoryViewCard extends VerticalLayout {
 
         String strItemTitle = record.getColumnData("item_title");
         String strItemDescr = record.getColumnData("descr");
+
+        // Build shareable resource for this story (requires strStoryUserName resolved above)
+        String storyPublicUrl = baseUrl + "/stories/member/" + strStoryUserName + "/story/" + strSlug;
+        ShareableResource storyResource = new ShareableResource(
+                ShareType.PHOTO_STORY,
+                String.valueOf(storyId),
+                strTitle.isBlank() || strTitle.equalsIgnoreCase("null") ? "Photo Story" : strTitle,
+                strDescription.isBlank() || strDescription.equalsIgnoreCase("null") ? "" : strDescription,
+                "",  // no CDN image yet
+                storyPublicUrl
+        );
 
 
         String strCity = "";
@@ -530,7 +546,7 @@ public class StoryViewCard extends VerticalLayout {
         layoutMemberInfo.add(layoutMemberPhotoCount, layoutMemberViewCount, layoutMemberLocationsCount, layoutDateJoined);
 //        detailsMember.add(avatarLargeItemMe, layoutMemberInfo);
 
-        layoutPhotosInfo.add(layoutRateAll, layoutViewCountAll, layoutLocationsCountAll, avatarItemMe);
+        layoutPhotosInfo.add(layoutLocationsCountAll, avatarItemMe);
 
         RouteParam routeMember = new RouteParam("member", strStoryUserName);
         RouteParam routeStory = new RouteParam("story", strSlug);
@@ -539,86 +555,48 @@ public class StoryViewCard extends VerticalLayout {
         btnMore.setIcon(FontAwesome.Solid.ARROW_RIGHT.create());
         btnMore.setIconAfterText(true);
 
-//        card.addClickListener(e -> UI.getCurrent().navigate("news/" + news.getId()));
-
         btnMore.addClickListener(click -> {
             btnMore.getUI().ifPresent(ui ->
                     ui.navigate(StoriesView.class, new RouteParameters(routeMember, routeStory))
             );
         });
 
+        // Share bar for the action bar row
+        ShareBottomBar shareBar = new ShareBottomBar(storyResource, shareService, shareMetricService);
+        shareBar.addShareItemMenu();
 
-            this.add(divImage, header, subtitle, divSubHeaderAll, layoutPhotosInfo, getActions(btnMore));
+        this.add(divImage, header, subtitle, divSubHeaderAll, layoutPhotosInfo,
+                buildActionBar(btnMore, layoutRateAll, layoutViewCountAll, shareBar));
 
     }
 
-    private HorizontalLayout getActions(Button btnMore) {
+    /**
+     * Action bar layout for the story list card:
+     * [left: viewsLayout + likeSection] | [center: View Story] | [right: shareBar]
+     *
+     * Both viewsLayout (VerticalLayout with eye+count) and likeSection (VerticalLayout
+     * with LikeButton+label) are pre-composed in the constructor; passing them here
+     * avoids duplicate-parent errors (Vaadin components have exactly one parent).
+     */
+    private HorizontalLayout buildActionBar(Button btnViewStory,
+                                            VerticalLayout likeSection,
+                                            VerticalLayout viewsLayout,
+                                            ShareBottomBar shareBar) {
+        HorizontalLayout leftGroup = new HorizontalLayout();
+        leftGroup.addClassNames(AlignItems.CENTER, JustifyContent.START, Gap.XSMALL,
+                Margin.NONE, Padding.NONE);
+        leftGroup.add(viewsLayout, likeSection);
 
-        StreamResource iconLike = new StreamResource("star-empty-icon.svg",
-                () -> getClass().getResourceAsStream("/icons/star-empty-icon.svg"));
-        SvgIcon svgLike = new SvgIcon(iconLike);
-        Button btnLike = new Button(svgLike);
+        HorizontalLayout rightGroup = new HorizontalLayout();
+        rightGroup.addClassNames(AlignItems.CENTER, JustifyContent.END, Gap.XSMALL,
+                Margin.NONE, Padding.NONE);
+        rightGroup.add(shareBar);
 
-        Div divInfo = new Div("1");
-        divInfo.addClassName(TextColor.DISABLED);
-
-        btnLike.setSuffixComponent(divInfo);
-        btnLike.setTooltipText("Like It");
-
-
-//        StreamResource iconAction = new StreamResource("stories.svg",
-//                () -> getClass().getResourceAsStream("/icons/stories.svg"));
-//        SvgIcon svgAction = new SvgIcon(iconAction);
-        Button btnMoreAction = new Button(VaadinIcon.BOOKMARK.create());//svgAction);
-        btnMoreAction.setTooltipText("Save to list");
-
-
-        Button btnComment = new Button(VaadinIcon.COMMENT.create());
-        btnComment.setTooltipText("Comment on it");
-
-//        Button btnUpload = new Button(VaadinIcon.UPLOAD.create());
-//        btnUpload.setTooltipText("Upload your related photos");
-
-        StreamResource iconShare = new StreamResource("share-line-icon.svg",
-                () -> getClass().getResourceAsStream("/icons/share-line-icon.svg"));
-        SvgIcon svgShare = new SvgIcon(iconShare);
-        Button btnShare = new Button(svgShare);
-        btnShare.setTooltipText("Share it");
-
-
-        HorizontalLayout layoutActions = new HorizontalLayout();
-        if (isMobile) {
-            layoutActions.addClassNames(
-                    Overflow.HIDDEN, //Width.FULL,
-                    AlignItems.CENTER, JustifyContent.CENTER,
-                    Margin.SMALL,
-                    Padding.NONE
-//                    Gap.XSMALL,
-                    //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                    //   Background.CONTRAST_5,
-//                    BorderRadius.LARGE
-            );
-           // layoutActions.addClassName("actions");// AlignItems.STRETCH, JustifyContent.EVENLY ,LumoUtility.Gap.Column.XSMALL);
-            layoutActions.addClassName("actions-mobile");// AlignItems.STRETCH, JustifyContent.EVENLY ,LumoUtility.Gap.Column.XSMALL);
-        } else {
-            layoutActions.addClassNames(
-                    Overflow.HIDDEN, //Width.FULL,
-                    AlignItems.CENTER, JustifyContent.CENTER,
-                    Margin.SMALL,
-                    Padding.NONE
-//                    Gap.LARGE,
-                    //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                    //   Background.CONTRAST_5,
-//                    BorderRadius.LARGE
-            );
-           // layoutActions.addClassName("actions");// AlignItems.STRETCH, JustifyContent.EVENLY ,LumoUtility.Gap.Column.XSMALL);
-        }
-        //layoutActions.setWidthFull();
-
-
-        layoutActions.add(btnMore);
-
-        return layoutActions;
+        HorizontalLayout bar = new HorizontalLayout();
+        bar.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.BETWEEN,
+                Padding.XSMALL, Margin.NONE);
+        bar.add(leftGroup, btnViewStory, rightGroup);
+        return bar;
     }
 
 

@@ -5,6 +5,7 @@ import com.photo.act.photo_act.model.ContentType;
 import com.photo.act.photo_act.model.OgMetaDto;
 import com.photo.act.photo_act.services.BotDetectionService;
 import com.photo.act.photo_act.services.OgMetaService;
+import com.photo.act.photo_act.services.StoryOgService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -47,6 +48,7 @@ import java.util.concurrent.TimeUnit;
 public class OgMetaController {
 
     private final OgMetaService ogMetaService;
+    private final StoryOgService storyOgService;
     private final BotDetectionService botDetectionService;
 
     /**
@@ -96,14 +98,38 @@ public class OgMetaController {
         ContentType contentType = parseType(type);
         if (contentType == null) return "error/404";
 
-        return ogMetaService.resolve(contentType, slug)
-                .map(dto -> {
+        Optional<OgMetaDto> meta = ogMetaService.resolve(contentType, slug);
+
+        // For STORY type: fall back to photo_stories table when not in content table
+        if (meta.isEmpty() && contentType == ContentType.STORY) {
+            meta = storyOgService.resolve(slug);
+        }
+
+        return meta.map(dto -> {
                     model.addAttribute("og", dto);
                     log.debug("Serving OG preview for {}/{} to UA={}",
                             type, slug, request.getHeader(HttpHeaders.USER_AGENT));
                     return "og-preview";
                 })
                 .orElse("error/404");
+    }
+
+    /**
+     * Bot detection for multi-segment story URLs:
+     * /stories/member/{member}/story/{slug}  → /og/story/{slug}
+     */
+    @GetMapping("/stories/member/{member}/story/{slug}")
+    public String storyRoute(
+            @PathVariable String member,
+            @PathVariable String slug,
+            HttpServletRequest request) {
+
+        String ua = request.getHeader(HttpHeaders.USER_AGENT);
+        if (botDetectionService.isBot(ua)) {
+            log.info("Bot detected on story URL ({}), forwarding to OG: story/{}", ua, slug);
+            return "forward:/og/story/" + slug;
+        }
+        return "forward:/vaadin-forward/stories/member/" + member + "/story/" + slug;
     }
 
     /**
