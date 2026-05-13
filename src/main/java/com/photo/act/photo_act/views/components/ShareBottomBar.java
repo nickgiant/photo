@@ -52,8 +52,7 @@ public class ShareBottomBar extends MenuBar {
         tooltip.setText("Share Menu");
 
         buildSubMenu();
-
-
+        addCopyItem();
 
         enableWebShareFirst();
         enableClickOutsideClose();

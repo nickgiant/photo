@@ -3,6 +3,10 @@ package com.photo.act.photo_act.views.components;
 import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
+import com.photo.act.photo_act.model.ShareType;
+import com.photo.act.photo_act.model.ShareableResource;
+import com.photo.act.photo_act.services.ShareMetricService;
+import com.photo.act.photo_act.services.ShareService;
 import com.photo.act.photo_act.views.StoriesView;
 import com.photo.act.photo_act.views.StoryView;
 import com.vaadin.flow.component.UI;
@@ -25,6 +29,8 @@ import com.vaadin.flow.theme.lumo.LumoUtility.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static com.photo.act.photo_act.views.MainLayout.baseUrl;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -36,14 +42,19 @@ public class StoryViewCard extends VerticalLayout {
 
     private static final Logger logger = LoggerFactory.getLogger(StoryViewCard.class);
     private RecordService recordService;
+    private ShareService shareService;
+    private ShareMetricService shareMetricService;
     private boolean isMobile;
     private GenericView genericView;
 
     private String dirChar = FileSystems.getDefault().getSeparator();
 
     public StoryViewCard(Record record, String strImagePath, boolean isMobile, int userId, String strUserName, long sessionCreation,
-                         String hostname, String publicIp, boolean isEditable, RecordService recordService) {
+                         String hostname, String publicIp, boolean isEditable, RecordService recordService,
+                         ShareService shareService, ShareMetricService shareMetricService) {
         this.recordService = recordService;
+        this.shareService = shareService;
+        this.shareMetricService = shareMetricService;
         this.isMobile = isMobile;
 
 
@@ -536,75 +547,46 @@ public class StoryViewCard extends VerticalLayout {
         });
 
 
-            this.add(divImage, header, subtitle, divSubHeaderAll, layoutPhotosInfo, getActions(btnMore));
+            this.add(divImage, header, subtitle, divSubHeaderAll, layoutPhotosInfo, getActions(btnMore, strStoryUserName, strSlug, strDescription, strPhotoUrl, strTitle, record.getColumnData("story_id")));
 
     }
 
-    private HorizontalLayout getActions(Button btnMore) {
-
-        StreamResource iconLike = new StreamResource("star-empty-icon.svg",
-                () -> getClass().getResourceAsStream("/icons/star-empty-icon.svg"));
-        SvgIcon svgLike = new SvgIcon(iconLike);
-        Button btnLike = new Button(svgLike);
-
-        Div divInfo = new Div("1");
-        divInfo.addClassName(TextColor.DISABLED);
-
-        btnLike.setSuffixComponent(divInfo);
-        btnLike.setTooltipText("Like It");
-
-
-//        StreamResource iconAction = new StreamResource("stories.svg",
-//                () -> getClass().getResourceAsStream("/icons/stories.svg"));
-//        SvgIcon svgAction = new SvgIcon(iconAction);
-        Button btnMoreAction = new Button(VaadinIcon.BOOKMARK.create());//svgAction);
-        btnMoreAction.setTooltipText("Save to list");
-
-
-        Button btnComment = new Button(VaadinIcon.COMMENT.create());
-        btnComment.setTooltipText("Comment on it");
-
-//        Button btnUpload = new Button(VaadinIcon.UPLOAD.create());
-//        btnUpload.setTooltipText("Upload your related photos");
-
-        StreamResource iconShare = new StreamResource("share-line-icon.svg",
-                () -> getClass().getResourceAsStream("/icons/share-line-icon.svg"));
-        SvgIcon svgShare = new SvgIcon(iconShare);
-        Button btnShare = new Button(svgShare);
-        btnShare.setTooltipText("Share it");
-
+    private HorizontalLayout getActions(Button btnMore, String storyUsername, String storySlug, String storyDescription, String coverPhotoFile, String storyTitle, String storyId) {
 
         HorizontalLayout layoutActions = new HorizontalLayout();
         if (isMobile) {
             layoutActions.addClassNames(
-                    Overflow.HIDDEN, //Width.FULL,
+                    Overflow.HIDDEN,
                     AlignItems.CENTER, JustifyContent.CENTER,
                     Margin.SMALL,
                     Padding.NONE
-//                    Gap.XSMALL,
-                    //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                    //   Background.CONTRAST_5,
-//                    BorderRadius.LARGE
             );
-           // layoutActions.addClassName("actions");// AlignItems.STRETCH, JustifyContent.EVENLY ,LumoUtility.Gap.Column.XSMALL);
-            layoutActions.addClassName("actions-mobile");// AlignItems.STRETCH, JustifyContent.EVENLY ,LumoUtility.Gap.Column.XSMALL);
+            layoutActions.addClassName("actions-mobile");
         } else {
             layoutActions.addClassNames(
-                    Overflow.HIDDEN, //Width.FULL,
+                    Overflow.HIDDEN,
                     AlignItems.CENTER, JustifyContent.CENTER,
                     Margin.SMALL,
                     Padding.NONE
-//                    Gap.LARGE,
-                    //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                    //   Background.CONTRAST_5,
-//                    BorderRadius.LARGE
             );
-           // layoutActions.addClassName("actions");// AlignItems.STRETCH, JustifyContent.EVENLY ,LumoUtility.Gap.Column.XSMALL);
         }
-        //layoutActions.setWidthFull();
 
+        String storyPublicUrl = baseUrl + "/stories/member/" + storyUsername + "/story/" + storySlug;
+        String storyImageUrl  = baseUrl + "/photo/" + coverPhotoFile;
 
-        layoutActions.add(btnMore);
+        ShareableResource storyResource = new ShareableResource(
+                ShareType.PHOTO_STORY,
+                storyId,
+                storyTitle,
+                storyDescription,
+                storyImageUrl,
+                storyPublicUrl
+        );
+
+        ShareBottomBar shareBottomBar = new ShareBottomBar(storyResource, shareService, shareMetricService);
+        shareBottomBar.addShareItemMenu();
+
+        layoutActions.add(btnMore, shareBottomBar);
 
         return layoutActions;
     }

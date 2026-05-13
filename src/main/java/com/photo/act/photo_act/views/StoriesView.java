@@ -3,6 +3,8 @@ package com.photo.act.photo_act.views;
 import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
+import com.photo.act.photo_act.services.ShareMetricService;
+import com.photo.act.photo_act.services.ShareService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.photo.act.photo_act.views.components.AvatarItem;
@@ -81,6 +83,7 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
             "name_new", "photo_1", "photo_2", "datetime_story_created"
             , "cat_title", "cat_title"
             , "username", "surname", "name", "resident", "date_joined", "avatar_path"
+            , "story_id"
     };
     String sqlStoriesAll = "SELECT s.title, s.slug,  s.`description`, s.story_visible_to, s.user_id, s.date_inserted " +
             " , count(sp.story_id) AS story_photo_count, SUM(pm.space_size) AS story_photo_size " +
@@ -88,6 +91,7 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
             " , getDateDiffFromNow(s.date_inserted) AS datetime_story_created " +
             " , sc.cat_title, sc.cat_title " +
             " , usr.username, usr.name, usr.surname, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined, usr.avatar_path " +
+            " , s.id AS story_id " +
             " FROM photo_stories_photo sp , photo_meta pm, photo_stories_categories sc, dbuser usr, photo_stories s " +//LEFT JOIN photo_meta p1 ON s.photo_id1 = p1.id " +
           //  " LEFT JOIN photo_meta p2 ON s.photo_id2 = p2.id " +
             " WHERE s.id = sp.story_id AND s.user_id = usr.userId AND sp.user_id = usr.userId AND s.photo_id1 = pm.id "+
@@ -121,6 +125,8 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
     private String strSlug;
     private String strCategory;
     private RecordService recordService;
+    private ShareService shareService;
+    private ShareMetricService shareMetricService;
     private String strHeader;
     private String strUrlRequestToBeLogged;
     private String dirChar = FileSystems.getDefault().getSeparator();
@@ -161,8 +167,10 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
     private String sessionDateTime;
     private GenericView genericView;
 
-    public StoriesView(RecordService recordService) {
+    public StoriesView(RecordService recordService, ShareService shareService, ShareMetricService shareMetricService) {
         this.recordService = recordService;
+        this.shareService = shareService;
+        this.shareMetricService = shareMetricService;
         utilsDate = new UtilsDate();
         genericView = new GenericView(recordService);
 
@@ -453,7 +461,7 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
         logger.info(" strImagePath " + strImagePath);
 
         StoryViewCard storyViewCard = new StoryViewCard(record, strImagePath, isMobile, userId, strUsername, sessionCreation, hostname, publicIp, isEditable,
-                recordService);
+                recordService, shareService, shareMetricService);
         return storyViewCard;
 
     }
