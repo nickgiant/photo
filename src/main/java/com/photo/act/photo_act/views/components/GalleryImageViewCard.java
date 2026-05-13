@@ -763,8 +763,8 @@ public class GalleryImageViewCard extends Div {
 
         final int photoIdLikeFinal = photoIdForLike;
         LikeButton likeButton = new LikeButton(initialLikeCount);
-        likeButton.setTitle("Like it!");
-        likeButton.addLikeClickListener(e -> {
+//        likeButton.setTitle("Like it!");
+/*        likeButton.addLikeClickListener(e -> {
             if (photoViewService != null) {
                 Integer likeUserId = null;
                 if (strAvailableAlbumsMemberId != null && !strAvailableAlbumsMemberId.isBlank()) {
@@ -775,7 +775,7 @@ public class GalleryImageViewCard extends Div {
                         cardPublicIp, cardSessionId, cardSessionDateTime);
                 likeButton.setCount(photoViewService.getLikeCount(photoIdLikeFinal));
             }
-        });
+        });*/
 
 
         // ── Rate button ───────────────────────────────────────────────────────
@@ -790,8 +790,8 @@ public class GalleryImageViewCard extends Div {
 
         final int photoIdRateFinal = photoIdForRate;
         RateButton rateButton = new RateButton(initialRateCount);
-        rateButton.setTitle("Rate it!");
-        rateButton.addRateClickListener(e -> {
+//        rateButton.setTitle("Rate it!");
+/*        rateButton.addRateClickListener(e -> {
             if (photoViewService != null) {
                 Integer rateUserId = null;
                 if (strAvailableAlbumsMemberId != null && !strAvailableAlbumsMemberId.isBlank()) {
@@ -802,11 +802,44 @@ public class GalleryImageViewCard extends Div {
                 showDialogWithCarousel(isType, strSelection, strPhotoId, strAlbumUsername, true);
                 rateButton.setCount(photoRatingService.getRatingCount(photoIdRateFinal));
             }
-        });
+        });*/
 
         // ── Compose the single action bar ────────────────────────────────────
-        shareBottomBar.addComponent(likeButton);
-        shareBottomBar.addComponent(rateButton);
+        shareBottomBar.addButton("Like it!",likeButton,
+                ()->
+                {
+                    if (photoViewService != null) {
+                        Integer likeUserId = null;
+                        if (strAvailableAlbumsMemberId != null && !strAvailableAlbumsMemberId.isBlank()) {
+                            try {
+                                likeUserId = Integer.parseInt(strAvailableAlbumsMemberId);
+                            } catch (NumberFormatException ignored) {
+                            }
+                        }
+                        String nameNew = (record != null) ? record.getColumnData("name_new") : "";
+                        photoViewService.recordLike(photoIdLikeFinal, nameNew, likeUserId,
+                                cardPublicIp, cardSessionId, cardSessionDateTime);
+                        likeButton.setCount(photoViewService.getLikeCount(photoIdLikeFinal));
+                    }
+                }
+                ,"btn-bar-share");
+        shareBottomBar.addButton("Rate it!",rateButton,
+                ()-> {
+                    if (photoViewService != null) {
+                        Integer rateUserId = null;
+                        if (strAvailableAlbumsMemberId != null && !strAvailableAlbumsMemberId.isBlank()) {
+                            try {
+                                rateUserId = Integer.parseInt(strAvailableAlbumsMemberId);
+                            } catch (NumberFormatException ignored) {
+                            }
+                        }
+                        String nameNew = (record != null) ? record.getColumnData("name_new") : "";
+//                photoViewService.recordRate(photoIdRateFinal, nameNew, rateUserId, cardPublicIp, cardSessionId, cardSessionDateTime);
+                        showDialogWithCarousel(isType, strSelection, strPhotoId, strAlbumUsername, true);
+                        rateButton.setCount(photoRatingService.getRatingCount(photoIdRateFinal));
+                    }
+                }
+                ,"btn-bar-share");
         shareBottomBar.addButton("View Larger",
                 VaadinIcon.VIEWPORT.create(),
                 () -> showDialogWithCarousel(isType, strSelection, strPhotoId, strAlbumUsername, false),

@@ -755,23 +755,28 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
                                         String username, String title, String description) {
 
         // Views display
-        HorizontalLayout viewsRow = new HorizontalLayout();
+/*        HorizontalLayout viewsRow = new HorizontalLayout();
         viewsRow.addClassNames(AlignItems.CENTER, JustifyContent.CENTER, Gap.XSMALL,
                 Margin.NONE, Padding.NONE);
         Div divViewCount = new Div(viewCount > 0 ? String.valueOf(viewCount) : "");
         viewsRow.add(FontAwesome.Regular.EYE.create(), divViewCount);
 
-        VerticalLayout viewsLayout = new VerticalLayout();
+ */
+
+        Span divViewCount = new Span(viewCount > 0 ? String.valueOf(viewCount) : "");
+//        viewsRow.add(FontAwesome.Regular.EYE.create(), divViewCount);
+
+        HorizontalLayout viewsLayout = new HorizontalLayout();
         viewsLayout.addClassNames(AlignItems.CENTER, JustifyContent.CENTER,
                 Margin.NONE, Padding.NONE, Gap.XSMALL);
-        Span viewsLabel = new Span("Views");
-        viewsLabel.addClassNames(FontSize.XXSMALL);
-        viewsLayout.add(viewsRow, viewsLabel);
+//        Span viewsLabel = new Span("Views");
+        viewsLayout.addClassNames(FontSize.XXSMALL);
+        viewsLayout.add(FontAwesome.Regular.EYE.create(),divViewCount);
 
         // Like button
         LikeButton btnLike = new LikeButton(likeCount);
-        btnLike.setTooltipText("Like It");
-        btnLike.addLikeClickListener(e -> {
+//        btnLike.setTooltipText("Like It");
+/*        btnLike.addLikeClickListener(e -> {
             if (photoStoryViewService != null && storyId > 0) {
                 Integer likeUserId = userId > 0 ? userId : null;
                 LocalDateTime sdt = new UtilsDate().calcDateTimeFromLongInLDT(sessionCreation, "UTC");
@@ -779,14 +784,14 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
                         VaadinSession.getCurrent().getSession().getId(), sdt);
                 btnLike.setCount(photoStoryViewService.getLikeCount(storyId));
             }
-        });
+        });*/
 
-        VerticalLayout likeLayout = new VerticalLayout();
+/*        VerticalLayout likeLayout = new VerticalLayout();
         likeLayout.addClassNames(AlignItems.CENTER, JustifyContent.CENTER,
                 Margin.NONE, Padding.NONE, Gap.XSMALL);
         Span likeLabel = new Span("Like");
         likeLabel.addClassNames(FontSize.XXSMALL);
-        likeLayout.add(btnLike, likeLabel);
+        likeLayout.add(btnLike, likeLabel);*/
 
         // ── Compose the single action bar ────────────────────────────────────
         String storyPublicUrl = baseUrl + "/stories/member/" + username + "/story/" + slug;
@@ -801,7 +806,18 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
         ShareBottomBar shareBar = new ShareBottomBar(storyResource, shareService, shareMetricService);
 
         shareBar.addComponent(viewsLayout);
-        shareBar.addComponent(likeLayout);
+
+        shareBar.addButton("Like", btnLike,
+                () -> {
+                    if (photoStoryViewService != null && storyId > 0) {
+                        Integer likeUserId = userId > 0 ? userId : null;
+                        LocalDateTime sdt = new UtilsDate().calcDateTimeFromLongInLDT(sessionCreation, "UTC");
+                        photoStoryViewService.recordLike(storyId, slug, likeUserId, publicIp,
+                                VaadinSession.getCurrent().getSession().getId(), sdt);
+                        btnLike.setCount(photoStoryViewService.getLikeCount(storyId));
+                    }
+                }
+                ,"btn-bar-share");
 
         RouteParam routeMember = new RouteParam("member", username);
         RouteParam routeStory  = new RouteParam("story",  slug);
@@ -821,7 +837,7 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
         }, "btn-bar-info");
 
         HorizontalLayout layoutActions = new HorizontalLayout();
-        layoutActions.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.START,
+        layoutActions.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER,
                 Padding.SMALL, Margin.NONE);
         layoutActions.addClassName("story-bottom-bar");
         layoutActions.add(shareBar);

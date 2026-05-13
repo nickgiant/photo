@@ -290,17 +290,21 @@ public class StoryViewCard extends VerticalLayout {
         );
         layoutPhotosInfo.addClassName("summary");
 
-        LikeButton likeButton = new LikeButton(likeCount);
-        likeButton.setTooltipText("Like It");
-        likeButton.addLikeClickListener(e -> {
+
+
+
+        LikeButton btnLike = new LikeButton(likeCount);
+//        likeButton.setTooltipText("Like It");
+        /*likeButton.addLikeClickListener(e -> {
             if (photoStoryViewService != null && finalStoryId > 0) {
                 Integer likeUserId = userId > 0 ? userId : null;
                 photoStoryViewService.recordLike(finalStoryId, finalSlug, likeUserId, clientIp,
                         sessionId, sessionDateTime);
                 likeButton.setCount(photoStoryViewService.getLikeCount(finalStoryId));
             }
-        });
+        });*/
 
+/*
         VerticalLayout layoutRateAll = new VerticalLayout();
         layoutRateAll.addClassNames(
                 AlignItems.CENTER, JustifyContent.CENTER,
@@ -309,9 +313,10 @@ public class StoryViewCard extends VerticalLayout {
         Span divRateLabel = new Span("Like");
         divRateLabel.addClassNames(FontSize.XXSMALL);
         layoutRateAll.add(likeButton, divRateLabel);
+*/
 
 
-        VerticalLayout layoutViewCountAll = new VerticalLayout();
+/*        VerticalLayout layoutViewCountAll = new VerticalLayout();
         layoutViewCountAll.addClassNames(
                 //   Overflow.HIDDEN, Width.FULL,
                 AlignItems.CENTER, JustifyContent.CENTER,
@@ -321,7 +326,7 @@ public class StoryViewCard extends VerticalLayout {
                 //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
                 //   Background.CONTRAST_5,
                 BorderRadius.NONE
-        );
+        );*/
         HorizontalLayout layoutViewCount = new HorizontalLayout();
         layoutViewCount.addClassNames(
 //                Overflow.HIDDEN, Width.FULL,
@@ -333,13 +338,13 @@ public class StoryViewCard extends VerticalLayout {
                 //   Background.CONTRAST_5,
                 BorderRadius.NONE
         );
-        Div divViews = new Div(viewCount > 0 ? String.valueOf(viewCount) : "");
-        layoutViewCount.add(FontAwesome.Regular.EYE.create(), divViews);
-        Span divViewsLabel = new Span("Views");
-        divViewsLabel.addClassNames(FontSize.XXSMALL);
-        layoutViewCountAll.add(layoutViewCount, divViewsLabel);
+        Span divViews = new Span(viewCount > 0 ? String.valueOf(viewCount) : "");
+//        layoutViewCount.add(FontAwesome.Regular.EYE.create(), divViews);
+//        Span divViewsLabel = new Span("Views");
+//        divViewsLabel.addClassNames(FontSize.XXSMALL);
+        layoutViewCount.add(FontAwesome.Regular.EYE.create(),divViews);
 
-        VerticalLayout layoutLocationsCountAll = new VerticalLayout();
+/*        VerticalLayout layoutLocationsCountAll = new VerticalLayout();
         layoutLocationsCountAll.addClassNames(
                 // Overflow.HIDDEN, Width.FULL,
                 AlignItems.CENTER, JustifyContent.CENTER,
@@ -349,8 +354,8 @@ public class StoryViewCard extends VerticalLayout {
                 //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
                 //   Background.CONTRAST_5,
                 BorderRadius.NONE
-        );
-        HorizontalLayout layoutLocationsCount = new HorizontalLayout();
+        );*/
+/*        HorizontalLayout layoutLocationsCount = new HorizontalLayout();
         layoutLocationsCount.addClassNames(
 //                Overflow.HIDDEN, Width.FULL,
                 AlignItems.CENTER, JustifyContent.CENTER,
@@ -360,7 +365,7 @@ public class StoryViewCard extends VerticalLayout {
                 //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
                 //   Background.CONTRAST_5,
                 BorderRadius.NONE
-        );
+        );*/
 /*        Div divLocations = new Div("1");
         layoutLocationsCount.add(FontAwesome.Regular.COMPASS.create(), divLocations);
         Span divLocationsLabel = new Span("Locations");
@@ -406,7 +411,7 @@ public class StoryViewCard extends VerticalLayout {
 
 
 
-        HorizontalLayout layoutUserActions = new HorizontalLayout();
+/*        HorizontalLayout layoutUserActions = new HorizontalLayout();
         layoutUserActions.addClassNames(
                 Overflow.HIDDEN, Width.FULL,
                 AlignItems.CENTER, JustifyContent.CENTER,
@@ -416,7 +421,7 @@ public class StoryViewCard extends VerticalLayout {
                 //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
                 //   Background.CONTRAST_5,
                 BorderRadius.LARGE
-        );
+        );*/
 
 
 //        if (strUploader.trim().isEmpty() || strUploader.equalsIgnoreCase("null")) {
@@ -432,7 +437,7 @@ public class StoryViewCard extends VerticalLayout {
 //        }
 
 
-        Button btnMoreAction = new Button(VaadinIcon.EDIT.create());//svgAction);
+/*        Button btnMoreAction = new Button(VaadinIcon.EDIT.create());//svgAction);
         btnMoreAction.setTooltipText("Edit");
         btnMoreAction.addClassName("btn-actions");
 
@@ -442,7 +447,7 @@ public class StoryViewCard extends VerticalLayout {
         Button btnMoreInfo = new Button(VaadinIcon.INFO.create());//svgAction);
         btnMoreInfo.setTooltipText("More info");
 
-        layoutUserActions.add(btnMoreAction, btnComment, btnMoreInfo);
+        layoutUserActions.add(btnMoreAction, btnComment, btnMoreInfo);*/
 
 
         //     divPhotoInfo.add(layoutPhotosInfo); //, layoutUserActions);
@@ -545,15 +550,24 @@ public class StoryViewCard extends VerticalLayout {
         layoutMemberInfo.add(layoutMemberPhotoCount, layoutMemberViewCount, layoutMemberLocationsCount, layoutDateJoined);
 //        detailsMember.add(avatarLargeItemMe, layoutMemberInfo);
 
-        layoutPhotosInfo.add(layoutLocationsCountAll, avatarItemMe);
+        layoutPhotosInfo.add( avatarItemMe);
 
         RouteParam routeMember = new RouteParam("member", strStoryUserName);
         RouteParam routeStory = new RouteParam("story", strSlug);
 
         // ── Compose the single action bar ────────────────────────────────────
         ShareBottomBar shareBar = new ShareBottomBar(storyResource, shareService, shareMetricService);
-        shareBar.addComponent(layoutViewCountAll);
-        shareBar.addComponent(layoutRateAll);
+        shareBar.addComponent(layoutViewCount);
+        shareBar.addButton("Like it!",btnLike,
+                ()-> {
+                    if (photoStoryViewService != null && finalStoryId > 0) {
+                        Integer likeUserId = userId > 0 ? userId : null;
+                        photoStoryViewService.recordLike(finalStoryId, finalSlug, likeUserId, clientIp,
+                                sessionId, sessionDateTime);
+                        btnLike.setCount(photoStoryViewService.getLikeCount(finalStoryId));
+                    }
+                }
+                ,"btn-bar-share");
         shareBar.addButton("View Story",
                 FontAwesome.Solid.ARROW_RIGHT.create(),
                 () -> getUI().ifPresent(ui ->
@@ -576,7 +590,7 @@ public class StoryViewCard extends VerticalLayout {
     /** Wraps the composed ShareBottomBar in a full-width action bar row. */
     private HorizontalLayout buildActionBar(ShareBottomBar shareBar) {
         HorizontalLayout bar = new HorizontalLayout();
-        bar.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.START,
+        bar.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER,
                 Padding.XSMALL, Margin.NONE);
         bar.addClassName("story-bottom-bar");
         bar.add(shareBar);
