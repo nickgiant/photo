@@ -26,6 +26,11 @@
     color: #466ca8;
 }
 
+
+.count-span{
+    padding: 1px;
+}
+
 /* ── Icon wrapper — hover rotates 30 deg ────────────────────────────────────── */
 .like-btn-icon {
     display:          flex;

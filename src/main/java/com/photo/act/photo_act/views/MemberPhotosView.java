@@ -78,12 +78,12 @@ public class MemberPhotosView extends Main implements HasUrlParameter<String>, B
             " WHERE 1 = 1 ";
     String[] arrColumnsMembers = {"userId", "username", "username", "resident", "date_joined", "member_since", "member_for",
             "avatar_path", "name", "surname", "short_bio", "url_insta", "url_fb", "url_flickr", "url_yt", "email", "resident", "resident_country",
-            "count_photos", "count_albums", "count_learnings_ref"};
+            "count_photos", "count_stories", "count_learnings_ref"};
     String sqlMembers = "SELECT " +
             "  usr.userId, usr.username, usr.username, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined,  " +
             " DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since , getDateDiffFromNow(usr.date_joined) AS member_for " +
             " , usr.avatar_path, name, surname, short_bio, url_insta, url_fb, url_flickr, url_yt, email, resident, resident_country " +
-            " , usrx.count_photos, usrx.count_albums, usrx.count_learnings_ref " +
+            " , usrx.count_photos, usrx.count_stories, usrx.count_learnings_ref " +
             //     "--  , pa.inc, pm.title, pm.id, pm.name_new, pm.title, pm.subtitle, pm.space_size, pm.location_by_user\\n\" +\n" +
             " FROM dbuser usr, dbuser_extra usrx " +
             " WHERE usr.userId = usrx.user_id  " +
@@ -92,13 +92,13 @@ public class MemberPhotosView extends Main implements HasUrlParameter<String>, B
     String[] arrColumnsMemberCountPhotos = {"photo_count", "photo_size",
             "userId", "username", "name", "surname", "resident", "resident_country", "date_joined", "member_since", "avatar_path",
             "short_bio", "url_fb", "url_yt", "url_insta", "url_flickr", "url_website",
-            "count_photos", "count_albums", "count_learnings_ref"
+            "count_photos", "count_stories", "count_learnings_ref"
     };
     String sqlMemberCountPhotos = "SELECT count(pm.id) AS photo_count, SUM(pm.space_size) AS photo_size " +
             " ,  usr.userId, usr.username, usr.resident, usr.resident_country, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined,  DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since " +
             " , usr.avatar_path, usr.name, usr.surname " +
             " , usr.short_bio, usr.url_fb, usr.url_yt, usr.url_insta, usr.url_flickr, usr.url_website " +
-            " , usrx.count_photos, usrx.count_albums, usrx.count_learnings_ref " +
+            " , usrx.count_photos, usrx.count_stories, usrx.count_learnings_ref " +
             //     "--  , pa.inc, pm.title, pm.id, pm.name_new, pm.title, pm.subtitle, pm.space_size, pm.location_by_user\\n\" +\n" +
             " FROM dbuser_extra usrx, dbuser_rights usrr, dbuser usr LEFT JOIN photo_meta pm ON pm.uploaderId = usr.userId " +
             " WHERE usr.userId = usrx.user_id  AND usrr.id = usr.user_rights_id" +
@@ -1201,7 +1201,7 @@ public class MemberPhotosView extends Main implements HasUrlParameter<String>, B
                 "    WHERE album_visible_to = 'ALL' " +
                 "    GROUP BY user_id " +
                 " ) AS p ON d.user_id = p.user_id " +
-                " SET d.username = NULL , d.count_albums = p.album_count " +
+                " SET d.username = NULL , d.count_stories = p.album_count " +
                 " WHERE d.user_id = ? ";
         return recordService.insertOneRecordWithQuery(strUpdateCount, fieldValueCount, fieldTypeCount);
 
@@ -1326,7 +1326,7 @@ public class MemberPhotosView extends Main implements HasUrlParameter<String>, B
                 String strWebsite = rec.getColumnData("url_website");
 
                 String strCountPhotos = rec.getColumnData("count_photos");
-                String strCountAlbums = rec.getColumnData("count_albums");
+                String strCountStories = rec.getColumnData("count_stories");
                 String strCountLearningsRef = rec.getColumnData("count_learnings_ref");
 
                 Anchor linkWebsite = new Anchor();
@@ -1424,7 +1424,7 @@ public class MemberPhotosView extends Main implements HasUrlParameter<String>, B
 
                 VerticalLayout layoutContribution = new VerticalLayout();
                 Div divContribTitle = new Div("Contributed with");
-                Div divCounts = new Div(strCountPhotos + ":Photos,  " + strCountAlbums + ":Albums,  ");
+                Div divCounts = new Div(strCountPhotos + ":Photos,  " + strCountStories + ":Albums,  ");
 
                 Div divCounts2 = new Div(strCountLearningsRef + ":Learnings Referenced");
 

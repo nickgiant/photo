@@ -76,19 +76,19 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
     public static String DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
     String[] arrColumnsMember = {"userId", "username", "resident", "resident_country", "date_joined", "member_since", "member_for", "avatar_path",
             "name", "surname", "user_rights_id", "short_bio", "url_insta", "url_fb", "url_flickr", "url_yt", "url_website", "email", "resident", "resident_country",
-            "count_photos", "count_albums"};
+            "count_photos", "count_stories"};
     String sqlMember = "SELECT " +
             "  usr.userId, usr.username, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined,  DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since " +
             " , usr.avatar_path, usr.name, usr.surname, usr.email, usr.user_rights_id, usr.resident, usr.resident_country " +
             " , usr.short_bio, usr.url_fb, usr.url_yt, usr.url_insta, usr.url_flickr, usr.url_website " +
-            " , ux.count_photos, ux.count_albums " +
+            " , ux.count_photos, ux.count_stories " +
             " FROM dbuser usr, dbuser_extra ux " +
             " WHERE usr.userId = ux.user_id ";
     String sqlMembers = "SELECT " +
             " usr.userId, usr.username, usr.username, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined,  " +
             " DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since , getDateDiffFromNow(usr.date_joined) AS member_for " +
             " , usr.avatar_path, name, surname, short_bio, url_insta, url_fb, url_flickr, url_yt, email, resident, resident_country " +
-            " , esrx.count_photos, esrx.count_albums, esrx.count_learnings_ref " +
+            " , esrx.count_photos, esrx.count_stories, esrx.count_learnings_ref " +
             //     "--  , pa.inc, pm.title, pm.id, pm.name_new, pm.title, pm.subtitle, pm.space_size, pm.location_by_user\\n\" +\n" +
             " FROM dbuser usr, dbuser_extra esrx " +
             " WHERE usr.userId = esrx.user_id " +
@@ -104,7 +104,7 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
 
     String[] arrColumnsMembers = {"userId", "username", "username", "resident", "date_joined", "member_since", "member_for",
             "avatar_path", "name", "surname", "short_bio", "url_insta", "url_fb", "url_flickr", "url_yt", "email", "resident", "resident_country",
-            "count_photos", "count_albums", "count_learnings"};
+            "count_photos", "count_stories", "count_learnings"};
     private String sqlReadDestinationCountries = "SELECT distinct country, city_name, prefecture, prefecture_capital " +
             " FROM destination d " +
             " GROUP BY country " +
@@ -132,7 +132,7 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
             , "city_name"
             , "subject_name", "subject_description", "subject_type"
             , "date_inserted"
-            , "username", "surname", "name", "resident", "resident_country", "date_joined", "member_since", "avatar_path", "short_bio", "count_photos", "count_albums"
+            , "username", "surname", "name", "resident", "resident_country", "date_joined", "member_since", "avatar_path", "short_bio", "count_photos", "count_stories"
     };
 
     private String sqlReadGalleryProfile =
@@ -140,7 +140,7 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
                     " , DATE_FORMAT(pm.meta_date, '%d/%m/%Y - %H:%i:%S') AS photo_time_shot,  pm.space_size, pm.space_size_medium, pm.space_size_thumb, pm.meta_camera_make, pm.meta_camera_model, pm.meta_lens_make, pm.meta_lens_model,  pm.meta_focal_length, pm.meta_focal_length_ff, pm.meta_iso, meta_aperture,  meta_shutter_speed, meta_orientation ,  pm.meta_i_height, pm.meta_i_length, pm.meta_i_width , pm.location_by_user, pm.location_area, pm.location_country_code, pm.location_lat, pm.location_lon " +
                     " , usr.username, usr.surname, usr.name, usr.resident, usr.resident_country, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined, DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since, usr.avatar_path " +
                     " , usr.short_bio " +
-                    " , ux.count_photos, ux.count_albums " +
+                    " , ux.count_photos, ux.count_stories " +
                     " FROM dbuser usr, dbuser_extra ux, photo_meta pm" +
                     " WHERE pm.uploaderId = usr.userId AND pm.visible_to = 'Profile' " +
                     " AND usr.userId = ux.user_id ";
@@ -930,7 +930,7 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
                 "    WHERE album_visible_to = 'ALL' " +
                 "    GROUP BY user_id " +
                 " ) AS p ON d.user_id = p.user_id " +
-                " SET d.username = NULL , d.count_albums = p.album_count " +
+                " SET d.username = NULL , d.count_stories = p.album_count " +
                 " WHERE d.user_id = ? ";
         int intAlbumCount = recordService.insertOneRecordWithQuery(strUpdateCount, fieldValueCount, fieldTypeCount);
 
@@ -1093,7 +1093,7 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
 
             // table: dbuser_extra
             String strCountPhotos = rec.getColumnData("count_photos");
-            String strCountAlbums = rec.getColumnData("count_albums");
+            String strCountStories = rec.getColumnData("count_stories");
 
             Anchor linkWebsite = new Anchor();
             linkWebsite.add(FontAwesome.Solid.LINK.create());
@@ -1250,7 +1250,7 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
             Icon iconAlbum = FontAwesome.Solid.PHOTO_FILM.create();
             Span divPhotos = new Span(strCountPhotos + " Photos");
             divPhotos.addClassNames(TextColor.SECONDARY);
-            Span divAlbums = new Span(strCountAlbums + " Albums");
+            Span divAlbums = new Span(strCountStories + " Albums");
             divAlbums.addClassNames(TextColor.SECONDARY);
 
             HorizontalLayout layoutCounts = new HorizontalLayout();

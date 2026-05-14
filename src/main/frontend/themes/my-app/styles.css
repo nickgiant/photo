@@ -12,6 +12,7 @@
 @import url('./views/image-gallery-view.css');
 @import url('./views/stories-view.css');
 @import url('./views/home-view.css');
+@import url("./views/button-bar.css");
 @import url('./main-layout.css');
 @import url('./sidebar.css');
 

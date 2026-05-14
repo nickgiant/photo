@@ -819,22 +819,24 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
                 }
                 ,"btn-bar-share");
 
-        RouteParam routeMember = new RouteParam("member", username);
-        RouteParam routeStory  = new RouteParam("story",  slug);
+/*        RouteParam routeMember = new RouteParam("member", username);
+        RouteParam routeStory  = new RouteParam("story",  slug);*/
+/*
         shareBar.addButton("View Story",
                 FontAwesome.Solid.ARROW_RIGHT.create(),
                 () -> shareBar.getUI().ifPresent(ui ->
                         ui.navigate(StoriesView.class, new RouteParameters(routeMember, routeStory))),
                 "btn-bar-view");
+*/
 
         shareBar.addShareItemMenu();
 
-        final String infoText = (description != null && !description.isBlank()) ? description : title;
+/*        final String infoText = (description != null && !description.isBlank()) ? description : title;
         shareBar.addButton("Info", VaadinIcon.INFO_CIRCLE_O.create(), () -> {
             if (infoText != null && !infoText.isBlank()) {
                 Notification.show(infoText, 5000, Notification.Position.BOTTOM_CENTER);
             }
-        }, "btn-bar-info");
+        }, "btn-bar-info");*/
 
         HorizontalLayout layoutActions = new HorizontalLayout();
         layoutActions.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER,

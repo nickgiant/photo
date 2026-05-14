@@ -1112,7 +1112,7 @@ public class GenericView {
         String strResidentCountry = record.getColumnData("resident_country");
 
         String strCountPhotos = record.getColumnData("count_photos");
-        String strCountAlbums = record.getColumnData("count_albums");
+        String strCountStories = record.getColumnData("count_stories");
 
         Div divImgAvatar = new Div();
         divImgAvatar.addClassNames(LumoUtility.Padding.NONE, LumoUtility.Margin.NONE);
@@ -1153,7 +1153,7 @@ public class GenericView {
         divPhotos.addClassNames(LumoUtility.TextColor.SECONDARY);
         Span spAlbums = new Span(" Albums");
         spAlbums.addClassNames(LumoUtility.TextColor.TERTIARY, LumoUtility.FontSize.SMALL);
-        Span divAlbums = new Span(strCountAlbums);
+        Span divAlbums = new Span(strCountStories);
         divAlbums.addClassNames(LumoUtility.TextColor.SECONDARY);
         divAlbums.add(spAlbums);
 

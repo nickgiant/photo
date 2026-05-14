@@ -16,11 +16,10 @@
 .btn-bar-item {
     position: relative;
     background: #ffffff;
-    border-radius: 12px;
-    margin: 2px;
-    padding: 1px;
-    width: 42px;
-    height: 42px;
+    border-radius: 14px;
+    margin: 7px;
+    width: 40px;
+    height: 40px;
     font-size: 18px;
     display: flex;
     justify-content: center;
@@ -50,8 +49,9 @@
     transform: translateX(-50%);
     font-size: 13px;
     font-weight: 500;
-    background: #ffffff;
-    color: #333333;
+    /*color: var(--lumo-contrast-70pct);*/
+    /*color: #333333;*/
+    color:   rgba(0, 0, 0, 0.70);
     padding: 5px 8px;
     border-radius: 5px;
     box-shadow: 0 10px 10px rgba(0, 0, 0, 0.10);
@@ -77,7 +77,7 @@
 
 /* Slide tooltip up on hover */
 .btn-bar-item:hover .btn-bar-tooltip {
-    top: -48px;
+    top: -40px;
     opacity: 1;
 }
 
@@ -103,7 +103,7 @@
 .btn-bar-youtube   { --brand-bg: #FF0000; --brand-color: #ffffff; }
 .btn-bar-github    { --brand-bg: #181717; --brand-color: #ffffff; }
 .btn-bar-copy      { --brand-bg: #374151; --brand-color: #ffffff; }
-.btn-bar-share     { --brand-bg: #6366F1; --brand-color: #ffffff; }
-.btn-bar-view      { --brand-bg: #10B981; --brand-color: #ffffff; }
-.btn-bar-location  { --brand-bg: #F59E0B; --brand-color: #ffffff; }
-.btn-bar-info      { --brand-bg: #3B82F6; --brand-color: #ffffff; }
+.btn-bar-share     { --brand-bg: #374151; --brand-color: #ffffff; }  /*#6366F1*/
+.btn-bar-view      { --brand-bg: #374151; --brand-color: #ffffff; } /*#10B981*/
+.btn-bar-rate  { --brand-bg: #374151; --brand-color: #ffffff; }
+.btn-bar-info      { --brand-bg: #374151; --brand-color: #ffffff; } /*#3B82F6*/

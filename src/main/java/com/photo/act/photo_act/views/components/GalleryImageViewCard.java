@@ -10,6 +10,7 @@ import com.photo.act.photo_act.services.PhotoViewService;
 import com.photo.act.photo_act.services.ShareMetricService;
 import com.photo.act.photo_act.services.ShareService;
 import com.photo.act.photo_act.services.WeatherService;
+import com.photo.act.photo_act.views.PhotographersView;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
@@ -34,6 +35,8 @@ import com.vaadin.flow.component.popover.PopoverPosition;
 import com.vaadin.flow.component.popover.PopoverVariant;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.textfield.TextArea;
+import com.vaadin.flow.router.RouteParam;
+import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.router.RouterLink;
 
 import com.vaadin.flow.server.VaadinSession;
@@ -319,7 +322,7 @@ public class GalleryImageViewCard extends Div {
         popover.setTarget(layoutUser);
         popover.setOpenOnClick(false);
         popover.setOpenOnHover(true);
-        popover.setHoverDelay(400);
+        popover.setHoverDelay(250);
         popover.setHideDelay(100);
 
         popover.setWidth("300px");
@@ -483,17 +486,19 @@ public class GalleryImageViewCard extends Div {
         HorizontalLayout layoutPhotoFocalLength = new HorizontalLayout();
 
         Div divMetaFocalLengthTitle = new Div("Focal Length:");
-        divMetaFocalLengthTitle.addClassNames(TextColor.TERTIARY, Padding.Vertical.NONE, FontSize.XSMALL);
+//        divMetaFocalLengthTitle.addClassNames(TextColor.TERTIARY, Padding.Vertical.NONE, FontSize.XSMALL);
         //SvgIcon svgFL = new SvgIcon(DownloadHandler.forClassResource(this.getClass(), "/icons/like-icon.svg"));
         Div divMetaFocalLength = new Div(strMetaFocalLength + " mm");
 
         Div divMetaFocalLengthFFTitle = new Div(" ( for Full Frame) ");
-        divMetaFocalLengthFFTitle.addClassNames(TextColor.TERTIARY, Padding.Vertical.NONE, FontSize.XSMALL);
+//        divMetaFocalLengthFFTitle.addClassNames(TextColor.TERTIARY, Padding.Vertical.NONE, FontSize.XSMALL);
         Div divMetaFocalLengthFF = new Div(strMetaFocalLengthFF + " mm");
         if (strMetaFocalLength.equalsIgnoreCase(strMetaFocalLengthFF)) {
             divMetaFocalLengthFF.setVisible(false);
             divMetaFocalLengthFFTitle.setVisible(false);
         }
+
+
         layoutPhotoFocalLength.add(divMetaFocalLengthTitle, divMetaFocalLength, divMetaFocalLengthFFTitle, divMetaFocalLengthFF);
 
 //        HorizontalLayout layoutPhotoMeta = new HorizontalLayout();
@@ -535,6 +540,15 @@ public class GalleryImageViewCard extends Div {
 
         HorizontalLayout layoutIso = new HorizontalLayout();
         layoutIso.add(divIsoTitle, divMetaIso);
+
+        HorizontalLayout layoutTime = new HorizontalLayout();
+        Div divTime = new Div("Time:");
+        Div spDateTimeShot = new Div(strDateTime);
+        layoutTime.add(divTime,spDateTimeShot);
+
+        if(strDateTime == null || strDateTime.isEmpty()){
+            layoutTime.setVisible(false);
+        }
 //        layoutPhotoMeta.add(, divSSTitle, divMetaSS, divIsoTitle, divMetaIso);
 
 //        detailsPhotoInfo.add(layoutPhotoCameraMeta, layoutPhotoFocalLength, layoutPhotoMeta);
@@ -545,23 +559,43 @@ public class GalleryImageViewCard extends Div {
 //        AvatarItem avatarItemMe = new AvatarItem(strPhotoNameUser + " " + strPhotoSurnameUser, "", imgAvatarSmall);
 //        avatarItemMe.addClassNames(Padding.NONE, Margin.NONE, AlignItems.CENTER);
 
-        VerticalLayout layoutPhotoDetails = new VerticalLayout();
-        layoutPhotoDetails.addClassName("figcaption");
-        layoutPhotoDetails.addClassNames(Width.FULL);
 
-        layoutPhotoDetails.add(divMetaCamera, divMetaLens, layoutPhotoFocalLength, layoutAperture, layoutShutterSpeed, layoutIso);
+        Popover popoverPhoto = new Popover();
+        popoverPhoto.setOpenOnClick(false);
+        popoverPhoto.setOpenOnHover(true);
+        popoverPhoto.setHoverDelay(250);
+        popoverPhoto.setHideDelay(100);
+
+        popoverPhoto.setWidth("400px");
+        popoverPhoto.addThemeVariants(PopoverVariant.ARROW,
+                PopoverVariant.LUMO_NO_PADDING);
+        popoverPhoto.setPosition(PopoverPosition.TOP);
+        popoverPhoto.setModal(true);
+        popoverPhoto.setAriaLabelledBy("member-popup");
+
+//        VerticalLayout layoutPhotoDetails = new VerticalLayout();
+//        layoutPhotoDetails.addClassName("figcaption");
+        VerticalLayout layoutPhotoDetails = new VerticalLayout();
+//        layoutPhotoDetails.addClassNames(Width.FULL);
+        layoutPhotoDetails.add(divMetaCamera, divMetaLens, layoutPhotoFocalLength, layoutAperture, layoutShutterSpeed, layoutIso,layoutTime);
+        layoutPhotoDetails.addClassName("info-to-show");
+        popoverPhoto.add(layoutPhotoDetails);
 
         HorizontalLayout statsRow = buildStatsRow(strPhotoId);
+
+        layoutPhotoDetails.getStyle().setOpacity("1");
 
         VerticalLayout layoutInfoPanel = new VerticalLayout();
         layoutInfoPanel.addClassNames(TextColor.BODY, Padding.Vertical.NONE, FontSize.SMALL);
         if (isEditable) {
-            layoutInfoPanel.add(popover,layoutUser, layoutDateTimeUploaded, layoutDateTimeShot);
+            popoverPhoto.setTarget(layoutDateTimeShot);
+            layoutInfoPanel.add(popover,layoutUser, statsRow,popoverPhoto, layoutDateTimeShot);
         } else {
-            layoutMemberTimeInfo.add(popover,layoutUser, statsRow, layoutDateRelUploaded);
+            popoverPhoto.setTarget(layoutDateRelUploaded);
+            layoutMemberTimeInfo.add(popover,layoutUser, statsRow, popoverPhoto, layoutDateRelUploaded);
             layoutInfoPanel.add(layoutMemberTimeInfo);
         }
-        divImage.add(layoutPhotoDetails);
+//        divImage.add(layoutPhotoDetails);
 
 //        AvatarItem avatarLargeItemMe = new AvatarItem(strPhotoNameUser + " " + strPhotoSurnameUser, "@" + strPhotoUserName, imgAvatarMedium);
 //        avatarLargeItemMe.addClassNames(Width.FULL, Padding.MEDIUM, Margin.NONE);
@@ -659,7 +693,6 @@ public class GalleryImageViewCard extends Div {
                 divPhotoInfo.add( getEditPanel(strPhotoId, strAvailableAlbumsMemberId, strUserRights, strSubTitle, strGenreId, strCityId, strSubjectId, strPersonalNotes));
             }
             // this.addClassNames(JustifyContent.EVENLY);
-
         }
     }
 
@@ -839,13 +872,13 @@ public class GalleryImageViewCard extends Div {
                         rateButton.setCount(photoRatingService.getRatingCount(photoIdRateFinal));
                     }
                 }
-                ,"btn-bar-share");
+                ,"btn-bar-rate");
         shareBottomBar.addButton("View Larger",
                 VaadinIcon.VIEWPORT.create(),
                 () -> showDialogWithCarousel(isType, strSelection, strPhotoId, strAlbumUsername, false),
                 "btn-bar-view");
         shareBottomBar.addShareItemMenu();
-        shareBottomBar.addButton("Info", VaadinIcon.INFO_CIRCLE_O.create(), () -> {
+/*        shareBottomBar.addButton("Info", VaadinIcon.INFO_CIRCLE_O.create(), () -> {
             StringBuilder info = new StringBuilder();
             if (strSubTitle != null && !strSubTitle.isBlank()
                     && !strSubTitle.equalsIgnoreCase("null")) {
@@ -858,10 +891,10 @@ public class GalleryImageViewCard extends Div {
             if (info.length() > 0) {
                 Notification.show(info.toString(), 4000, Notification.Position.BOTTOM_CENTER);
             }
-        }, "btn-bar-info");
+        }, "btn-bar-info");*/
 
         HorizontalLayout layoutActions = new HorizontalLayout();
-        layoutActions.addClassNames(AlignItems.CENTER, JustifyContent.START,
+        layoutActions.addClassNames(AlignItems.CENTER, JustifyContent.CENTER,
                 Margin.NONE, Padding.SMALL);
         layoutActions.addClassName("actions");
         layoutActions.add(shareBottomBar);
@@ -1105,7 +1138,7 @@ public class GalleryImageViewCard extends Div {
 
 
         MultiSelectComboBox cmbAlbums = new MultiSelectComboBox<>();
-        cmbAlbums.setLabel("Albums");
+        cmbAlbums.setLabel("Stories");
         cmbAlbums.setItems(lstAlbumTitle);
         cmbAlbums.select(setAlbumsPhotoBelongs);
         cmbAlbums.setWidthFull();
@@ -1452,7 +1485,7 @@ public class GalleryImageViewCard extends Div {
                 LumoUtility.AlignItems.START, LumoUtility.JustifyContent.START);
         layoutCreatorInfo.addClassNames("member-profile-design");
         layoutCreatorInfo.addClassName("info-to-show");
-        layoutCreatorInfo.setMaxHeight("160px");
+        layoutCreatorInfo.setMaxHeight("210px");
 //        layoutCreatorInfo.getStyle().setOpacity("1");
 
         String strCreatorId = record.getColumnData("uploaderId");
@@ -1466,7 +1499,7 @@ public class GalleryImageViewCard extends Div {
         String strResidentCountry = record.getColumnData("resident_country");
 
         String strCountPhotos = record.getColumnData("count_photos");
-        String strCountAlbums = record.getColumnData("count_albums");
+        String strCountStories = record.getColumnData("count_stories");
 
         Div divImgAvatar = new Div();
         divImgAvatar.addClassNames(LumoUtility.Padding.NONE, LumoUtility.Margin.NONE);
@@ -1506,7 +1539,7 @@ public class GalleryImageViewCard extends Div {
         divPhotos.addClassNames(LumoUtility.TextColor.SECONDARY);
         Span spAlbums = new Span(" Albums");
         spAlbums.addClassNames(LumoUtility.TextColor.TERTIARY, LumoUtility.FontSize.SMALL);
-        Span divAlbums = new Span(strCountAlbums);
+        Span divAlbums = new Span(strCountStories);
         divAlbums.addClassNames(LumoUtility.TextColor.SECONDARY);
         divAlbums.add(spAlbums);
 
@@ -1535,12 +1568,24 @@ public class GalleryImageViewCard extends Div {
                 LumoUtility.Gap.XSMALL);
         layoutAdditional.add(objMember, objName, divMemberSince); //, divBioTitle, divBio);//, divResidentCaption, divResident);
 
+
+        //            linkTutorFacebook.setVisible(false);
+        Button btnProfile = new Button(FontAwesome.Solid.USER_ALT.create());
+        btnProfile.setText("View Profile");
+        btnProfile.setWidthFull();
+
+        RouteParam routeTitle = new RouteParam("member", strUsername);
+        btnProfile.addClickListener(click -> {
+            btnProfile.getUI().ifPresent(ui ->
+                    ui.navigate(PhotographersView.class, new RouteParameters(routeTitle)));
+        });
+
         horizontalLayout.add(layoutMemberCard, layoutAdditional);
 
         if(showMinimum){
-            layoutCreatorInfo.add(horizontalLayout);
+            layoutCreatorInfo.add(horizontalLayout,btnProfile);
         }else {
-            layoutCreatorInfo.add(horizontalLayout, layoutCounts);
+            layoutCreatorInfo.add(horizontalLayout, layoutCounts,btnProfile);
         }
 
         return layoutCreatorInfo;

@@ -82,19 +82,19 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
     public static String DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
     String[] arrColumnsMember = {"userId", "username", "resident", "resident_country", "date_joined", "member_since", "member_for", "avatar_path",
             "name", "surname", "user_rights_id", "short_bio", "url_insta", "url_fb", "url_flickr", "url_yt", "url_website", "email", "resident", "resident_country",
-            "count_photos", "count_albums"};
+            "count_photos", "count_stories"};
     String sqlMember = "SELECT " +
             "  usr.userId, usr.username, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined,  DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since " +
             " , usr.avatar_path, usr.name, usr.surname, usr.email, usr.user_rights_id, usr.resident, usr.resident_country " +
             " , usr.short_bio, usr.url_fb, usr.url_yt, usr.url_insta, usr.url_flickr, usr.url_website " +
-            " , ux.count_photos, ux.count_albums " +
+            " , ux.count_photos, ux.count_stories " +
             " FROM dbuser usr, dbuser_extra ux " +
             " WHERE usr.userId = ux.user_id ";
     String sqlMembers = "SELECT " +
             " usr.userId, usr.username, usr.username, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined,  " +
             " DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since , getDateDiffFromNow(usr.date_joined) AS member_for " +
             " , usr.avatar_path, name, surname, short_bio, url_insta, url_fb, url_flickr, url_yt, url_website, email, resident, resident_country " +
-            " , esrx.count_photos, esrx.count_albums, esrx.count_learnings_ref " +
+            " , esrx.count_photos, esrx.count_stories, esrx.count_learnings_ref " +
             //     "--  , pa.inc, pm.title, pm.id, pm.name_new, pm.title, pm.subtitle, pm.space_size, pm.location_by_user\\n\" +\n" +
             " FROM dbuser usr, dbuser_extra esrx, dbuser_rights usrr " +
             " WHERE usr.userId = esrx.user_id " +
@@ -113,7 +113,7 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
 
     String[] arrColumnsMembers = {"userId", "username", "username", "resident", "date_joined", "member_since", "member_for",
             "avatar_path", "name", "surname", "short_bio", "url_insta", "url_fb", "url_flickr", "url_yt", "url_website", "email", "resident", "resident_country",
-            "count_photos", "count_albums", "count_learnings"};
+            "count_photos", "count_stories", "count_learnings"};
     private String sqlReadDestinationCountries = "SELECT distinct country, city_name, prefecture, prefecture_capital " +
             " FROM destination d " +
             " GROUP BY country " +
@@ -1041,7 +1041,7 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
                 "    WHERE album_visible_to = 'ALL' " +
                 "    GROUP BY user_id " +
                 " ) AS p ON d.user_id = p.user_id " +
-                " SET d.username = NULL , d.count_albums = p.album_count " +
+                " SET d.username = NULL , d.count_stories = p.album_count " +
                 " WHERE d.user_id = ? ";
         int intAlbumCount = recordService.insertOneRecordWithQuery(strUpdateCount, fieldValueCount, fieldTypeCount);
 
@@ -1216,7 +1216,7 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
                 String strFlickr = rec.getColumnData("url_flickr");
                 String strWebsite = rec.getColumnData("url_website");
 
-                String strCountAlbums = rec.getColumnData("count_albums");
+                String strCountStories = rec.getColumnData("count_stories");
                 String strCountPhotos = rec.getColumnData("count_photos");
 
                 Anchor linkWebsite = new Anchor();
@@ -1335,8 +1335,8 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
                 layoutStories.addClassNames(AlignItems.CENTER, JustifyContent.CENTER);
                 layoutStories.addClassName("member-photos-count");
                 Icon iconAlbum = FontAwesome.Solid.PHOTO_FILM.create();
-                Div spAlbums = new Div("Albums");
-                H2 divAlbums = new H2(strCountAlbums);
+                Div spAlbums = new Div("Stories");
+                H2 divAlbums = new H2(strCountStories);
                 layoutStories.add(divAlbums, spAlbums);
 
                 VerticalLayout layoutPhotos = new VerticalLayout();
@@ -1441,7 +1441,7 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
             String strFlickr = rec.getColumnData("url_flickr");
             String strWebsite = rec.getColumnData("url_website");
 
-            String strCountAlbums = rec.getColumnData("count_albums");
+            String strCountStories = rec.getColumnData("count_stories");
             String strCountPhotos = rec.getColumnData("count_photos");
 
             Anchor linkWebsite = new Anchor();
@@ -1549,8 +1549,8 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
             layoutStories.addClassNames(AlignItems.CENTER, JustifyContent.CENTER);
             layoutStories.addClassName("member-photos-count");
             Icon iconAlbum = FontAwesome.Solid.PHOTO_FILM.create();
-            Div spAlbums = new Div("Albums");
-            H2 divAlbums = new H2(strCountAlbums);
+            Div spAlbums = new Div("Stories");
+            H2 divAlbums = new H2(strCountStories);
             layoutStories.add(divAlbums, spAlbums);
 
             VerticalLayout layoutPhotos = new VerticalLayout();

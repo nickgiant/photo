@@ -117,7 +117,7 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
     String[] arrColumnsMemberAlbums = {"id", "title", "description", "album_visible_to", "category_id"
             , "username", "name", "surname", "resident", "date_joined", "member_since", "avatar_path"
             , "album_count"
-            , "count_photos", "count_albums"
+            , "count_photos", "count_stories"
     };
 
     String sqlMemberOfAlbums = "SELECT a.id, a.title, a.description, a.album_visible_to, a.category_id " +
@@ -125,7 +125,7 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
             " , DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since " +
             " , usr.avatar_path " +
             " , count(usr.userId) AS album_count " +
-            " , ux.count_photos, ux.count_albums " +
+            " , ux.count_photos, ux.count_stories " +
             " FROM dbuser usr,  dbuser_extra ux, photo_album a " +
             " WHERE a.user_id = usr.userId " +
             " AND usr.userId = ux.user_id " +
@@ -155,7 +155,7 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
             , "photo_2", "photo_3", "photo_4", "datetime_album_created"
             , "cat_type"
             , "username", "surname", "name", "resident", "date_joined", "member_since", "avatar_path"
-            , "count_photos", "count_albums"
+            , "count_photos", "count_stories"
     };
     String sqlAlbumsAll = "SELECT a.id, a.title AS album_title, a.description, a.album_visible_to, a.user_id, a.date_inserted " +
             " , count(pap.photo_album_id) AS album_photo_count, SUM(pm.space_size) AS album_photo_size " +
@@ -165,7 +165,7 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
             " , getDateDiffFromNow(a.date_inserted) AS datetime_album_created " +
             " , ac.cat_type " +
             " , usr.username, usr.surname, usr.name, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined, DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since, usr.avatar_path " +
-            " , ux.count_photos, ux.count_albums " +
+            " , ux.count_photos, ux.count_stories " +
             //     "--  , pap.inc, pm.title, pm.id, pm.name_new, pm.title, pm.subtitle, pm.space_size, pm.location_by_user\\n\" +\n" +
             " FROM photo_album_photo pap , photo_meta pm, photo_album_categories ac,  dbuser_extra ux, dbuser usr, photo_album a LEFT JOIN photo_meta p1 ON a.photo_id1 = p1.id " +
             " LEFT JOIN photo_meta p2 ON a.photo_id2 = p2.id  LEFT JOIN photo_meta p3 ON a.photo_id3 = p3.id " +
@@ -188,7 +188,7 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
             , "location_by_user", "location_area", "location_country_code", "location_lat", "location_lon"
             , "date_inserted"
             , "username", "surname", "name", "resident", "date_joined", "member_since", "avatar_path"
-            , "count_photos", "count_albums"
+            , "count_photos", "count_stories"
     };
 
     private String sqlReadAlbumPhotos = "SELECT a.title AS album_title, a.user_id, a. album_visible_to, a.description, " +
@@ -202,7 +202,7 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
             " , pm.meta_focal_length, pm.meta_focal_length_ff, pm.meta_iso, meta_aperture,  meta_shutter_speed, meta_orientation " +
             " , pm.location_by_user, pm.location_area, pm.location_country_code, pm.location_lat, pm.location_lon " +
             " , usr.username, usr.surname, usr.name, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined, DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since, usr.avatar_path " +
-            " , ux.count_photos, ux.count_albums " +
+            " , ux.count_photos, ux.count_stories " +
             //, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description, DATE_FORMAT(f.dateInsert , '%D %M %Y') AS formatedDateUpdated  " +
             " FROM dbuser usr, dbuser_extra ux, photo_album a LEFT JOIN destination da  ON (da.id = a.destination_id) , photo_album_photo pap , photo_meta pm LEFT JOIN destination d ON pm.destination_Id = d.id " +
             " WHERE  a.user_id = usr.userId AND a.user_id = pap.user_id AND a.id = pap.photo_album_id AND pap.photo_id = pm.id " +

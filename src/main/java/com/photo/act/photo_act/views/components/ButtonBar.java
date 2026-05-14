@@ -16,7 +16,7 @@ import com.vaadin.flow.component.dependency.CssImport;
  *   bar.addButton("Facebook", facebookIcon, () -> openFacebook(), "btn-bar-facebook");
  *   bar.addButton("Copy URL", linkIcon, this::copyUrl, "btn-bar-copy");
  */
-@CssImport("./themes/my-app/components/button-bar.css")
+
 public class ButtonBar extends Div {
 
     public ButtonBar() {

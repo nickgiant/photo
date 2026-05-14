@@ -131,7 +131,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
                     " , pm.meta_i_height, pm.meta_i_length, pm.meta_i_width " +
                     " , usr.username, usr.surname, usr.name, usr.resident, usr.resident_country, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined, DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since, usr.avatar_path " +
                     " , usr.short_bio " +
-                    " , ux.count_photos, ux.count_albums " +
+                    " , ux.count_photos, ux.count_stories " +
                     " FROM dbuser usr, dbuser_extra ux, photo_meta pm" +
                     " WHERE pm.uploaderId = usr.userId AND pm.visible_to = 'ALL' " +
                     " AND usr.userId = ux.user_id ";
@@ -180,7 +180,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
             , "subject_name", "subject_description", "subject_type"
             , "date_inserted_diff_from_now"
             , "username", "surname", "name", "resident", "resident_country", "date_joined", "member_since", "avatar_path", "short_bio"
-            , "count_photos", "count_albums"
+            , "count_photos", "count_stories"
     };
 
 
@@ -196,7 +196,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
                     " , d.city_name, d.prefecture, d.country " +
                     " , usr.username, usr.surname, usr.name, usr.resident, usr.resident_country, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined, DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since, usr.avatar_path " +
                     " , usr.short_bio " +
-                    " , ux.count_photos, ux.count_albums " +
+                    " , ux.count_photos, ux.count_stories " +
                     " FROM dbuser usr, dbuser_extra ux, photo_meta pm" +
                     " LEFT JOIN destination d ON pm.destination_id = d.id " +
                     " WHERE pm.uploaderId = usr.userId AND pm.visible_to = 'ALL' " +
@@ -209,7 +209,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
                     " , getDateDiffFromNow(pm.date_inserted) AS date_inserted_diff_from_now " +
                     " , usr.username, usr.surname, usr.name, usr.resident, usr.resident_country, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined,  DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since, usr.avatar_path " +
                     " , usr.short_bio  " +
-                    " , ux.count_photos, ux.count_albums " +
+                    " , ux.count_photos, ux.count_stories " +
                     " , s.subject_name " +
                     " FROM  dbuser usr, dbuser_extra ux, photo_meta pm " +
                     " RIGHT JOIN  subject s ON s.id = pm.subject_id " +

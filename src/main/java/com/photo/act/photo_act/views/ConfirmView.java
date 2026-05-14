@@ -60,12 +60,12 @@ public class ConfirmView extends Main implements HasUrlParameter<String>, Before
             " WHERE 1 = 1 ";
     String[] arrColumnsMembers = {"userId", "username", "username", "resident", "date_joined", "member_since", "member_for",
             "avatar_path", "name", "surname", "short_bio", "url_insta", "url_fb", "url_flickr", "url_yt", "email", "resident", "resident_country",
-            "count_photos", "count_albums", "count_learnings"};
+            "count_photos", "count_stories", "count_learnings"};
     String sqlMembers = "SELECT " +
             " usr.userId, usr.username, usr.username, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined,  " +
             " DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since , getDateDiffFromNow(usr.date_joined) AS member_for " +
             " , usr.avatar_path, name, surname, short_bio, url_insta, url_fb, url_flickr, url_yt, email, resident, resident_country " +
-            " , esrx.count_photos, esrx.count_albums, esrx.count_learnings_ref " +
+            " , esrx.count_photos, esrx.count_stories, esrx.count_learnings_ref " +
             //     "--  , pa.inc, pm.title, pm.id, pm.name_new, pm.title, pm.subtitle, pm.space_size, pm.location_by_user\\n\" +\n" +
             " FROM dbuser usr, dbuser_extra esrx " +
             " WHERE usr.userId = esrx.user_id " +

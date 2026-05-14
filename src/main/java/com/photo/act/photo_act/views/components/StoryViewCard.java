@@ -230,11 +230,11 @@ public class StoryViewCard extends VerticalLayout {
                 //   Background.CONTRAST_5,
                 BorderRadius.NONE
         );
-        H4 divPhotoCount = new H4(strStoryPhotoCount);
+/*        H4 divPhotoCount = new H4(strStoryPhotoCount);
         layoutPhotoCount.add(FontAwesome.Regular.IMAGES.create(), divPhotoCount);
         H4 divCountLabel = new H4("Photos");
 //        divCountLabel.addClassNames(FontSize.XXSMALL);
-        layoutPhotoCountAll.add(layoutPhotoCount, divCountLabel);
+        layoutPhotoCountAll.add(layoutPhotoCount, divCountLabel);*/
 
         HorizontalLayout layoutDateAll = new HorizontalLayout();
         layoutDateAll.addClassNames(
@@ -264,10 +264,19 @@ public class StoryViewCard extends VerticalLayout {
 
         layoutDateAll.add(layoutDate);
 
+        Image imgAvatarSmall = genericView.getAvatarThumbImage(strAvatarPath, strStoryNameOfUser, "40px", "40px");
+
+        Image imgAvatarMedium = genericView.getAvatarThumbImage(strAvatarPath, strStoryNameOfUser, "70px", "70px");
+
+        AvatarItem avatarItemMe = new AvatarItem(strStoryNameOfUser, "", imgAvatarSmall);
+
+
+        AvatarItem avatarLargeItemMe = new AvatarItem(strStoryNameOfUser, "@" + strStoryUserName, imgAvatarMedium);
+
         HorizontalLayout divSubHeaderAll = new HorizontalLayout();
         divSubHeaderAll.addClassNames(Width.FULL, AlignItems.END,
                 JustifyContent.BETWEEN, Margin.NONE, Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL);
-        divSubHeaderAll.add(layoutCategoryAll, layoutPhotoCountAll, layoutDateAll);
+        divSubHeaderAll.add(layoutCategoryAll, layoutDateAll, avatarItemMe);
 
         Paragraph subtitle = new Paragraph();
 
@@ -465,20 +474,6 @@ public class StoryViewCard extends VerticalLayout {
 //        userAvatarLarge.addThemeVariants(AvatarVariant.LUMO_XLARGE);
 
 
-        Image imgAvatarSmall = genericView.getAvatarThumbImage(strAvatarPath, strStoryNameOfUser, "40px", "40px");
-        //Image imgAvatarSmall = getAvatarImage(strAvatar, strAlbumUserName, "40px", "40px");
-
-        Image imgAvatarMedium = genericView.getAvatarThumbImage(strAvatarPath, strStoryNameOfUser, "70px", "70px");
-//        Image imgAvatarMedium = getAvatarImage(strAvatar, strAlbumUserName, "70px", "70px");
-
-        AvatarItem avatarItemMe = new AvatarItem(strStoryNameOfUser, "", imgAvatarSmall);
-        avatarItemMe.setWidthFull();
-/*        Details detailsMember = new Details();
-        detailsMember.addClassNames(Width.FULL, BorderRadius.SMALL);
-//        detailsMember.addThemeVariants(DetailsVariant.FILLED);
-        detailsMember.addClassName("member-small");
-        detailsMember.setSummary(avatarItemMe);*/
-        AvatarItem avatarLargeItemMe = new AvatarItem(strStoryNameOfUser, "@" + strStoryUserName, imgAvatarMedium);
 
         HorizontalLayout layoutMemberInfo = new HorizontalLayout();
         layoutMemberInfo.addClassNames(
@@ -550,7 +545,7 @@ public class StoryViewCard extends VerticalLayout {
         layoutMemberInfo.add(layoutMemberPhotoCount, layoutMemberViewCount, layoutMemberLocationsCount, layoutDateJoined);
 //        detailsMember.add(avatarLargeItemMe, layoutMemberInfo);
 
-        layoutPhotosInfo.add( avatarItemMe);
+//        layoutPhotosInfo.add( avatarItemMe);
 
         RouteParam routeMember = new RouteParam("member", strStoryUserName);
         RouteParam routeStory = new RouteParam("story", strSlug);
@@ -573,16 +568,18 @@ public class StoryViewCard extends VerticalLayout {
                 () -> getUI().ifPresent(ui ->
                         ui.navigate(StoriesView.class, new RouteParameters(routeMember, routeStory))),
                 "btn-bar-view");
+
         shareBar.addShareItemMenu();
-        final String infoText = (strDescription != null && !strDescription.isBlank()
+
+/*        final String infoText = (strDescription != null && !strDescription.isBlank()
                 && !strDescription.equalsIgnoreCase("null")) ? strDescription : strTitle;
         shareBar.addButton("Info", VaadinIcon.INFO_CIRCLE_O.create(), () -> {
             if (infoText != null && !infoText.isBlank()) {
                 Notification.show(infoText, 5000, Notification.Position.BOTTOM_CENTER);
             }
-        }, "btn-bar-info");
+        }, "btn-bar-info");*/
 
-        this.add(divImage, header, subtitle, divSubHeaderAll, layoutPhotosInfo,
+        this.add(divImage, header, subtitle, divSubHeaderAll,
                 buildActionBar(shareBar));
 
     }

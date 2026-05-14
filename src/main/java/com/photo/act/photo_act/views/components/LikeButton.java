@@ -49,8 +49,11 @@ public class LikeButton extends Div {
 
         if(initialCount==0){
             countSpan = new Span("");
+            countSpan.setVisible(false);
         }else {
             countSpan = new Span(String.valueOf(initialCount));
+            countSpan.addClassName("count-span");
+            countSpan.setVisible(true);
         }
         countSpan.addClassName("like-count");
 

@@ -162,7 +162,7 @@ public class PhotoLightboxView extends VerticalLayout
             , "subject_name", "subject_description", "subject_type"
             , "date_inserted_diff_from_now"
             , "username", "surname", "name", "resident", "resident_country", "date_joined", "member_since", "avatar_path", "short_bio"
-            , "count_photos", "count_albums"
+            , "count_photos", "count_stories"
     };
 
     private String sqlReadGalleryDestinations =
@@ -172,7 +172,7 @@ public class PhotoLightboxView extends VerticalLayout
                     " , d.city_name, d.prefecture, d.country " +
                     " , usr.username, usr.surname, usr.name, usr.resident, usr.resident_country, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined, DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since, usr.avatar_path " +
                     " , usr.short_bio " +
-                    " , ux.count_photos, ux.count_albums " +
+                    " , ux.count_photos, ux.count_stories " +
                     " FROM dbuser usr, dbuser_extra ux, photo_meta pm" +
                     " LEFT JOIN destination d ON pm.destination_id = d.id " +
                     " WHERE pm.uploaderId = usr.userId AND pm.visible_to = 'ALL' " +
