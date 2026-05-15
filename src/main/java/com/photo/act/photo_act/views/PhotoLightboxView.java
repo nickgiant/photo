@@ -2,15 +2,12 @@ package com.photo.act.photo_act.views;
 
 
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.services.PhotoViewService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.photo.act.photo_act.views.components.GenericView;
-import com.photo.act.photo_act.views.components.GlightboxComponent;
 import com.photo.act.photo_act.views.components.LikeButton;
 import com.photo.act.photo_act.views.components.ThumbnailStrip;
 import com.vaadin.flow.component.UI;
@@ -21,13 +18,12 @@ import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.*;
-
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
+import com.vaadin.flow.server.streams.DownloadHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,7 +32,6 @@ import java.io.File;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.FileSystems;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
@@ -50,32 +45,15 @@ import static com.photo.act.photo_act.views.MainLayout.PROP_PHOTOS;
  * ── Overall layout (VerticalLayout, full height) ──────────────────────────────
  *
  *   ┌──────────────────────────────────────────────┬──────────────┐
- *   │                                              │              │
- *   │          GLightbox viewer                    │ Vaadin panel │
- *   │          (flex-grow: 1)                      │  (220 px)    │
- *   │                                              │              │
+ *   │  [❮]  Vaadin Image (DownloadHandler)  [❯]  │ info panel   │
+ *   │        object-fit: contain                 │  (220 px)    │
+ *   │        [✕] top-right close button          │              │
  *   ├──────────────────────────────────────────────┴──────────────┤
  *   │       Thumbnail filmstrip   ← → scrollable  (100 px)       │
  *   └─────────────────────────────────────────────────────────────┘
  *
- * ── GLightbox effects available ──────────────────────────────────────────────
- *   • "zoom"  — image scales in from small to full (default)
- *   • "fade"  — cross-fade between slides
- *   • "slide" — slides in from the side
- *   • "none"  — instant cut
- *
- * ── Communication flow ────────────────────────────────────────────────────────
- *   User clicks thumb      → ThumbnailStrip.onSelect()
- *                          → PhotoLightboxView.selectPhoto(index)
- *                          → glightbox.openSlide(index)   [Java → JS]
- *                          → GLightbox navigates with transition effect
- *                          → glightbox.onSlideChanged()   [JS → Java]
- *                          → loadInfoPanel(photoId)       [Vaadin update]
- *                          → thumbnailStrip.setActiveIndex(index)
- *
- *   User swipes/arrows     → GLightbox handles natively
- *                          → glightbox.onSlideChanged()   [JS → Java]
- *                          → same chain as above from loadInfoPanel
+ * Navigation is fully server-side: clicking ❮/❯ updates Image.setSrc()
+ * via DownloadHandler.forFile(). No URL strings are passed to JavaScript.
  */
 
 @AnonymousAllowed
@@ -92,12 +70,16 @@ public class PhotoLightboxView extends VerticalLayout
     private RecordService recordService;
 
     // ── Dependencies ──────────────────────────────────────────────────────────
-    private final ObjectMapper      objectMapper;
     private final PhotoViewService  photoViewService;
 
     // ── Components ────────────────────────────────────────────────────────────
-    private GlightboxComponent glightbox;
+    private Image currentImage;
     private ThumbnailStrip thumbnailStrip;
+
+    // State: index of the photo currently shown in the viewer
+    private int currentIndex = 0;
+    // Base path for large photos — set in buildView, used by navigation handlers
+    private String strPathLargePhotos;
 
     // Right panel elements
     private final H2    photoTitle   = new H2();
@@ -203,10 +185,8 @@ public class PhotoLightboxView extends VerticalLayout
     // ── View setup ────────────────────────────────────────────────────────────
 
     public PhotoLightboxView(RecordService recordService,
-                             ObjectMapper objectMapper,
                              PhotoViewService photoViewService) {
         this.recordService    = recordService;
-        this.objectMapper     = objectMapper;
         this.photoViewService = photoViewService;
 
         // Outer VerticalLayout: full screen, no padding/gap
@@ -288,15 +268,14 @@ public class PhotoLightboxView extends VerticalLayout
 
         buildView();
 
-        // Load like count for the initial photo
-        if (!strPhotoId.isBlank()) {
+        // Position viewer on the photo that matches the URL parameter
+        currentIndex = findInitialIndex();
+        updatePhotoImage();
+        thumbnailStrip.setActiveIndex(currentIndex);
+
+        if (!photos.isEmpty()) {
             try {
-                currentPhotoId = Long.parseLong(strPhotoId);
-                loadInfoPanel(currentPhotoId);
-            } catch (NumberFormatException ignored) {}
-        } else if (!photos.isEmpty()) {
-            try {
-                currentPhotoId = Long.parseLong(photos.get(0).getColumnData("id"));
+                currentPhotoId = Long.parseLong(photos.get(currentIndex).getColumnData("id"));
                 loadInfoPanel(currentPhotoId);
             } catch (NumberFormatException ignored) {}
         }
@@ -307,31 +286,43 @@ public class PhotoLightboxView extends VerticalLayout
     private void buildView() {
         removeAll();
 
-        String strPathThumbs = getAppProps("dir-photos") + dirChar + subPathThumbs;
+        String dirPhotos = getAppProps("dir-photos");
+        strPathLargePhotos = (dirPhotos != null ? dirPhotos : "") + dirChar + subPathLarge;
+        String strPathThumbs = (dirPhotos != null ? dirPhotos : "") + dirChar + subPathThumbs;
 
-        // ── Top section: viewer + info panel side by side ─────────────────────
-        glightbox = new GlightboxComponent();
-//        glightbox.setSizeFull();
-        glightbox.getStyle().set("min-height", "0"); // flex child must have this
+        // ── Photo viewer: Image + overlaid prev/next/close buttons ────────────
+        currentImage = new Image();
+        currentImage.setSizeFull();
+        currentImage.getStyle()
+                .set("object-fit", "contain")
+                .set("display", "block");
 
-        // Wire slide-changed event: update info panel + thumbnail highlight
-        glightbox.addSlideChangeListener((index, photoId) -> {
-            currentPhotoId = photoId;
-            loadInfoPanel(photoId);
-            thumbnailStrip.setActiveIndex(index);
+        Div prevBtn  = navDiv("❮", "left");
+        Div nextBtn  = navDiv("❯", "right");
+        Div closeBtn = closeDiv();
+
+        prevBtn.addClickListener(e -> {
+            currentIndex = (currentIndex - 1 + photos.size()) % photos.size();
+            updatePhotoImage();
+            updateNavState();
         });
+        nextBtn.addClickListener(e -> {
+            currentIndex = (currentIndex + 1) % photos.size();
+            updatePhotoImage();
+            updateNavState();
+        });
+        closeBtn.addClickListener(e ->
+                getUI().ifPresent(ui -> ui.getPage().executeJs("window.history.back()")));
 
-        // Load all slides into GLightbox
-        glightbox.setSlides(buildSlidesJson());
-
-        // GLightbox wrapper — takes all remaining height
-        Div viewerWrap = new Div(glightbox);
+        Div viewerWrap = new Div(currentImage, prevBtn, nextBtn, closeBtn);
         viewerWrap.setSizeFull();
         viewerWrap.getStyle()
-                .set("min-height", "0")             // critical for flex height
-                .set("background", "#0d0d0d");
+                .set("position", "relative")
+                .set("background", "#0d0d0d")
+                .set("overflow", "hidden")
+                .set("min-height", "0");
 
-        // Right info panel
+        // ── Right info panel ──────────────────────────────────────────────────
         VerticalLayout infoPanel = buildInfoPanel();
         infoPanel.setWidth("220px");
         infoPanel.setHeightFull();
@@ -345,34 +336,108 @@ public class PhotoLightboxView extends VerticalLayout
         topSection.setPadding(false);
         topSection.setSpacing(false);
         topSection.getStyle()
-                .set("min-height", "0")             // critical — prevents filmstrip from being pushed off
+                .set("min-height", "0")
                 .set("flex", "1 1 auto");
 
-        // ── Bottom section: thumbnail filmstrip ───────────────────────────────
+        // ── Bottom: thumbnail filmstrip ───────────────────────────────────────
         thumbnailStrip = new ThumbnailStrip(photos, strPathThumbs, (index, photoId) -> {
+            currentIndex = index;
             currentPhotoId = photoId;
-            glightbox.openSlide(index);         // → JS transition
+            updatePhotoImage();
             loadInfoPanel(photoId);
         });
         thumbnailStrip.setWidthFull();
 
-        // ── Assemble ─────────────────────────────────────────────────────────
-        // setFlexGrow on topSection so it expands; thumbnailStrip stays 100px
         add(topSection, thumbnailStrip);
-        setFlexGrow(1, topSection);             // top section fills remaining height
+        setFlexGrow(1, topSection);
+    }
+
+    /** Updates the main Image to show the photo at currentIndex. */
+    private void updatePhotoImage() {
+        if (photos.isEmpty()) return;
+        String nameNew = photos.get(currentIndex).getColumnData("name_new");
+        if (nameNew != null) {
+            File file = Paths.get(strPathLargePhotos + dirChar + nameNew).toFile();
+            if (file.exists()) {
+                currentImage.setSrc(DownloadHandler.forFile(file));
+                return;
+            }
+            log.warn("Photo file not found: {}", strPathLargePhotos + dirChar + nameNew);
+        }
+        currentImage.setSrc("/static/photographerM.jpg");
+    }
+
+    /** Syncs thumbnail highlight and info panel after arrow navigation. */
+    private void updateNavState() {
+        thumbnailStrip.setActiveIndex(currentIndex);
+        if (!photos.isEmpty()) {
+            try {
+                currentPhotoId = Long.parseLong(photos.get(currentIndex).getColumnData("id"));
+                loadInfoPanel(currentPhotoId);
+            } catch (NumberFormatException ignored) {}
+        }
+    }
+
+    /** Returns the index of the photo matching strPhotoId, or 0 if not found. */
+    private int findInitialIndex() {
+        if (!strPhotoId.isBlank()) {
+            for (int i = 0; i < photos.size(); i++) {
+                if (strPhotoId.equals(photos.get(i).getColumnData("id"))) return i;
+            }
+        }
+        return 0;
+    }
+
+    /** Prev / next overlay button (left or right edge of the viewer). */
+    private Div navDiv(String symbol, String side) {
+        Div btn = new Div();
+        btn.setText(symbol);
+        btn.getStyle()
+                .set("position", "absolute")
+                .set("top", "50%")
+                .set("transform", "translateY(-50%)")
+                .set(side, "0")
+                .set("z-index", "10")
+                .set("background", "rgba(0,0,0,0.45)")
+                .set("color", "#fff")
+                .set("width", "44px")
+                .set("height", "80px")
+                .set("font-size", "30px")
+                .set("cursor", "pointer")
+                .set("border-radius", "3px")
+                .set("display", "flex")
+                .set("align-items", "center")
+                .set("justify-content", "center")
+                .set("user-select", "none");
+        return btn;
+    }
+
+    /** Close (×) button overlaid in the top-right corner of the viewer. */
+    private Div closeDiv() {
+        Div btn = new Div();
+        btn.setText("✕");
+        btn.getStyle()
+                .set("position", "absolute")
+                .set("top", "10px")
+                .set("right", "10px")
+                .set("z-index", "10")
+                .set("background", "rgba(0,0,0,0.55)")
+                .set("color", "#fff")
+                .set("width", "38px")
+                .set("height", "38px")
+                .set("font-size", "20px")
+                .set("cursor", "pointer")
+                .set("border-radius", "50%")
+                .set("display", "flex")
+                .set("align-items", "center")
+                .set("justify-content", "center")
+                .set("user-select", "none");
+        return btn;
     }
 
     // ── Info panel (right VerticalLayout) ─────────────────────────────────────
 
     private VerticalLayout buildInfoPanel() {
-        // Effect selector (zoom / fade / slide / none)
-        Select<String> effectSelect = new Select<>();
-        effectSelect.setLabel("Transition");
-        effectSelect.setItems("zoom", "fade", "slide", "none");
-        effectSelect.setValue("zoom");
-        effectSelect.setWidthFull();
-        effectSelect.addValueChangeListener(e -> glightbox.setEffect(e.getValue()));
-
         // Like button
         likeButton = new LikeButton(0); // count is refreshed in loadInfoPanel()
         likeButton.setTitle("Like this photo");
@@ -407,7 +472,6 @@ public class PhotoLightboxView extends VerticalLayout
                 photoTitle, authorSpan,
                 new Hr(),
                 likeButton, downloadBtn, shareBtn,
-                effectSelect,
                 new Hr(),
                 new H4("Camera info"), exifGrid,
                 new H4("Tags"), tagsRow,
@@ -503,53 +567,6 @@ public class PhotoLightboxView extends VerticalLayout
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
-
-    /**
-     * Builds the JSON array GLightbox needs from the photos list.
-     * Each element: { href, title, description, photoId }
-     */
-    private String buildSlidesJson() {
-        String dirPhotos = getAppProps("dir-photos");
-        if (dirPhotos == null) {
-            log.error("App property 'dir-photos' not found — cannot build slides");
-            return "[]";
-        }
-        String strPathShow = dirPhotos + dirChar + subPathLarge;
-
-        List<Map<String, Object>> slides = photos.stream().map(p -> {
-            String href = "/static/photographerM.jpg";
-            String nameNew = p.getColumnData("name_new");
-            if (nameNew != null) {
-                File file = Paths.get(strPathShow + dirChar + nameNew).toFile();
-                if (file.exists()) {
-                    com.vaadin.flow.server.StreamResource sr =
-                        new com.vaadin.flow.server.StreamResource(nameNew, () -> {
-                            try { return new java.io.FileInputStream(file); }
-                            catch (java.io.FileNotFoundException ex) {
-                                return java.io.InputStream.nullInputStream();
-                            }
-                        });
-                    com.vaadin.flow.server.ResourceReference ref =
-                        VaadinSession.getCurrent().getResourceRegistry().registerResource(sr);
-                    href = ref.getResourceUri().toString();
-                } else {
-                    log.warn("Photo file not found: {}", file.getAbsolutePath());
-                }
-            }
-            return Map.<String, Object>of(
-                "href",    href,
-                "title",   p.getColumnData("title") != null ? p.getColumnData("title") : "",
-                "photoId", p.getColumnData("id") != null ? p.getColumnData("id") : "0"
-            );
-        }).toList();
-
-        try {
-            return objectMapper.writeValueAsString(slides);
-        } catch (JsonProcessingException e) {
-            log.error("Could not serialize slides", e);
-            return "[]";
-        }
-    }
 
     private static String truncate(String s, int max) {
         return s.length() <= max ? s : s.substring(0, max - 1) + "…";
