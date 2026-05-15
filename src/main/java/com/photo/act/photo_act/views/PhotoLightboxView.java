@@ -315,6 +315,8 @@ public class PhotoLightboxView extends VerticalLayout
         // ── Right info panel ──────────────────────────────────────────────────
         VerticalLayout infoPanel = buildInfoPanel();
         infoPanel.addClassName("plv-info-panel");
+        infoPanel.setWidth("220px");
+        infoPanel.setHeightFull();
 
         HorizontalLayout topSection = new HorizontalLayout(photoFrame, infoPanel);
         topSection.setSizeFull();

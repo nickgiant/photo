@@ -41,8 +41,18 @@ public class PhotoFrameComponent extends Div {
     private Effect effect = Effect.FADE;
 
     public PhotoFrameComponent() {
-        setSizeFull();        // Vaadin layout: fills the parent flex cell (width+height)
+        setSizeFull();
         addClassName("pf-frame");
+        getStyle()
+            .set("position", "relative")
+            .set("display", "flex")
+            .set("align-items", "center")
+            .set("justify-content", "center")
+            .set("overflow", "hidden")
+            .set("min-height", "0");
+        img.getStyle()
+            .set("display", "block")
+            .set("object-fit", "contain");
         add(img);
     }
 
@@ -125,10 +135,16 @@ public class PhotoFrameComponent extends Div {
     private void applyOrientation(int width, int height) {
         if (width > 0 && height > 0 && height > width) {
             setOrientationClass("pf-img--portrait");
+            img.getStyle().set("height", "100%").set("width", "auto")
+                .set("max-width", "100%").set("max-height", "100%");
         } else if (width > 0 && height > 0) {
             setOrientationClass("pf-img--landscape");
+            img.getStyle().set("width", "100%").set("height", "auto")
+                .set("max-width", "100%").set("max-height", "100%");
         } else {
             setOrientationClass("pf-img--unknown");
+            img.getStyle().set("width", "auto").set("height", "auto")
+                .set("max-width", "100%").set("max-height", "100%");
         }
     }
 

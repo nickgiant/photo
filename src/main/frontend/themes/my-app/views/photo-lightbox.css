@@ -8,9 +8,8 @@
 }
 
 .plv-info-panel {
+    /* width (220px) and height (100%) are set inline by Java */
     flex-shrink: 0;
-    width: 220px;
-    height: 100%;
     border-left: 0.5px solid var(--lumo-contrast-10pct);
     overflow-y: auto;
 }
@@ -89,44 +88,9 @@
 /* ── PhotoFrameComponent ────────────────────────────────────────────────── */
 
 .pf-frame {
-    /* flex: grow to fill remaining width; Vaadin setSizeFull() sets the
-       inline width/height so those are intentionally omitted here */
-    flex: 1 1 auto;
-    min-width: 0;       /* allow shrinking past content size in flex row */
-    min-height: 0;      /* critical inside flex parents */
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    /* Structural layout (display, position, flex, sizing) is set inline by Java.
+       Only aesthetic properties live here. */
     background: #0d0d0d;
-    overflow: hidden;
-}
-
-.pf-frame img {
-    display: block;
-    object-fit: contain;
-}
-
-/* Orientation variants — applied/swapped by PhotoFrameComponent.applyOrientation() */
-.pf-img--portrait {
-    height: 100%;
-    width: auto;
-    max-width: 100%;
-    max-height: 100%;
-}
-
-.pf-img--landscape {
-    width: 100%;
-    height: auto;
-    max-width: 100%;
-    max-height: 100%;
-}
-
-.pf-img--unknown {
-    width: auto;
-    height: auto;
-    max-width: 100%;
-    max-height: 100%;
 }
 
 /* ── ThumbnailStrip ─────────────────────────────────────────────────────── */
