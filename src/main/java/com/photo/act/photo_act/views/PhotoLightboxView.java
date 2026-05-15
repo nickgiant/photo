@@ -28,7 +28,6 @@ import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
-import com.vaadin.flow.server.streams.DownloadHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -510,21 +509,40 @@ public class PhotoLightboxView extends VerticalLayout
      * Each element: { href, title, description, photoId }
      */
     private String buildSlidesJson() {
+        String dirPhotos = getAppProps("dir-photos");
+        if (dirPhotos == null) {
+            log.error("App property 'dir-photos' not found — cannot build slides");
+            return "[]";
+        }
+        String strPathShow = dirPhotos + dirChar + subPathLarge;
 
-        String strPathShow = getAppProps("dir-photos") + dirChar + subPathLarge;
+        List<Map<String, Object>> slides = photos.stream().map(p -> {
+            String href = "/static/photographerM.jpg";
+            String nameNew = p.getColumnData("name_new");
+            if (nameNew != null) {
+                File file = Paths.get(strPathShow + dirChar + nameNew).toFile();
+                if (file.exists()) {
+                    com.vaadin.flow.server.StreamResource sr =
+                        new com.vaadin.flow.server.StreamResource(nameNew, () -> {
+                            try { return new java.io.FileInputStream(file); }
+                            catch (java.io.FileNotFoundException ex) {
+                                return java.io.InputStream.nullInputStream();
+                            }
+                        });
+                    com.vaadin.flow.server.ResourceReference ref =
+                        VaadinSession.getCurrent().getResourceRegistry().registerResource(sr);
+                    href = ref.getResourceUri().toString();
+                } else {
+                    log.warn("Photo file not found: {}", file.getAbsolutePath());
+                }
+            }
+            return Map.<String, Object>of(
+                "href",    href,
+                "title",   p.getColumnData("title") != null ? p.getColumnData("title") : "",
+                "photoId", p.getColumnData("id") != null ? p.getColumnData("id") : "0"
+            );
+        }).toList();
 
-
-
-
-
-
-
-        List<Map<String, Object>> slides = photos.stream().map(p -> Map.<String, Object>of(
-              "href",        p.getColumnData("name_new")  != null ? DownloadHandler.forFile(Paths.get(strPathShow+dirChar+p.getColumnData("name_new")).toFile()) : "/static/photographerM.jpg",
-                "title",      p.getColumnData("title")      != null ?    p.getColumnData("title")      : "",
-       /*         "description", p.getDescription()!= null ? truncate(p.getDescription(), 80) : "", */
-                "photoId",     p.getColumnData("id")
-        )).toList();
         try {
             return objectMapper.writeValueAsString(slides);
         } catch (JsonProcessingException e) {
@@ -548,14 +566,10 @@ public class PhotoLightboxView extends VerticalLayout
 
 
     public String getAppProps(String prop) {
-
         for (int r = 0; r < recProps.size(); r++) {
             String strProp = recProps.get(r).getColumnData("propName");
-            String strValue = recProps.get(r).getColumnData("propValue");
             if (prop.equalsIgnoreCase(strProp)) {
-                return strValue;
-            } else {
-                return null;
+                return recProps.get(r).getColumnData("propValue");
             }
         }
         return null;

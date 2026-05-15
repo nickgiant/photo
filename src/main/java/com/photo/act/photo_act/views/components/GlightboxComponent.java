@@ -33,15 +33,15 @@ import java.util.List;
 @JsModule("./glightbox-viewer.js")
 public class GlightboxComponent extends Component {
 
-    // listeners for slide change events coming from the client
     private final List<SlideChangeListener> listeners = new ArrayList<>();
+    private final List<Runnable> closeListeners = new ArrayList<>();
 
     public GlightboxComponent() {
         getElement().getStyle()
-//                .set("display", "block")
+                .set("display", "block")
                 .set("width", "100%")
-                .set("height", "90%")
-                .set("min-height", "0");     // critical — prevents flex overflow
+                .set("height", "100%")
+                .set("min-height", "0");
     }
 
     // ── Server → Client ───────────────────────────────────────────────────────
@@ -83,13 +83,15 @@ public class GlightboxComponent extends Component {
         listeners.forEach(l -> l.slideChanged(index, photoId));
     }
 
-    /**
-     * Called when the user zooms the image in the viewer.
-     * Useful for showing a "zoom level" indicator in the info panel.
-     */
+    /** Called when the user clicks the close (×) button in the viewer. */
     @ClientCallable
-    public void onZoomChanged(double scale) {
-        // optional — wire to a zoom indicator in the info panel
+    public void onClose() {
+        closeListeners.forEach(Runnable::run);
+    }
+
+    public Registration addCloseListener(Runnable listener) {
+        closeListeners.add(listener);
+        return () -> closeListeners.remove(listener);
     }
 
     public Registration addSlideChangeListener(SlideChangeListener listener) {
