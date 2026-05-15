@@ -17,6 +17,10 @@
 @import url('./main-layout.css');
 @import url('./sidebar.css');
 
+/* Hide the native scrollbar on the thumbnail filmstrip */
+.ts-scroll::-webkit-scrollbar { display: none; }
+.ts-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+
 
 
 
