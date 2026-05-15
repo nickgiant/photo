@@ -39,6 +39,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.access.method.P;
 
 import java.io.File;
 import java.net.InetAddress;
@@ -152,25 +153,27 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
     private ArrayList<String> lstAlbums;
     private String strColorExternalweb = "#9fafd5";
     private String[] arrColumnNamesStoryPhotos = {"story_title", "slug", "story_visible_to", "description"
+            , "datetime_story_created"
             , "item_title", "descr", "item_type"
             , "name_new", "title", "subtitle", "photo_type", "uploader", "creator", "visible_to", "city_name", "meta_date", "photo_date", "photo_time_shot"
             , "space_size", "space_size_medium", "space_size_thumb", "meta_camera_make", "meta_camera_model", "meta_lens_make", "meta_lens_model"
-            , "meta_focal_length", "meta_focal_length_ff", "meta_iso", "meta_aperture", "meta_shutter_speed"
+            , "meta_focal_length", "meta_focal_length_ff", "meta_iso", "meta_aperture", "meta_shutter_speed","meta_i_width", "meta_i_height","meta_orientation"
             , "location_by_user", "location_area", "location_country_code", "location_lat", "location_lon"
             , "inc"
             , "date_inserted"
-            , "username", "username", "resident", "date_joined", "avatar_path"
+            , "username", "name", "surname", "resident", "date_joined", "avatar_path"
             , "story_id"
     };
     private String sqlReadStoryPhotos = "SELECT s.id AS story_id, s.title AS story_title, s.slug, s.user_id, s.story_visible_to, s.description, " +
+            " getDateDiffFromNow(s.date_inserted) AS datetime_story_created, " +
             " sp.item_title, sp.descr, sp.item_type, " +
             " pm.name_new, pm.title, pm.subtitle, pm.photo_type, pm.uploader, pm.creator, pm.visible_to,  " +
             " DATE_FORMAT(pm.meta_date, '%W %D %M %Y %H:%i %p') AS meta_date, DATE_FORMAT(pm.meta_date, '%M %Y') AS photo_date, DATE_FORMAT(pm.meta_date, '%d/%m/%Y - %H:%i:%S') AS photo_time_shot " +
             " , pm.space_size, pm.space_size_medium, pm.space_size_thumb, pm.meta_camera_make, pm.meta_camera_model, pm.meta_lens_make, pm.meta_lens_model " +
-            " , pm.meta_focal_length, pm.meta_focal_length_ff, pm.meta_iso, meta_aperture,  meta_shutter_speed " +
+            " , pm.meta_focal_length, pm.meta_focal_length_ff, pm.meta_iso, meta_aperture,  meta_shutter_speed, pm.meta_i_width, pm.meta_i_height, pm.meta_orientation " +
             " , pm.location_by_user, pm.location_area, pm.location_country_code, pm.location_lat, pm.location_lon " +
             " , sp.inc "+
-            " , usr.username, usr.username, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined, usr.avatar_path " +
+            " , usr.username, usr.name, usr.surname, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined, usr.avatar_path " +
             //, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description, DATE_FORMAT(f.dateInsert , '%D %M %Y') AS formatedDateUpdated  " +
             " FROM dbuser usr, photo_stories s , photo_stories_photo sp LEFT JOIN photo_meta pm ON sp.photo_id = pm.id " +
             " WHERE s.user_Id = usr.userId AND s.id = sp.story_id ";
@@ -237,9 +240,6 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
             } else {*/
 
 
-                H3 titleAlbum = new H3(strTitle);
-                titleAlbum.addClassNames(Width.FULL, TextAlignment.CENTER);
-                verticalLayout.add(titleAlbum);
                 String sqlStoriesAll = sqlReadStoryPhotos + " ";
                 sqlStoriesAll = sqlStoriesAll + " AND s.slug LIKE '" + strSlug + "' ";
                 sqlStoriesAll = sqlStoriesAll + " ORDER BY sp.inc ASC, sp.date_inserted ASC ";
@@ -505,19 +505,42 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
         int detailStoryId = 0;
         String detailSlug     = "";
         String detailUsername = "";
+        String detailName = "";
+        String detailSurname = "";
         String detailTitle    = "";
         String detailDesc     = "";
+        String strDateCreated = "";
         if (!lstRecords.isEmpty()) {
             try {
                 detailStoryId  = Integer.parseInt(lstRecords.get(0).getColumnData("story_id"));
                 detailSlug     = lstRecords.get(0).getColumnData("slug");
                 detailUsername = lstRecords.get(0).getColumnData("username");
+                detailName = lstRecords.get(0).getColumnData("name");
+                detailSurname = lstRecords.get(0).getColumnData("surname");
                 detailTitle    = lstRecords.get(0).getColumnData("story_title");
                 detailDesc     = lstRecords.get(0).getColumnData("description");
+                strDateCreated = lstRecords.get(0).getColumnData("datetime_story_created");
                 if (photoStoryViewService != null) {
                     likeCount = photoStoryViewService.getLikeCount(detailStoryId);
                     viewCount = photoStoryViewService.getViewCount(detailStoryId);
                 }
+
+
+
+                H3 titleAlbum = new H3(detailTitle);
+                titleAlbum.addClassNames(Width.FULL, TextAlignment.CENTER);
+
+                HorizontalLayout layoutStoryTitle = new HorizontalLayout();
+                layoutStoryTitle.addClassName("title");
+                layoutStoryTitle.addClassNames(Width.FULL,
+                        Padding.NONE, Margin.NONE,
+                        AlignItems.CENTER, JustifyContent.BETWEEN);
+                Div divDate = new Div(strDateCreated);
+
+                Div divAuthor = new Div(detailName+" "+detailSurname);
+                layoutStoryTitle.add(divDate, divAuthor);
+                divGallery.add(titleAlbum,layoutStoryTitle);
+
             } catch (NumberFormatException ignored) {}
         }
 

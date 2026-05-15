@@ -212,8 +212,8 @@ public class PhotoLightboxView extends VerticalLayout
 
         // Outer VerticalLayout: full screen, no padding/gap
         setSizeFull();
-        setPadding(false);
-        setSpacing(false);
+        setPadding(true);
+        setSpacing(true);
         getStyle().set("overflow", "hidden");
 
         utilsDate = new UtilsDate();
@@ -514,8 +514,13 @@ public class PhotoLightboxView extends VerticalLayout
         String strPathShow = getAppProps("dir-photos") + dirChar + subPathLarge;
 
 
+
+
+
+
+
         List<Map<String, Object>> slides = photos.stream().map(p -> Map.<String, Object>of(
-              "href",        p.getColumnData("name_new")  != null ? DownloadHandler.forFile(new File(Paths.get(strPathShow+dirChar+p.getColumnData("name_new")).toFile().toURI())) : "/static/placeholder.jpg",
+              "href",        p.getColumnData("name_new")  != null ? DownloadHandler.forFile(Paths.get(strPathShow+dirChar+p.getColumnData("name_new")).toFile()) : "/static/photographerM.jpg",
                 "title",      p.getColumnData("title")      != null ?    p.getColumnData("title")      : "",
        /*         "description", p.getDescription()!= null ? truncate(p.getDescription(), 80) : "", */
                 "photoId",     p.getColumnData("id")

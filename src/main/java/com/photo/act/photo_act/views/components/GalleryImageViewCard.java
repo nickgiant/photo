@@ -206,10 +206,10 @@ public class GalleryImageViewCard extends Div {
         String strMetaSS = record.getColumnData("meta_shutter_speed");
         String strMetaAperture = record.getColumnData("meta_aperture");
 
-        String strMetaOrientation = record.getColumnData("meta_orientation");
+        String strOrientation = record.getColumnData("meta_orientation");
 //        String strMetaLength = record.getColumnData("meta_i_length");
-//        String strMetaWidth = record.getColumnData("meta_i_width");
-//        String strMetaHeight = record.getColumnData("meta_i_height");
+        String strWidth = record.getColumnData("meta_i_width");
+        String strHeight = record.getColumnData("meta_i_height");
 
         String strPhotoUserName = record.getColumnData("username");
         String strPhotoNameUser = record.getColumnData("name");
@@ -271,30 +271,10 @@ public class GalleryImageViewCard extends Div {
         String strMetaLength = record.getColumnData("meta_i_length");
         String strMetaWidth = record.getColumnData("meta_i_width");
         String strMetaHeight = record.getColumnData("meta_i_height");
-        int intW = 1;
-        int intH = 1;
-        try {
-            intW = Integer.parseInt(strMetaLength);
-            intH = Integer.parseInt(strMetaHeight);
-        } catch (NumberFormatException e) {
 
-            logger.error(e.getMessage());
-        }
-        try {
 
-            if(intW!=0 && intH!= 0) {
-                    int ratio = intW / intH;
-                    if (ratio < 0.8) {
-                        divImage.addClassName("portrait");
-                    } else if (ratio > 1.5) {
-                        divImage.addClassName("landscape");
-                    }else{
-                        divImage.addClassName("square");
-                    }
-                        }
-        }catch (ArithmeticException e){
-            logger.error(e.getMessage());
-        }
+
+
 
 
         divImage.add(image);
@@ -426,7 +406,6 @@ public class GalleryImageViewCard extends Div {
         );
         Span divDateRelUploaded = new Span(strDateUploadedRelative);
         layoutDateRelUploaded.add(FontAwesome.Solid.UPLOAD.create(), divDateRelUploaded);
-
 
         HorizontalLayout layoutDateShot = new HorizontalLayout();
         layoutDateShot.addClassNames(
@@ -965,8 +944,7 @@ public class GalleryImageViewCard extends Div {
             logger.error(" isType in not defined");
 
         }
-
-
+        
         // Record Full view when dialog is opened
         if (photoViewService != null && strPhotoId != null) {
             try {

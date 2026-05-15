@@ -38,9 +38,9 @@ public class GlightboxComponent extends Component {
 
     public GlightboxComponent() {
         getElement().getStyle()
-                .set("display", "block")
+//                .set("display", "block")
                 .set("width", "100%")
-                .set("height", "100%")
+                .set("height", "90%")
                 .set("min-height", "0");     // critical — prevents flex overflow
     }
 

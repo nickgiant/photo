@@ -20,6 +20,7 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.StreamResource;
+import com.vaadin.flow.server.streams.DownloadHandler;
 import com.vaadin.flow.theme.lumo.LumoUtility.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -93,6 +94,9 @@ public class StoryItemViewCard extends Div {
         String strAvatarPath = record.getColumnData("avatar_path");
         String strPhotoUserJoined = record.getColumnData("date_joined");
 
+        String strWidth = record.getColumnData("meta_i_width");
+        String strHeight = record.getColumnData("meta_i_height");
+        String strOrientation = record.getColumnData("meta_orientation");
 
 
         String strItemTitle = record.getColumnData("item_title");
@@ -105,7 +109,7 @@ public class StoryItemViewCard extends Div {
         Path path = Paths.get(strImagePath);
         File file = path.toFile();
 
-        final StreamResource imageResource = new StreamResource("streamResource", () -> {
+/*        final StreamResource imageResource = new StreamResource("streamResource", () -> {
             try {
                 ImageUtilsMeta imageUtilsMeta = new ImageUtilsMeta();
                 imageUtilsMeta.printPhotoMetadataValue(file);
@@ -117,7 +121,9 @@ public class StoryItemViewCard extends Div {
                 logger.error("FileNotFoundException  " + e.getMessage());
             }
             return null;
-        });
+        });*/
+
+
 
         HorizontalLayout layoutImage = new HorizontalLayout();
         layoutImage.addClassNames(
@@ -126,15 +132,38 @@ public class StoryItemViewCard extends Div {
         );
 
         Div divImage = new Div();
-        divImage.addClassName("image-container");
+        divImage.addClassName("photo-item");
 
         Image image = new Image();
         image.addClassNames(Width.FULL, Height.FULL);
         image.addClassNames(BorderRadius.LARGE);
 
-        image.setSrc(imageResource);
+        image.setSrc( DownloadHandler.forFile(file));
         divImage.add(image);
         layoutImage.add(divImage);
+
+
+
+
+//        logger.info("--> "+strFileName +"       "+strMetaIso+" ."+strMetaFocalLength+". "+strWidth+"  - "+strHeight);
+        if(strWidth.isEmpty() || strHeight.isEmpty()){
+            divImage.addClassName("photo-item-wide");
+        }else {
+            int width = Integer.parseInt(strWidth);
+            int height = Integer.parseInt(strHeight);
+            if (width > height) {
+                divImage.addClassName("photo-item-wide");
+            } else if (width < height ) {
+                divImage.addClassName("photo-item-wide"); // tall
+//                logger.warn(width + " --- "+width+"  <  " + height+"  should rotate");
+            } else {
+
+            }
+        }
+
+
+
+
 
         VerticalLayout divPhotoInfo = new VerticalLayout();
         divPhotoInfo.addClassNames(Overflow.HIDDEN, TextColor.TERTIARY,
@@ -143,18 +172,6 @@ public class StoryItemViewCard extends Div {
                 Gap.XSMALL
         );
 
-        if (isMobile) {
-//            this.addClassName("gallery-view-card-mobile");
-            layoutImage.addClassName("image-and-info-panel");
-            divPhotoInfo.addClassName("image-and-info-panel");
-            layoutImage.addClassName("image-and-info-panel-mobile");
-            divPhotoInfo.addClassName("image-and-info-panel-mobile");
-
-        } else {
-            layoutImage.addClassName("image-and-info-panel");
-            divPhotoInfo.addClassName("image-and-info-panel");
-//            this.addClassName("bottom-radius-shadow");
-        }
 
 //        Image imgAvatarSmall = getAvatarImage(strAvatar, strPhotoUserName, "40px", "40px");
 

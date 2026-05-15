@@ -67,6 +67,7 @@ import static com.photo.act.photo_act.views.MainLayout.*;
 @RouteAlias(value = "photos/location-type/:destination-type?", layout = MainLayout.class)
 @RouteAlias(value = "photos/month-uploaded/:month-uploaded?", layout = MainLayout.class)
 @RouteAlias(value = "photos/member/:member?/location/:destination?", layout = MainLayout.class)
+@RouteAlias(value = "photo/:id?", layout = MainLayout.class)
 
 
 
@@ -283,7 +284,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         strDestination = event.getRouteParameters().get("destination").orElse(STR_ALL_DESTINATIONS);
         strDestinationType = event.getRouteParameters().get("destination-type").orElse(STR_ALL_DESTINATION_TYPES);
         strUploadedMonth = event.getRouteParameters().get("month-uploaded").orElse(STR_ALL_MONTHS);
-        strPhotoId = event.getRouteParameters().get("photo-id").orElse("");
+        strPhotoId = event.getRouteParameters().get("id").orElse("");
 
         getUserClientInfo();
 
@@ -313,7 +314,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
             filtersContainer.removeAll();
             //   layoutHeaderParameters.add(loadFiltersHeader(sqlReadDestinationCat + sqlReadDestinationCatGroupby, arrDestinationCatNames, "Locations"));
             // String sqlOrderBy = " ORDER BY pm.date_inserted DESC, pm.title ASC, meta_date DESC ";
-            filter(divGallery, "", VIEW_PHOTO_GRID);
+            filter(divGallery, "", VIEW_ONE_PHOTO);
         } else if (!strUploadedMonth.isEmpty() && (strDestination.isEmpty() || strDestination.equalsIgnoreCase(STR_ALL_DESTINATIONS) && (strDestinationType.isEmpty() || strDestinationType.equalsIgnoreCase(STR_ALL_DESTINATION_TYPES)))) {
             layoutHeaderParameters = loadHeader("Photos", "Uploaded by our members", "Month Uploaded", strUploadedMonth);
 
