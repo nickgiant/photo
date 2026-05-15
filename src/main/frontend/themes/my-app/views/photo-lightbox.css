@@ -1,0 +1,198 @@
+/* ── PhotoLightboxView ──────────────────────────────────────────────────── */
+
+.plv-root { overflow: hidden; }
+
+.plv-top-section {
+    min-height: 0;
+    flex: 1 1 auto;
+}
+
+.plv-info-panel {
+    flex-shrink: 0;
+    width: 220px;
+    height: 100%;
+    border-left: 0.5px solid var(--lumo-contrast-10pct);
+    overflow-y: auto;
+}
+
+/* gap on <vaadin-vertical-layout> host — overrides default spacing */
+.plv-info-panel-inner { gap: 6px; }
+
+.plv-photo-title {
+    margin: 0 !important;
+    font-size: 1rem;
+}
+
+.plv-author {
+    font-size: 0.8rem;
+    color: var(--lumo-secondary-text-color);
+}
+
+.plv-exif-grid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 2px 8px;
+    font-size: 0.75rem;
+    width: 100%;
+}
+
+.plv-exif-label { color: var(--lumo-secondary-text-color); }
+
+.plv-tags-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.plv-tag-chip { cursor: pointer; }
+
+/* Prev / next overlay nav buttons */
+.plv-nav-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+    background: rgba(0, 0, 0, 0.45);
+    color: #fff;
+    width: 44px;
+    height: 80px;
+    font-size: 30px;
+    cursor: pointer;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+}
+.plv-nav-btn--left  { left:  0; }
+.plv-nav-btn--right { right: 0; }
+
+/* Close (✕) button — top-right of the photo frame */
+.plv-close-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 10;
+    background: rgba(0, 0, 0, 0.55);
+    color: #fff;
+    width: 38px;
+    height: 38px;
+    font-size: 20px;
+    cursor: pointer;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+}
+
+/* ── PhotoFrameComponent ────────────────────────────────────────────────── */
+
+.pf-frame {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #0d0d0d;
+    overflow: hidden;
+    min-height: 0;      /* critical inside flex parents */
+    width: 100%;
+    height: 100%;
+}
+
+.pf-frame img {
+    display: block;
+    object-fit: contain;
+}
+
+/* Orientation variants — applied/swapped by PhotoFrameComponent.applyOrientation() */
+.pf-img--portrait {
+    height: 100%;
+    width: auto;
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.pf-img--landscape {
+    width: 100%;
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.pf-img--unknown {
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
+}
+
+/* ── ThumbnailStrip ─────────────────────────────────────────────────────── */
+
+.ts-strip {
+    width: 100%;
+    height: 100px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: stretch;
+    border-top: 0.5px solid var(--lumo-contrast-10pct);
+}
+
+/* Scrollable middle section — hides native scrollbar on all browsers */
+.ts-scroll {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+.ts-scroll::-webkit-scrollbar { display: none; }
+
+/* Inner flex row of thumbnails */
+.ts-strip-inner {
+    display: flex;
+    gap: 6px;
+    padding: 8px;
+    align-items: center;
+    height: 100%;
+    min-width: max-content;  /* grow beyond scroll container to trigger overflow */
+}
+
+/* Individual thumbnail box — width/height set in Java (aspect-ratio dependent) */
+.ts-thumb {
+    flex-shrink: 0;
+    border-radius: var(--lumo-border-radius-s);
+    overflow: hidden;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: border-color 0.2s, opacity 0.2s;
+    opacity: 0.7;
+}
+
+.ts-thumb--active {
+    border-color: var(--lumo-primary-color);
+    opacity: 1;
+}
+
+/* Thumbnail image fills its box */
+.ts-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* Scroll arrow buttons (❮ / ❯) */
+.ts-scroll-btn {
+    flex-shrink: 0;
+    width: 32px;
+    background: rgba(0, 0, 0, 0.45);
+    color: #fff;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+}

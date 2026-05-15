@@ -14,12 +14,9 @@
 @import url('./views/home-view.css');
 @import url("./views/button-bar.css");
 @import url('./views/photo-frame.css');
+@import url('./views/photo-lightbox.css');
 @import url('./main-layout.css');
 @import url('./sidebar.css');
-
-/* Hide the native scrollbar on the thumbnail filmstrip */
-.ts-scroll::-webkit-scrollbar { display: none; }
-.ts-scroll { -ms-overflow-style: none; scrollbar-width: none; }
 
 
 

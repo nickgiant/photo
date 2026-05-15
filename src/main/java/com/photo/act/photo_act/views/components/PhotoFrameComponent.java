@@ -24,34 +24,24 @@ import java.io.File;
  * ── Usage ─────────────────────────────────────────────────────────────────────
  *   PhotoFrameComponent frame = new PhotoFrameComponent();
  *   frame.setEffect("zoom");
- *   // on navigation:
  *   frame.setPhoto(file, title, width, height);
  *   frame.animateEnter(+1);   // +1 = forward, -1 = backward
  *
- * Requires the CSS keyframes from photo-frame.css (imported in styles.css).
+ * CSS: photo-lightbox.css (.pf-frame, .pf-img--portrait/landscape/unknown)
+ *      photo-frame.css    (keyframe animations)
  */
 public class PhotoFrameComponent extends Div {
 
     public enum Effect { FADE, ZOOM, SLIDE, NONE }
 
+    private static final String[] ORIENTATION_CLASSES =
+            { "pf-img--portrait", "pf-img--landscape", "pf-img--unknown" };
+
     private final Image img = new Image();
     private Effect effect = Effect.FADE;
 
     public PhotoFrameComponent() {
-        setSizeFull();
-        getStyle()
-                .set("position",        "relative")   // anchors absolute-positioned overlays
-                .set("display",         "flex")
-                .set("align-items",     "center")
-                .set("justify-content", "center")
-                .set("background",      "#0d0d0d")
-                .set("overflow",        "hidden")
-                .set("min-height",      "0");          // critical inside flex parents
-
-        img.getStyle()
-                .set("display",      "block")
-                .set("object-fit",   "contain");       // last-resort safeguard
-
+        addClassName("pf-frame");
         add(img);
     }
 
@@ -71,17 +61,11 @@ public class PhotoFrameComponent extends Div {
         applyOrientation(width, height);
     }
 
-    /**
-     * Display a fallback static image when the photo file is missing.
-     */
+    /** Display a fallback static image when the photo file is missing. */
     public void setFallback(String staticSrc) {
         img.setSrc(staticSrc);
         img.setAlt("");
-        img.getStyle()
-                .set("width",      "auto")
-                .set("height",     "auto")
-                .set("max-width",  "100%")
-                .set("max-height", "100%");
+        setOrientationClass("pf-img--unknown");
     }
 
     /**
@@ -101,7 +85,7 @@ public class PhotoFrameComponent extends Div {
     /**
      * Trigger the enter-animation for the photo just set via setPhoto().
      * Call immediately after setPhoto() — both are sent in the same Vaadin
-     * round-trip, so the browser applies the new src and animation together.
+     * round-trip so the browser applies src + animation class together.
      *
      * @param direction +1 = forward (next), -1 = backward (prev)
      */
@@ -114,10 +98,9 @@ public class PhotoFrameComponent extends Div {
         };
         if (cls == null) return;
 
-        // Hide the img immediately so the old photo doesn't flash while the
-        // new src is still loading. Trigger the enter-animation only after
-        // the browser fires 'load' on the new image. For cached images the
-        // event fires synchronously (img.complete), so there's no delay.
+        // Hide immediately so the old photo doesn't flash during load.
+        // Start the animation only after the browser fires 'load' on the new
+        // image. For cached images img.complete is already true.
         getElement().executeJs(
                 "var img = this.querySelector('img');" +
                 "var cls = $0;" +
@@ -138,35 +121,18 @@ public class PhotoFrameComponent extends Div {
 
     // ── Private ───────────────────────────────────────────────────────────────
 
-    /**
-     * Apply CSS sizing that shows the full photo without cropping.
-     *
-     * Portrait  (h > w): fill container height, auto width.
-     * Landscape / square: fill container width, auto height.
-     * Unknown: fall back to max-constrained auto sizing.
-     */
     private void applyOrientation(int width, int height) {
         if (width > 0 && height > 0 && height > width) {
-            // Portrait
-            img.getStyle()
-                    .set("height",     "100%")
-                    .set("width",      "auto")
-                    .set("max-width",  "100%")
-                    .set("max-height", "100%");
+            setOrientationClass("pf-img--portrait");
         } else if (width > 0 && height > 0) {
-            // Landscape or square
-            img.getStyle()
-                    .set("width",      "100%")
-                    .set("height",     "auto")
-                    .set("max-width",  "100%")
-                    .set("max-height", "100%");
+            setOrientationClass("pf-img--landscape");
         } else {
-            // Unknown dimensions — constrain both axes, maintain aspect ratio
-            img.getStyle()
-                    .set("width",      "auto")
-                    .set("height",     "auto")
-                    .set("max-width",  "100%")
-                    .set("max-height", "100%");
+            setOrientationClass("pf-img--unknown");
         }
+    }
+
+    private void setOrientationClass(String cls) {
+        img.removeClassNames(ORIENTATION_CLASSES);
+        img.addClassName(cls);
     }
 }

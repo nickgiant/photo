@@ -189,11 +189,10 @@ public class PhotoLightboxView extends VerticalLayout
         this.recordService    = recordService;
         this.photoViewService = photoViewService;
 
-        // Outer VerticalLayout: full screen, no padding/gap
         setSizeFull();
         setPadding(true);
         setSpacing(true);
-        getStyle().set("overflow", "hidden");
+        addClassName("plv-root");
 
         utilsDate = new UtilsDate();
         genericView = new GenericView(recordService);
@@ -315,20 +314,13 @@ public class PhotoLightboxView extends VerticalLayout
 
         // ── Right info panel ──────────────────────────────────────────────────
         VerticalLayout infoPanel = buildInfoPanel();
-        infoPanel.setWidth("220px");
-        infoPanel.setHeightFull();
-        infoPanel.getStyle()
-                .set("flex-shrink", "0")
-                .set("border-left", "0.5px solid var(--lumo-contrast-10pct)")
-                .set("overflow-y", "auto");
+        infoPanel.addClassName("plv-info-panel");
 
         HorizontalLayout topSection = new HorizontalLayout(photoFrame, infoPanel);
         topSection.setSizeFull();
         topSection.setPadding(false);
         topSection.setSpacing(false);
-        topSection.getStyle()
-                .set("min-height", "0")
-                .set("flex", "1 1 auto");
+        topSection.addClassName("plv-top-section");
 
         // ── Bottom: thumbnail filmstrip ───────────────────────────────────────
         thumbnailStrip = new ThumbnailStrip(photos, strPathThumbs, (index, photoId) -> {
@@ -338,7 +330,6 @@ public class PhotoLightboxView extends VerticalLayout
             updatePhotoImage(dir != 0 ? dir : +1);
             loadInfoPanel(photoId);
         });
-        thumbnailStrip.setWidthFull();
 
         add(topSection, thumbnailStrip);
         setFlexGrow(1, topSection);
@@ -394,46 +385,15 @@ public class PhotoLightboxView extends VerticalLayout
     private Div navDiv(String symbol, String side) {
         Div btn = new Div();
         btn.setText(symbol);
-        btn.getStyle()
-                .set("position", "absolute")
-                .set("top", "50%")
-                .set("transform", "translateY(-50%)")
-                .set(side, "0")
-                .set("z-index", "10")
-                .set("background", "rgba(0,0,0,0.45)")
-                .set("color", "#fff")
-                .set("width", "44px")
-                .set("height", "80px")
-                .set("font-size", "30px")
-                .set("cursor", "pointer")
-                .set("border-radius", "3px")
-                .set("display", "flex")
-                .set("align-items", "center")
-                .set("justify-content", "center")
-                .set("user-select", "none");
+        btn.addClassNames("plv-nav-btn", "plv-nav-btn--" + side);
         return btn;
     }
 
-    /** Close (×) button overlaid in the top-right corner of the viewer. */
+    /** Close (✕) button overlaid in the top-right corner of the viewer. */
     private Div closeDiv() {
         Div btn = new Div();
         btn.setText("✕");
-        btn.getStyle()
-                .set("position", "absolute")
-                .set("top", "10px")
-                .set("right", "10px")
-                .set("z-index", "10")
-                .set("background", "rgba(0,0,0,0.55)")
-                .set("color", "#fff")
-                .set("width", "38px")
-                .set("height", "38px")
-                .set("font-size", "20px")
-                .set("cursor", "pointer")
-                .set("border-radius", "50%")
-                .set("display", "flex")
-                .set("align-items", "center")
-                .set("justify-content", "center")
-                .set("user-select", "none");
+        btn.addClassName("plv-close-btn");
         return btn;
     }
 
@@ -453,21 +413,10 @@ public class PhotoLightboxView extends VerticalLayout
         shareBtn.setWidthFull();
         shareBtn.addClickListener(e -> handleShare());
 
-        photoTitle.getStyle().set("margin", "0").set("font-size", "1rem");
-        authorSpan.getStyle().set("font-size", "0.8rem")
-                .set("color", "var(--lumo-secondary-text-color)");
-
-        exifGrid.getStyle()
-                .set("display", "grid")
-                .set("grid-template-columns", "auto 1fr")
-                .set("gap", "2px 8px")
-                .set("font-size", "0.75rem");
-
-        tagsRow.getStyle()
-                .set("display", "flex")
-                .set("flex-wrap", "wrap")
-                .set("gap", "4px");
-
+        photoTitle.addClassName("plv-photo-title");
+        authorSpan.addClassName("plv-author");
+        exifGrid.addClassName("plv-exif-grid");
+        tagsRow.addClassName("plv-tags-row");
         commentsDiv.setWidthFull();
 
         Select<String> effectSelect = new Select<>();
@@ -493,7 +442,7 @@ public class PhotoLightboxView extends VerticalLayout
         );
         panel.setPadding(true);
         panel.setSpacing(false);
-        panel.getStyle().set("gap", "6px");
+        panel.addClassName("plv-info-panel-inner");
 
         return panel;
     }
@@ -565,7 +514,7 @@ public class PhotoLightboxView extends VerticalLayout
     private void row(String label, String value) {
         if (value == null || value.isBlank() || "null null".equals(value)) return;
         Span lbl = new Span(label);
-        lbl.getStyle().set("color", "var(--lumo-secondary-text-color)");
+        lbl.addClassName("plv-exif-label");
         exifGrid.add(lbl, new Span(value));
     }
 
@@ -577,7 +526,7 @@ public class PhotoLightboxView extends VerticalLayout
             if (tag.isEmpty()) continue;
             Span chip = new Span(tag);
             chip.getElement().getThemeList().add("badge pill");
-            chip.getStyle().set("cursor", "pointer");
+            chip.addClassName("plv-tag-chip");
             chip.addClickListener(e ->
                     getUI().ifPresent(ui -> ui.navigate("search?tag=" + tag)));
             tagsRow.add(chip);
