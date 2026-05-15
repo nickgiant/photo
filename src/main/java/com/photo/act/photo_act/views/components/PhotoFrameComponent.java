@@ -114,16 +114,24 @@ public class PhotoFrameComponent extends Div {
         };
         if (cls == null) return;
 
-        // Remove all animation classes, force a reflow to restart the animation,
-        // then add the new class. This runs in the same browser frame as the
-        // src update from setPhoto(), so the image fades/slides in from scratch.
+        // Hide the img immediately so the old photo doesn't flash while the
+        // new src is still loading. Trigger the enter-animation only after
+        // the browser fires 'load' on the new image. For cached images the
+        // event fires synchronously (img.complete), so there's no delay.
         getElement().executeJs(
                 "var img = this.querySelector('img');" +
+                "var cls = $0;" +
                 "img.classList.remove(" +
                 "  'pf-enter-fade','pf-enter-zoom'," +
                 "  'pf-enter-slide-fwd','pf-enter-slide-bwd');" +
-                "void img.offsetWidth;" +   // reflow: restart keyframe from 0%
-                "img.classList.add($0);",
+                "img.style.opacity = '0';" +
+                "function go() {" +
+                "  img.style.opacity = '';" +
+                "  void img.offsetWidth;" +
+                "  img.classList.add(cls);" +
+                "}" +
+                "if (img.complete && img.naturalWidth > 0) { go(); }" +
+                "else { img.addEventListener('load', go, {once: true}); }",
                 cls
         );
     }
