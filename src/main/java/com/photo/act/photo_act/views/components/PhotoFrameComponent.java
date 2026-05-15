@@ -41,6 +41,7 @@ public class PhotoFrameComponent extends Div {
     private Effect effect = Effect.FADE;
 
     public PhotoFrameComponent() {
+        setSizeFull();        // Vaadin layout: fills the parent flex cell (width+height)
         addClassName("pf-frame");
         add(img);
     }
