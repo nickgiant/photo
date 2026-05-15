@@ -501,22 +501,66 @@ public class PhotoLightboxView extends VerticalLayout
     // ── Load info panel data for a given photoId ──────────────────────────────
 
     private void loadInfoPanel(long photoId) {
+        Record photo = photos.stream()
+                .filter(p -> String.valueOf(photoId).equals(p.getColumnData("id")))
+                .findFirst()
+                .orElse(photos.isEmpty() ? null : photos.get(currentIndex));
+
+        if (photo != null) {
+            String title = photo.getColumnData("title");
+            photoTitle.setText(title != null ? title : "");
+
+            String name = (safe(photo.getColumnData("name")) + " " + safe(photo.getColumnData("surname"))).trim();
+            String username = safe(photo.getColumnData("username"));
+            authorSpan.setText(name.isEmpty() ? username : name + (username.isEmpty() ? "" : " · @" + username));
+
+            populateTags(photo.getColumnData("subject_name"));
+            populateExif(photo);
+        }
+
         if (photoViewService != null && likeButton != null) {
             likeButton.setCount(photoViewService.getLikeCount((int) photoId));
         }
     }
 
-/*    private void populateExif(PhotoMetadata m) {
+    private void populateExif(Record photo) {
         exifGrid.removeAll();
-        row("Camera",   safe(m.getCameraMake()) + " " + safe(m.getCameraModel()));
-        row("Lens",     safe(m.getLens()));
-        row("Focal",    m.getFocalLength() != null ? m.getFocalLength() + " mm" : "—");
-        row("Aperture", m.getAperture()    != null ? "f/" + m.getAperture()     : "—");
-        row("Shutter",  safe(m.getShutterSpeed()) + " s");
-        row("ISO",      m.getIso()         != null ? String.valueOf(m.getIso()) : "—");
-        if (m.getShootDate() != null)
-            row("Date", m.getShootDate().toLocalDate().toString());
-    }*/
+        String cameraMake  = photo.getColumnData("meta_camera_make");
+        String cameraModel = photo.getColumnData("meta_camera_model");
+        String lensMake    = photo.getColumnData("meta_lens_make");
+        String lensModel   = photo.getColumnData("meta_lens_model");
+        String focal       = photo.getColumnData("meta_focal_length");
+        String focalFF     = photo.getColumnData("meta_focal_length_ff");
+        String iso         = photo.getColumnData("meta_iso");
+        String aperture    = photo.getColumnData("meta_aperture");
+        String shutter     = photo.getColumnData("meta_shutter_speed");
+        String shot        = photo.getColumnData("photo_time_shot");
+        String city        = photo.getColumnData("city_name");
+        String width       = photo.getColumnData("meta_i_width");
+        String height      = photo.getColumnData("meta_i_height");
+
+        String camera = (safe(cameraMake) + " " + safe(cameraModel)).trim();
+        if (!camera.isEmpty()) row("Camera", camera);
+        String lens = (safe(lensMake) + " " + safe(lensModel)).trim();
+        if (!lens.isEmpty()) row("Lens", lens);
+
+        if (isPresent(focal)) {
+            row("Focal", isPresent(focalFF) && !focalFF.equalsIgnoreCase(focal)
+                    ? focal + " mm  (" + focalFF + " mm FF)"
+                    : focal + " mm");
+        }
+        if (isPresent(aperture)) row("Aperture", "f/" + aperture);
+        if (isPresent(shutter))  row("Shutter",  shutter + " s");
+        if (isPresent(iso))      row("ISO",       iso);
+        if (isPresent(shot))     row("Shot",      shot);
+        if (isPresent(city))     row("Location",  city);
+        if (isPresent(width) && isPresent(height))
+            row("Size", width + " × " + height + " px");
+    }
+
+    private static boolean isPresent(String s) {
+        return s != null && !s.isBlank() && !"null".equalsIgnoreCase(s);
+    }
 
     private void row(String label, String value) {
         if (value == null || value.isBlank() || "null null".equals(value)) return;

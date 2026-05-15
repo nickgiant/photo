@@ -845,16 +845,13 @@ public class GalleryImageViewCard extends Div {
                             } catch (NumberFormatException ignored) {
                             }
                         }
-                        String nameNew = (record != null) ? record.getColumnData("name_new") : "";
-//                photoViewService.recordRate(photoIdRateFinal, nameNew, rateUserId, cardPublicIp, cardSessionId, cardSessionDateTime);
-                        showDialogWithCarousel(isType, strSelection, strPhotoId, strAlbumUsername, true);
-                        rateButton.setCount(photoRatingService.getRatingCount(photoIdRateFinal));
+                        showFullPhoto(strPhotoId);
                     }
                 }
                 ,"btn-bar-rate");
         shareBottomBar.addButton("View Larger",
                 VaadinIcon.VIEWPORT.create(),
-                () -> showDialogWithCarousel(isType, strSelection, strPhotoId, strAlbumUsername, false),
+                () -> showFullPhoto(strPhotoId),
                 "btn-bar-view");
         shareBottomBar.addShareItemMenu();
 /*        shareBottomBar.addButton("Info", VaadinIcon.INFO_CIRCLE_O.create(), () -> {
@@ -919,6 +916,22 @@ public class GalleryImageViewCard extends Div {
         return item;
     }
 
+
+    private void showFullPhoto(String strPhotoId) {
+        if (photoViewService != null && strPhotoId != null) {
+            try {
+                int photoIdInt = Integer.parseInt(strPhotoId);
+                Integer viewUserId = null;
+                if (strAvailableAlbumsMemberId != null && !strAvailableAlbumsMemberId.isBlank()) {
+                    try { viewUserId = Integer.parseInt(strAvailableAlbumsMemberId); } catch (NumberFormatException ignored) {}
+                }
+                String nameNew = (record != null) ? record.getColumnData("name_new") : "";
+                photoViewService.recordView(photoIdInt, nameNew, viewUserId, cardPublicIp, PhotoViewService.TYPE_FULL,
+                        cardSessionId, cardSessionDateTime);
+            } catch (NumberFormatException ignored) {}
+        }
+        getUI().ifPresent(ui -> ui.navigate("photo/" + strPhotoId));
+    }
 
     private void showDialogWithCarousel(int isType, String strSelection, String strPhotoId, String strAlbumUsername, boolean isOnlyRating) {
 
