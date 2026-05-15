@@ -9,6 +9,7 @@ import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.photo.act.photo_act.views.components.GenericView;
 import com.photo.act.photo_act.views.components.LikeButton;
+import com.photo.act.photo_act.views.components.PhotoFrameComponent;
 import com.photo.act.photo_act.views.components.ThumbnailStrip;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
@@ -18,12 +19,12 @@ import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
-import com.vaadin.flow.server.streams.DownloadHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,13 +74,12 @@ public class PhotoLightboxView extends VerticalLayout
     private final PhotoViewService  photoViewService;
 
     // ── Components ────────────────────────────────────────────────────────────
-    private Image currentImage;
+    private PhotoFrameComponent photoFrame;
     private ThumbnailStrip thumbnailStrip;
 
-    // State: index of the photo currently shown in the viewer
-    private int currentIndex = 0;
-    // Base path for large photos — set in buildView, used by navigation handlers
-    private String strPathLargePhotos;
+    // State
+    private int    currentIndex       = 0;
+    private String strPathLargePhotos = "";  // set in buildView
 
     // Right panel elements
     private final H2    photoTitle   = new H2();
@@ -270,7 +270,7 @@ public class PhotoLightboxView extends VerticalLayout
 
         // Position viewer on the photo that matches the URL parameter
         currentIndex = findInitialIndex();
-        updatePhotoImage();
+        updatePhotoImage(0);
         thumbnailStrip.setActiveIndex(currentIndex);
 
         if (!photos.isEmpty()) {
@@ -290,12 +290,8 @@ public class PhotoLightboxView extends VerticalLayout
         strPathLargePhotos = (dirPhotos != null ? dirPhotos : "") + dirChar + subPathLarge;
         String strPathThumbs = (dirPhotos != null ? dirPhotos : "") + dirChar + subPathThumbs;
 
-        // ── Photo viewer: Image + overlaid prev/next/close buttons ────────────
-        currentImage = new Image();
-        currentImage.setSizeFull();
-        currentImage.getStyle()
-                .set("object-fit", "contain")
-                .set("display", "block");
+        // ── Photo frame: orientation-aware viewer with overlay nav/close ──────
+        photoFrame = new PhotoFrameComponent();
 
         Div prevBtn  = navDiv("❮", "left");
         Div nextBtn  = navDiv("❯", "right");
@@ -303,24 +299,19 @@ public class PhotoLightboxView extends VerticalLayout
 
         prevBtn.addClickListener(e -> {
             currentIndex = (currentIndex - 1 + photos.size()) % photos.size();
-            updatePhotoImage();
+            updatePhotoImage(-1);
             updateNavState();
         });
         nextBtn.addClickListener(e -> {
             currentIndex = (currentIndex + 1) % photos.size();
-            updatePhotoImage();
+            updatePhotoImage(+1);
             updateNavState();
         });
         closeBtn.addClickListener(e ->
                 getUI().ifPresent(ui -> ui.getPage().executeJs("window.history.back()")));
 
-        Div viewerWrap = new Div(currentImage, prevBtn, nextBtn, closeBtn);
-        viewerWrap.setSizeFull();
-        viewerWrap.getStyle()
-                .set("position", "relative")
-                .set("background", "#0d0d0d")
-                .set("overflow", "hidden")
-                .set("min-height", "0");
+        // Nav and close buttons are position:absolute — they overlay the image
+        photoFrame.add(prevBtn, nextBtn, closeBtn);
 
         // ── Right info panel ──────────────────────────────────────────────────
         VerticalLayout infoPanel = buildInfoPanel();
@@ -331,7 +322,7 @@ public class PhotoLightboxView extends VerticalLayout
                 .set("border-left", "0.5px solid var(--lumo-contrast-10pct)")
                 .set("overflow-y", "auto");
 
-        HorizontalLayout topSection = new HorizontalLayout(viewerWrap, infoPanel);
+        HorizontalLayout topSection = new HorizontalLayout(photoFrame, infoPanel);
         topSection.setSizeFull();
         topSection.setPadding(false);
         topSection.setSpacing(false);
@@ -341,9 +332,10 @@ public class PhotoLightboxView extends VerticalLayout
 
         // ── Bottom: thumbnail filmstrip ───────────────────────────────────────
         thumbnailStrip = new ThumbnailStrip(photos, strPathThumbs, (index, photoId) -> {
+            int dir = Integer.signum(index - currentIndex);
             currentIndex = index;
             currentPhotoId = photoId;
-            updatePhotoImage();
+            updatePhotoImage(dir != 0 ? dir : +1);
             loadInfoPanel(photoId);
         });
         thumbnailStrip.setWidthFull();
@@ -352,19 +344,29 @@ public class PhotoLightboxView extends VerticalLayout
         setFlexGrow(1, topSection);
     }
 
-    /** Updates the main Image to show the photo at currentIndex. */
-    private void updatePhotoImage() {
+    /** Updates the photo frame to show the photo at currentIndex. direction: +1 forward, -1 backward, 0 no animation. */
+    private void updatePhotoImage(int direction) {
         if (photos.isEmpty()) return;
-        String nameNew = photos.get(currentIndex).getColumnData("name_new");
+        Record photo = photos.get(currentIndex);
+        String nameNew = photo.getColumnData("name_new");
+        int w = parseIntSafe(photo.getColumnData("meta_i_width"));
+        int h = parseIntSafe(photo.getColumnData("meta_i_height"));
         if (nameNew != null) {
             File file = Paths.get(strPathLargePhotos + dirChar + nameNew).toFile();
             if (file.exists()) {
-                currentImage.setSrc(DownloadHandler.forFile(file));
+                photoFrame.setPhoto(file, photo.getColumnData("title"), w, h);
+                if (direction != 0) photoFrame.animateEnter(direction);
                 return;
             }
             log.warn("Photo file not found: {}", strPathLargePhotos + dirChar + nameNew);
         }
-        currentImage.setSrc("/static/photographerM.jpg");
+        photoFrame.setFallback("/static/photographerM.jpg");
+    }
+
+    private static int parseIntSafe(String s) {
+        if (s == null) return 0;
+        try { return Integer.parseInt(s.trim()); }
+        catch (NumberFormatException e) { return 0; }
     }
 
     /** Syncs thumbnail highlight and info panel after arrow navigation. */
@@ -468,10 +470,21 @@ public class PhotoLightboxView extends VerticalLayout
 
         commentsDiv.setWidthFull();
 
+        Select<String> effectSelect = new Select<>();
+        effectSelect.setLabel("Transition effect");
+        effectSelect.setItems("fade", "zoom", "slide", "none");
+        effectSelect.setValue("fade");
+        effectSelect.setWidthFull();
+        effectSelect.addValueChangeListener(e -> {
+            if (photoFrame != null) photoFrame.setEffect(e.getValue());
+        });
+
         VerticalLayout panel = new VerticalLayout(
                 photoTitle, authorSpan,
                 new Hr(),
                 likeButton, downloadBtn, shareBtn,
+                new Hr(),
+                effectSelect,
                 new Hr(),
                 new H4("Camera info"), exifGrid,
                 new H4("Tags"), tagsRow,
