@@ -357,25 +357,17 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         if (isMobile) {
             verticalLayout.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
-                    // Margin.LARGE, //.Left.MEDIUM, Margin.Right.MEDIUM,
-                    //  Padding.Left.MEDIUM, Padding.Left.MEDIUM,
-                    // Margin.Horizontal.SMALL,
                     Margin.NONE,
                     Padding.NONE,
                     Padding.Top.XSMALL,
-//                    Gap.MEDIUM,
                     AlignItems.CENTER, JustifyContent.CENTER
             );
         } else {
             verticalLayout.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
-                    // Margin.LARGE, //.Left.MEDIUM, Margin.Right.MEDIUM,
-                    //  Padding.Left.MEDIUM, Padding.Left.MEDIUM,
-                    // Margin.Horizontal.SMALL,
                     Margin.NONE,
                     Padding.SMALL,
                     Padding.Top.XSMALL,
-//                    Gap.LARGE,
                     AlignItems.CENTER, JustifyContent.CENTER
             );
         }
@@ -511,39 +503,6 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         }
         headerContainer.addClassName("header-layout");
 
-
-        VerticalLayout headerContainerMaster = new VerticalLayout();
-        if (isMobile) {
-            headerContainerMaster.addClassNames(
-                    AlignItems.CENTER, JustifyContent.BETWEEN,
-                    Overflow.HIDDEN, Width.FULL,
-                    Margin.NONE,
-                    Padding.NONE
-                    //                  Background.CONTRAST_5
-            );
-        } else {
-            headerContainerMaster.addClassNames(
-                    AlignItems.CENTER, JustifyContent.BETWEEN,
-                    Overflow.HIDDEN, Width.FULL,
-                    Margin.NONE,
-                    Padding.NONE
-//                    Background.CONTRAST_5
-            );
-        }
-
-
-        cmbCount = new Select<>();
-        cmbCount.setLabel("Count of Learnings");
-        cmbCount.setItems("20", "40", "60", "80");
-        cmbCount.setValue("20");
-
-
-        cmbSortBy = new Select<>();
-        cmbSortBy.setLabel("Sort Learnings"); // "Most Viewed", "Least Viewed",
-        cmbSortBy.setItems(arrOrderByItems);
-        cmbSortBy.setValue(strDefOrderBy);
-
-
         H1 header = new H1(strHeader);
 
         Div subheader = new Div(strSubHeader);
@@ -551,135 +510,18 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
                 LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.START,
                 LumoUtility.Margin.Bottom.NONE, LumoUtility.Margin.Top.NONE, LumoUtility.FontSize.SMALL, LumoUtility.TextColor.SECONDARY);
 
-        Div layoutHeaderHorizontal = new Div();
-        if (isMobile) {
-            layoutHeaderHorizontal.addClassNames(
-                    Display.FLEX, FlexDirection.COLUMN,
-                    FlexDirection.Breakpoint.Medium.ROW,
 
-                    AlignItems.CENTER, JustifyContent.BETWEEN,
-                    Overflow.HIDDEN, Width.FULL,
-//                    Margin.NONE,
-//                    Padding.XSMALL,
-                    Gap.XSMALL
-            );
-        } else {
-            layoutHeaderHorizontal.addClassNames(
-                    Display.FLEX, FlexDirection.COLUMN,
-                    FlexDirection.Breakpoint.Medium.ROW,
-
-                    AlignItems.CENTER, JustifyContent.BETWEEN,
-                    Overflow.HIDDEN, Width.FULL,
-//                    Margin.NONE,
-//                    Padding.MEDIUM,
-                    Gap.XSMALL
-            );
-        }
-        layoutHeaderHorizontal.addClassName("header-layout-panel");
-
-
-
-        VerticalLayout layoutSortNCommands = new VerticalLayout();
-        layoutSortNCommands.addClassNames(
-                AlignItems.CENTER, JustifyContent.START,
-                Margin.NONE, Padding.SMALL,
-                FontSize.SMALL, TextColor.SECONDARY,
-                TextAlignment.CENTER
-        );
-        layoutSortNCommands.addClassName("header-layout-sort");
-
-
-//        RouteParam routeOrderNewest = new RouteParam("order", STR_ORDER_BY_NEWEST);
-//        RouterLink linkOrderNewest = new RouterLink("Newest First", LearningsView.class, new RouteParameters(routeOrderNewest));
-//
-//        RouteParam routeOrderOlder = new RouteParam("order", STR_ORDER_BY_OLDER);
-//        RouterLink linkOrderOlder = new RouterLink("Older First", LearningsView.class, new RouteParameters(routeOrderOlder));
-////        layoutSortBy.add(linkOrderNewest, linkOrderOlder);
-
-
-        VerticalLayout layoutFiltersAll = new VerticalLayout();
-        layoutFiltersAll.addClassNames(
-                AlignItems.CENTER, JustifyContent.START,
-                Margin.NONE, Padding.SMALL,
-                FontSize.SMALL, TextColor.SECONDARY,
-//                Background.CONTRAST_5,
-                TextAlignment.CENTER
-        );
-
-//        Div layoutFilters = new Div();
-
-
-
-
-/*        Div layoutGenres = new Div("mmm");
-        layoutGenres.addClassNames(Width.FULL, Height.FULL);
-
-        Span tab1Icon = new Span();
-        tab1Icon.add(FontAwesome.Solid.BOOK_OPEN.create());
-        Span tab1 = new Span("Subject");
-        tab1.addClassNames(FontWeight.BOLD, Padding.MEDIUM);
-        tab1Icon.add(tab1);
-//        tab1.getStyle().setColor("#466ca8");
-
-        Span tab2Icon = new Span();
-        tab2Icon.add(FontAwesome.Solid.IMAGE_PORTRAIT.create());
-        Span tab2 = new Span("Photo Genre");
-        tab2.addClassNames(FontWeight.BOLD, Padding.MEDIUM);
-        tab2Icon.add(tab2);
-
-        Span tab3Icon = new Span();
-        tab3Icon.add(FontAwesome.Solid.BOOK_READER.create());
-        Span tab3 = new Span("Format");
-        tab3.addClassNames(FontWeight.BOLD, Padding.MEDIUM);
-        tab3Icon.add(tab3);*/
-//        Span tab3 = new Span("Time");
-//        tab3.addClassNames(FontWeight.BOLD);
-
-/*        TabSheet tabSheet = new TabSheet();
-        tabSheet.add(tab1Icon, layoutFilters);
-        tabSheet.add(tab2Icon, layoutFilterGenres);
-        tabSheet.add(tab3Icon, layoutFilterFormat);
-
-        tabSheet.setMinHeight("180px");
-        tabSheet.addThemeVariants(TabSheetVariant.LUMO_BORDERED);
-        tabSheet.addClassNames(Width.FULL, Height.FULL);*/
-
-/*
-        Div divFiltersTitle = new Div("Filter by");
-        layoutFiltersAll.add(divFiltersTitle, tabSheet);
-
-        Button btnFilter = new Button("Filter");
-        btnFilter.setIcon(VaadinIcon.SEARCH.create());
-        btnFilter.addClassName("btn-filter");
-        btnFilter.addClickListener(event -> {
-
-            filter(null);
-        });
-
-
-*/
 
         filtersContainer.removeAll();
 
         filtersContainer.add(loadFiltersHeader(sqlLearningTypes, arrColumnsLearningTypes, "category", "Learnings"));
-/*        checkboxCheckboxGroup.addClassNames(Gap.MEDIUM, Padding.SMALL);
-        layoutFilters.add(checkboxCheckboxGroup);
-        layoutFilters.addClassNames(Width.FULL, Height.FULL);*/
 
-//        filtersContainer.add(loadFiltersHeader(sqlLearningCategoriesRead, arrColLearningCategories, "genre","Learnings"));
-
-
-
-//        filtersContainer.add(loadFiltersHeader(sqlLearningsFormatRead, arrColumnsLearningFormat, "format", "Learning Format"));
-
-
-
-        layoutSortNCommands.add(cmbCount, cmbSortBy);
+/*        layoutSortNCommands.add(cmbCount, cmbSortBy);
         layoutHeaderHorizontal.add(layoutFiltersAll, layoutSortNCommands);
 
         if (title.equalsIgnoreCase(STR_ALL_TITLES)) {
             headerContainerMaster.add(layoutHeaderHorizontal);
-        }
+        }*/
 
         H2 headerSection = new H2(strSection);
         headerSection.addClassNames(
@@ -701,7 +543,6 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         Div divLine = new Div();
         divLine.addClassNames(Border.BOTTOM, Width.FULL);
 
-
         Div divLineB = new Div();
         divLineB.addClassNames(Border.BOTTOM, Width.FULL);
 
@@ -711,52 +552,6 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
 
         return headerContainer;
     }
-
-//    private VerticalLayout loadLearnings(String sqlRead, String[] arrColumnNames) {
-//        strPath = DIR_PHOTOS_SERVER + dirChar;
-//
-//        VerticalLayout  layoutLearnings = new VerticalLayout();
-//        if(isMobile){
-//            layoutLearnings.addClassNames(
-//                    Overflow.HIDDEN, Width.FULL,
-//                    // Margin.LARGE, //.Left.MEDIUM, Margin.Right.MEDIUM,
-//                    //  Padding.Left.MEDIUM, Padding.Left.MEDIUM,
-//                    // Margin.Horizontal.SMALL,
-//                    Margin.NONE, Padding.NONE,
-//                    Gap.MEDIUM,
-//                    //  Padding.NONE, //.Left.MEDIUM, Padding.Right.MEDIUM,
-//                    //Margin.Vertical.MEDIUM, Padding.Vertical.NONE,
-//                    AlignItems.CENTER, JustifyContent.CENTER
-//            );
-//        }else {
-//            layoutLearnings.addClassNames(
-//                    Overflow.HIDDEN, Width.FULL,
-//                    // Margin.LARGE, //.Left.MEDIUM, Margin.Right.MEDIUM,
-//                    //  Padding.Left.MEDIUM, Padding.Left.MEDIUM,
-//                    // Margin.Horizontal.SMALL,
-//                    Margin.NONE,
-//                    Padding.NONE,
-////                    Padding.Top.NONE,
-////                    Padding.XLARGE,
-//                    Gap.LARGE,
-//                    //  Padding.NONE, //.Left.MEDIUM, Padding.Right.MEDIUM,
-//                    //Margin.Vertical.MEDIUM, Padding.Vertical.NONE,
-//                    AlignItems.CENTER, JustifyContent.CENTER
-//            );
-
-    /// /            layoutLearnings.getStyle().set("gap","3rem");
-//        }
-//
-//
-//        List<Record> lstRecords = getRecordsFromDb(sqlRead, arrColumnNames);
-//        for (int r = 0;r< lstRecords.size();r++) {
-//
-//            Record rec = lstRecords.get(r);
-//            layoutLearnings.add(getLearningsItem(rec));
-//        }
-//        return layoutLearnings;
-//    }
-
 
     private Div loadFiltersHeader(String sqlRead, String[] arrColumnNames, String nameUrlVariable, String strCaptionsCount) {
         Div filtersPanel = new Div();

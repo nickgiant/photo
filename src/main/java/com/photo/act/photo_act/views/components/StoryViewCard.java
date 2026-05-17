@@ -94,7 +94,6 @@ public class StoryViewCard extends VerticalLayout {
 
         String strStoryPhotoCount = record.getColumnData("story_photo_count");
 
-//        String strCreator = record.getColumnData("creator");
         String strVisibleTo = record.getColumnData("visible_to");
         String strPhotoUrl = record.getColumnData("name_new");
 
@@ -155,24 +154,19 @@ public class StoryViewCard extends VerticalLayout {
             return null;
         });
 
-
         Div divImage = new Div();
 
         Image image = new Image();
         image.addClassNames(Width.FULL, Height.FULL);
 
         image.setSrc(imageResource);
+
         divImage.add(image);
-
-//        Div divTextDescription = new Div();
-//        divTextDescription.addClassNames(Width.FULL, JustifyContent.CENTER, AlignItems.CENTER, Padding.NONE, Margin.NONE);
-
         H3 header = new H3();
         header.addClassNames(FontSize.LARGE, FontWeight.SEMIBOLD,
                 Width.FULL, TextAlignment.CENTER, AlignItems.CENTER, JustifyContent.CENTER,
                 Padding.XSMALL, Margin.NONE
         );
-//        header.getStyle().set("font-family", "Times-New-Roman, serif");
         header.setText(strTitle);
         if (strTitle.trim().isEmpty() || strTitle.equalsIgnoreCase("null")) {
             header.setText("");
@@ -182,24 +176,18 @@ public class StoryViewCard extends VerticalLayout {
 
         HorizontalLayout layoutCategoryAll = new HorizontalLayout();
         layoutCategoryAll.addClassNames(
-                //  Overflow.HIDDEN, Width.FULL,
                 AlignItems.CENTER, JustifyContent.CENTER,
                 Margin.NONE,
                 Padding.NONE,
                 Gap.XSMALL,
-                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                //   Background.CONTRAST_5,
                 BorderRadius.NONE
         );
         HorizontalLayout layoutCategory = new HorizontalLayout();
         layoutCategory.addClassNames(
-//                Overflow.HIDDEN, Width.FULL,
                 AlignItems.CENTER, JustifyContent.CENTER,
                 Margin.NONE,
                 Padding.NONE,
                 Gap.XSMALL,
-                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                //   Background.CONTRAST_5,
                 BorderRadius.NONE
         );
         H5 divCategory = new H5(strCategory);
@@ -210,72 +198,53 @@ public class StoryViewCard extends VerticalLayout {
 
         HorizontalLayout layoutPhotoCountAll = new HorizontalLayout();
         layoutPhotoCountAll.addClassNames(
-                //  Overflow.HIDDEN, Width.FULL,
                 AlignItems.CENTER, JustifyContent.CENTER,
                 Margin.NONE,
                 Padding.NONE,
                 Gap.XSMALL,
-                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                //   Background.CONTRAST_5,
                 BorderRadius.NONE
         );
         HorizontalLayout layoutPhotoCount = new HorizontalLayout();
         layoutPhotoCount.addClassNames(
-//                Overflow.HIDDEN, Width.FULL,
                 AlignItems.CENTER, JustifyContent.CENTER,
                 Margin.NONE,
                 Padding.NONE,
                 Gap.XSMALL,
-                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                //   Background.CONTRAST_5,
                 BorderRadius.NONE
         );
-/*        H4 divPhotoCount = new H4(strStoryPhotoCount);
-        layoutPhotoCount.add(FontAwesome.Regular.IMAGES.create(), divPhotoCount);
-        H4 divCountLabel = new H4("Photos");
-//        divCountLabel.addClassNames(FontSize.XXSMALL);
-        layoutPhotoCountAll.add(layoutPhotoCount, divCountLabel);*/
 
         HorizontalLayout layoutDateAll = new HorizontalLayout();
         layoutDateAll.addClassNames(
-                //  Overflow.HIDDEN, Width.FULL,
                 AlignItems.CENTER, JustifyContent.CENTER,
                 Margin.NONE,
                 Padding.NONE,
                 Gap.XSMALL,
-                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                //   Background.CONTRAST_5,
                 BorderRadius.NONE
         );
         HorizontalLayout layoutDate = new HorizontalLayout();
         layoutDate.addClassNames(
-//                Overflow.HIDDEN, Width.FULL,
                 AlignItems.CENTER, JustifyContent.CENTER,
                 Margin.NONE,
                 Padding.NONE,
                 Gap.XSMALL,
-                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                //   Background.CONTRAST_5,
                 BorderRadius.NONE
         );
-        H4 divDateCreated = new H4(strDateCreated);
+        Div divDateCreated = new Div(strDateCreated);
         divDateCreated.addClassNames(AlignItems.CENTER, TextAlignment.CENTER, JustifyContent.CENTER);
         layoutDate.add(FontAwesome.Solid.CALENDAR_DAY.create(), divDateCreated);
 
         layoutDateAll.add(layoutDate);
 
         Image imgAvatarSmall = genericView.getAvatarThumbImage(strAvatarPath, strStoryNameOfUser, "40px", "40px");
-
         Image imgAvatarMedium = genericView.getAvatarThumbImage(strAvatarPath, strStoryNameOfUser, "70px", "70px");
 
         AvatarItem avatarItemMe = new AvatarItem(strStoryNameOfUser, "", imgAvatarSmall);
-
-
         AvatarItem avatarLargeItemMe = new AvatarItem(strStoryNameOfUser, "@" + strStoryUserName, imgAvatarMedium);
 
         HorizontalLayout divSubHeaderAll = new HorizontalLayout();
-        divSubHeaderAll.addClassNames(Width.FULL, AlignItems.END,
-                JustifyContent.BETWEEN, Margin.NONE, Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL);
+        divSubHeaderAll.addClassNames(Width.FULL,
+                AlignItems.CENTER, JustifyContent.BETWEEN,
+                Margin.NONE, Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL);
         divSubHeaderAll.add(layoutCategoryAll, layoutDateAll, avatarItemMe);
 
         Paragraph subtitle = new Paragraph();
@@ -293,259 +262,23 @@ public class StoryViewCard extends VerticalLayout {
                 Margin.NONE,
                 Padding.NONE,
                 Gap.XSMALL,
-                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                //   Background.CONTRAST_5,
                 BorderRadius.NONE
         );
         layoutPhotosInfo.addClassName("summary");
 
-
-
-
         LikeButton btnLike = new LikeButton(likeCount);
-//        likeButton.setTooltipText("Like It");
-        /*likeButton.addLikeClickListener(e -> {
-            if (photoStoryViewService != null && finalStoryId > 0) {
-                Integer likeUserId = userId > 0 ? userId : null;
-                photoStoryViewService.recordLike(finalStoryId, finalSlug, likeUserId, clientIp,
-                        sessionId, sessionDateTime);
-                likeButton.setCount(photoStoryViewService.getLikeCount(finalStoryId));
-            }
-        });*/
 
-/*
-        VerticalLayout layoutRateAll = new VerticalLayout();
-        layoutRateAll.addClassNames(
-                AlignItems.CENTER, JustifyContent.CENTER,
-                Margin.NONE, Padding.NONE, Gap.XSMALL, BorderRadius.NONE
-        );
-        Span divRateLabel = new Span("Like");
-        divRateLabel.addClassNames(FontSize.XXSMALL);
-        layoutRateAll.add(likeButton, divRateLabel);
-*/
-
-
-/*        VerticalLayout layoutViewCountAll = new VerticalLayout();
-        layoutViewCountAll.addClassNames(
-                //   Overflow.HIDDEN, Width.FULL,
-                AlignItems.CENTER, JustifyContent.CENTER,
-                Margin.NONE,
-                Padding.NONE,
-                Gap.XSMALL,
-                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                //   Background.CONTRAST_5,
-                BorderRadius.NONE
-        );*/
         HorizontalLayout layoutViewCount = new HorizontalLayout();
         layoutViewCount.addClassNames(
-//                Overflow.HIDDEN, Width.FULL,
                 AlignItems.CENTER, JustifyContent.CENTER,
                 Margin.NONE,
                 Padding.NONE,
                 Gap.XSMALL,
-                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                //   Background.CONTRAST_5,
                 BorderRadius.NONE
         );
         Span divViews = new Span(viewCount > 0 ? String.valueOf(viewCount) : "");
-//        layoutViewCount.add(FontAwesome.Regular.EYE.create(), divViews);
-//        Span divViewsLabel = new Span("Views");
-//        divViewsLabel.addClassNames(FontSize.XXSMALL);
+
         layoutViewCount.add(FontAwesome.Regular.EYE.create(),divViews);
-
-/*        VerticalLayout layoutLocationsCountAll = new VerticalLayout();
-        layoutLocationsCountAll.addClassNames(
-                // Overflow.HIDDEN, Width.FULL,
-                AlignItems.CENTER, JustifyContent.CENTER,
-                Margin.NONE,
-                Padding.NONE,
-                Gap.XSMALL,
-                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                //   Background.CONTRAST_5,
-                BorderRadius.NONE
-        );*/
-/*        HorizontalLayout layoutLocationsCount = new HorizontalLayout();
-        layoutLocationsCount.addClassNames(
-//                Overflow.HIDDEN, Width.FULL,
-                AlignItems.CENTER, JustifyContent.CENTER,
-                Margin.NONE,
-                Padding.NONE,
-                Gap.XSMALL,
-                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                //   Background.CONTRAST_5,
-                BorderRadius.NONE
-        );*/
-/*        Div divLocations = new Div("1");
-        layoutLocationsCount.add(FontAwesome.Regular.COMPASS.create(), divLocations);
-        Span divLocationsLabel = new Span("Locations");
-        divLocationsLabel.addClassNames(FontSize.XXSMALL);
-        layoutLocationsCountAll.add(layoutLocationsCount, divLocationsLabel);*/
-
-//        VerticalLayout layoutDateAlbumCreatedAll = new VerticalLayout();
-//        layoutDateAlbumCreatedAll.addClassNames(
-//                //    Overflow.HIDDEN, Width.FULL,
-//                AlignItems.CENTER, JustifyContent.CENTER,
-//                Margin.NONE,
-//                Padding.NONE,
-//                Gap.XSMALL,
-//                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-//                //   Background.CONTRAST_5,
-//                BorderRadius.NONE
-//        );
-//
-//        HorizontalLayout layoutDateAlbumCreated = new HorizontalLayout();
-//        layoutDateAlbumCreated.addClassNames(
-////                Overflow.HIDDEN, Width.FULL,
-//                AlignItems.CENTER, JustifyContent.CENTER,
-//                Margin.NONE,
-//                Padding.NONE,
-//                Gap.XSMALL,
-//                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-//                //   Background.CONTRAST_5,
-//                BorderRadius.NONE
-//        );
-//        Div divDate = new Div(strDateAlbumCreated);
-//        layoutDateAlbumCreated.add(VaadinIcon.CALENDAR_CLOCK.create(), divDate); // FontAwesome.Regular.CALENDAR.create()
-//        Div divAlbumCreatedLabel = new Div("Created");
-//        divAlbumCreatedLabel.addClassNames(FontSize.XXSMALL);
-//        layoutDateAlbumCreatedAll.add(layoutDateAlbumCreated, divAlbumCreatedLabel);
-
-
-        //RouterLink linkUploader = new RouterLink(strUploader, AlbumsView.class, new RouteParameters(routeAlbum, routeUploader));
-        //RouterLink linkAlbum = new RouterLink(strTitle, AlbumsView.class, new RouteParameters(routeAlbum, routeUploader));
-
-//        RouterLink routerLinkAlbum = new RouterLink();
-//        routerLinkAlbum.setRoute(AlbumsView.class, new RouteParameters(routeAlbum, routeUploader));
-//        routerLinkAlbum.addClassNames(AlignItems.CENTER, JustifyContent.START, TextAlignment.CENTER);
-
-
-
-/*        HorizontalLayout layoutUserActions = new HorizontalLayout();
-        layoutUserActions.addClassNames(
-                Overflow.HIDDEN, Width.FULL,
-                AlignItems.CENTER, JustifyContent.CENTER,
-                Margin.NONE,
-                Padding.NONE,
-                Gap.SMALL,
-                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                //   Background.CONTRAST_5,
-                BorderRadius.LARGE
-        );*/
-
-
-//        if (strUploader.trim().isEmpty() || strUploader.equalsIgnoreCase("null")) {
-//            linkUploader.setText("");
-//            linkUploader.setVisible(false);
-//        }
-//
-//        if (!strCity.isEmpty()) {
-//            linkDestination.setVisible(true);
-//
-//        } else {
-//            linkDestination.setVisible(false);
-//        }
-
-
-/*        Button btnMoreAction = new Button(VaadinIcon.EDIT.create());//svgAction);
-        btnMoreAction.setTooltipText("Edit");
-        btnMoreAction.addClassName("btn-actions");
-
-        Button btnComment = new Button(VaadinIcon.COMMENT.create());
-        btnComment.setTooltipText("Comment on it");
-
-        Button btnMoreInfo = new Button(VaadinIcon.INFO.create());//svgAction);
-        btnMoreInfo.setTooltipText("More info");
-
-        layoutUserActions.add(btnMoreAction, btnComment, btnMoreInfo);*/
-
-
-        //     divPhotoInfo.add(layoutPhotosInfo); //, layoutUserActions);
-//        routerLinkAlbum.add(header, subtitle, layoutImage, divPhotoInfo);
-
-
-//        Avatar userAvatar = new Avatar(strAlbumUserName);
-//        userAvatar.setImage(strAvatar);
-//        userAvatar.getElement().setAttribute("tabindex", "-1");
-//        userAvatar.addThemeVariants(AvatarVariant.LUMO_SMALL);
-//
-//        Avatar userAvatarLarge = new Avatar(strAlbumUserName);
-//        userAvatarLarge.setImage(strAvatar);
-//        userAvatarLarge.getElement().setAttribute("tabindex", "-1");
-//        userAvatarLarge.addThemeVariants(AvatarVariant.LUMO_XLARGE);
-
-
-
-        HorizontalLayout layoutMemberInfo = new HorizontalLayout();
-        layoutMemberInfo.addClassNames(
-                Overflow.HIDDEN, Width.FULL,
-                AlignItems.CENTER, JustifyContent.AROUND,
-                Margin.NONE,
-                Padding.XSMALL,
-                Gap.XSMALL,
-                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                //   Background.CONTRAST_5,
-                BorderRadius.NONE
-        );
-
-        HorizontalLayout layoutMemberPhotoCount = new HorizontalLayout();
-        layoutMemberPhotoCount.addClassNames(
-//                Overflow.HIDDEN, Width.FULL,
-                AlignItems.CENTER, JustifyContent.CENTER,
-                Margin.NONE,
-                Padding.XSMALL,
-                Gap.XSMALL,
-                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                //   Background.CONTRAST_5,
-                BorderRadius.NONE
-        );
-        Div divMemberPhotoCount = new Div("111");
-        layoutMemberPhotoCount.add(FontAwesome.Regular.IMAGES.create(), divMemberPhotoCount);
-
-        HorizontalLayout layoutMemberViewCount = new HorizontalLayout();
-        layoutMemberViewCount.addClassNames(
-//                Overflow.HIDDEN, Width.FULL,
-                AlignItems.CENTER, JustifyContent.CENTER,
-                Margin.NONE,
-                Padding.XSMALL,
-                Gap.XSMALL,
-                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                //   Background.CONTRAST_5,
-                BorderRadius.NONE
-        );
-        Div divMemberViews = new Div("1");
-        layoutMemberViewCount.add(FontAwesome.Regular.EYE.create(), divMemberViews);
-
-        HorizontalLayout layoutMemberLocationsCount = new HorizontalLayout();
-        layoutMemberLocationsCount.addClassNames(
-//                Overflow.HIDDEN, Width.FULL,
-                AlignItems.CENTER, JustifyContent.CENTER,
-                Margin.NONE,
-                Padding.XSMALL,
-                Gap.XSMALL,
-                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                //   Background.CONTRAST_5,
-                BorderRadius.NONE
-        );
-        Div divMemberLocations = new Div(strUserResident);
-        layoutMemberLocationsCount.add(FontAwesome.Regular.COMPASS.create(), divMemberLocations);
-
-        HorizontalLayout layoutDateJoined = new HorizontalLayout();
-        layoutDateJoined.addClassNames(
-//                Overflow.HIDDEN, Width.FULL,
-                AlignItems.CENTER, JustifyContent.CENTER,
-                Margin.NONE,
-                Padding.XSMALL,
-                Gap.XSMALL,
-                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                //   Background.CONTRAST_5,
-                BorderRadius.NONE
-        );
-        Div divDateJoined = new Div(strUserJoined);
-        layoutDateJoined.add(VaadinIcon.CALENDAR_CLOCK.create(), divDateJoined); // FontAwesome.Regular.CALENDAR.create()
-        layoutMemberInfo.add(layoutMemberPhotoCount, layoutMemberViewCount, layoutMemberLocationsCount, layoutDateJoined);
-//        detailsMember.add(avatarLargeItemMe, layoutMemberInfo);
-
-//        layoutPhotosInfo.add( avatarItemMe);
 
         RouteParam routeMember = new RouteParam("member", strStoryUserName);
         RouteParam routeStory = new RouteParam("story", strSlug);
@@ -570,14 +303,6 @@ public class StoryViewCard extends VerticalLayout {
                 "btn-bar-view");
 
         shareBar.addShareItemMenu();
-
-/*        final String infoText = (strDescription != null && !strDescription.isBlank()
-                && !strDescription.equalsIgnoreCase("null")) ? strDescription : strTitle;
-        shareBar.addButton("Info", VaadinIcon.INFO_CIRCLE_O.create(), () -> {
-            if (infoText != null && !infoText.isBlank()) {
-                Notification.show(infoText, 5000, Notification.Position.BOTTOM_CENTER);
-            }
-        }, "btn-bar-info");*/
 
         this.add(divImage, header, subtitle, divSubHeaderAll,
                 buildActionBar(shareBar));

@@ -423,7 +423,7 @@ public class StoryItemViewCard extends Div {
             if (!isEditable) {
                 //anyone logged in
                 if (isMobile) {
-                    divPhotoInfo.add(header, divTextDescription, detailsPhotoInfo);
+                    divPhotoInfo.add(header, divTextDescription);
                 } else {
                     divPhotoInfo.add(header, divTextDescription);
                 }
@@ -432,7 +432,7 @@ public class StoryItemViewCard extends Div {
             } else {
                 // user himself
                 if (isMobile) {
-                    divPhotoInfo.add(header, divTextDescription, detailsPhotoInfo, layoutUserActions);
+                    divPhotoInfo.add(header, divTextDescription, layoutUserActions);
                 } else {
                     divPhotoInfo.add(header, divTextDescription, layoutUserActions);
                 }
@@ -442,83 +442,6 @@ public class StoryItemViewCard extends Div {
 
     }
 
-    public StoryItemViewCard(String strUsername, String url, boolean isMobile) {
-//        addClassNames(
-//                Overflow.HIDDEN,
-//                //  Width.FULL,
-//                Background.CONTRAST_5, Display.FLEX, FlexDirection.COLUMN,
-//                BorderRadius.LARGE,
-//                // Margin.Left.NONE, Margin.Right.NONE,
-//                Padding.NONE,
-//                Margin.NONE
-//                // Margin.Left.MEDIUM, Margin.Right.MEDIUM, Margin.Top.XSMALL, Margin.Bottom.XSMALL,
-//                //AlignItems.CENTER
-//        );
-//
-//        Div divImage = new Div();
-//        divImage.addClassNames( Overflow.HIDDEN, BorderRadius.LARGE);
-//
-//        Path path = Paths.get(url);
-//        File file = path.toFile();
-//
-//        final StreamResource imageResource = new StreamResource("streamResource", () -> {
-//            try {
-//                return new FileInputStream(file);
-//            } catch (final FileNotFoundException e) {
-//                //logErrorInDb(e,hostname,"CreationsViewCard StreamResource",userId,username,file.getAbsolutePath());
-//                logger.error("FileNotFoundException  " + e.getMessage());
-//                // e.printStackTrace();
-//                return null;
-//            }
-//        });
-//
-//        Image image = new Image();
-//        image.setWidthFull();
-//        image.setHeight("auto");
-//        image.setSrc(imageResource);
-//        image.addClassNames(BorderRadius.MEDIUM);
-//
-//        divImage.add(image);
-//
-//        Span header = new Span();
-//        header.addClassNames(FontSize.MEDIUM, TextColor.SECONDARY, FontWeight.SEMIBOLD);
-//        header.getStyle().set("font-family", "Times-New-Roman, serif");
-//        header.setText("title");
-//
-//        Span objUser = new Span();
-//        objUser.addClassNames(FontSize.SMALL, TextColor.TERTIARY, FontWeight.BOLD);
-//        objUser.setText("created by me");
-//
-//        Span subtitle = new Span();
-//        subtitle.addClassNames(FontSize.SMALL, TextColor.TERTIARY);
-//        subtitle.setText("Subtitle");
-//
-//        Span badge = new Span();
-//        badge.getElement().setAttribute("theme", "badge");
-//        badge.setText("Photo Tag");
-//
-//        if(isMobile)
-//        {
-//            this.setWidthFull();
-//        } else {
-//            divImage.setMaxHeight("500px");
-//            divImage.setWidthFull();
-//            // this.setMinWidth("400px");
-//        }
-//
-//        VerticalLayout divDescription = new VerticalLayout();
-//        divDescription.addClassNames(AlignItems.START, JustifyContent.AROUND, Padding.XSMALL, Margin.XSMALL);
-//        divDescription.add( header,objUser, subtitle, badge);
-//
-//        this.add(divImage,divDescription);
-    }
-
-    public Div getCardForGrid() {
-        Div divCard = new Div();
-
-
-        return divCard;
-    }
 
     private HorizontalLayout getMemberActions() {
 

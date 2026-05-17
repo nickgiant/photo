@@ -1,6 +1,9 @@
 /* ── PhotoLightboxView ──────────────────────────────────────────────────── */
 
-.plv-root { overflow: hidden; }
+.plv-root {
+    overflow: hidden;
+    background-color: whitesmoke;
+}
 
 .plv-top-section {
     min-height: 0;
@@ -12,10 +15,22 @@
     flex-shrink: 0;
     border-left: 0.5px solid var(--lumo-contrast-10pct);
     overflow-y: auto;
+    color: #757272;
+}
+
+.plv-info-panel h2{
+    font-weight: 700;
+    color: #757272;
+}
+
+.plv-info-panel h4{
+    color: #757272;
 }
 
 /* gap on <vaadin-vertical-layout> host — overrides default spacing */
-.plv-info-panel-inner { gap: 6px; }
+.plv-info-panel-inner {
+    gap: 6px;
+}
 
 .plv-photo-title {
     margin: 0 !important;
@@ -25,9 +40,20 @@
 .plv-author {
     font-size: 0.8rem;
     color: var(--lumo-secondary-text-color);
+
+    padding: 6px;
+    border-radius: 14px;
+    background-color: #ffffff;
+    border: solid 1px #e9e9e7;
 }
 
 .plv-exif-grid {
+
+    padding: 6px;
+    border-radius: 14px;
+    background-color: #ffffff;
+    border: solid 1px #e9e9e7;
+
     display: grid;
     grid-template-columns: auto 1fr;
     gap: 2px 8px;
@@ -35,7 +61,14 @@
     width: 100%;
 }
 
-.plv-exif-label { color: var(--lumo-secondary-text-color); }
+.plv-exif-label {
+    color: var(--lumo-secondary-text-color);
+}
+
+.plv-exif-value {
+    color: var(--lumo-secondary-text-color);
+    font-weight: 700;
+}
 
 .plv-tags-row {
     display: flex;
@@ -57,12 +90,19 @@
     height: 80px;
     font-size: 30px;
     cursor: pointer;
-    border-radius: 3px;
+    border-radius: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
     user-select: none;
+    border: 1px solid transparent;
 }
+
+.plv-nav-btn:hover {
+    border: 1px solid rgba(255, 255, 255, 0.50);
+    color: rgba(255, 255, 255, 0.90);
+}
+
 .plv-nav-btn--left  { left:  0; }
 .plv-nav-btn--right { right: 0; }
 
@@ -74,15 +114,20 @@
     z-index: 10;
     background: rgba(0, 0, 0, 0.55);
     color: #fff;
-    width: 38px;
-    height: 38px;
-    font-size: 20px;
+    width: 42px;
+    height: 42px;
+    font-size: 30px;
     cursor: pointer;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     user-select: none;
+    border: 1px solid transparent;
+}
+.plv-close-btn:hover {
+    border: 1px solid rgba(255, 255, 255, 0.50);
+    color: rgba(255, 255, 255, 0.90);
 }
 
 /* ── PhotoFrameComponent ────────────────────────────────────────────────── */
@@ -137,12 +182,14 @@
 }
 
 .ts-thumb--active {
-    border-color: var(--lumo-primary-color);
+    border-color: rgba(0, 0, 0, 0.70);
+    border-radius: 6px;
     opacity: 1;
 }
 
 /* Thumbnail image fills its box */
 .ts-thumb img {
+    border-radius: 4px;
     width: 100%;
     height: 100%;
     object-fit: cover;
@@ -153,7 +200,7 @@
 .ts-scroll-btn {
     flex-shrink: 0;
     width: 32px;
-    background: rgba(0, 0, 0, 0.45);
+    background: rgba(0, 0, 0, 0.70);
     color: #fff;
     font-size: 18px;
     cursor: pointer;
@@ -161,4 +208,9 @@
     align-items: center;
     justify-content: center;
     user-select: none;
+    border-radius: 15px;
+}
+
+.ts-scroll-btn:hover{
+    background: rgba(0, 0, 0, 0.65);
 }

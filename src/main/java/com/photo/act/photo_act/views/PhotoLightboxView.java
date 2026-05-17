@@ -2,6 +2,7 @@ package com.photo.act.photo_act.views;
 
 
 
+import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.services.PhotoViewService;
@@ -16,6 +17,8 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.*;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -25,6 +28,8 @@ import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
+import com.vaadin.flow.server.streams.DownloadHandler;
+import com.vaadin.flow.theme.lumo.LumoUtility;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,12 +38,14 @@ import java.io.File;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.FileSystems;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
 import static com.photo.act.photo_act.views.AlbumsView.subPathThumbs;
 import static com.photo.act.photo_act.views.HomeView.subPathLarge;
 import static com.photo.act.photo_act.views.MainLayout.PROP_PHOTOS;
+import static com.photo.act.photo_act.views.MainLayout.SUB_PATH_AVATARS_THUMBS;
 
 /**
  * Full-screen photo viewer.
@@ -158,7 +165,7 @@ public class PhotoLightboxView extends VerticalLayout
                     " LEFT JOIN destination d ON pm.destination_id = d.id " +
                     " WHERE pm.uploaderId = usr.userId AND pm.visible_to = 'ALL' " +
                     " AND usr.userId = ux.user_id ";
-    private String sqlReadGallery1OrderBy = " ORDER BY pm.date_inserted DESC  ";
+    private String sqlReadGalleryDestinationsOrderBy = " ORDER BY pm.date_inserted DESC  LIMIT 80 ";
     private String strBrowser;
     private String hostname;
     private String hostAddress;
@@ -196,9 +203,6 @@ public class PhotoLightboxView extends VerticalLayout
 
         utilsDate = new UtilsDate();
         genericView = new GenericView(recordService);
-
-
-
     }
 
     @Override
@@ -218,14 +222,14 @@ public class PhotoLightboxView extends VerticalLayout
 
         String strFilterColumn = "";
 
-        int isType = 2;
+        int isType = 1;
         String strSelection = "";
-        String sqlReadOrderBy = " ORDER BY pm.date_inserted DESC";
+        String sqlReadOrderBy = sqlReadGalleryDestinationsOrderBy; //" ORDER BY pm.date_inserted DESC";
 
         if (isType == 1) {
-/*            arrNames = arrAlbumNames;
-            sqlRead = sqlReadAlbums + " AND usr.username = '" + strAlbumUsername + "' " + sqlReadAlbumsOrderby;
-            strFilterColumn = "a.title";*/
+            arrNames = arrColumnNamesGallery;
+            sqlRead = sqlReadGalleryDestinations;
+            strFilterColumn = "pm.id";
         } else if (isType == 2) {
             arrNames = arrColumnNamesGallery;
             sqlRead = sqlReadGalleryDestinations;
@@ -240,17 +244,22 @@ public class PhotoLightboxView extends VerticalLayout
 
         String sqlReadPhotos = "";
 
-        if (strSelection.isEmpty()) {
+        if (strPhotoId.isEmpty()) {
             if (isType == 2 || isType == 3) {
-                sqlReadPhotos = sqlRead;
+                sqlReadPhotos = sqlRead  + " " +  sqlReadOrderBy;
             } else {
                 sqlReadPhotos = sqlRead + " " + sqlReadOrderBy;
             }
         } else {
             if (isType == 2 || isType == 3) {
-                sqlReadPhotos = sqlRead + " AND " + strFilterColumn + " LIKE '" + strSelection + "' ";
+                sqlReadPhotos = sqlRead + " AND " + strFilterColumn + " LIKE '" + strSelection + "' "+ " " + sqlReadOrderBy;
             } else if (isType == 1) {
-                sqlReadPhotos = sqlRead + " AND " + strFilterColumn + " LIKE '" + strSelection + "' ";
+                sqlReadPhotos = sqlRead + " AND pm.date_inserted  " +
+                        " <= (\n" +
+                        "    SELECT date_inserted\n" +
+                        "    FROM photo_meta \n" +
+                        "    WHERE id = " +strPhotoId+" ) "+
+                        " "+ sqlReadOrderBy;
             }
         }
 
@@ -315,7 +324,7 @@ public class PhotoLightboxView extends VerticalLayout
         // ── Right info panel ──────────────────────────────────────────────────
         VerticalLayout infoPanel = buildInfoPanel();
         infoPanel.addClassName("plv-info-panel");
-        infoPanel.setWidth("220px");
+        infoPanel.setWidth("330px");
         infoPanel.setHeightFull();
 
         HorizontalLayout topSection = new HorizontalLayout(photoFrame, infoPanel);
@@ -431,17 +440,20 @@ public class PhotoLightboxView extends VerticalLayout
         });
 
         VerticalLayout panel = new VerticalLayout(
-                photoTitle, authorSpan,
-                new Hr(),
-                likeButton, downloadBtn, shareBtn,
-                new Hr(),
-                effectSelect,
-                new Hr(),
-                new H4("Camera info"), exifGrid,
-                new H4("Tags"), tagsRow,
-                new Hr(),
-                new H4("Comments"), commentsDiv
+                photoTitle,
+//                new Hr(),
+                authorSpan,
+//                new Hr(),
+//                likeButton, downloadBtn, shareBtn,
+//                new Hr(),
+//                effectSelect,
+//                new Hr(),
+                /*new H4("Camera Info"),*/ exifGrid,
+                /*new H4("Tags"),*/ tagsRow
+//                new Hr(),
+//                new H4("Comments"), commentsDiv
         );
+        panel.setWidthFull();
         panel.setPadding(true);
         panel.setSpacing(false);
         panel.addClassName("plv-info-panel-inner");
@@ -461,17 +473,145 @@ public class PhotoLightboxView extends VerticalLayout
             String title = photo.getColumnData("title");
             photoTitle.setText(title != null ? title : "");
 
-            String name = (safe(photo.getColumnData("name")) + " " + safe(photo.getColumnData("surname"))).trim();
-            String username = safe(photo.getColumnData("username"));
-            authorSpan.setText(name.isEmpty() ? username : name + (username.isEmpty() ? "" : " · @" + username));
+//            String name = (safe(photo.getColumnData("name")) + " " + safe(photo.getColumnData("surname"))).trim();
+//            String username = safe(photo.getColumnData("username"));
+//            authorSpan.setText(name.isEmpty() ? username : name + (username.isEmpty() ? "" : " · @" + username));
 
-            populateTags(photo.getColumnData("subject_name"));
+            String strCreatorId = photo.getColumnData("uploaderId");
+            String strUsername = photo.getColumnData("username");
+            String strName = photo.getColumnData("name");
+            String strSurname = photo.getColumnData("surname");
+            String strShortBio = photo.getColumnData("short_bio");
+            String strMemberSince = photo.getColumnData("member_since");
+            String strAvatarPath = photo.getColumnData("avatar_path");
+            String strResident = photo.getColumnData("resident");
+            String strResidentCountry = photo.getColumnData("resident_country");
+
+            String strCountPhotos = photo.getColumnData("count_photos");
+            String strCountStories = photo.getColumnData("count_stories");
+
+            authorSpan.removeAll();
+            authorSpan.setWidthFull();
+            authorSpan.add(fetchPhotographer(strUsername,strName,strSurname,strAvatarPath,strCountPhotos,strCountStories,false));
+            populateTags(photo.getColumnData("contains_tags"));
             populateExif(photo);
         }
 
         if (photoViewService != null && likeButton != null) {
             likeButton.setCount(photoViewService.getLikeCount((int) photoId));
         }
+    }
+
+    private VerticalLayout fetchPhotographer(String strUsername, String strName, String strSurname, String strAvatarPath,
+                                             String strCountPhotos, String strCountStories, boolean showMinimum) {
+
+        VerticalLayout layoutCreatorInfo = new VerticalLayout();
+        layoutCreatorInfo.addClassNames(
+                LumoUtility.Width.FULL, LumoUtility.Height.FULL,
+                LumoUtility.Padding.NONE, LumoUtility.Margin.NONE,
+                LumoUtility.Gap.XSMALL,
+                LumoUtility.BorderRadius.LARGE,
+                LumoUtility.AlignItems.START, LumoUtility.JustifyContent.START);
+//        layoutCreatorInfo.addClassNames("member-profile-design");
+//        layoutCreatorInfo.addClassName("info-to-show");
+        layoutCreatorInfo.setMaxHeight("160px");
+//        layoutCreatorInfo.getStyle().setOpacity("1");
+
+
+
+        Div divImgAvatar = new Div();
+        divImgAvatar.addClassNames(LumoUtility.Padding.NONE, LumoUtility.Margin.NONE);
+
+        String strAvatarSize = "50px";
+        Image imageAvatar = getAvatarThumbImage(strAvatarPath, strUsername, strAvatarSize, strAvatarSize);
+        divImgAvatar.add(imageAvatar);
+
+
+        HorizontalLayout horizontalLayout = new HorizontalLayout();
+
+        layoutCreatorInfo.getStyle().setOpacity("1");
+
+
+        H4 objMember = new H4(strUsername);
+        objMember.addClassNames(LumoUtility.TextColor.SECONDARY, LumoUtility.FontWeight.NORMAL, LumoUtility.FontSize.SMALL,
+                LumoUtility.Margin.NONE, LumoUtility.Padding.NONE,
+                LumoUtility.Gap.XSMALL);
+
+        H4 objName = new H4(strName + " " + strSurname);
+        objName.addClassNames(LumoUtility.TextColor.SECONDARY, LumoUtility.FontWeight.BOLD, LumoUtility.FontSize.SMALL,
+                LumoUtility.Margin.NONE, LumoUtility.Padding.NONE,
+                LumoUtility.Gap.XSMALL);
+
+//        Div divMemberSince = new Div("Member since "+strMemberSince);
+//        divMemberSince.addClassNames(LumoUtility.TextColor.SECONDARY, LumoUtility.FontWeight.EXTRALIGHT, LumoUtility.FontSize.XSMALL,
+//                LumoUtility.Margin.NONE, LumoUtility.Padding.XSMALL,
+//                LumoUtility.Gap.XSMALL);
+
+
+
+        Icon iconPhoto = VaadinIcon.PICTURE.create();
+        Icon iconAlbum = FontAwesome.Solid.PHOTO_FILM.create();
+//        Span spPhotos = new Span(" Photos");
+//        spPhotos.addClassNames(LumoUtility.TextColor.TERTIARY, LumoUtility.FontSize.SMALL);
+        Span divPhotos = new Span(strCountPhotos);
+//        divPhotos.add(spPhotos);
+        divPhotos.addClassNames(LumoUtility.TextColor.SECONDARY);
+//        Span spAlbums = new Span(" Albums");
+//        spAlbums.addClassNames(LumoUtility.TextColor.TERTIARY, LumoUtility.FontSize.SMALL);
+        Span divAlbums = new Span(strCountStories);
+        divAlbums.addClassNames(LumoUtility.TextColor.SECONDARY);
+//        divAlbums.add(spAlbums);
+
+        HorizontalLayout layoutCounts = new HorizontalLayout();
+        layoutCounts.addClassNames(LumoUtility.Width.FULL, LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.EVENLY,
+                LumoUtility.Padding.SMALL, LumoUtility.Margin.NONE,
+                LumoUtility.Gap.XSMALL,
+                LumoUtility.BorderRadius.LARGE, LumoUtility.Background.CONTRAST_5,
+                LumoUtility.TextColor.SECONDARY, LumoUtility.FontSize.MEDIUM);
+        layoutCounts.add(iconPhoto, divPhotos, iconAlbum, divAlbums);
+
+        VerticalLayout layoutMemberCard = new VerticalLayout();
+//            layoutMemberCard.getStyle().setMaxWidth("300px");
+//            layoutMemberCard.getStyle().set("border", "lightgrey 1px solid");
+        layoutMemberCard.addClassNames(LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER);
+        layoutMemberCard.setMaxWidth("60px");
+        layoutMemberCard.add(divImgAvatar);
+
+//        Div divResidentCaption = new Div("Resident");
+//        Div divResident = new Div(strResident);
+//        divResident.addClassNames(LumoUtility.FontWeight.BOLD);
+
+        VerticalLayout layoutAdditional = new VerticalLayout();
+        layoutAdditional.addClassNames(LumoUtility.Width.FULL, LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER,
+                LumoUtility.Margin.NONE, LumoUtility.Padding.XSMALL,
+                LumoUtility.Gap.XSMALL);
+        layoutAdditional.add(objMember, objName); //, divBioTitle, divBio);//, divResidentCaption, divResident);
+
+        horizontalLayout.add(layoutMemberCard, layoutAdditional);
+
+        if(showMinimum){
+            layoutCreatorInfo.add(horizontalLayout);
+        }else {
+            layoutCreatorInfo.add(horizontalLayout, layoutCounts);
+        }
+
+        return layoutCreatorInfo;
+    }
+
+    private Image getAvatarThumbImage(String strAvatarPath, String altDescr, String width, String height) {
+
+        String strAvatarFullPath = getAppProps(PROP_PHOTOS) + dirChar + SUB_PATH_AVATARS_THUMBS + dirChar + strAvatarPath;
+        Path path = Paths.get(strAvatarFullPath);
+        File file = path.toFile();
+
+        Image image = new Image();
+        image.setWidth(width);
+        image.setHeight(height);
+        image.addClassNames(LumoUtility.BorderRadius.FULL);
+        image.setAlt(altDescr);
+        image.setSrc(DownloadHandler.forFile(file));
+
+        return image;
     }
 
     private void populateExif(Record photo) {
@@ -517,7 +657,9 @@ public class PhotoLightboxView extends VerticalLayout
         if (value == null || value.isBlank() || "null null".equals(value)) return;
         Span lbl = new Span(label);
         lbl.addClassName("plv-exif-label");
-        exifGrid.add(lbl, new Span(value));
+        Span val = new Span(value);
+        val.addClassName("plv-exif-value");
+        exifGrid.add(lbl, val);
     }
 
     private void populateTags(String keywords) {
@@ -590,7 +732,7 @@ public class PhotoLightboxView extends VerticalLayout
 
 
 
-    public String getAppProps(String prop) {
+    private String getAppProps(String prop) {
         for (int r = 0; r < recProps.size(); r++) {
             String strProp = recProps.get(r).getColumnData("propName");
             if (prop.equalsIgnoreCase(strProp)) {
