@@ -2,33 +2,34 @@ package com.photo.act.photo_act.views;
 
 
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.services.PhotoViewService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.photo.act.photo_act.views.components.GenericView;
-import com.photo.act.photo_act.views.components.GlightboxComponent;
 import com.photo.act.photo_act.views.components.LikeButton;
+import com.photo.act.photo_act.views.components.PhotoFrameComponent;
 import com.photo.act.photo_act.views.components.ThumbnailStrip;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.*;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.*;
-
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.server.streams.DownloadHandler;
+import com.vaadin.flow.theme.lumo.LumoUtility;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,6 +45,7 @@ import java.util.*;
 import static com.photo.act.photo_act.views.AlbumsView.subPathThumbs;
 import static com.photo.act.photo_act.views.HomeView.subPathLarge;
 import static com.photo.act.photo_act.views.MainLayout.PROP_PHOTOS;
+import static com.photo.act.photo_act.views.MainLayout.SUB_PATH_AVATARS_THUMBS;
 
 /**
  * Full-screen photo viewer.
@@ -51,32 +53,15 @@ import static com.photo.act.photo_act.views.MainLayout.PROP_PHOTOS;
  * ── Overall layout (VerticalLayout, full height) ──────────────────────────────
  *
  *   ┌──────────────────────────────────────────────┬──────────────┐
- *   │                                              │              │
- *   │          GLightbox viewer                    │ Vaadin panel │
- *   │          (flex-grow: 1)                      │  (220 px)    │
- *   │                                              │              │
+ *   │  [❮]  Vaadin Image (DownloadHandler)  [❯]  │ info panel   │
+ *   │        object-fit: contain                 │  (220 px)    │
+ *   │        [✕] top-right close button          │              │
  *   ├──────────────────────────────────────────────┴──────────────┤
  *   │       Thumbnail filmstrip   ← → scrollable  (100 px)       │
  *   └─────────────────────────────────────────────────────────────┘
  *
- * ── GLightbox effects available ──────────────────────────────────────────────
- *   • "zoom"  — image scales in from small to full (default)
- *   • "fade"  — cross-fade between slides
- *   • "slide" — slides in from the side
- *   • "none"  — instant cut
- *
- * ── Communication flow ────────────────────────────────────────────────────────
- *   User clicks thumb      → ThumbnailStrip.onSelect()
- *                          → PhotoLightboxView.selectPhoto(index)
- *                          → glightbox.openSlide(index)   [Java → JS]
- *                          → GLightbox navigates with transition effect
- *                          → glightbox.onSlideChanged()   [JS → Java]
- *                          → loadInfoPanel(photoId)       [Vaadin update]
- *                          → thumbnailStrip.setActiveIndex(index)
- *
- *   User swipes/arrows     → GLightbox handles natively
- *                          → glightbox.onSlideChanged()   [JS → Java]
- *                          → same chain as above from loadInfoPanel
+ * Navigation is fully server-side: clicking ❮/❯ updates Image.setSrc()
+ * via DownloadHandler.forFile(). No URL strings are passed to JavaScript.
  */
 
 @AnonymousAllowed
@@ -93,12 +78,15 @@ public class PhotoLightboxView extends VerticalLayout
     private RecordService recordService;
 
     // ── Dependencies ──────────────────────────────────────────────────────────
-    private final ObjectMapper      objectMapper;
     private final PhotoViewService  photoViewService;
 
     // ── Components ────────────────────────────────────────────────────────────
-    private GlightboxComponent glightbox;
+    private PhotoFrameComponent photoFrame;
     private ThumbnailStrip thumbnailStrip;
+
+    // State
+    private int    currentIndex       = 0;
+    private String strPathLargePhotos = "";  // set in buildView
 
     // Right panel elements
     private final H2    photoTitle   = new H2();
@@ -177,7 +165,7 @@ public class PhotoLightboxView extends VerticalLayout
                     " LEFT JOIN destination d ON pm.destination_id = d.id " +
                     " WHERE pm.uploaderId = usr.userId AND pm.visible_to = 'ALL' " +
                     " AND usr.userId = ux.user_id ";
-    private String sqlReadGallery1OrderBy = " ORDER BY pm.date_inserted DESC  ";
+    private String sqlReadGalleryDestinationsOrderBy = " ORDER BY pm.date_inserted DESC  LIMIT 80 ";
     private String strBrowser;
     private String hostname;
     private String hostAddress;
@@ -204,23 +192,17 @@ public class PhotoLightboxView extends VerticalLayout
     // ── View setup ────────────────────────────────────────────────────────────
 
     public PhotoLightboxView(RecordService recordService,
-                             ObjectMapper objectMapper,
                              PhotoViewService photoViewService) {
         this.recordService    = recordService;
-        this.objectMapper     = objectMapper;
         this.photoViewService = photoViewService;
 
-        // Outer VerticalLayout: full screen, no padding/gap
         setSizeFull();
         setPadding(true);
         setSpacing(true);
-        getStyle().set("overflow", "hidden");
+        addClassName("plv-root");
 
         utilsDate = new UtilsDate();
         genericView = new GenericView(recordService);
-
-
-
     }
 
     @Override
@@ -240,14 +222,14 @@ public class PhotoLightboxView extends VerticalLayout
 
         String strFilterColumn = "";
 
-        int isType = 2;
+        int isType = 1;
         String strSelection = "";
-        String sqlReadOrderBy = " ORDER BY pm.date_inserted DESC";
+        String sqlReadOrderBy = sqlReadGalleryDestinationsOrderBy; //" ORDER BY pm.date_inserted DESC";
 
         if (isType == 1) {
-/*            arrNames = arrAlbumNames;
-            sqlRead = sqlReadAlbums + " AND usr.username = '" + strAlbumUsername + "' " + sqlReadAlbumsOrderby;
-            strFilterColumn = "a.title";*/
+            arrNames = arrColumnNamesGallery;
+            sqlRead = sqlReadGalleryDestinations;
+            strFilterColumn = "pm.id";
         } else if (isType == 2) {
             arrNames = arrColumnNamesGallery;
             sqlRead = sqlReadGalleryDestinations;
@@ -262,17 +244,22 @@ public class PhotoLightboxView extends VerticalLayout
 
         String sqlReadPhotos = "";
 
-        if (strSelection.isEmpty()) {
+        if (strPhotoId.isEmpty()) {
             if (isType == 2 || isType == 3) {
-                sqlReadPhotos = sqlRead;
+                sqlReadPhotos = sqlRead  + " " +  sqlReadOrderBy;
             } else {
                 sqlReadPhotos = sqlRead + " " + sqlReadOrderBy;
             }
         } else {
             if (isType == 2 || isType == 3) {
-                sqlReadPhotos = sqlRead + " AND " + strFilterColumn + " LIKE '" + strSelection + "' ";
+                sqlReadPhotos = sqlRead + " AND " + strFilterColumn + " LIKE '" + strSelection + "' "+ " " + sqlReadOrderBy;
             } else if (isType == 1) {
-                sqlReadPhotos = sqlRead + " AND " + strFilterColumn + " LIKE '" + strSelection + "' ";
+                sqlReadPhotos = sqlRead + " AND pm.date_inserted  " +
+                        " <= (\n" +
+                        "    SELECT date_inserted\n" +
+                        "    FROM photo_meta \n" +
+                        "    WHERE id = " +strPhotoId+" ) "+
+                        " "+ sqlReadOrderBy;
             }
         }
 
@@ -289,15 +276,14 @@ public class PhotoLightboxView extends VerticalLayout
 
         buildView();
 
-        // Load like count for the initial photo
-        if (!strPhotoId.isBlank()) {
+        // Position viewer on the photo that matches the URL parameter
+        currentIndex = findInitialIndex();
+        updatePhotoImage(0);
+        thumbnailStrip.setActiveIndex(currentIndex);
+
+        if (!photos.isEmpty()) {
             try {
-                currentPhotoId = Long.parseLong(strPhotoId);
-                loadInfoPanel(currentPhotoId);
-            } catch (NumberFormatException ignored) {}
-        } else if (!photos.isEmpty()) {
-            try {
-                currentPhotoId = Long.parseLong(photos.get(0).getColumnData("id"));
+                currentPhotoId = Long.parseLong(photos.get(currentIndex).getColumnData("id"));
                 loadInfoPanel(currentPhotoId);
             } catch (NumberFormatException ignored) {}
         }
@@ -308,72 +294,123 @@ public class PhotoLightboxView extends VerticalLayout
     private void buildView() {
         removeAll();
 
-        String strPathThumbs = getAppProps("dir-photos") + dirChar + subPathThumbs;
+        String dirPhotos = getAppProps("dir-photos");
+        strPathLargePhotos = (dirPhotos != null ? dirPhotos : "") + dirChar + subPathLarge;
+        String strPathThumbs = (dirPhotos != null ? dirPhotos : "") + dirChar + subPathThumbs;
 
-        // ── Top section: viewer + info panel side by side ─────────────────────
-        glightbox = new GlightboxComponent();
-//        glightbox.setSizeFull();
-        glightbox.getStyle().set("min-height", "0"); // flex child must have this
+        // ── Photo frame: orientation-aware viewer with overlay nav/close ──────
+        photoFrame = new PhotoFrameComponent();
 
-        // Wire slide-changed event: update info panel + thumbnail highlight
-        glightbox.addSlideChangeListener((index, photoId) -> {
-            currentPhotoId = photoId;
-            loadInfoPanel(photoId);
-            thumbnailStrip.setActiveIndex(index);
+        Div prevBtn  = navDiv("❮", "left");
+        Div nextBtn  = navDiv("❯", "right");
+        Div closeBtn = closeDiv();
+
+        prevBtn.addClickListener(e -> {
+            currentIndex = (currentIndex - 1 + photos.size()) % photos.size();
+            updatePhotoImage(-1);
+            updateNavState();
         });
+        nextBtn.addClickListener(e -> {
+            currentIndex = (currentIndex + 1) % photos.size();
+            updatePhotoImage(+1);
+            updateNavState();
+        });
+        closeBtn.addClickListener(e ->
+                getUI().ifPresent(ui -> ui.getPage().executeJs("window.history.back()")));
 
-        // Load all slides into GLightbox
-        glightbox.setSlides(buildSlidesJson());
+        // Nav and close buttons are position:absolute — they overlay the image
+        photoFrame.add(prevBtn, nextBtn, closeBtn);
 
-        // GLightbox wrapper — takes all remaining height
-        Div viewerWrap = new Div(glightbox);
-        viewerWrap.setSizeFull();
-        viewerWrap.getStyle()
-                .set("min-height", "0")             // critical for flex height
-                .set("background", "#0d0d0d");
-
-        // Right info panel
+        // ── Right info panel ──────────────────────────────────────────────────
         VerticalLayout infoPanel = buildInfoPanel();
-        infoPanel.setWidth("220px");
+        infoPanel.addClassName("plv-info-panel");
+        infoPanel.setWidth("330px");
         infoPanel.setHeightFull();
-        infoPanel.getStyle()
-                .set("flex-shrink", "0")
-                .set("border-left", "0.5px solid var(--lumo-contrast-10pct)")
-                .set("overflow-y", "auto");
 
-        HorizontalLayout topSection = new HorizontalLayout(viewerWrap, infoPanel);
+        HorizontalLayout topSection = new HorizontalLayout(photoFrame, infoPanel);
         topSection.setSizeFull();
         topSection.setPadding(false);
         topSection.setSpacing(false);
-        topSection.getStyle()
-                .set("min-height", "0")             // critical — prevents filmstrip from being pushed off
-                .set("flex", "1 1 auto");
+        topSection.addClassName("plv-top-section");
 
-        // ── Bottom section: thumbnail filmstrip ───────────────────────────────
+        // ── Bottom: thumbnail filmstrip ───────────────────────────────────────
         thumbnailStrip = new ThumbnailStrip(photos, strPathThumbs, (index, photoId) -> {
+            int dir = Integer.signum(index - currentIndex);
+            currentIndex = index;
             currentPhotoId = photoId;
-            glightbox.openSlide(index);         // → JS transition
+            updatePhotoImage(dir != 0 ? dir : +1);
             loadInfoPanel(photoId);
         });
-        thumbnailStrip.setWidthFull();
 
-        // ── Assemble ─────────────────────────────────────────────────────────
-        // setFlexGrow on topSection so it expands; thumbnailStrip stays 100px
         add(topSection, thumbnailStrip);
-        setFlexGrow(1, topSection);             // top section fills remaining height
+        setFlexGrow(1, topSection);
+    }
+
+    /** Updates the photo frame to show the photo at currentIndex. direction: +1 forward, -1 backward, 0 no animation. */
+    private void updatePhotoImage(int direction) {
+        if (photos.isEmpty()) return;
+        Record photo = photos.get(currentIndex);
+        String nameNew = photo.getColumnData("name_new");
+        int w = parseIntSafe(photo.getColumnData("meta_i_width"));
+        int h = parseIntSafe(photo.getColumnData("meta_i_height"));
+        if (nameNew != null) {
+            File file = Paths.get(strPathLargePhotos + dirChar + nameNew).toFile();
+            if (file.exists()) {
+                photoFrame.setPhoto(file, photo.getColumnData("title"), w, h);
+                if (direction != 0) photoFrame.animateEnter(direction);
+                return;
+            }
+            log.warn("Photo file not found: {}", strPathLargePhotos + dirChar + nameNew);
+        }
+        photoFrame.setFallback("/static/photographerM.jpg");
+    }
+
+    private static int parseIntSafe(String s) {
+        if (s == null) return 0;
+        try { return Integer.parseInt(s.trim()); }
+        catch (NumberFormatException e) { return 0; }
+    }
+
+    /** Syncs thumbnail highlight and info panel after arrow navigation. */
+    private void updateNavState() {
+        thumbnailStrip.setActiveIndex(currentIndex);
+        if (!photos.isEmpty()) {
+            try {
+                currentPhotoId = Long.parseLong(photos.get(currentIndex).getColumnData("id"));
+                loadInfoPanel(currentPhotoId);
+            } catch (NumberFormatException ignored) {}
+        }
+    }
+
+    /** Returns the index of the photo matching strPhotoId, or 0 if not found. */
+    private int findInitialIndex() {
+        if (!strPhotoId.isBlank()) {
+            for (int i = 0; i < photos.size(); i++) {
+                if (strPhotoId.equals(photos.get(i).getColumnData("id"))) return i;
+            }
+        }
+        return 0;
+    }
+
+    /** Prev / next overlay button (left or right edge of the viewer). */
+    private Div navDiv(String symbol, String side) {
+        Div btn = new Div();
+        btn.setText(symbol);
+        btn.addClassNames("plv-nav-btn", "plv-nav-btn--" + side);
+        return btn;
+    }
+
+    /** Close (✕) button overlaid in the top-right corner of the viewer. */
+    private Div closeDiv() {
+        Div btn = new Div();
+        btn.setText("✕");
+        btn.addClassName("plv-close-btn");
+        return btn;
     }
 
     // ── Info panel (right VerticalLayout) ─────────────────────────────────────
 
     private VerticalLayout buildInfoPanel() {
-        // Effect selector (zoom / fade / slide / none)
-        Select<String> effectSelect = new Select<>();
-        effectSelect.setLabel("Transition");
-        effectSelect.setItems("zoom", "fade", "slide", "none");
-        effectSelect.setValue("zoom");
-        effectSelect.setWidthFull();
-        effectSelect.addValueChangeListener(e -> glightbox.setEffect(e.getValue()));
-
         // Like button
         likeButton = new LikeButton(0); // count is refreshed in loadInfoPanel()
         likeButton.setTitle("Like this photo");
@@ -387,37 +424,39 @@ public class PhotoLightboxView extends VerticalLayout
         shareBtn.setWidthFull();
         shareBtn.addClickListener(e -> handleShare());
 
-        photoTitle.getStyle().set("margin", "0").set("font-size", "1rem");
-        authorSpan.getStyle().set("font-size", "0.8rem")
-                .set("color", "var(--lumo-secondary-text-color)");
-
-        exifGrid.getStyle()
-                .set("display", "grid")
-                .set("grid-template-columns", "auto 1fr")
-                .set("gap", "2px 8px")
-                .set("font-size", "0.75rem");
-
-        tagsRow.getStyle()
-                .set("display", "flex")
-                .set("flex-wrap", "wrap")
-                .set("gap", "4px");
-
+        photoTitle.addClassName("plv-photo-title");
+        authorSpan.addClassName("plv-author");
+        exifGrid.addClassName("plv-exif-grid");
+        tagsRow.addClassName("plv-tags-row");
         commentsDiv.setWidthFull();
 
+        Select<String> effectSelect = new Select<>();
+        effectSelect.setLabel("Transition effect");
+        effectSelect.setItems("fade", "zoom", "slide", "none");
+        effectSelect.setValue("fade");
+        effectSelect.setWidthFull();
+        effectSelect.addValueChangeListener(e -> {
+            if (photoFrame != null) photoFrame.setEffect(e.getValue());
+        });
+
         VerticalLayout panel = new VerticalLayout(
-                photoTitle, authorSpan,
-                new Hr(),
-                likeButton, downloadBtn, shareBtn,
-                effectSelect,
-                new Hr(),
-                new H4("Camera info"), exifGrid,
-                new H4("Tags"), tagsRow,
-                new Hr(),
-                new H4("Comments"), commentsDiv
+                photoTitle,
+//                new Hr(),
+                authorSpan,
+//                new Hr(),
+//                likeButton, downloadBtn, shareBtn,
+//                new Hr(),
+//                effectSelect,
+//                new Hr(),
+                /*new H4("Camera Info"),*/ exifGrid,
+                /*new H4("Tags"),*/ tagsRow
+//                new Hr(),
+//                new H4("Comments"), commentsDiv
         );
+        panel.setWidthFull();
         panel.setPadding(true);
         panel.setSpacing(false);
-        panel.getStyle().set("gap", "6px");
+        panel.addClassName("plv-info-panel-inner");
 
         return panel;
     }
@@ -425,28 +464,202 @@ public class PhotoLightboxView extends VerticalLayout
     // ── Load info panel data for a given photoId ──────────────────────────────
 
     private void loadInfoPanel(long photoId) {
+        Record photo = photos.stream()
+                .filter(p -> String.valueOf(photoId).equals(p.getColumnData("id")))
+                .findFirst()
+                .orElse(photos.isEmpty() ? null : photos.get(currentIndex));
+
+        if (photo != null) {
+            String title = photo.getColumnData("title");
+            photoTitle.setText(title != null ? title : "");
+
+//            String name = (safe(photo.getColumnData("name")) + " " + safe(photo.getColumnData("surname"))).trim();
+//            String username = safe(photo.getColumnData("username"));
+//            authorSpan.setText(name.isEmpty() ? username : name + (username.isEmpty() ? "" : " · @" + username));
+
+            String strCreatorId = photo.getColumnData("uploaderId");
+            String strUsername = photo.getColumnData("username");
+            String strName = photo.getColumnData("name");
+            String strSurname = photo.getColumnData("surname");
+            String strShortBio = photo.getColumnData("short_bio");
+            String strMemberSince = photo.getColumnData("member_since");
+            String strAvatarPath = photo.getColumnData("avatar_path");
+            String strResident = photo.getColumnData("resident");
+            String strResidentCountry = photo.getColumnData("resident_country");
+
+            String strCountPhotos = photo.getColumnData("count_photos");
+            String strCountStories = photo.getColumnData("count_stories");
+
+            authorSpan.removeAll();
+            authorSpan.setWidthFull();
+            authorSpan.add(fetchPhotographer(strUsername,strName,strSurname,strAvatarPath,strCountPhotos,strCountStories,false));
+            populateTags(photo.getColumnData("contains_tags"));
+            populateExif(photo);
+        }
+
         if (photoViewService != null && likeButton != null) {
             likeButton.setCount(photoViewService.getLikeCount((int) photoId));
         }
     }
 
-/*    private void populateExif(PhotoMetadata m) {
+    private VerticalLayout fetchPhotographer(String strUsername, String strName, String strSurname, String strAvatarPath,
+                                             String strCountPhotos, String strCountStories, boolean showMinimum) {
+
+        VerticalLayout layoutCreatorInfo = new VerticalLayout();
+        layoutCreatorInfo.addClassNames(
+                LumoUtility.Width.FULL, LumoUtility.Height.FULL,
+                LumoUtility.Padding.NONE, LumoUtility.Margin.NONE,
+                LumoUtility.Gap.XSMALL,
+                LumoUtility.BorderRadius.LARGE,
+                LumoUtility.AlignItems.START, LumoUtility.JustifyContent.START);
+//        layoutCreatorInfo.addClassNames("member-profile-design");
+//        layoutCreatorInfo.addClassName("info-to-show");
+        layoutCreatorInfo.setMaxHeight("160px");
+//        layoutCreatorInfo.getStyle().setOpacity("1");
+
+
+
+        Div divImgAvatar = new Div();
+        divImgAvatar.addClassNames(LumoUtility.Padding.NONE, LumoUtility.Margin.NONE);
+
+        String strAvatarSize = "50px";
+        Image imageAvatar = getAvatarThumbImage(strAvatarPath, strUsername, strAvatarSize, strAvatarSize);
+        divImgAvatar.add(imageAvatar);
+
+
+        HorizontalLayout horizontalLayout = new HorizontalLayout();
+
+        layoutCreatorInfo.getStyle().setOpacity("1");
+
+
+        H4 objMember = new H4(strUsername);
+        objMember.addClassNames(LumoUtility.TextColor.SECONDARY, LumoUtility.FontWeight.NORMAL, LumoUtility.FontSize.SMALL,
+                LumoUtility.Margin.NONE, LumoUtility.Padding.NONE,
+                LumoUtility.Gap.XSMALL);
+
+        H4 objName = new H4(strName + " " + strSurname);
+        objName.addClassNames(LumoUtility.TextColor.SECONDARY, LumoUtility.FontWeight.BOLD, LumoUtility.FontSize.SMALL,
+                LumoUtility.Margin.NONE, LumoUtility.Padding.NONE,
+                LumoUtility.Gap.XSMALL);
+
+//        Div divMemberSince = new Div("Member since "+strMemberSince);
+//        divMemberSince.addClassNames(LumoUtility.TextColor.SECONDARY, LumoUtility.FontWeight.EXTRALIGHT, LumoUtility.FontSize.XSMALL,
+//                LumoUtility.Margin.NONE, LumoUtility.Padding.XSMALL,
+//                LumoUtility.Gap.XSMALL);
+
+
+
+        Icon iconPhoto = VaadinIcon.PICTURE.create();
+        Icon iconAlbum = FontAwesome.Solid.PHOTO_FILM.create();
+//        Span spPhotos = new Span(" Photos");
+//        spPhotos.addClassNames(LumoUtility.TextColor.TERTIARY, LumoUtility.FontSize.SMALL);
+        Span divPhotos = new Span(strCountPhotos);
+//        divPhotos.add(spPhotos);
+        divPhotos.addClassNames(LumoUtility.TextColor.SECONDARY);
+//        Span spAlbums = new Span(" Albums");
+//        spAlbums.addClassNames(LumoUtility.TextColor.TERTIARY, LumoUtility.FontSize.SMALL);
+        Span divAlbums = new Span(strCountStories);
+        divAlbums.addClassNames(LumoUtility.TextColor.SECONDARY);
+//        divAlbums.add(spAlbums);
+
+        HorizontalLayout layoutCounts = new HorizontalLayout();
+        layoutCounts.addClassNames(LumoUtility.Width.FULL, LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.EVENLY,
+                LumoUtility.Padding.SMALL, LumoUtility.Margin.NONE,
+                LumoUtility.Gap.XSMALL,
+                LumoUtility.BorderRadius.LARGE, LumoUtility.Background.CONTRAST_5,
+                LumoUtility.TextColor.SECONDARY, LumoUtility.FontSize.MEDIUM);
+        layoutCounts.add(iconPhoto, divPhotos, iconAlbum, divAlbums);
+
+        VerticalLayout layoutMemberCard = new VerticalLayout();
+//            layoutMemberCard.getStyle().setMaxWidth("300px");
+//            layoutMemberCard.getStyle().set("border", "lightgrey 1px solid");
+        layoutMemberCard.addClassNames(LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER);
+        layoutMemberCard.setMaxWidth("60px");
+        layoutMemberCard.add(divImgAvatar);
+
+//        Div divResidentCaption = new Div("Resident");
+//        Div divResident = new Div(strResident);
+//        divResident.addClassNames(LumoUtility.FontWeight.BOLD);
+
+        VerticalLayout layoutAdditional = new VerticalLayout();
+        layoutAdditional.addClassNames(LumoUtility.Width.FULL, LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER,
+                LumoUtility.Margin.NONE, LumoUtility.Padding.XSMALL,
+                LumoUtility.Gap.XSMALL);
+        layoutAdditional.add(objMember, objName); //, divBioTitle, divBio);//, divResidentCaption, divResident);
+
+        horizontalLayout.add(layoutMemberCard, layoutAdditional);
+
+        if(showMinimum){
+            layoutCreatorInfo.add(horizontalLayout);
+        }else {
+            layoutCreatorInfo.add(horizontalLayout, layoutCounts);
+        }
+
+        return layoutCreatorInfo;
+    }
+
+    private Image getAvatarThumbImage(String strAvatarPath, String altDescr, String width, String height) {
+
+        String strAvatarFullPath = getAppProps(PROP_PHOTOS) + dirChar + SUB_PATH_AVATARS_THUMBS + dirChar + strAvatarPath;
+        Path path = Paths.get(strAvatarFullPath);
+        File file = path.toFile();
+
+        Image image = new Image();
+        image.setWidth(width);
+        image.setHeight(height);
+        image.addClassNames(LumoUtility.BorderRadius.FULL);
+        image.setAlt(altDescr);
+        image.setSrc(DownloadHandler.forFile(file));
+
+        return image;
+    }
+
+    private void populateExif(Record photo) {
         exifGrid.removeAll();
-        row("Camera",   safe(m.getCameraMake()) + " " + safe(m.getCameraModel()));
-        row("Lens",     safe(m.getLens()));
-        row("Focal",    m.getFocalLength() != null ? m.getFocalLength() + " mm" : "—");
-        row("Aperture", m.getAperture()    != null ? "f/" + m.getAperture()     : "—");
-        row("Shutter",  safe(m.getShutterSpeed()) + " s");
-        row("ISO",      m.getIso()         != null ? String.valueOf(m.getIso()) : "—");
-        if (m.getShootDate() != null)
-            row("Date", m.getShootDate().toLocalDate().toString());
-    }*/
+        String cameraMake  = photo.getColumnData("meta_camera_make");
+        String cameraModel = photo.getColumnData("meta_camera_model");
+        String lensMake    = photo.getColumnData("meta_lens_make");
+        String lensModel   = photo.getColumnData("meta_lens_model");
+        String focal       = photo.getColumnData("meta_focal_length");
+        String focalFF     = photo.getColumnData("meta_focal_length_ff");
+        String iso         = photo.getColumnData("meta_iso");
+        String aperture    = photo.getColumnData("meta_aperture");
+        String shutter     = photo.getColumnData("meta_shutter_speed");
+        String shot        = photo.getColumnData("photo_time_shot");
+        String city        = photo.getColumnData("city_name");
+        String width       = photo.getColumnData("meta_i_width");
+        String height      = photo.getColumnData("meta_i_height");
+
+        String camera = (safe(cameraMake) + " " + safe(cameraModel)).trim();
+        if (!camera.isEmpty()) row("Camera", camera);
+        String lens = (safe(lensMake) + " " + safe(lensModel)).trim();
+        if (!lens.isEmpty()) row("Lens", lens);
+
+        if (isPresent(focal)) {
+            row("Focal", isPresent(focalFF) && !focalFF.equalsIgnoreCase(focal)
+                    ? focal + " mm  (" + focalFF + " mm FF)"
+                    : focal + " mm");
+        }
+        if (isPresent(aperture)) row("Aperture", "f/" + aperture);
+        if (isPresent(shutter))  row("Shutter",  shutter + " s");
+        if (isPresent(iso))      row("ISO",       iso);
+        if (isPresent(shot))     row("Shot",      shot);
+        if (isPresent(city))     row("Location",  city);
+        if (isPresent(width) && isPresent(height))
+            row("Size", width + " × " + height + " px");
+    }
+
+    private static boolean isPresent(String s) {
+        return s != null && !s.isBlank() && !"null".equalsIgnoreCase(s);
+    }
 
     private void row(String label, String value) {
         if (value == null || value.isBlank() || "null null".equals(value)) return;
         Span lbl = new Span(label);
-        lbl.getStyle().set("color", "var(--lumo-secondary-text-color)");
-        exifGrid.add(lbl, new Span(value));
+        lbl.addClassName("plv-exif-label");
+        Span val = new Span(value);
+        val.addClassName("plv-exif-value");
+        exifGrid.add(lbl, val);
     }
 
     private void populateTags(String keywords) {
@@ -457,7 +670,7 @@ public class PhotoLightboxView extends VerticalLayout
             if (tag.isEmpty()) continue;
             Span chip = new Span(tag);
             chip.getElement().getThemeList().add("badge pill");
-            chip.getStyle().set("cursor", "pointer");
+            chip.addClassName("plv-tag-chip");
             chip.addClickListener(e ->
                     getUI().ifPresent(ui -> ui.navigate("search?tag=" + tag)));
             tagsRow.add(chip);
@@ -505,34 +718,6 @@ public class PhotoLightboxView extends VerticalLayout
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    /**
-     * Builds the JSON array GLightbox needs from the photos list.
-     * Each element: { href, title, description, photoId }
-     */
-    private String buildSlidesJson() {
-
-        String strPathShow = getAppProps("dir-photos") + dirChar + subPathLarge;
-
-
-
-
-
-
-
-        List<Map<String, Object>> slides = photos.stream().map(p -> Map.<String, Object>of(
-              "href",        p.getColumnData("name_new")  != null ? DownloadHandler.forFile(Paths.get(strPathShow+dirChar+p.getColumnData("name_new")).toFile()) : "/static/photographerM.jpg",
-                "title",      p.getColumnData("title")      != null ?    p.getColumnData("title")      : "",
-       /*         "description", p.getDescription()!= null ? truncate(p.getDescription(), 80) : "", */
-                "photoId",     p.getColumnData("id")
-        )).toList();
-        try {
-            return objectMapper.writeValueAsString(slides);
-        } catch (JsonProcessingException e) {
-            log.error("Could not serialize slides", e);
-            return "[]";
-        }
-    }
-
     private static String truncate(String s, int max) {
         return s.length() <= max ? s : s.substring(0, max - 1) + "…";
     }
@@ -547,15 +732,11 @@ public class PhotoLightboxView extends VerticalLayout
 
 
 
-    public String getAppProps(String prop) {
-
+    private String getAppProps(String prop) {
         for (int r = 0; r < recProps.size(); r++) {
             String strProp = recProps.get(r).getColumnData("propName");
-            String strValue = recProps.get(r).getColumnData("propValue");
             if (prop.equalsIgnoreCase(strProp)) {
-                return strValue;
-            } else {
-                return null;
+                return recProps.get(r).getColumnData("propValue");
             }
         }
         return null;

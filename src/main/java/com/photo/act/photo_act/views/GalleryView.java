@@ -69,8 +69,6 @@ import static com.photo.act.photo_act.views.MainLayout.*;
 @RouteAlias(value = "photos/member/:member?/location/:destination?", layout = MainLayout.class)
 @RouteAlias(value = "photo/:id?", layout = MainLayout.class)
 
-
-
 //@Menu(order = 0, icon = "line-awesome/svg/th-list-solid.svg")
 public class GalleryView extends Main implements HasUrlParameter<String>, BeforeEnterObserver, HasComponents, HasDynamicTitle, HasStyle {
 
@@ -208,7 +206,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
             " SELECT pm.id, pm.name_new, pm.title, pm.subtitle, pm.notes, pm.photo_type, pm.uploader, pm.creator, pm.visible_to,  DATE_FORMAT(pm.meta_date, '%W %D %M %Y %H:%i %p') AS meta_date, DATE_FORMAT(pm.meta_date, '%M %Y') AS photo_date, DATE_FORMAT(pm.meta_date, '%H:%i') AS photo_time " +
                     " , DATE_FORMAT(pm.meta_date, '%d/%m/%Y - %H:%i:%S') AS photo_time_shot,  pm.space_size, pm.space_size_medium, pm.space_size_thumb, pm.meta_camera_make, pm.meta_camera_model, pm.meta_lens_make, pm.meta_lens_model,  pm.meta_focal_length, pm.meta_focal_length_ff, pm.meta_iso, meta_aperture,  meta_shutter_speed, meta_orientation,  pm.meta_i_height, pm.meta_i_length, pm.meta_i_width , pm.location_by_user, pm.location_area, pm.location_country_code, pm.location_lat, pm.location_lon " +
                     " , getDateDiffFromNow(pm.date_inserted) AS date_inserted_diff_from_now " +
-                    " , usr.username, usr.surname, usr.name, usr.resident, usr.resident_country, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined,  DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since, usr.avatar_path " +
+                    " , usr.username, usr.surname, usr.name, usr.resident, usr.resident_country, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined,  DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since, usr.avatar_path, usr. " +
                     " , usr.short_bio  " +
                     " , ux.count_photos, ux.count_stories " +
                     " , s.subject_name " +
@@ -500,44 +498,33 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         if (isMobile) {
             headerContainer.addClassNames(
                     AlignItems.START, JustifyContent.BETWEEN,
-                    Overflow.HIDDEN, Width.FULL,
+                    Overflow.HIDDEN,// Width.FULL,
                     Margin.NONE,
-                    Padding.SMALL,
-                    Gap.SMALL,
-                    // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
-                    //   Background.CONTRAST_5,
                     BorderRadius.NONE
             );
         } else {
             headerContainer.addClassNames(
-                    AlignItems.STRETCH, JustifyContent.BETWEEN,
-                    Overflow.HIDDEN, Width.FULL,
+                    AlignItems.START, JustifyContent.BETWEEN,
+                    Overflow.HIDDEN, //Width.FULL,
                     Margin.NONE,
-                    Padding.MEDIUM,
-                    Gap.MEDIUM,
-                    // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
-                    //   Background.CONTRAST_5,
                     BorderRadius.LARGE
             );
         }
         headerContainer.addClassName("header-layout");
 
-
         H1 header = new H1(strHeader);
 
         Div subheader = new Div(strSubHeader);
         subheader.addClassNames(
-                AlignItems.CENTER, JustifyContent.START,
-                Margin.NONE, Margin.Top.NONE,
-                FontSize.SMALL, TextColor.SECONDARY);
-
+                LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.START,
+                LumoUtility.Margin.Bottom.NONE, LumoUtility.Margin.Top.NONE, LumoUtility.FontSize.SMALL, LumoUtility.TextColor.SECONDARY);
 
         H2 headerSection = new H2(strSection);
         headerSection.addClassNames(
                 FontSize.XLARGE
         );
-        headerSection.getStyle().set("text-transform","capitalize");
-        if (strSection.isEmpty() ||  strSection.contains("all")) {
+        if (strSection.isEmpty() || strSection.equalsIgnoreCase(STR_ALL_MONTHS)) {
+
             headerSection.setVisible(false);
         }
 
@@ -553,61 +540,14 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         Div divLine = new Div();
         divLine.addClassNames(Border.BOTTOM, Width.FULL);
 
-        VerticalLayout layoutHeader = new VerticalLayout();
-        layoutHeader.addClassNames(Width.FULL,
-                AlignItems.START, JustifyContent.EVENLY,
-                Padding.NONE, Margin.NONE, Gap.XSMALL);
-        layoutHeader.add(header, subheader);
+        Div divLineB = new Div();
+        divLineB.addClassNames(Border.BOTTOM, Width.FULL);
 
-//
-//        Button btnLastUploaded = new Button("Last Uploaded");
-//        btnLastUploaded.setIcon(FontAwesome.Solid.CALENDAR_DAY.create());
-
-//        HorizontalLayout layoutTabViewPhotos = new HorizontalLayout();
-//
-//        layoutTabViewPhotos.addClassName("tab-select");
-//        RadioButtonGroup<String> btnGroupShowPhotos = new RadioButtonGroup<>();
-////        btnGroupShowPhotos.setItems(btnLastUploaded);
-//        btnGroupShowPhotos.setItems("Month Uploaded", "Location Type");
-//        layoutTabViewPhotos.add(btnGroupShowPhotos);
-//        btnGroupShowPhotos.addValueChangeListener(e -> {
-//            if (e.getValue() == null) {
-//
-//            } else if (e.getValue().contains("Uploaded")) {
-//                filtersContainer.removeAll();
-//                filtersContainer.add(loadFiltersHeader(sqlUploadedPeriodCat + sqlUploadedPeriodCatGroupby, arrUploadedPeriodCatNames, "month-uploaded", "Photos"));
-////                e.getSource().getUI().ifPresent(ui ->
-////                        ui.navigate(GalleryView.class)
-////                );
-//
-//            } else if (e.getValue().contains("Location")) {
-//                filtersContainer.removeAll();
-//
-//                filtersContainer.add(loadFiltersHeader(sqlReadDestinationCat + sqlReadDestinationCatGroupby, arrDestinationCatNames, "destination-type", "Locations"));
-//
-//            } else if (e.getValue().contains("Object")) {
-//                filtersContainer.removeAll();
-//                filtersContainer.add(loadFiltersHeader(sqlReadDestinationCat + sqlReadDestinationCatGroupby, arrDestinationCatNames, "destination-type", "Objects"));
-//            } else if (e.getValue().contains("Date")) {
-//                filtersContainer.removeAll();
-//                filtersContainer.add(loadFiltersHeader(sqlReadDestinationCat + sqlReadDestinationCatGroupby, arrDestinationCatNames, "destination-type", "Objects"));
-//            }
-//        });
-//        btnGroupShowPhotos.setValue("By Genre");
-
-
-//        HorizontalLayout headerNTabsLayout = new HorizontalLayout();
-//        headerNTabsLayout.addClassNames(Width.FULL,
-//                AlignItems.CENTER, JustifyContent.CENTER,
-//                Padding.NONE, Margin.NONE, Gap.XSMALL);
-//        headerNTabsLayout.add(layoutHeader, layoutTabViewPhotos);
-
-        headerContainer.add(layoutHeader);
-
-
+        headerContainer.add(header, subheader, divLine);
         headerContainer.add(filtersContainer);
-        headerContainer.add(headerSection, headerSectionCaption, divLine);
-       // headerContainer.add(createToolbar());
+        headerContainer.add(headerSection, headerSectionCaption, divLineB);
+
+        logger.info("--->   strHeader: "+strHeader+" strSection: "+strSection);
 
         return headerContainer;
     }

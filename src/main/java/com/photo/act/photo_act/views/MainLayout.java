@@ -95,7 +95,6 @@ public class MainLayout extends AppLayout{
 
     public static final String SECTION_LOG = "log";
 
-
     public static final String SUB_PATH_AVAILABLE_AVATARS = "avail-avatars";
     public static final String SUB_PATH_AVATARS_THUMBS = "avatars-thumbs";
     public static final String SUB_PATH_AVATARS_SMALL = "avatars-small";

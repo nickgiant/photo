@@ -54,7 +54,8 @@ public class ShareBottomBar extends ButtonBar {
         popover.addClassName("btn-bar-wrapper");
 
         HorizontalLayout layout = new HorizontalLayout();
-        layout.addClassNames(LumoUtility.Padding.SMALL, LumoUtility.Padding.Top.XLARGE, LumoUtility.Padding.Left.MEDIUM, LumoUtility.Padding.Right.MEDIUM, LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER);
+        layout.addClassNames(LumoUtility.Padding.SMALL, LumoUtility.Padding.Top.XLARGE, LumoUtility.Padding.Left.LARGE, LumoUtility.Padding.Right.LARGE, LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER);
+
         popover.add(layout);
 
         layout.add(addButton("Facebook",

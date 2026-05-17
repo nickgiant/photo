@@ -1,0 +1,26 @@
+/* ── PhotoFrameComponent: enter-animation keyframes ──────────────────────── */
+
+@keyframes pf-fade {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+@keyframes pf-zoom {
+    from { opacity: 0; transform: scale(0.94); }
+    to   { opacity: 1; transform: none; }
+}
+
+@keyframes pf-sfwd {
+    from { opacity: 0; transform: translateX(40px); }
+    to   { opacity: 1; transform: none; }
+}
+
+@keyframes pf-sbwd {
+    from { opacity: 0; transform: translateX(-40px); }
+    to   { opacity: 1; transform: none; }
+}
+
+.pf-enter-fade      { animation: pf-fade .28s ease forwards; }
+.pf-enter-zoom      { animation: pf-zoom .28s ease forwards; }
+.pf-enter-slide-fwd { animation: pf-sfwd .28s ease forwards; }
+.pf-enter-slide-bwd { animation: pf-sbwd .28s ease forwards; }

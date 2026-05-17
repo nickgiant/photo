@@ -86,7 +86,6 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
     private String strColorOfIcons = "#a62f03"; //"#f9943b";//"#a62c5c";//"#7d1e32";
 
     private static final Logger logger = LoggerFactory.getLogger(HomeView.class);
-
     private VerticalLayout verticalLayout;
     private String sessionid;
     private long sessionCreation;

@@ -13,6 +13,8 @@
 @import url('./views/stories-view.css');
 @import url('./views/home-view.css');
 @import url("./views/button-bar.css");
+@import url('./views/photo-frame.css');
+@import url('./views/photo-lightbox.css');
 @import url('./main-layout.css');
 @import url('./sidebar.css');
 

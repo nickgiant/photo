@@ -15,7 +15,7 @@ import java.util.List;
 
 @Service
 @EnableCaching
-@CacheConfig(cacheNames = "learnings")
+//@CacheConfig(cacheNames = "learnings")
 public class CacheService {
 
     private static final Logger logger = LoggerFactory.getLogger(CacheService.class);
@@ -37,13 +37,13 @@ public class CacheService {
         return lstRecords;
     }
 
-    //@Cacheable(value = "learnings")
     public List<Record> getAllLearnings(String sql, String[] arrColumnNames, String columnPk) {
         this.columnPkLearnings = columnPk;
         lstLearnings = getRecordsFromDb(sql, arrColumnNames);
         return lstLearnings;
     }
 
+    @Cacheable(value = "learnings", key = "#id")
     public Record getLearningById(String id) {
         logger.info("Fetching learning from in-memory list..." + id);
         for (int r = 0; r < lstLearnings.size(); r++) {
@@ -55,13 +55,14 @@ public class CacheService {
         return null;
     }
 
-    //@Cacheable(value = "photos")
+
     public List<Record> getAllPhotos(String sql, String[] arrColumnNames, String columnPk) {
         this.columnPkPhotos = columnPk;
         lstPhotos = getRecordsFromDb(sql, arrColumnNames);
         return lstPhotos;
     }
 
+    @Cacheable(value = "photos", key = "#id")
     public Record getPhotoById(String id) {
         logger.info("Fetching photo from in-memory list..." + id);
         for (int r = 0; r < lstPhotos.size(); r++) {

@@ -216,7 +216,7 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
         verticalLayout.removeAll();
 
          if (strSlug == null || strSlug.isEmpty() || strSlug.equalsIgnoreCase(STR_ALL_TITLES)) {
-            verticalLayout.add(loadHeader("Photo-Stories", "", ""));
+            verticalLayout.add(loadHeader("Photo-Stories", "Collections of photos", ""));
             if (strMember == null || strMember.isEmpty() || strMember.equalsIgnoreCase(STR_ALL_MEMBERS)) {
                 String sqlStories = sqlStoriesAll + sqlStoriesGroupBy;
                 loadStoriesFromDb(sqlStories, arrColumnsStories, false);
@@ -228,7 +228,7 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
             }
         } else if (!strSlug.equalsIgnoreCase(STR_ALL_TITLES) && (strMember != null || !strMember.isEmpty() || !strMember.equalsIgnoreCase(STR_ALL_MEMBERS))) {
              logger.info("A strMember:"+strMember+" story:"+strSlug+" strCategory:"+strCategory);
-            verticalLayout.add(loadHeader("Photo-Stories", "", ""));
+            verticalLayout.add(loadHeader("Photo-Stories", "Collections of photos", ""));
 /*            if (strMember == null || strMember.isEmpty() || strMember.equalsIgnoreCase(STR_ALL_MEMBERS)) {
                 H3 titleAlbum = new H3(strTitle);
                 titleAlbum.addClassNames(Width.FULL, TextAlignment.CENTER);
@@ -301,40 +301,25 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
         lstAlbums = new ArrayList<>();
 
         verticalLayout = new VerticalLayout();
+        verticalLayout.setId("verticalLayout");
         if (isMobile) {
             verticalLayout.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
-                    // Margin.LARGE, //.Left.MEDIUM, Margin.Right.MEDIUM,
-                    //  Padding.Left.MEDIUM, Padding.Left.MEDIUM,
-                    // Margin.Horizontal.SMALL,
                     Margin.NONE,
-                    Padding.MEDIUM,
+                    Padding.NONE,
                     Padding.Top.XSMALL,
-                    Gap.MEDIUM,
-                    //  Padding.NONE, //.Left.MEDIUM, Padding.Right.MEDIUM,
-                    //Margin.Vertical.MEDIUM, Padding.Vertical.NONE,
                     AlignItems.CENTER, JustifyContent.CENTER
             );
         } else {
             verticalLayout.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
-                    // Margin.LARGE, //.Left.MEDIUM, Margin.Right.MEDIUM,
-                    //  Padding.Left.MEDIUM, Padding.Left.MEDIUM,
-                    // Margin.Horizontal.SMALL,
                     Margin.NONE,
-                    Padding.XLARGE,
+                    Padding.SMALL,
                     Padding.Top.XSMALL,
-                    Gap.LARGE,
-                    //  Padding.NONE, //.Left.MEDIUM, Padding.Right.MEDIUM,
-                    //Margin.Vertical.MEDIUM, Padding.Vertical.NONE,
                     AlignItems.CENTER, JustifyContent.CENTER
             );
-//            verticalLayout.getStyle().set("gap", "3rem");
         }
 
-        Html htmlTitle = new Html("<title>'photoact.net Through Photography, We Connect and Act'</title>");
-        Html htmlMeta = new Html("<meta name='description' content='Get the latest uploaded photos, organized to albums, from our community of photographers.'>");
-        verticalLayout.add(htmlTitle, htmlMeta);
 
         this.setWidthFull();
 
@@ -454,6 +439,7 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
         strPath = DIR_PHOTOS_SERVER + dirChar;
 
         Div divGallery = new Div();
+        divGallery.addClassName("gallery");
 
         List<Record> lstRecords = getRecordsFromDb(sqlRead, arrColumnNames);
         for (int r = 0; r < lstRecords.size(); r++) {
@@ -510,6 +496,8 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
         String detailTitle    = "";
         String detailDesc     = "";
         String strDateCreated = "";
+        String strStoryNameOfUser ="";
+        String strAvatarPath ="";
         if (!lstRecords.isEmpty()) {
             try {
                 detailStoryId  = Integer.parseInt(lstRecords.get(0).getColumnData("story_id"));
@@ -517,6 +505,8 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
                 detailUsername = lstRecords.get(0).getColumnData("username");
                 detailName = lstRecords.get(0).getColumnData("name");
                 detailSurname = lstRecords.get(0).getColumnData("surname");
+                strStoryNameOfUser = lstRecords.get(0).getColumnData("name") +" "+ lstRecords.get(0).getColumnData("surname");
+                strAvatarPath = lstRecords.get(0).getColumnData("avatar_path");
                 detailTitle    = lstRecords.get(0).getColumnData("story_title");
                 detailDesc     = lstRecords.get(0).getColumnData("description");
                 strDateCreated = lstRecords.get(0).getColumnData("datetime_story_created");
@@ -531,15 +521,38 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
                 titleAlbum.addClassNames(Width.FULL, TextAlignment.CENTER);
 
                 HorizontalLayout layoutStoryTitle = new HorizontalLayout();
-                layoutStoryTitle.addClassName("title");
                 layoutStoryTitle.addClassNames(Width.FULL,
                         Padding.NONE, Margin.NONE,
                         AlignItems.CENTER, JustifyContent.BETWEEN);
-                Div divDate = new Div(strDateCreated);
 
-                Div divAuthor = new Div(detailName+" "+detailSurname);
-                layoutStoryTitle.add(divDate, divAuthor);
-                divGallery.add(titleAlbum,layoutStoryTitle);
+                HorizontalLayout layoutDate = new HorizontalLayout();
+                layoutDate.addClassNames(
+//                Overflow.HIDDEN, Width.FULL,
+                        AlignItems.CENTER, JustifyContent.CENTER,
+                        Margin.NONE,
+                        Padding.NONE,
+                        Gap.XSMALL,
+                        //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+                        //   Background.CONTRAST_5,
+                        BorderRadius.NONE
+                );
+                Div divDateCreated = new Div(strDateCreated);
+                divDateCreated.addClassNames(AlignItems.CENTER, TextAlignment.CENTER, JustifyContent.CENTER);
+                layoutDate.add(FontAwesome.Solid.CALENDAR_DAY.create(), divDateCreated);
+
+                Image imgAvatarSmall = genericView.getAvatarThumbImage(strAvatarPath, strStoryNameOfUser, "40px", "40px");
+                Image imgAvatarMedium = genericView.getAvatarThumbImage(strAvatarPath, strStoryNameOfUser, "70px", "70px");
+
+                AvatarItem avatarItemMe = new AvatarItem(strStoryNameOfUser, "", imgAvatarSmall);
+                layoutStoryTitle.add(avatarItemMe, layoutDate);
+
+                VerticalLayout layoutTitle = new VerticalLayout();
+                layoutTitle.addClassNames(Width.FULL,
+                        AlignItems.CENTER, JustifyContent.BETWEEN);
+                layoutTitle.addClassName("story-item-title");
+                layoutTitle.add(titleAlbum,layoutStoryTitle);
+
+                divGallery.add(layoutTitle);
 
             } catch (NumberFormatException ignored) {}
         }
@@ -575,20 +588,11 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
 
         String strStoryTitle = record.getColumnData("story_title");
 
-//        RouteParam routeUploaderAll = new RouteParam("member", STR_ALL_MEMBERS);
-
-/*        RouteParam routeAlbum = new RouteParam("title", strStoryTitle);
-        RouteParam routeUploader = new RouteParam("member", strUploader);
-        RouterLink linkUploader = new RouterLink(strUploader, StoriesView.class, new RouteParameters(routeUploader, routeAlbum));
-        RouterLink linkAlbum = new RouterLink(strStoryTitle, StoriesView.class, new RouteParameters(routeUploader, routeAlbum));*/
-
         String strImagePath = strPath + dirChar + strFileName;
-        logger.info(" strImagePath " + strImagePath);
 
         StoryItemViewCard storyItemViewCard = new StoryItemViewCard(record, strImagePath, isMobile, userId, strUsername, sessionCreation, hostname, publicIp, isEditable,
-                recordService);  // , sqlReadStoryPhotos, arrColumnNamesStoryPhotos
+                recordService);
         return storyItemViewCard;
-
     }
 
     private Details getStoryMemberInfo(Record record) {

@@ -8,16 +8,18 @@
 .btn-bar-wrapper {
     display: inline-flex;
     align-items: center;
+    justify-content: space-evenly;
     padding: 4px 0;
     font-family: "Poppins", sans-serif;
+    gap: 15px;
 }
 
 /* ── Individual button ── */
 .btn-bar-item {
     position: relative;
     background: #ffffff;
-    border-radius: 14px;
-    margin: 7px;
+    border-radius: 12px;
+    margin: 2px;
     width: 40px;
     height: 40px;
     font-size: 18px;

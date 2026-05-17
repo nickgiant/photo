@@ -1,0 +1,216 @@
+/* ── PhotoLightboxView ──────────────────────────────────────────────────── */
+
+.plv-root {
+    overflow: hidden;
+    background-color: whitesmoke;
+}
+
+.plv-top-section {
+    min-height: 0;
+    flex: 1 1 auto;
+}
+
+.plv-info-panel {
+    /* width (220px) and height (100%) are set inline by Java */
+    flex-shrink: 0;
+    border-left: 0.5px solid var(--lumo-contrast-10pct);
+    overflow-y: auto;
+    color: #757272;
+}
+
+.plv-info-panel h2{
+    font-weight: 700;
+    color: #757272;
+}
+
+.plv-info-panel h4{
+    color: #757272;
+}
+
+/* gap on <vaadin-vertical-layout> host — overrides default spacing */
+.plv-info-panel-inner {
+    gap: 6px;
+}
+
+.plv-photo-title {
+    margin: 0 !important;
+    font-size: 1rem;
+}
+
+.plv-author {
+    font-size: 0.8rem;
+    color: var(--lumo-secondary-text-color);
+
+    padding: 6px;
+    border-radius: 14px;
+    background-color: #ffffff;
+    border: solid 1px #e9e9e7;
+}
+
+.plv-exif-grid {
+
+    padding: 6px;
+    border-radius: 14px;
+    background-color: #ffffff;
+    border: solid 1px #e9e9e7;
+
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 2px 8px;
+    font-size: 0.75rem;
+    width: 100%;
+}
+
+.plv-exif-label {
+    color: var(--lumo-secondary-text-color);
+}
+
+.plv-exif-value {
+    color: var(--lumo-secondary-text-color);
+    font-weight: 700;
+}
+
+.plv-tags-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.plv-tag-chip { cursor: pointer; }
+
+/* Prev / next overlay nav buttons */
+.plv-nav-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+    background: rgba(0, 0, 0, 0.45);
+    color: #fff;
+    width: 44px;
+    height: 80px;
+    font-size: 30px;
+    cursor: pointer;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    border: 1px solid transparent;
+}
+
+.plv-nav-btn:hover {
+    border: 1px solid rgba(255, 255, 255, 0.50);
+    color: rgba(255, 255, 255, 0.90);
+}
+
+.plv-nav-btn--left  { left:  0; }
+.plv-nav-btn--right { right: 0; }
+
+/* Close (✕) button — top-right of the photo frame */
+.plv-close-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 10;
+    background: rgba(0, 0, 0, 0.55);
+    color: #fff;
+    width: 42px;
+    height: 42px;
+    font-size: 30px;
+    cursor: pointer;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    border: 1px solid transparent;
+}
+.plv-close-btn:hover {
+    border: 1px solid rgba(255, 255, 255, 0.50);
+    color: rgba(255, 255, 255, 0.90);
+}
+
+/* ── PhotoFrameComponent ────────────────────────────────────────────────── */
+
+.pf-frame {
+    /* Structural layout (display, position, flex, sizing) is set inline by Java.
+       Only aesthetic properties live here. */
+    background: #0d0d0d;
+}
+
+/* ── ThumbnailStrip ─────────────────────────────────────────────────────── */
+
+.ts-strip {
+    width: 100%;
+    height: 100px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: stretch;
+    border-top: 0.5px solid var(--lumo-contrast-10pct);
+}
+
+/* Scrollable middle section — hides native scrollbar on all browsers */
+.ts-scroll {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+.ts-scroll::-webkit-scrollbar { display: none; }
+
+/* Inner flex row of thumbnails */
+.ts-strip-inner {
+    display: flex;
+    gap: 6px;
+    padding: 8px;
+    align-items: center;
+    height: 100%;
+    min-width: max-content;  /* grow beyond scroll container to trigger overflow */
+}
+
+/* Individual thumbnail box — width/height set in Java (aspect-ratio dependent) */
+.ts-thumb {
+    flex-shrink: 0;
+    border-radius: var(--lumo-border-radius-s);
+    overflow: hidden;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: border-color 0.2s, opacity 0.2s;
+    opacity: 0.7;
+}
+
+.ts-thumb--active {
+    border-color: rgba(0, 0, 0, 0.70);
+    border-radius: 6px;
+    opacity: 1;
+}
+
+/* Thumbnail image fills its box */
+.ts-thumb img {
+    border-radius: 4px;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* Scroll arrow buttons (❮ / ❯) */
+.ts-scroll-btn {
+    flex-shrink: 0;
+    width: 32px;
+    background: rgba(0, 0, 0, 0.70);
+    color: #fff;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    border-radius: 15px;
+}
+
+.ts-scroll-btn:hover{
+    background: rgba(0, 0, 0, 0.65);
+}
