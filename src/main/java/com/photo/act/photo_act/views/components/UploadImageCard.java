@@ -3,6 +3,7 @@ package com.photo.act.photo_act.views.components;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.services.EmailSendService;
+import com.photo.act.photo_act.services.PhotoProcessingService;
 import com.photo.act.photo_act.services.WeatherService;
 import com.photo.act.photo_act.utils.ImageUtilsMeta;
 import com.photo.act.photo_act.utils.UtilsDate;
@@ -88,14 +89,18 @@ public class UploadImageCard extends VerticalLayout {
 //    private WeatherService weatherService;
 
     private EmailSendService emailSendService;
+    private PhotoProcessingService photoProcessingService;
     private boolean isTypeProfile = false;
 
     private String strMailboxSend = "info@photoact.net";
 
     @Autowired
-    public UploadImageCard(RecordService recordService, EmailSendService emailSendService, int intUserId, String strUserName, long sessionCreation, String publicIp, String hostname) {
+    public UploadImageCard(RecordService recordService, EmailSendService emailSendService,
+                           PhotoProcessingService photoProcessingService,
+                           int intUserId, String strUserName, long sessionCreation, String publicIp, String hostname) {
         this.recordService = recordService;
         this.emailSendService = emailSendService;
+        this.photoProcessingService = photoProcessingService;
         this.intUserId = intUserId;
         this.strUserName = strUserName;
 
@@ -895,12 +900,12 @@ public class UploadImageCard extends VerticalLayout {
             if (confirmedUploadPhoto(strOrgFileName, strNewFileName, lstPhotoMetaData, arrPhotoGpsMeta, publicIp, hostname, strImageMetaInfo,
                     txtSubtitle.getValue().trim(), strGenreId, strDestinationId, strSubjectId, txtPersonalNotes.getValue().trim(), isTypeProfile)) {
 
-                //double dblSize = Double.parseDouble(event.getContentLength() + "");
-                // String strFilesize = getFileSizeMB(dblSize) + "";
-
-                // if (strFilesize.length() > 7) {
-                //    strFilesize = strFilesize.substring(0, 5) + " MB";  //String.format("%.2f", dblSize);
-                //}
+                // Trigger CDN variant generation asynchronously — does not block the UI
+                // Reads from photo-show (full-quality copy) and writes OG/Pinterest/medium/thumb to CDN
+                String showFilePath = DIR_PHOTOS_SERVER + dirChar + subPathShow + dirChar + strNewFileName;
+                if (photoProcessingService != null) {
+                    photoProcessingService.processAsync(showFilePath, strNewFileName);
+                }
 
                 String messageUp = "Upload Finished!";
                 Notification notificationUp = Notification.show(messageUp, 6000, Notification.Position.MIDDLE);
