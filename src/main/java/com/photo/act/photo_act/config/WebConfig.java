@@ -35,13 +35,21 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class WebConfig implements WebMvcConfigurer {
 
     /**
-     * Serve static assets from /static/** (og-default.jpg, robots.txt, etc.)
-     * Nginx should intercept these in production — this is the Java fallback.
+     * Serve static assets and CDN files via Spring MVC.
+     * Nginx intercepts /cdn/** and /static/** in production — this is the Java fallback
+     * used in development or when a CDN variant has not yet been generated.
      */
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         registry.addResourceHandler("/static/**")
                 .addResourceLocations("classpath:/static/")
-                .setCachePeriod(86400); // 1 day browser cache
+                .setCachePeriod(86400); // 1 day
+
+        // CDN files served from the local filesystem.
+        // CdnController handles /cdn/** with path-traversal protection;
+        // this handler covers any files not matched by the controller pattern.
+        registry.addResourceHandler("/cdn/**")
+                .addResourceLocations("file:/var/www/photoact/cdn/")
+                .setCachePeriod(31536000); // 1 year
     }
 }

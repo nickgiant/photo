@@ -4,6 +4,7 @@ import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.services.EmailSendService;
+import com.photo.act.photo_act.services.PhotoProcessingService;
 import com.photo.act.photo_act.services.PhotoRatingService;
 import com.photo.act.photo_act.services.PhotoViewService;
 import com.photo.act.photo_act.services.ShareMetricService;
@@ -201,15 +202,19 @@ public class UploadView extends Main implements HasUrlParameter<String>, BeforeE
     private String strBrowser;
     private GenericView genericView;
     private EmailSendService emailSendService;
+    private PhotoProcessingService photoProcessingService;
     private WeatherService weatherService;
     private PhotoRatingService photoRatingService;
     private PhotoViewService photoViewService;
 
-    public UploadView(RecordService recordService, EmailSendService emailSendService, ShareService shareService, ShareMetricService shareMetricService, WeatherService weatherService, PhotoRatingService photoRatingService, PhotoViewService photoViewService) {
+    public UploadView(RecordService recordService, EmailSendService emailSendService, ShareService shareService,
+                      ShareMetricService shareMetricService, PhotoProcessingService photoProcessingService,
+                      WeatherService weatherService, PhotoRatingService photoRatingService, PhotoViewService photoViewService) {
         this.recordService = recordService;
         this.emailSendService = emailSendService;
         this.shareService = shareService;
         this.shareMetricService = shareMetricService;
+        this.photoProcessingService = photoProcessingService;
         this.weatherService = weatherService;
         this.photoRatingService = photoRatingService;
         this.photoViewService = photoViewService;
@@ -378,7 +383,7 @@ public class UploadView extends Main implements HasUrlParameter<String>, BeforeE
     }
 
     private void loadUploadView(int intUserId, String strMember) {
-        UploadImageCard uploadImageCard = new UploadImageCard(recordService, emailSendService, intUserId, strMember, sessionCreation, publicIp, hostname);
+        UploadImageCard uploadImageCard = new UploadImageCard(recordService, emailSendService, photoProcessingService, intUserId, strMember, sessionCreation, publicIp, hostname);
         uploadImageCard.addClassNames(
                 Overflow.HIDDEN, Width.FULL,
                 Margin.SMALL,

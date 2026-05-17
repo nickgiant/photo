@@ -6,6 +6,7 @@ import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.services.CacheService;
 import com.photo.act.photo_act.services.EmailSendService;
 import com.photo.act.photo_act.services.ImageService;
+import com.photo.act.photo_act.services.PhotoProcessingService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.photo.act.photo_act.utils.UtilsString;
@@ -202,11 +203,13 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
     private GenericView genericView;
     private UtilsString utilsString;
     private EmailSendService emailSendService;
+    private  PhotoProcessingService photoProcessingService;
 
 
-    public MeView(RecordService recordService, EmailSendService emailSendService) {
+    public MeView(RecordService recordService, EmailSendService emailSendService, PhotoProcessingService photoProcessingService) {
         this.recordService = recordService;
         this.emailSendService = emailSendService;
+        this.photoProcessingService = photoProcessingService;
 
         utilsDate = new UtilsDate();
         utilsString = new UtilsString();
@@ -801,7 +804,7 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
     }
 
     private void loadUploadView(int intUserId, String strMember) {
-        UploadImageCard uploadImageCard = new UploadImageCard(recordService, emailSendService, intUserId, strMember, sessionCreation, publicIp, hostname);
+        UploadImageCard uploadImageCard = new UploadImageCard(recordService, emailSendService,  photoProcessingService, intUserId, strMember, sessionCreation, publicIp, hostname);
         uploadImageCard.addClassNames(
                 Overflow.HIDDEN, Width.FULL,
                 Margin.SMALL,
