@@ -15,6 +15,11 @@ import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.services.EmailSendService;
 import com.photo.act.photo_act.services.PhotoFlickrService;
+import com.photo.act.photo_act.services.PhotoRatingService;
+import com.photo.act.photo_act.services.PhotoStatisticsService;
+import com.photo.act.photo_act.services.PhotoViewService;
+import com.photo.act.photo_act.services.ShareMetricService;
+import com.photo.act.photo_act.services.ShareService;
 import com.photo.act.photo_act.services.WeatherService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
@@ -196,11 +201,24 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
     private Div layoutLastPhotos;
     private EmailSendService emailSendService;
     private WeatherService weatherService;
+    private ShareService shareService;
+    private ShareMetricService shareMetricService;
+    private PhotoRatingService photoRatingService;
+    private PhotoViewService photoViewService;
+    private PhotoStatisticsService photoStatisticsService;
 
-    public HomeView(RecordService recordService, EmailSendService emailSendService,  WeatherService weatherService) {
+    public HomeView(RecordService recordService, EmailSendService emailSendService, WeatherService weatherService,
+                    ShareService shareService, ShareMetricService shareMetricService,
+                    PhotoRatingService photoRatingService, PhotoViewService photoViewService,
+                    PhotoStatisticsService photoStatisticsService) {
         this.recordService = recordService;
         this.emailSendService = emailSendService;
         this.weatherService = weatherService;
+        this.shareService = shareService;
+        this.shareMetricService = shareMetricService;
+        this.photoRatingService = photoRatingService;
+        this.photoViewService = photoViewService;
+        this.photoStatisticsService = photoStatisticsService;
         utilsDate = new UtilsDate();
         genericView = new GenericView(recordService);
 
@@ -469,6 +487,9 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         layoutMorePhotosActions.add(btnMorePhotos);
         layoutLastPhotoUploads.add(titleLastPhotos, layoutPhotosButton, layoutTabViewPhotos, layoutLastPhotos, layoutMorePhotosActions);
         verticalLayout.add(layoutLastPhotoUploads);
+
+        VerticalLayout layoutStatistics = loadStatisticsSection();
+        verticalLayout.add(layoutStatistics);
 
         H2 titleWeather = new H2("Current Weather at:");
 
@@ -1727,6 +1748,96 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 //        logger.info(" photo  getRecordsFromDb with params:   " + sql);
 //        return recordService.findAll(sql,arrColumnNames, sqlParValue, sqlParType);
 //    }
+
+    private VerticalLayout loadStatisticsSection() {
+        VerticalLayout layout = new VerticalLayout();
+        layout.addClassName("page-section");
+        layout.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER, Padding.MEDIUM);
+
+        H2 title = new H2("Photo Statistics");
+
+        RadioButtonGroup<String> filterType = new RadioButtonGroup<>();
+        filterType.setLabel("Show");
+        filterType.setItems("Most Viewed", "Most Liked", "Most Recent");
+        filterType.setValue("Most Viewed");
+        filterType.addClassName("tab-select");
+
+        RadioButtonGroup<String> countSelector = new RadioButtonGroup<>();
+        countSelector.setLabel("Count");
+        countSelector.setItems("10 Photos", "20 Photos", "30 Photos");
+        countSelector.setValue("10 Photos");
+        countSelector.addClassName("tab-select");
+
+        HorizontalLayout filtersLayout = new HorizontalLayout(filterType, countSelector);
+        filtersLayout.addClassNames(AlignItems.CENTER, JustifyContent.CENTER, Gap.MEDIUM, Padding.SMALL);
+        filtersLayout.setWrap(true);
+
+        Div statsContainer = new Div();
+        statsContainer.addClassName("stats-gallery");
+        statsContainer.addClassNames(Width.FULL);
+
+        loadStatsPhotos(statsContainer, "Most Viewed", 10);
+
+        filterType.addValueChangeListener(e -> {
+            int count = parseCountSelector(countSelector.getValue());
+            statsContainer.removeAll();
+            loadStatsPhotos(statsContainer, e.getValue(), count);
+        });
+
+        countSelector.addValueChangeListener(e -> {
+            int count = parseCountSelector(e.getValue());
+            statsContainer.removeAll();
+            loadStatsPhotos(statsContainer, filterType.getValue(), count);
+        });
+
+        layout.add(title, filtersLayout, statsContainer);
+        return layout;
+    }
+
+    private int parseCountSelector(String val) {
+        if (val.startsWith("20")) return 20;
+        if (val.startsWith("30")) return 30;
+        return 10;
+    }
+
+    private void loadStatsPhotos(Div container, String filter, int count) {
+        String sql;
+        switch (filter) {
+            case "Most Liked":
+                sql = photoStatisticsService.getMostLikedSql(count);
+                break;
+            case "Most Recent":
+                sql = photoStatisticsService.getMostRecentSql(count);
+                break;
+            default:
+                sql = photoStatisticsService.getMostViewedSql(count);
+        }
+
+        String strPath = DIR_PHOTOS_SERVER + dirChar + subPathSmall;
+        List<Record> lstRecords = getRecordsFromDb(sql, PhotoStatisticsService.STATS_COLUMNS);
+
+        String sqlCarouselForStats = photoStatisticsService.getMostRecentSql(20);
+        String sqlCarouselOrderBy = " ORDER BY pm.date_inserted DESC";
+
+        for (Record record : lstRecords) {
+            String strFileName = record.getColumnData("name_new");
+            String strImagePath = strPath + dirChar + strFileName;
+
+            GalleryImageViewCard card = new GalleryImageViewCard(
+                    record, strImagePath, isMobile, userId, strUsername,
+                    sessionCreation, hostname, publicIp,
+                    false,
+                    recordService,
+                    2,
+                    sqlCarouselForStats,
+                    sqlCarouselOrderBy,
+                    PhotoStatisticsService.STATS_COLUMNS,
+                    shareService, shareMetricService, weatherService,
+                    photoRatingService, photoViewService
+            );
+            container.add(card);
+        }
+    }
 
     private void logVisitorToDb() {
 
