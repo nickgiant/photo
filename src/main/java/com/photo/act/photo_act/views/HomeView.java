@@ -4,6 +4,7 @@ import com.flickr4java.flickr.people.User;
 import com.flickr4java.flickr.photos.Photo;
 import com.flowingcode.vaadin.addons.carousel.Carousel;
 import com.flowingcode.vaadin.addons.carousel.Slide;
+import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.github.appreciated.apexcharts.ApexChartsBuilder;
 import com.github.appreciated.apexcharts.config.builder.ChartBuilder;
 import com.github.appreciated.apexcharts.config.builder.LegendBuilder;
@@ -1756,7 +1757,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         layout.addClassName("page-section");
         layout.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER, Padding.MEDIUM);
 
-        H2 title = new H2("Photo Statistics");
+        H2 title = new H2("Popular Photos");
 
         Div statsContainer = new Div();
         statsContainer.addClassName("stats-gallery");
@@ -1770,9 +1771,14 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         String thumbPath  = "M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z";
         String uploadPath = "M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z";
 
+/*        FontAwesome.Solid.EYE.create()
+        FontAwesome.Solid.THUMBS_UP.create()
+        FontAwesome.Solid.FILE_UPLOAD.create()*/
+
         Div filterTiles = buildRadioTiles("stat-filter",
                 new String[]{"Most Viewed", "Most Liked", "Most Recent"},
-                new String[]{eyePath, thumbPath, uploadPath},
+//                new String[]{eyePath, thumbPath, uploadPath},
+                new Icon[] {FontAwesome.Solid.EYE.create(), FontAwesome.Solid.THUMBS_UP.create(), FontAwesome.Solid.FILE_UPLOAD.create()},
                 val -> {
                     activeFilter[0] = val;
                     statsContainer.removeAll();
@@ -1795,42 +1801,50 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         return layout;
     }
 
-    private Div buildRadioTiles(String groupName, String[] labels, String[] svgPaths,
+    private Div buildRadioTiles(String groupName, String[] labels, Icon[] svgPaths,
                                 Consumer<String> onChange) {
         Div container = new Div();
         container.addClassName("radio-inputs");
 
+        RadioButtonGroup inputEl = new RadioButtonGroup();
+        inputEl.addClassName("radio-input");
+//            inputEl.setAttribute("type", "radio");
+        inputEl.setId(groupName);
+
+        Div[] arrDiv = new Div[labels.length];
+
         for (int i = 0; i < labels.length; i++) {
-            Element labelEl = new Element("label");
 
-            Element inputEl = new Element("input");
-            inputEl.setAttribute("class", "radio-input");
-            inputEl.setAttribute("type", "radio");
-            inputEl.setAttribute("name", groupName);
-            inputEl.setAttribute("value", labels[i]);
-            if (i == 0) inputEl.setAttribute("checked", "");
+            Div tileEl = new Div();
 
-            Element tileEl = new Element("div");
-            tileEl.setAttribute("class", "radio-tile");
+//            tileEl.setText(labels[i]);
+//            if (i == 0) inputEl.setValue("");
+
+            tileEl.addClassName("radio-tile");
 
             if (svgPaths != null && svgPaths[i] != null) {
-                Element iconDiv = new Element("div");
-                iconDiv.setAttribute("class", "radio-icon");
-                iconDiv.appendChild(createSvgIcon(svgPaths[i]));
-                tileEl.appendChild(iconDiv);
+                Div divIcon = new Div();
+                divIcon.addClassName("radio-icon");
+                divIcon.add(svgPaths[i]);
+                tileEl.add(divIcon);
             }
 
-            Element labelSpan = new Element("span");
-            labelSpan.setAttribute("class", "radio-label");
+            Span labelSpan = new Span();
+            labelSpan.addClassName("radio-label");
             labelSpan.setText(labels[i]);
-            tileEl.appendChild(labelSpan);
+            tileEl.add(labelSpan);
 
             String val = labels[i];
-            inputEl.addEventListener("change", e -> onChange.accept(val));
+            inputEl.addValueChangeListener( e -> onChange.accept(val));
 
-            labelEl.appendChild(inputEl, tileEl);
-            container.getElement().appendChild(labelEl);
+//            inputEl.add(inputEl, tileEl);
+            arrDiv[i] = tileEl;
+
         }
+
+        inputEl.setItems(arrDiv);
+
+        container.add(inputEl);
 
         return container;
     }
