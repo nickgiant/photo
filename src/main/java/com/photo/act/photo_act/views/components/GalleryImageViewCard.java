@@ -63,6 +63,13 @@ import static com.photo.act.photo_act.views.MainLayout.baseUrl;
 
 public class GalleryImageViewCard extends Div {
 
+    /** Controls the visual footprint of the card; apply via the size-aware constructor. */
+    public enum CardSize {
+        COMPACT,  // smaller cards – stats panels, list overviews
+        NORMAL,   // default gallery card
+        WIDE      // featured / hero display
+    }
+
 
 
     private static final Logger logger = LoggerFactory.getLogger(GalleryImageViewCard.class);
@@ -132,10 +139,22 @@ public class GalleryImageViewCard extends Div {
 
     private boolean isTypeProfile = false;
 
+    /** Backwards-compatible constructor – defaults to {@link CardSize#NORMAL}. */
     public GalleryImageViewCard(Record record, String strImagePath, boolean isMobile, int userId, String strUserName, long sessionCreation,
                                 String hostname, String publicIp, boolean isEditable, RecordService recordService, int isType, String sqlCarousel, String sqlCarouselOrderBy,
                                 String[] arrColumnsCarousel, ShareService shareService, ShareMetricService shareMetricService, WeatherService weatherService,
                                 PhotoRatingService photoRatingService, PhotoViewService photoViewService) {
+        this(record, strImagePath, isMobile, userId, strUserName, sessionCreation, hostname, publicIp, isEditable,
+                recordService, isType, sqlCarousel, sqlCarouselOrderBy, arrColumnsCarousel,
+                shareService, shareMetricService, weatherService, photoRatingService, photoViewService,
+                CardSize.NORMAL);
+    }
+
+    /** Full constructor with explicit {@link CardSize}. */
+    public GalleryImageViewCard(Record record, String strImagePath, boolean isMobile, int userId, String strUserName, long sessionCreation,
+                                String hostname, String publicIp, boolean isEditable, RecordService recordService, int isType, String sqlCarousel, String sqlCarouselOrderBy,
+                                String[] arrColumnsCarousel, ShareService shareService, ShareMetricService shareMetricService, WeatherService weatherService,
+                                PhotoRatingService photoRatingService, PhotoViewService photoViewService, CardSize size) {
         this.recordService = recordService;
         this.shareService = shareService;
         this.shareMetricService = shareMetricService;
@@ -156,6 +175,11 @@ public class GalleryImageViewCard extends Div {
 
 
         this.addClassName("gallery-view-card");
+        if (size == CardSize.COMPACT) {
+            this.addClassName("gallery-view-card--compact");
+        } else if (size == CardSize.WIDE) {
+            this.addClassName("gallery-view-card--wide");
+        }
 
         genericView = new GenericView(recordService);
         genericView.setPhotoRatingService(photoRatingService);

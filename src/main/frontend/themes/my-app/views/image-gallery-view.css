@@ -659,6 +659,48 @@
     }
 }
 
+/* ── Statistics filter / count buttons ──────────────────────────────────── */
+.stat-filter-btn,
+.stat-count-btn {
+    border-radius: 20px;
+    transition: all 0.2s ease;
+}
+
+.stat-filter-btn vaadin-icon,
+.stat-filter-btn iron-icon {
+    margin-right: 4px;
+}
+
+/* ── GalleryImageViewCard size variants ──────────────────────────────────── */
+
+/* COMPACT — used in statistics panels and list overviews */
+.gallery-view-card--compact {
+    font-size: 0.74rem;
+}
+
+.gallery-view-card--compact .image-and-info-panel img {
+    max-height: 220px;
+    object-fit: cover;
+}
+
+.gallery-view-card--compact vaadin-button,
+.gallery-view-card--compact .actions {
+    font-size: 0.72rem;
+}
+
+/* WIDE — used for featured / hero display */
+.gallery-view-card--wide {
+    font-size: 1rem;
+}
+
+.gallery-view-card--wide .image-and-info-panel {
+    min-height: 380px;
+}
+
+.gallery-view-card--wide .image-and-info-panel img {
+    object-fit: cover;
+}
+
 @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }

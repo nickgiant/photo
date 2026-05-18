@@ -27,7 +27,9 @@ import com.photo.act.photo_act.views.components.*;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.HasStyle;
 import com.vaadin.flow.component.UI;
+import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.CheckboxGroup;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.*;
@@ -1756,19 +1758,38 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
         H2 title = new H2("Photo Statistics");
 
-        RadioButtonGroup<String> filterType = new RadioButtonGroup<>();
-        filterType.setLabel("Show");
-        filterType.setItems("Most Viewed", "Most Liked", "Most Recent");
-        filterType.setValue("Most Viewed");
-        filterType.addClassName("tab-select");
+        // ── Filter type buttons (with icons) ──────────────────────────────
+        Button btnMostViewed = new Button("Most Viewed", FontAwesome.Regular.EYE.create());
+        Button btnMostLiked  = new Button("Most Liked",  FontAwesome.Regular.THUMBS_UP.create());
+        Button btnMostRecent = new Button("Most Recent", FontAwesome.Solid.UPLOAD.create());
 
-        RadioButtonGroup<String> countSelector = new RadioButtonGroup<>();
-        countSelector.setLabel("Count");
-        countSelector.setItems("10 Photos", "20 Photos", "30 Photos");
-        countSelector.setValue("10 Photos");
-        countSelector.addClassName("tab-select");
+        Button[] filterBtns = {btnMostViewed, btnMostLiked, btnMostRecent};
+        for (Button b : filterBtns) {
+            b.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+            b.addClassName("stat-filter-btn");
+        }
+        btnMostViewed.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
-        HorizontalLayout filtersLayout = new HorizontalLayout(filterType, countSelector);
+        // ── Count buttons ─────────────────────────────────────────────────
+        Button btn10 = new Button("10");
+        Button btn20 = new Button("20");
+        Button btn30 = new Button("30");
+
+        Button[] countBtns = {btn10, btn20, btn30};
+        for (Button b : countBtns) {
+            b.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_SMALL);
+            b.addClassName("stat-count-btn");
+        }
+        btn10.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+
+        HorizontalLayout filterRow = new HorizontalLayout(btnMostViewed, btnMostLiked, btnMostRecent);
+        filterRow.addClassNames(AlignItems.CENTER, JustifyContent.CENTER, Gap.SMALL, Padding.NONE);
+        filterRow.setWrap(true);
+
+        HorizontalLayout countRow = new HorizontalLayout(btn10, btn20, btn30);
+        countRow.addClassNames(AlignItems.CENTER, JustifyContent.CENTER, Gap.XSMALL, Padding.NONE);
+
+        HorizontalLayout filtersLayout = new HorizontalLayout(filterRow, countRow);
         filtersLayout.addClassNames(AlignItems.CENTER, JustifyContent.CENTER, Gap.MEDIUM, Padding.SMALL);
         filtersLayout.setWrap(true);
 
@@ -1776,28 +1797,72 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         statsContainer.addClassName("stats-gallery");
         statsContainer.addClassNames(Width.FULL);
 
+        // Shared mutable state via single-element arrays (lambda-accessible)
+        final String[] activeFilter = {"Most Viewed"};
+        final int[] activeCount = {10};
+
         loadStatsPhotos(statsContainer, "Most Viewed", 10);
 
-        filterType.addValueChangeListener(e -> {
-            int count = parseCountSelector(countSelector.getValue());
+        // Wire filter buttons
+        btnMostViewed.addClickListener(e -> {
+            activeFilter[0] = "Most Viewed";
+            setActiveFilterBtn(filterBtns, btnMostViewed);
             statsContainer.removeAll();
-            loadStatsPhotos(statsContainer, e.getValue(), count);
+            loadStatsPhotos(statsContainer, activeFilter[0], activeCount[0]);
+        });
+        btnMostLiked.addClickListener(e -> {
+            activeFilter[0] = "Most Liked";
+            setActiveFilterBtn(filterBtns, btnMostLiked);
+            statsContainer.removeAll();
+            loadStatsPhotos(statsContainer, activeFilter[0], activeCount[0]);
+        });
+        btnMostRecent.addClickListener(e -> {
+            activeFilter[0] = "Most Recent";
+            setActiveFilterBtn(filterBtns, btnMostRecent);
+            statsContainer.removeAll();
+            loadStatsPhotos(statsContainer, activeFilter[0], activeCount[0]);
         });
 
-        countSelector.addValueChangeListener(e -> {
-            int count = parseCountSelector(e.getValue());
+        // Wire count buttons
+        btn10.addClickListener(e -> {
+            activeCount[0] = 10;
+            setActiveCountBtn(countBtns, btn10);
             statsContainer.removeAll();
-            loadStatsPhotos(statsContainer, filterType.getValue(), count);
+            loadStatsPhotos(statsContainer, activeFilter[0], activeCount[0]);
+        });
+        btn20.addClickListener(e -> {
+            activeCount[0] = 20;
+            setActiveCountBtn(countBtns, btn20);
+            statsContainer.removeAll();
+            loadStatsPhotos(statsContainer, activeFilter[0], activeCount[0]);
+        });
+        btn30.addClickListener(e -> {
+            activeCount[0] = 30;
+            setActiveCountBtn(countBtns, btn30);
+            statsContainer.removeAll();
+            loadStatsPhotos(statsContainer, activeFilter[0], activeCount[0]);
         });
 
         layout.add(title, filtersLayout, statsContainer);
         return layout;
     }
 
-    private int parseCountSelector(String val) {
-        if (val.startsWith("20")) return 20;
-        if (val.startsWith("30")) return 30;
-        return 10;
+    private void setActiveFilterBtn(Button[] all, Button active) {
+        for (Button b : all) {
+            b.removeThemeVariants(ButtonVariant.LUMO_PRIMARY);
+            b.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        }
+        active.removeThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        active.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    }
+
+    private void setActiveCountBtn(Button[] all, Button active) {
+        for (Button b : all) {
+            b.removeThemeVariants(ButtonVariant.LUMO_PRIMARY);
+            b.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        }
+        active.removeThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        active.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     }
 
     private void loadStatsPhotos(Div container, String filter, int count) {
@@ -1833,7 +1898,8 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
                     sqlCarouselOrderBy,
                     PhotoStatisticsService.STATS_COLUMNS,
                     shareService, shareMetricService, weatherService,
-                    photoRatingService, photoViewService
+                    photoRatingService, photoViewService,
+                    GalleryImageViewCard.CardSize.COMPACT
             );
             container.add(card);
         }
