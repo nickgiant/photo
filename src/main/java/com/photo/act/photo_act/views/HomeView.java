@@ -1766,19 +1766,9 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         final String[] activeFilter = {"Most Viewed"};
         final int[] activeCount = {10};
 
-        // SVG path data for filter icons (Material Design, viewBox 0 0 24 24)
-        String eyePath    = "M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5C21.27 7.61 17 4.5 12 4.5zm0 12.5c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z";
-        String thumbPath  = "M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z";
-        String uploadPath = "M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z";
-
-/*        FontAwesome.Solid.EYE.create()
-        FontAwesome.Solid.THUMBS_UP.create()
-        FontAwesome.Solid.FILE_UPLOAD.create()*/
-
         Div filterTiles = buildRadioTiles("stat-filter",
                 new String[]{"Most Viewed", "Most Liked", "Most Recent"},
-//                new String[]{eyePath, thumbPath, uploadPath},
-                new Icon[] {FontAwesome.Solid.EYE.create(), FontAwesome.Solid.THUMBS_UP.create(), FontAwesome.Solid.FILE_UPLOAD.create()},
+                new Icon[]{FontAwesome.Solid.EYE.create(), FontAwesome.Solid.THUMBS_UP.create(), FontAwesome.Solid.FILE_UPLOAD.create()},
                 val -> {
                     activeFilter[0] = val;
                     statsContainer.removeAll();
@@ -1801,63 +1791,46 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         return layout;
     }
 
-    private Div buildRadioTiles(String groupName, String[] labels, Icon[] svgPaths,
+    private Div buildRadioTiles(String groupName, String[] labels, Icon[] icons,
                                 Consumer<String> onChange) {
         Div container = new Div();
         container.addClassName("radio-inputs");
 
-        RadioButtonGroup inputEl = new RadioButtonGroup();
-        inputEl.addClassName("radio-input");
-//            inputEl.setAttribute("type", "radio");
-        inputEl.setId(groupName);
-
-        Div[] arrDiv = new Div[labels.length];
-
         for (int i = 0; i < labels.length; i++) {
+            Element labelEl = new Element("label");
 
-            Div tileEl = new Div();
+            Element inputEl = new Element("input");
+            inputEl.setAttribute("class", "radio-input");
+            inputEl.setAttribute("type", "radio");
+            inputEl.setAttribute("name", groupName);
+            inputEl.setAttribute("value", labels[i]);
+            if (i == 0) inputEl.setAttribute("checked", "");
 
-//            tileEl.setText(labels[i]);
-//            if (i == 0) inputEl.setValue("");
+            Element tileEl = new Element("div");
+            tileEl.setAttribute("class", "radio-tile");
 
-            tileEl.addClassName("radio-tile");
-
-            if (svgPaths != null && svgPaths[i] != null) {
-                Div divIcon = new Div();
-                divIcon.addClassName("radio-icon");
-                divIcon.add(svgPaths[i]);
-                tileEl.add(divIcon);
+            if (icons != null && icons[i] != null) {
+                Element iconDiv = new Element("div");
+                iconDiv.setAttribute("class", "radio-icon");
+                iconDiv.appendChild(icons[i].getElement());
+                tileEl.appendChild(iconDiv);
             }
 
-            Span labelSpan = new Span();
-            labelSpan.addClassName("radio-label");
+            Element labelSpan = new Element("span");
+            labelSpan.setAttribute("class", "radio-label");
             labelSpan.setText(labels[i]);
-            tileEl.add(labelSpan);
+            tileEl.appendChild(labelSpan);
 
             String val = labels[i];
-            inputEl.addValueChangeListener( e -> onChange.accept(val));
+            inputEl.addEventListener("change", e -> onChange.accept(val));
 
-//            inputEl.add(inputEl, tileEl);
-            arrDiv[i] = tileEl;
-
+            labelEl.appendChild(inputEl, tileEl);
+            container.getElement().appendChild(labelEl);
         }
-
-        inputEl.setItems(arrDiv);
-
-        container.add(inputEl);
 
         return container;
     }
 
-    private Element createSvgIcon(String pathData) {
-        Element svg = new Element("svg");
-        svg.setAttribute("viewBox", "0 0 24 24");
-        svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-        Element path = new Element("path");
-        path.setAttribute("d", pathData);
-        svg.appendChild(path);
-        return svg;
-    }
 
     private void loadStatsPhotos(Div container, String filter, int count) {
         String sql;

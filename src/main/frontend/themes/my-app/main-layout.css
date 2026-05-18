@@ -30,8 +30,10 @@
   border-color: #466ca8;
 }
 
-.radio-input:checked + .radio-tile .radio-icon svg {
+.radio-input:checked + .radio-tile .radio-icon svg,
+.radio-input:checked + .radio-tile .radio-icon vaadin-icon {
   fill: #466ca8;
+  color: #466ca8;
 }
 
 .radio-input:checked + .radio-tile .radio-label {
@@ -89,10 +91,12 @@
   opacity: 1;
 }
 
-.radio-icon svg {
+.radio-icon svg,
+.radio-icon vaadin-icon {
   width: 3rem;
   height: 3rem;
   fill: #494949;
+  color: #494949;
 }
 
 .radio-label {
