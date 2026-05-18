@@ -27,9 +27,8 @@ import com.photo.act.photo_act.views.components.*;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.HasStyle;
 import com.vaadin.flow.component.UI;
-import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.dom.Element;
 import com.vaadin.flow.component.checkbox.CheckboxGroup;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.*;
@@ -67,6 +66,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.function.Consumer;
 
 import static com.photo.act.photo_act.views.MainLayout.*;
 
@@ -1758,111 +1758,91 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
         H2 title = new H2("Photo Statistics");
 
-        // ── Filter type buttons (with icons) ──────────────────────────────
-        Button btnMostViewed = new Button("Most Viewed", FontAwesome.Regular.EYE.create());
-        Button btnMostLiked  = new Button("Most Liked",  FontAwesome.Regular.THUMBS_UP.create());
-        Button btnMostRecent = new Button("Most Recent", FontAwesome.Solid.UPLOAD.create());
-
-        Button[] filterBtns = {btnMostViewed, btnMostLiked, btnMostRecent};
-        for (Button b : filterBtns) {
-            b.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-            b.addClassName("stat-filter-btn");
-        }
-        btnMostViewed.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-
-        // ── Count buttons ─────────────────────────────────────────────────
-        Button btn10 = new Button("10");
-        Button btn20 = new Button("20");
-        Button btn30 = new Button("30");
-
-        Button[] countBtns = {btn10, btn20, btn30};
-        for (Button b : countBtns) {
-            b.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_SMALL);
-            b.addClassName("stat-count-btn");
-        }
-        btn10.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-
-        HorizontalLayout filterRow = new HorizontalLayout(btnMostViewed, btnMostLiked, btnMostRecent);
-        filterRow.addClassNames(AlignItems.CENTER, JustifyContent.CENTER, Gap.SMALL, Padding.NONE);
-        filterRow.setWrap(true);
-
-        HorizontalLayout countRow = new HorizontalLayout(btn10, btn20, btn30);
-        countRow.addClassNames(AlignItems.CENTER, JustifyContent.CENTER, Gap.XSMALL, Padding.NONE);
-
-        HorizontalLayout filtersLayout = new HorizontalLayout(filterRow, countRow);
-        filtersLayout.addClassNames(AlignItems.CENTER, JustifyContent.CENTER, Gap.MEDIUM, Padding.SMALL);
-        filtersLayout.setWrap(true);
-
         Div statsContainer = new Div();
         statsContainer.addClassName("stats-gallery");
         statsContainer.addClassNames(Width.FULL);
 
-        // Shared mutable state via single-element arrays (lambda-accessible)
         final String[] activeFilter = {"Most Viewed"};
         final int[] activeCount = {10};
 
+        // SVG path data for filter icons (Material Design, viewBox 0 0 24 24)
+        String eyePath    = "M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5C21.27 7.61 17 4.5 12 4.5zm0 12.5c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z";
+        String thumbPath  = "M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z";
+        String uploadPath = "M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z";
+
+        Div filterTiles = buildRadioTiles("stat-filter",
+                new String[]{"Most Viewed", "Most Liked", "Most Recent"},
+                new String[]{eyePath, thumbPath, uploadPath},
+                val -> {
+                    activeFilter[0] = val;
+                    statsContainer.removeAll();
+                    loadStatsPhotos(statsContainer, activeFilter[0], activeCount[0]);
+                });
+
+        Div countTiles = buildRadioTiles("stat-count",
+                new String[]{"10", "20", "30"},
+                null,
+                val -> {
+                    activeCount[0] = Integer.parseInt(val);
+                    statsContainer.removeAll();
+                    loadStatsPhotos(statsContainer, activeFilter[0], activeCount[0]);
+                });
+        countTiles.addClassName("radio-inputs--compact");
+
         loadStatsPhotos(statsContainer, "Most Viewed", 10);
 
-        // Wire filter buttons
-        btnMostViewed.addClickListener(e -> {
-            activeFilter[0] = "Most Viewed";
-            setActiveFilterBtn(filterBtns, btnMostViewed);
-            statsContainer.removeAll();
-            loadStatsPhotos(statsContainer, activeFilter[0], activeCount[0]);
-        });
-        btnMostLiked.addClickListener(e -> {
-            activeFilter[0] = "Most Liked";
-            setActiveFilterBtn(filterBtns, btnMostLiked);
-            statsContainer.removeAll();
-            loadStatsPhotos(statsContainer, activeFilter[0], activeCount[0]);
-        });
-        btnMostRecent.addClickListener(e -> {
-            activeFilter[0] = "Most Recent";
-            setActiveFilterBtn(filterBtns, btnMostRecent);
-            statsContainer.removeAll();
-            loadStatsPhotos(statsContainer, activeFilter[0], activeCount[0]);
-        });
-
-        // Wire count buttons
-        btn10.addClickListener(e -> {
-            activeCount[0] = 10;
-            setActiveCountBtn(countBtns, btn10);
-            statsContainer.removeAll();
-            loadStatsPhotos(statsContainer, activeFilter[0], activeCount[0]);
-        });
-        btn20.addClickListener(e -> {
-            activeCount[0] = 20;
-            setActiveCountBtn(countBtns, btn20);
-            statsContainer.removeAll();
-            loadStatsPhotos(statsContainer, activeFilter[0], activeCount[0]);
-        });
-        btn30.addClickListener(e -> {
-            activeCount[0] = 30;
-            setActiveCountBtn(countBtns, btn30);
-            statsContainer.removeAll();
-            loadStatsPhotos(statsContainer, activeFilter[0], activeCount[0]);
-        });
-
-        layout.add(title, filtersLayout, statsContainer);
+        layout.add(title, filterTiles, countTiles, statsContainer);
         return layout;
     }
 
-    private void setActiveFilterBtn(Button[] all, Button active) {
-        for (Button b : all) {
-            b.removeThemeVariants(ButtonVariant.LUMO_PRIMARY);
-            b.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+    private Div buildRadioTiles(String groupName, String[] labels, String[] svgPaths,
+                                Consumer<String> onChange) {
+        Div container = new Div();
+        container.addClassName("radio-inputs");
+
+        for (int i = 0; i < labels.length; i++) {
+            Element labelEl = new Element("label");
+
+            Element inputEl = new Element("input");
+            inputEl.setAttribute("class", "radio-input");
+            inputEl.setAttribute("type", "radio");
+            inputEl.setAttribute("name", groupName);
+            inputEl.setAttribute("value", labels[i]);
+            if (i == 0) inputEl.setAttribute("checked", "");
+
+            Element tileEl = new Element("div");
+            tileEl.setAttribute("class", "radio-tile");
+
+            if (svgPaths != null && svgPaths[i] != null) {
+                Element iconDiv = new Element("div");
+                iconDiv.setAttribute("class", "radio-icon");
+                iconDiv.appendChild(createSvgIcon(svgPaths[i]));
+                tileEl.appendChild(iconDiv);
+            }
+
+            Element labelSpan = new Element("span");
+            labelSpan.setAttribute("class", "radio-label");
+            labelSpan.setText(labels[i]);
+            tileEl.appendChild(labelSpan);
+
+            String val = labels[i];
+            inputEl.addEventListener("change", e -> onChange.accept(val));
+
+            labelEl.appendChild(inputEl, tileEl);
+            container.getElement().appendChild(labelEl);
         }
-        active.removeThemeVariants(ButtonVariant.LUMO_TERTIARY);
-        active.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+
+        return container;
     }
 
-    private void setActiveCountBtn(Button[] all, Button active) {
-        for (Button b : all) {
-            b.removeThemeVariants(ButtonVariant.LUMO_PRIMARY);
-            b.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-        }
-        active.removeThemeVariants(ButtonVariant.LUMO_TERTIARY);
-        active.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    private Element createSvgIcon(String pathData) {
+        Element svg = new Element("svg");
+        svg.setAttribute("viewBox", "0 0 24 24");
+        svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+        Element path = new Element("path");
+        path.setAttribute("d", pathData);
+        svg.appendChild(path);
+        return svg;
     }
 
     private void loadStatsPhotos(Div container, String filter, int count) {
