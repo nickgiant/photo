@@ -674,7 +674,7 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
     private Div loadFiltersHeader(String sqlRead, String[] arrColumnNames, String strCaptionsCount) {
         Div filtersBar = new Div();
 
-        filtersBar.addClassName("top-tall-layout-filters");
+        filtersBar.addClassName("top-tall-filters-layout");
 
         List<Record> lstLearningCategoriesRecs = getRecordsFromDb(sqlRead, arrColumnNames);
 

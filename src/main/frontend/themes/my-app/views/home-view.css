@@ -221,8 +221,8 @@ header p {
 }
 
 .home-view .page-section{
-    background-color: var(--lumo-contrast-5pct); /* #fdeec5;*/
-    border-radius: 18px;
+    border-top: 2px solid var(--lumo-contrast-5pct); /* #fdeec5;*/
+
 }
 
 /*

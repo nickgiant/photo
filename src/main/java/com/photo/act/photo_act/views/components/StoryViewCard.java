@@ -285,6 +285,7 @@ public class StoryViewCard extends VerticalLayout {
 
         // ── Compose the single action bar ────────────────────────────────────
         ShareBottomBar shareBar = new ShareBottomBar(storyResource, shareService, shareMetricService);
+        shareBar.addClassName("btn-bar-wrapper");
         shareBar.addComponent(layoutViewCount);
         shareBar.addButton("Like it!",btnLike,
                 ()-> {

@@ -652,7 +652,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
 
     private Div loadFiltersHeader(String sqlRead, String[] arrColumnNames, String nameUrlVariable, String strCaptionsCount) {
         Div filtersPanel = new Div();
-        filtersPanel.addClassName("top-tall-layout-filters");
+        filtersPanel.addClassName("top-tall-filters-layout");
 
         List<Record> lstLearningCategoriesRecs = getRecordsFromDb(sqlRead, arrColumnNames);
 

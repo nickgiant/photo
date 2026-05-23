@@ -365,6 +365,12 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
         verticalLayout.add(divMainImage, div1, div2, layoutUserBtns);
 
+
+        VerticalLayout layoutStatistics = loadStatisticsSection();
+        verticalLayout.add(layoutStatistics);
+
+
+
         Div divLearningTopics = loadLearningTopics(sqlLearningTopics, arrColLearningTopics);
         VerticalLayout layoutLearningTopics = new VerticalLayout();
         H2 titleLearnTopics = new H2("Learning Categories");
@@ -382,7 +388,6 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         layoutLearningTopics.add(titleLearnTopics, divLearningTopics, layoutLearningsActions);
 
         layoutLearningTopics.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER, Padding.MEDIUM);
-        layoutLearningTopics.addClassName("page-section");
         verticalLayout.add(layoutLearningTopics);
 
 
@@ -406,7 +411,10 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 //        verticalLayout.add(titleCarousel, getCarousel(lstImage));
 
 
-
+        VerticalLayout layoutPhotoUploads = new VerticalLayout();
+        layoutPhotoUploads.addClassNames(AlignItems.CENTER, JustifyContent.CENTER,
+        Padding.SMALL, Margin.NONE);
+        layoutPhotoUploads.addClassName("page-section");
         H2 titleGraphLastPhotos = new H2("Photo Uploads");
         HorizontalLayout layoutFilterUploadsPeriod = new HorizontalLayout();
         layoutFilterUploadsPeriod.addClassName("tab-select");
@@ -415,7 +423,8 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
                 AlignItems.CENTER, JustifyContent.CENTER,
                 Padding.NONE, Margin.NONE);
         layoutGraph.add(loadGraphUploads(sqlUploadsGrouped + sqlGroupByMonthly + sqlUploadsGroupedOrderBy, arrColsUploadsGrouped, "month"));
-        verticalLayout.add(titleGraphLastPhotos, layoutFilterUploadsPeriod, layoutGraph);
+        layoutPhotoUploads.add(titleGraphLastPhotos, layoutFilterUploadsPeriod, layoutGraph);
+        verticalLayout.add(layoutPhotoUploads);
 
         HorizontalLayout layoutTabSelectPeriod = new HorizontalLayout();
         layoutTabSelectPeriod.addClassName("tab-select");
@@ -436,7 +445,6 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
 
         VerticalLayout layoutLastLearnings = new VerticalLayout();
-        layoutLastLearnings.addClassName("page-section");
         layoutLastLearnings.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER, Padding.MEDIUM);
         H2 titleLastLearnings = new H2("Last Posted Learnings");
         Div divLastLearnings = loadLastLearnings(sqlLearningsRead, arrColumnsLearning);
@@ -444,21 +452,14 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         verticalLayout.add(layoutLastLearnings);
 
 
-        H2 titleLastPhotos = new H2("Last Photos Uploaded");
-        layoutLastPhotos.addClassNames(Overflow.HIDDEN, Width.FULL,
-                AlignItems.CENTER, JustifyContent.CENTER,
-                Margin.NONE, Padding.SMALL);
-        layoutLastPhotos.addClassName("container-uploaded-lines");
 
-        VerticalLayout layoutLastPhotoUploads = new VerticalLayout();
-        layoutLastPhotoUploads.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER, Padding.MEDIUM);
 
 
         String finalSqlGalleryAll = sqlGalleryAll;
 
         HorizontalLayout layoutPhotosButton = new HorizontalLayout();
 
-        HorizontalLayout layoutTabViewPhotos = new HorizontalLayout();
+/*        HorizontalLayout layoutTabViewPhotos = new HorizontalLayout();
         layoutTabViewPhotos.addClassName("tab-select");
         RadioButtonGroup<String> btnGroupShowPhotos = new RadioButtonGroup<>();
         btnGroupShowPhotos.setItems("Last 5 Photos", "Last 10 Photos", "Last 15 Photos");
@@ -476,7 +477,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
             }
         });
         btnGroupShowPhotos.setValue("Last 5 Photos");
-        layoutTabViewPhotos.add(btnGroupShowPhotos);
+        layoutTabViewPhotos.add(btnGroupShowPhotos);*/
 
         HorizontalLayout layoutMorePhotosActions = new HorizontalLayout();
         layoutMorePhotosActions.addClassName("view-more");
@@ -488,11 +489,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
             );
         });
         layoutMorePhotosActions.add(btnMorePhotos);
-        layoutLastPhotoUploads.add(titleLastPhotos, layoutPhotosButton, layoutTabViewPhotos, layoutLastPhotos, layoutMorePhotosActions);
-        verticalLayout.add(layoutLastPhotoUploads);
 
-        VerticalLayout layoutStatistics = loadStatisticsSection();
-        verticalLayout.add(layoutStatistics);
 
         H2 titleWeather = new H2("Current Weather at:");
 
@@ -1764,9 +1761,13 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         statsContainer.addClassNames(Width.FULL);
 
         final String[] activeFilter = {"Most Viewed"};
-        final int[] activeCount = {10};
+        final int[] activeCount = {5};
+/*
+        SvgIcon iconLike = new SvgIcon(
+                DownloadHandler.forClassResource(LikeButton.class, "/icons/like-icon.svg"));
+        Icon icLike = new Icon( DownloadHandler.forClassResource(LikeButton.class, "/icons/like-icon.svg").getUrlPostfix());*/
 
-        Div filterTiles = buildRadioTiles("stat-filter",
+        HorizontalLayout filterTiles = buildRadioTiles("stat-filter",
                 new String[]{"Most Viewed", "Most Liked", "Most Recent"},
                 new Icon[]{FontAwesome.Solid.EYE.create(), FontAwesome.Solid.THUMBS_UP.create(), FontAwesome.Solid.FILE_UPLOAD.create()},
                 val -> {
@@ -1775,8 +1776,8 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
                     loadStatsPhotos(statsContainer, activeFilter[0], activeCount[0]);
                 });
 
-        Div countTiles = buildRadioTiles("stat-count",
-                new String[]{"10", "20", "30"},
+        HorizontalLayout countTiles = buildRadioTiles("stat-count",
+                new String[]{"5", "10", "15", "20"},
                 null,
                 val -> {
                     activeCount[0] = Integer.parseInt(val);
@@ -1785,15 +1786,16 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
                 });
         countTiles.addClassName("radio-inputs--compact");
 
-        loadStatsPhotos(statsContainer, "Most Viewed", 10);
+        loadStatsPhotos(statsContainer, "Most Viewed", 5);
 
         layout.add(title, filterTiles, countTiles, statsContainer);
         return layout;
     }
 
-    private Div buildRadioTiles(String groupName, String[] labels, Icon[] icons,
+    private HorizontalLayout buildRadioTiles(String groupName, String[] labels, Icon[] icons,
                                 Consumer<String> onChange) {
-        Div container = new Div();
+        HorizontalLayout container = new HorizontalLayout();
+        container.setWrap(true);
         container.addClassName("radio-inputs");
 
         for (int i = 0; i < labels.length; i++) {

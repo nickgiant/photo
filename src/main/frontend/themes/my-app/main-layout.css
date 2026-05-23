@@ -3,10 +3,11 @@
 
 /* ── Radio-tile filter widgets (statistics section) ───────────────────────── */
 .radio-inputs {
+    width: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
-  max-width: 550px;
+  max-width: 650px;
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
@@ -55,6 +56,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
+    padding: 5px;
   width: 160px;
   min-height: 50px;
   border-radius: 0.5rem;
@@ -64,6 +66,10 @@
   transition: 0.15s ease;
   cursor: pointer;
   position: relative;
+    /*transition: 0.3s;*/
+    &:active{
+        transform: scale(0.97);
+    }
 }
 
 .radio-tile:before {
@@ -93,10 +99,10 @@
 
 .radio-icon svg,
 .radio-icon vaadin-icon {
-  width: 3rem;
-  height: 3rem;
-  fill: #494949;
-  color: #494949;
+  width: 1.4rem;
+  height: 1.4rem;
+  fill: #707070;
+  color: #707070;
 }
 
 .radio-label {
@@ -119,12 +125,13 @@
 
 /* Compact variant — used for the count selector (10 / 20 / 30) */
 .radio-inputs--compact {
-  max-width: 320px;
+  max-width: 550px;
 }
 
 .radio-inputs--compact .radio-tile {
+    padding: 5px;
   width: 80px;
-  min-height: 50px;
+  min-height: 30px;
 }
 
 .radio-inputs--compact .radio-label {
