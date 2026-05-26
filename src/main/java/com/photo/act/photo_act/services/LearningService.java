@@ -102,6 +102,15 @@ public class LearningService {
                 .map(this::toDto).toList();
     }
 
+    public List<LearningDto> getLearningsByUser(Integer userIdPost) {
+        return learningRepo.findByUserIdPostOrderByDateInsertDesc(userIdPost).stream()
+                .map(this::toDto).toList();
+    }
+
+    public long countLearningsByUser(Integer userIdPost) {
+        return learningRepo.countByUserIdPost(userIdPost);
+    }
+
     public Page<LearningDto> searchLearnings(String keyword, int page, int size) {
         return learningRepo.searchByKeyword(keyword, PageRequest.of(page, size))
                 .map(this::toDto);

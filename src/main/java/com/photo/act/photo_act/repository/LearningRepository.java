@@ -25,6 +25,10 @@ public interface LearningRepository extends JpaRepository<LearningEntity, Long> 
 
     long countByTutorId(Long tutorId);
 
+    List<LearningEntity> findByUserIdPostOrderByDateInsertDesc(Integer userIdPost);
+
+    long countByUserIdPost(Integer userIdPost);
+
     @Query("SELECT l FROM LearningEntity l WHERE " +
            "LOWER(l.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            "LOWER(l.description) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
