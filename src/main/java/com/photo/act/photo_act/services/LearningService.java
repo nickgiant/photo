@@ -111,6 +111,18 @@ public class LearningService {
         return learningRepo.countByUserIdPost(userIdPost);
     }
 
+    public List<LearningDto> getLearningsByTutorName(String tutorName) {
+        return tutorRepo.findByTutorNameIgnoreCase(tutorName)
+                .map(tutor -> learningRepo.findByTutorIdOrderByDateInsertDesc(tutor.getId())
+                        .stream().map(this::toDto).toList())
+                .orElse(List.of());
+    }
+
+    public Optional<LearningCategoryDto> getCategoryByTitle(String title) {
+        return categoryRepo.findByCatTitleIgnoreCase(title)
+                .map(c -> LearningCategoryDto.from(c, categoryRepo.countLearningsByCategoryId(c.getId())));
+    }
+
     public Page<LearningDto> searchLearnings(String keyword, int page, int size) {
         return learningRepo.searchByKeyword(keyword, PageRequest.of(page, size))
                 .map(this::toDto);

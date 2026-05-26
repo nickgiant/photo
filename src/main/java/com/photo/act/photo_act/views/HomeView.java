@@ -14,7 +14,10 @@ import com.github.appreciated.apexcharts.config.legend.HorizontalAlign;
 import com.github.appreciated.apexcharts.helper.Series;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
+import com.photo.act.photo_act.dto.LearningCategoryDto;
+import com.photo.act.photo_act.dto.LearningDto;
 import com.photo.act.photo_act.services.EmailSendService;
+import com.photo.act.photo_act.services.LearningService;
 import com.photo.act.photo_act.services.PhotoFlickrService;
 import com.photo.act.photo_act.services.PhotoRatingService;
 import com.photo.act.photo_act.services.PhotoStatisticsService;
@@ -64,6 +67,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -136,30 +140,6 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
     private String strColorExternalweb = "#9fafd5";
 
 
-    String[] arrColLearningTopics = {"cat_title", "cat_title_type", "cat_type", "cat_location_count", "cat_title_count", "cat_description_min", "cat_description_big"};
-
-    String sqlLearningTopics =
-            " SELECT l.id, lc.id, lc.cat_title, lc.cat_title_type, lc.cat_type, cat_description_min, cat_description_big, " +
-                    " count(l.has_location) AS cat_location_count , count(lc.cat_title) AS cat_title_count, lc.cat_order " +
-                    " FROM learnings l LEFT JOIN learnings_categories lc ON l.category_id = lc.id " +
-                    " WHERE 1 = 1 " +
-                    " AND lc.cat_type not LIKE '%genre%' " +
-                    " AND lc.cat_type not LIKE 'not show' " +
-                    " GROUP BY lc.cat_type " +
-                    " ORDER BY lc.cat_order ASC " +
-                    " LIMIT 6 ";
-
-    String[] arrColLearningGenres = {"cat_title", "cat_title_type", "cat_type", "cat_location_count", "cat_title_count", "cat_description_min", "cat_description_big"};
-
-    String sqlLearningGenres = //f.nameShort, f.location, f.country, f.periodOfYear, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description  " +
-            " SELECT lc.id, lc.cat_title, lc.cat_title_type, lc.cat_type, l.cat_genre_id, count(l.has_location) AS cat_location_count, count(lc.cat_title) AS cat_title_count, cat_description_min, cat_description_big " +
-
-                    " FROM learnings l LEFT JOIN learnings_categories lc ON l.cat_genre_id = lc.id " +
-                    " WHERE 1 = 1 " +
-                    " AND lc.cat_type LIKE '%genre%' " +
-                    " GROUP BY lc.cat_title " +
-                    " ORDER BY lc.cat_order ASC " +
-                    " LIMIT 6 ";
 
 
 //    String[] arrColLearningTopics = {"cat_title", "cat_title2", "cat_title_type", "cat_title_type2", "cat_type",
@@ -209,12 +189,15 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
     private PhotoRatingService photoRatingService;
     private PhotoViewService photoViewService;
     private PhotoStatisticsService photoStatisticsService;
+    private LearningService learningService;
 
-    public HomeView(RecordService recordService, EmailSendService emailSendService, WeatherService weatherService,
+    public HomeView(RecordService recordService, LearningService learningService,
+                    EmailSendService emailSendService, WeatherService weatherService,
                     ShareService shareService, ShareMetricService shareMetricService,
                     PhotoRatingService photoRatingService, PhotoViewService photoViewService,
                     PhotoStatisticsService photoStatisticsService) {
         this.recordService = recordService;
+        this.learningService = learningService;
         this.emailSendService = emailSendService;
         this.weatherService = weatherService;
         this.shareService = shareService;
@@ -250,28 +233,6 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 //        VerticalLayout layoutHeaderParameters = loadHeader("", "", "");
 //
 //        verticalLayout.add(layoutHeaderParameters);
-
-
-        String[] arrColumnsLearning = {"title", "subtitle", "picture", "category_id", "cat_genre_id", "format", "url", "tutor_id", "artists_ref", "description", "duration", "pages", "published", "year_published",
-                "user_Id_post", "date_inserted",
-                "cat_title", "cat_type", "genre_title",
-                "tutor_name",
-                "username", "name", "surname"
-        };
-
-        // learnings: l.id, l.title, l.picture, l.section , l.category, l.format, l.url, l.parent_id, l.child_index, l.tutor_id, l.artists_ref, l.description, l.duration, l.pages, l.published, l.userIdInsert, l.username, l.dateInsert
-// learnings_tutor:  lt.id, lt.tutor_name, lt.learnings_team_id, lt.website, lt.url_fb, lt.url_yt, lt.url_insta, lt.url_flickr, lt.url_wikipedia, lt.url_ref1, lt.url_ref2, lt.url_ref3, lt.url_flckr, lt.city_base, lt.country_base, lt.userIdInsert, lt.username, lt.date_inserted
-        String sqlLearningsRead = "SELECT "
-                + " l.id, l.title,  l.subtitle, l.picture, l.category_id, l.cat_genre_id, l.format, l.url, l.tutor_id, l.artists_ref, l.description, l.duration, l.pages, l.published, DATE_FORMAT(l.published, '%Y') AS year_published,  l.user_Id_post, l.date_insert, getDateDiffFromNow(l.date_insert) AS date_inserted"
-                + " , lc.cat_title,  lc.cat_type, t.tutor_name "
-                + " , lcg.cat_title AS genre_title"
-                + " , usr.username, usr.name, usr.surname "
-                //  + " , l.tutor_id, l.tutor_id_team, l.category_id, l.category_id2, t.tutor_name, t.website, t.url_fb, t.url_yt, t.url_insta, t.url_flickr, t.url_wikipedia, t.url_ref1, t.url_ref2, t.url_ref3, t.city_base, t.country_base, t.userIdInsert, t.username, t.date_inserted "
-                + " FROM learnings_categories lc, learnings l LEFT JOIN learnings_categories lcg ON l.cat_genre_id = lcg.id,  tutor t, dbuser usr " //, tutor t  "
-                + " WHERE 1 = 1 "
-                + " AND lc.id = l.category_id AND l.tutor_id = t.id AND l.user_Id_post = usr.userId"
-                + " ORDER BY l.date_insert DESC "
-                + " LIMIT 3";
 
 
         String[] arrColumnNamesGallery = {"name_org", "name_new", "title", "subtitle", "photo_type", "uploader", "uploaderId", "photo_type", "contains",
@@ -371,7 +332,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
 
 
-        Div divLearningTopics = loadLearningTopics(sqlLearningTopics, arrColLearningTopics);
+        Div divLearningTopics = loadLearningTopics();
         VerticalLayout layoutLearningTopics = new VerticalLayout();
         H2 titleLearnTopics = new H2("Learning Categories");
 
@@ -447,7 +408,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         VerticalLayout layoutLastLearnings = new VerticalLayout();
         layoutLastLearnings.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER, Padding.MEDIUM);
         H2 titleLastLearnings = new H2("Last Posted Learnings");
-        Div divLastLearnings = loadLastLearnings(sqlLearningsRead, arrColumnsLearning);
+        Div divLastLearnings = loadLastLearnings();
         layoutLastLearnings.add(titleLastLearnings, divLastLearnings);
         verticalLayout.add(layoutLastLearnings);
 
@@ -818,17 +779,15 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
     }
 
 
-    private Div loadLastLearnings(String sqlRead, String[] arrColumnNames) {
-
+    private Div loadLastLearnings() {
         Div layoutLastLearnings = new Div();
         layoutLastLearnings.addClassNames(AlignItems.CENTER, JustifyContent.CENTER,
-                Margin.XSMALL, //Margin.Vertical.SMALL,
-                Padding.LARGE, //Padding.Vertical.SMALL,
+                Margin.XSMALL,
+                Padding.LARGE,
                 Gap.XLARGE);
 
-        List<Record> lstRecords = getRecordsFromDb(sqlRead, arrColumnNames);
-        for (int r = 0; r < lstRecords.size(); r++) {
-
+        List<LearningDto> learnings = learningService.getLatestLearnings(0, 3).getContent();
+        for (LearningDto dto : learnings) {
             VerticalLayout layoutLearning = new VerticalLayout();
             layoutLearning.addClassNames(AlignItems.CENTER, JustifyContent.CENTER,
                     Padding.LARGE, Margin.LARGE,
@@ -836,22 +795,16 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
             );
             layoutLearning.addClassName("last-learning-item");
 
-            Record record = lstRecords.get(r);
-            String strTitle = record.getColumnData("title");
-            String strSubtitle = record.getColumnData("subtitle");
-            String strCategory = record.getColumnData("cat_title");
-            String strCatGenre = record.getColumnData("genre_title");
-            String strPicture = record.getColumnData("picture");
-            String strUrl = record.getColumnData("url");
-//            String strDescription = record.getColumnData("description");
-            String strDuration = record.getColumnData("duration");
-            String strPages = record.getColumnData("pages");
-            String strDateInserted = record.getColumnData("date_inserted");
-            String strTutorName = record.getColumnData("tutor_name");
+            String strTitle = nvl(dto.getTitle());
+            String strCategory = nvl(dto.getCategoryTitle());
+            String strCatGenre = nvl(dto.getCatGenreTitle());
+            String strDuration = nvl(dto.getDuration());
+            String strDateInserted = dto.getDateInsert() != null
+                    ? dto.getDateInsert().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) : "";
+            String strTutorName = nvl(dto.getTutorName());
 
             H4 h4Title = new H4(strTitle);
             h4Title.addClassNames(FontWeight.BOLD, FontSize.LARGE);
-
 
             Div divCategory = new Div();
             if (!strCategory.isEmpty()) {
@@ -874,7 +827,6 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
             layoutHor2.add(divTutor, divCategory);
 
             layoutLearning.add(h4Title, layoutHor1, layoutHor2);
-
             layoutLastLearnings.add(layoutLearning);
         }
         return layoutLastLearnings;
@@ -1443,143 +1395,51 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 //        }
 //        return layoutLearnings;
 //    }
-    private Div loadLearningTopics(String sqlRead, String[] arrColumnNames) {
-
+    private Div loadLearningTopics() {
         Div panelOfTopics = new Div();
         if (isMobile) {
             panelOfTopics.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.CENTER,
-                    Margin.NONE,
-                    Padding.MEDIUM,
-                    Gap.SMALL,
-                    //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                    //  Background.CONTRAST_5,
+                    Margin.NONE, Padding.MEDIUM, Gap.SMALL,
                     BorderRadius.NONE);
         } else {
             panelOfTopics.addClassNames(
                     Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.CENTER,
-                    Margin.NONE,
-                    Padding.XLARGE,
-                    Gap.SMALL,
-                    //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                    //  Background.CONTRAST_5,
+                    Margin.NONE, Padding.XLARGE, Gap.SMALL,
                     BorderRadius.LARGE);
         }
         panelOfTopics.addClassName("learning-photo-genres");
 
+        List<LearningCategoryDto> categories = learningService.getAllCategories().stream()
+                .filter(c -> c.getCatType() != null
+                        && !c.getCatType().toLowerCase().contains("genre")
+                        && !"not show".equalsIgnoreCase(c.getCatType()))
+                .limit(6)
+                .toList();
 
-        List<Record> lstLearningCategoriesRecs = getRecordsFromDb(sqlRead, arrColumnNames);
-
-        ArrayList<String> lstCategories = new ArrayList<>();
-        ArrayList<String> lstCategoriesDescriptions = new ArrayList<>();
-        ArrayList<String> lstCategoriesCount = new ArrayList<>();
-        for (int r = 0; r < lstLearningCategoriesRecs.size(); r++) {
-            lstCategories.add(lstLearningCategoriesRecs.get(r).getColumnData("cat_type"));
-            String strDescr = lstLearningCategoriesRecs.get(r).getColumnData("cat_description_min");
-            String strCount = lstLearningCategoriesRecs.get(r).getColumnData("cat_title_count");
-            lstCategoriesCount.add(strCount);
-            lstCategoriesDescriptions.add(strDescr);
-        }
-
-        for (int c = 0; c < lstCategories.size(); c++) {
-            String captionCategory = lstCategories.get(c);
-            String captionCategoryDescription = lstCategoriesDescriptions.get(c);
+        for (LearningCategoryDto cat : categories) {
+            String captionCategory = cat.getCatTitle();
             H3 categoryTitle = new H3(captionCategory);
-            Div categoryDescription = new Div(captionCategoryDescription);
 
-            if (captionCategoryDescription.isEmpty() || captionCategoryDescription.equalsIgnoreCase("null")) {
+            String catDescr = cat.getCatDescriptionMin() != null ? cat.getCatDescriptionMin() : "";
+            Div categoryDescription = new Div(catDescr);
+            if (catDescr.isEmpty() || catDescr.equalsIgnoreCase("null")) {
                 categoryDescription.setVisible(false);
             }
-            String strCount = lstCategoriesCount.get(c);
-            int intCount = Integer.parseInt(strCount);
-            if (intCount == 1) {
-                strCount = strCount + " Learning";
-            } else {
-                strCount = strCount + " Learnings";
-            }
+
+            long count = cat.getLearningCount();
+            String strCount = count + (count == 1 ? " Learning" : " Learnings");
             H6 divCount = new H6(strCount);
 
             RouteParam routeCategory = new RouteParam("category", captionCategory);
             RouterLink linkPhotoCategory = new RouterLink(LearningsView.class, new RouteParameters(routeCategory));
             linkPhotoCategory.addClassNames(AlignItems.CENTER, JustifyContent.BETWEEN);
             linkPhotoCategory.add(categoryTitle, categoryDescription, divCount);
-
             panelOfTopics.add(linkPhotoCategory);
         }
         return panelOfTopics;
-    }
-
-
-    private Div loadLearningsAboutGenres(String sqlRead, String[] arrColumnNames) {
-
-        Div panelOfGenres = new Div();
-        if (isMobile) {
-            panelOfGenres.addClassNames(
-                    Overflow.HIDDEN, Width.FULL,
-                    AlignItems.CENTER, JustifyContent.CENTER,
-                    Margin.NONE,
-                    Padding.MEDIUM,
-                    Gap.SMALL,
-                    Width.FULL,
-                    //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                    //  Background.CONTRAST_5,
-                    BorderRadius.NONE);
-        } else {
-            panelOfGenres.addClassNames(
-                    Overflow.HIDDEN, Width.FULL,
-                    AlignItems.CENTER, JustifyContent.CENTER,
-                    Margin.NONE,
-                    Padding.XLARGE,
-                    Gap.SMALL,
-                    Width.FULL,
-                    //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                    //  Background.CONTRAST_5,
-                    BorderRadius.LARGE);
-        }
-        panelOfGenres.addClassName("learning-photo-genres");
-
-        List<Record> lstLearningCategoriesRecs = getRecordsFromDb(sqlRead, arrColumnNames);
-
-        ArrayList<String> lstCategories = new ArrayList<>();
-        ArrayList<String> lstCategoriesCount = new ArrayList<>();
-        ArrayList<String> lstCategoriesDescriptions = new ArrayList<>();
-        for (int r = 0; r < lstLearningCategoriesRecs.size(); r++) {
-            lstCategories.add(lstLearningCategoriesRecs.get(r).getColumnData("cat_title"));
-            String strDescr = lstLearningCategoriesRecs.get(r).getColumnData("cat_description_min");
-            String strCount = lstLearningCategoriesRecs.get(r).getColumnData("cat_title_count");
-            lstCategoriesCount.add(strCount);
-            if (strDescr != null && !strDescr.isEmpty() && !strDescr.equalsIgnoreCase("null")) {
-                lstCategoriesDescriptions.add(strDescr);
-            } else {
-                lstCategoriesDescriptions.add("");
-            }
-
-        }
-
-        for (int c = 0; c < lstCategories.size(); c++) {
-            String captionCategory = lstCategories.get(c);
-            String captionCategoryDescription = lstCategoriesDescriptions.get(c);
-            H3 genreTitle = new H3(captionCategory);
-            Div genreDescription = new Div(captionCategoryDescription);
-            String strCount = lstCategoriesCount.get(c);
-
-            int intCount = Integer.parseInt(strCount);
-            if (intCount == 1) {
-                strCount = strCount + " Learning";
-            } else {
-                strCount = strCount + " Learnings";
-            }
-            H6 divCount = new H6(strCount);
-
-            RouteParam routeCategory = new RouteParam("genre", captionCategory);
-            RouterLink linkPhotoCategory = new RouterLink(LearningsView.class, new RouteParameters(routeCategory));
-            linkPhotoCategory.add(genreTitle, genreDescription, divCount);
-
-            panelOfGenres.add(linkPhotoCategory);
-        }
-        return panelOfGenres;
     }
 
 
@@ -1964,6 +1824,10 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
         double filesizeMB = (double) size / (1024 * 1024);// + " mb";
         return String.format("%.2f", filesizeMB);
+    }
+
+    private static String nvl(String s) {
+        return s == null ? "" : s;
     }
 
 
