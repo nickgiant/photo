@@ -9,10 +9,20 @@
     display: inline-flex;
     align-items: center;
     justify-content: space-evenly;
-    padding: 4px 0;
+    padding: 5px 0;
     font-family: "Poppins", sans-serif;
-    gap: 15px;
+    gap: 16px;
 }
+
+.btn-bar-wrapper-compact {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-evenly;
+    padding: 2px 0;
+    font-family: "Poppins", sans-serif;
+    gap: 6px;
+}
+
 
 /* ── Individual button ── */
 .btn-bar-item {
@@ -36,6 +46,11 @@
     /* Brand color variables – overridden per brand class below */
     --brand-bg: #51459f;
     --brand-color: #ffffff;
+
+    transition: 0.2s;
+    &:active{
+        transform: scale(0.95);
+    }
 }
 
 .btn-bar-item:hover {

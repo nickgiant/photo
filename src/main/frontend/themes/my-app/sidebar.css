@@ -246,7 +246,7 @@ vaadin-side-nav-item::part(link) {
 
 vaadin-side-nav-item:hover {
     color: #151a2d;
-    background: whitesmoke;
+    background: whitesmoke 50%;
 }
 
 vaadin-side-nav-item:hover::part(item) {

@@ -596,6 +596,111 @@
     }
 }
 
+/* Statistics section — smaller photo grid shown on the home page */
+.stats-gallery {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+    padding: 8px;
+    margin: 0;
+}
+
+.stats-gallery .gallery-view-card {
+    border-radius: 6px;
+    box-shadow: 0 0 10px 2px var(--lumo-contrast-10pct);
+    font-size: 0.78rem;
+}
+
+.stats-gallery .gallery-view-card .image-container {
+    width: 100%;
+    height: auto;
+    text-align: center;
+}
+
+.stats-gallery .gallery-view-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center;
+    display: block;
+}
+
+.stats-gallery .gallery-view-card .image-and-info-panel {
+    position: relative;
+    overflow: hidden;
+    border-radius: 6px;
+    box-shadow: 0 0 14px 2px var(--lumo-contrast-10pct);
+}
+
+.stats-gallery .gallery-view-card .image-and-info-panel img {
+    width: 100%;
+    height: auto;
+    display: block;
+    object-position: center;
+    transition: transform 0.3s ease;
+}
+
+.stats-gallery .gallery-view-card .image-and-info-panel:hover {
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.14);
+}
+
+@media (max-width: 768px) {
+    .stats-gallery {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 8px;
+    }
+}
+
+@media (max-width: 480px) {
+    .stats-gallery {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 6px;
+    }
+}
+
+/* ── Statistics filter / count buttons ──────────────────────────────────── */
+.stat-filter-btn,
+.stat-count-btn {
+    border-radius: 20px;
+    transition: all 0.2s ease;
+}
+
+.stat-filter-btn vaadin-icon,
+.stat-filter-btn iron-icon {
+    margin-right: 4px;
+}
+
+/* ── GalleryImageViewCard size variants ──────────────────────────────────── */
+
+/* COMPACT — used in statistics panels and list overviews */
+.gallery-view-card--compact {
+    font-size: 0.74rem;
+}
+
+.gallery-view-card--compact .image-and-info-panel img {
+    max-height: 220px;
+    object-fit: cover;
+}
+
+.gallery-view-card--compact vaadin-button,
+.gallery-view-card--compact .actions {
+    font-size: 0.72rem;
+}
+
+/* WIDE — used for featured / hero display */
+.gallery-view-card--wide {
+    font-size: 1rem;
+}
+
+.gallery-view-card--wide .image-and-info-panel {
+    min-height: 380px;
+}
+
+.gallery-view-card--wide .image-and-info-panel img {
+    object-fit: cover;
+}
+
 @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }

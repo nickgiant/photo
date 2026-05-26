@@ -4,6 +4,7 @@ import com.flickr4java.flickr.people.User;
 import com.flickr4java.flickr.photos.Photo;
 import com.flowingcode.vaadin.addons.carousel.Carousel;
 import com.flowingcode.vaadin.addons.carousel.Slide;
+import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.github.appreciated.apexcharts.ApexChartsBuilder;
 import com.github.appreciated.apexcharts.config.builder.ChartBuilder;
 import com.github.appreciated.apexcharts.config.builder.LegendBuilder;
@@ -15,6 +16,11 @@ import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.services.EmailSendService;
 import com.photo.act.photo_act.services.PhotoFlickrService;
+import com.photo.act.photo_act.services.PhotoRatingService;
+import com.photo.act.photo_act.services.PhotoStatisticsService;
+import com.photo.act.photo_act.services.PhotoViewService;
+import com.photo.act.photo_act.services.ShareMetricService;
+import com.photo.act.photo_act.services.ShareService;
 import com.photo.act.photo_act.services.WeatherService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
@@ -23,6 +29,7 @@ import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.HasStyle;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.dom.Element;
 import com.vaadin.flow.component.checkbox.CheckboxGroup;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.*;
@@ -60,6 +67,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.function.Consumer;
 
 import static com.photo.act.photo_act.views.MainLayout.*;
 
@@ -196,11 +204,24 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
     private Div layoutLastPhotos;
     private EmailSendService emailSendService;
     private WeatherService weatherService;
+    private ShareService shareService;
+    private ShareMetricService shareMetricService;
+    private PhotoRatingService photoRatingService;
+    private PhotoViewService photoViewService;
+    private PhotoStatisticsService photoStatisticsService;
 
-    public HomeView(RecordService recordService, EmailSendService emailSendService,  WeatherService weatherService) {
+    public HomeView(RecordService recordService, EmailSendService emailSendService, WeatherService weatherService,
+                    ShareService shareService, ShareMetricService shareMetricService,
+                    PhotoRatingService photoRatingService, PhotoViewService photoViewService,
+                    PhotoStatisticsService photoStatisticsService) {
         this.recordService = recordService;
         this.emailSendService = emailSendService;
         this.weatherService = weatherService;
+        this.shareService = shareService;
+        this.shareMetricService = shareMetricService;
+        this.photoRatingService = photoRatingService;
+        this.photoViewService = photoViewService;
+        this.photoStatisticsService = photoStatisticsService;
         utilsDate = new UtilsDate();
         genericView = new GenericView(recordService);
 
@@ -344,6 +365,12 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
         verticalLayout.add(divMainImage, div1, div2, layoutUserBtns);
 
+
+        VerticalLayout layoutStatistics = loadStatisticsSection();
+        verticalLayout.add(layoutStatistics);
+
+
+
         Div divLearningTopics = loadLearningTopics(sqlLearningTopics, arrColLearningTopics);
         VerticalLayout layoutLearningTopics = new VerticalLayout();
         H2 titleLearnTopics = new H2("Learning Categories");
@@ -361,7 +388,6 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         layoutLearningTopics.add(titleLearnTopics, divLearningTopics, layoutLearningsActions);
 
         layoutLearningTopics.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER, Padding.MEDIUM);
-        layoutLearningTopics.addClassName("page-section");
         verticalLayout.add(layoutLearningTopics);
 
 
@@ -385,7 +411,10 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 //        verticalLayout.add(titleCarousel, getCarousel(lstImage));
 
 
-
+        VerticalLayout layoutPhotoUploads = new VerticalLayout();
+        layoutPhotoUploads.addClassNames(AlignItems.CENTER, JustifyContent.CENTER,
+        Padding.SMALL, Margin.NONE);
+        layoutPhotoUploads.addClassName("page-section");
         H2 titleGraphLastPhotos = new H2("Photo Uploads");
         HorizontalLayout layoutFilterUploadsPeriod = new HorizontalLayout();
         layoutFilterUploadsPeriod.addClassName("tab-select");
@@ -394,7 +423,8 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
                 AlignItems.CENTER, JustifyContent.CENTER,
                 Padding.NONE, Margin.NONE);
         layoutGraph.add(loadGraphUploads(sqlUploadsGrouped + sqlGroupByMonthly + sqlUploadsGroupedOrderBy, arrColsUploadsGrouped, "month"));
-        verticalLayout.add(titleGraphLastPhotos, layoutFilterUploadsPeriod, layoutGraph);
+        layoutPhotoUploads.add(titleGraphLastPhotos, layoutFilterUploadsPeriod, layoutGraph);
+        verticalLayout.add(layoutPhotoUploads);
 
         HorizontalLayout layoutTabSelectPeriod = new HorizontalLayout();
         layoutTabSelectPeriod.addClassName("tab-select");
@@ -415,7 +445,6 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
 
         VerticalLayout layoutLastLearnings = new VerticalLayout();
-        layoutLastLearnings.addClassName("page-section");
         layoutLastLearnings.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER, Padding.MEDIUM);
         H2 titleLastLearnings = new H2("Last Posted Learnings");
         Div divLastLearnings = loadLastLearnings(sqlLearningsRead, arrColumnsLearning);
@@ -423,21 +452,14 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         verticalLayout.add(layoutLastLearnings);
 
 
-        H2 titleLastPhotos = new H2("Last Photos Uploaded");
-        layoutLastPhotos.addClassNames(Overflow.HIDDEN, Width.FULL,
-                AlignItems.CENTER, JustifyContent.CENTER,
-                Margin.NONE, Padding.SMALL);
-        layoutLastPhotos.addClassName("container-uploaded-lines");
 
-        VerticalLayout layoutLastPhotoUploads = new VerticalLayout();
-        layoutLastPhotoUploads.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER, Padding.MEDIUM);
 
 
         String finalSqlGalleryAll = sqlGalleryAll;
 
         HorizontalLayout layoutPhotosButton = new HorizontalLayout();
 
-        HorizontalLayout layoutTabViewPhotos = new HorizontalLayout();
+/*        HorizontalLayout layoutTabViewPhotos = new HorizontalLayout();
         layoutTabViewPhotos.addClassName("tab-select");
         RadioButtonGroup<String> btnGroupShowPhotos = new RadioButtonGroup<>();
         btnGroupShowPhotos.setItems("Last 5 Photos", "Last 10 Photos", "Last 15 Photos");
@@ -455,7 +477,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
             }
         });
         btnGroupShowPhotos.setValue("Last 5 Photos");
-        layoutTabViewPhotos.add(btnGroupShowPhotos);
+        layoutTabViewPhotos.add(btnGroupShowPhotos);*/
 
         HorizontalLayout layoutMorePhotosActions = new HorizontalLayout();
         layoutMorePhotosActions.addClassName("view-more");
@@ -467,8 +489,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
             );
         });
         layoutMorePhotosActions.add(btnMorePhotos);
-        layoutLastPhotoUploads.add(titleLastPhotos, layoutPhotosButton, layoutTabViewPhotos, layoutLastPhotos, layoutMorePhotosActions);
-        verticalLayout.add(layoutLastPhotoUploads);
+
 
         H2 titleWeather = new H2("Current Weather at:");
 
@@ -1727,6 +1748,131 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 //        logger.info(" photo  getRecordsFromDb with params:   " + sql);
 //        return recordService.findAll(sql,arrColumnNames, sqlParValue, sqlParType);
 //    }
+
+    private VerticalLayout loadStatisticsSection() {
+        VerticalLayout layout = new VerticalLayout();
+        layout.addClassName("page-section");
+        layout.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER, Padding.MEDIUM);
+
+        H2 title = new H2("Popular Photos");
+
+        Div statsContainer = new Div();
+        statsContainer.addClassName("stats-gallery");
+        statsContainer.addClassNames(Width.FULL);
+
+        final String[] activeFilter = {"Most Viewed"};
+        final int[] activeCount = {5};
+/*
+        SvgIcon iconLike = new SvgIcon(
+                DownloadHandler.forClassResource(LikeButton.class, "/icons/like-icon.svg"));
+        Icon icLike = new Icon( DownloadHandler.forClassResource(LikeButton.class, "/icons/like-icon.svg").getUrlPostfix());*/
+
+        HorizontalLayout filterTiles = buildRadioTiles("stat-filter",
+                new String[]{"Most Viewed", "Most Liked", "Most Recent"},
+                new Icon[]{FontAwesome.Solid.EYE.create(), FontAwesome.Solid.THUMBS_UP.create(), FontAwesome.Solid.FILE_UPLOAD.create()},
+                val -> {
+                    activeFilter[0] = val;
+                    statsContainer.removeAll();
+                    loadStatsPhotos(statsContainer, activeFilter[0], activeCount[0]);
+                });
+
+        HorizontalLayout countTiles = buildRadioTiles("stat-count",
+                new String[]{"5", "10", "15", "20"},
+                null,
+                val -> {
+                    activeCount[0] = Integer.parseInt(val);
+                    statsContainer.removeAll();
+                    loadStatsPhotos(statsContainer, activeFilter[0], activeCount[0]);
+                });
+        countTiles.addClassName("radio-inputs--compact");
+
+        loadStatsPhotos(statsContainer, "Most Viewed", 5);
+
+        layout.add(title, filterTiles, countTiles, statsContainer);
+        return layout;
+    }
+
+    private HorizontalLayout buildRadioTiles(String groupName, String[] labels, Icon[] icons,
+                                Consumer<String> onChange) {
+        HorizontalLayout container = new HorizontalLayout();
+        container.setWrap(true);
+        container.addClassName("radio-inputs");
+
+        for (int i = 0; i < labels.length; i++) {
+            Element labelEl = new Element("label");
+
+            Element inputEl = new Element("input");
+            inputEl.setAttribute("class", "radio-input");
+            inputEl.setAttribute("type", "radio");
+            inputEl.setAttribute("name", groupName);
+            inputEl.setAttribute("value", labels[i]);
+            if (i == 0) inputEl.setAttribute("checked", "");
+
+            Element tileEl = new Element("div");
+            tileEl.setAttribute("class", "radio-tile");
+
+            if (icons != null && icons[i] != null) {
+                Element iconDiv = new Element("div");
+                iconDiv.setAttribute("class", "radio-icon");
+                iconDiv.appendChild(icons[i].getElement());
+                tileEl.appendChild(iconDiv);
+            }
+
+            Element labelSpan = new Element("span");
+            labelSpan.setAttribute("class", "radio-label");
+            labelSpan.setText(labels[i]);
+            tileEl.appendChild(labelSpan);
+
+            String val = labels[i];
+            inputEl.addEventListener("change", e -> onChange.accept(val));
+
+            labelEl.appendChild(inputEl, tileEl);
+            container.getElement().appendChild(labelEl);
+        }
+
+        return container;
+    }
+
+
+    private void loadStatsPhotos(Div container, String filter, int count) {
+        String sql;
+        switch (filter) {
+            case "Most Liked":
+                sql = photoStatisticsService.getMostLikedSql(count);
+                break;
+            case "Most Recent":
+                sql = photoStatisticsService.getMostRecentSql(count);
+                break;
+            default:
+                sql = photoStatisticsService.getMostViewedSql(count);
+        }
+
+        String strPath = DIR_PHOTOS_SERVER + dirChar + subPathSmall;
+        List<Record> lstRecords = getRecordsFromDb(sql, PhotoStatisticsService.STATS_COLUMNS);
+
+        String sqlCarouselForStats = photoStatisticsService.getMostRecentSql(20);
+        String sqlCarouselOrderBy = " ORDER BY pm.date_inserted DESC";
+
+        for (Record record : lstRecords) {
+            String strFileName = record.getColumnData("name_new");
+            String strImagePath = strPath + dirChar + strFileName;
+
+            GalleryImageViewCard card = new GalleryImageViewCard(
+                    record, strImagePath, isMobile, userId, strUsername,
+                    sessionCreation, hostname, publicIp,
+                    false,
+                    recordService,
+                    2,
+                    sqlCarouselForStats,
+                    sqlCarouselOrderBy,
+                    PhotoStatisticsService.STATS_COLUMNS,
+                    shareService, shareMetricService, weatherService,
+                    photoRatingService, photoViewService,
+                    GalleryImageViewCard.CardSize.COMPACT
+            );
+            container.add(card);
+        }
+    }
 
     private void logVisitorToDb() {
 

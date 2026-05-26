@@ -63,6 +63,13 @@ import static com.photo.act.photo_act.views.MainLayout.baseUrl;
 
 public class GalleryImageViewCard extends Div {
 
+    /** Controls the visual footprint of the card; apply via the size-aware constructor. */
+    public enum CardSize {
+        COMPACT,  // smaller cards – stats panels, list overviews
+        NORMAL,   // default gallery card
+        WIDE      // featured / hero display
+    }
+
 
 
     private static final Logger logger = LoggerFactory.getLogger(GalleryImageViewCard.class);
@@ -131,11 +138,24 @@ public class GalleryImageViewCard extends Div {
     private String sqlReadAlbumsOrderby = " ORDER BY title ASC ";
 
     private boolean isTypeProfile = false;
+    private CardSize size;
 
+    /** Backwards-compatible constructor – defaults to {@link CardSize#NORMAL}. */
     public GalleryImageViewCard(Record record, String strImagePath, boolean isMobile, int userId, String strUserName, long sessionCreation,
                                 String hostname, String publicIp, boolean isEditable, RecordService recordService, int isType, String sqlCarousel, String sqlCarouselOrderBy,
                                 String[] arrColumnsCarousel, ShareService shareService, ShareMetricService shareMetricService, WeatherService weatherService,
                                 PhotoRatingService photoRatingService, PhotoViewService photoViewService) {
+        this(record, strImagePath, isMobile, userId, strUserName, sessionCreation, hostname, publicIp, isEditable,
+                recordService, isType, sqlCarousel, sqlCarouselOrderBy, arrColumnsCarousel,
+                shareService, shareMetricService, weatherService, photoRatingService, photoViewService,
+                CardSize.NORMAL);
+    }
+
+    /** Full constructor with explicit {@link CardSize}. */
+    public GalleryImageViewCard(Record record, String strImagePath, boolean isMobile, int userId, String strUserName, long sessionCreation,
+                                String hostname, String publicIp, boolean isEditable, RecordService recordService, int isType, String sqlCarousel, String sqlCarouselOrderBy,
+                                String[] arrColumnsCarousel, ShareService shareService, ShareMetricService shareMetricService, WeatherService weatherService,
+                                PhotoRatingService photoRatingService, PhotoViewService photoViewService, CardSize size) {
         this.recordService = recordService;
         this.shareService = shareService;
         this.shareMetricService = shareMetricService;
@@ -153,9 +173,15 @@ public class GalleryImageViewCard extends Div {
         this.sqlCarouselOrderBy = sqlCarouselOrderBy;
         this.arrColumnsCarousel = arrColumnsCarousel;
         this.weatherService = weatherService;
+        this.size = size;
 
 
         this.addClassName("gallery-view-card");
+        if (size == CardSize.COMPACT) {
+            this.addClassName("gallery-view-card--compact");
+        } else if (size == CardSize.WIDE) {
+            this.addClassName("gallery-view-card--wide");
+        }
 
         genericView = new GenericView(recordService);
         genericView.setPhotoRatingService(photoRatingService);
@@ -281,7 +307,6 @@ public class GalleryImageViewCard extends Div {
 
         HorizontalLayout layoutUser = new HorizontalLayout();
         layoutUser.addClassNames(
-//                Overflow.HIDDEN, Width.FULL,
                 AlignItems.CENTER, JustifyContent.CENTER,
                 Margin.NONE,
                 Padding.NONE,
@@ -559,27 +584,20 @@ public class GalleryImageViewCard extends Div {
         layoutPhotoDetails.add(divMetaCamera, divMetaLens, layoutPhotoFocalLength, layoutAperture, layoutShutterSpeed, layoutIso,layoutTime);
         layoutPhotoDetails.addClassName("info-to-show");
         popoverPhoto.add(layoutPhotoDetails);
+        popoverPhoto.setTarget(layoutDateTimeShot);
 
-        HorizontalLayout statsRow = buildStatsRow(strPhotoId);
+            HorizontalLayout statsRow = buildStatsRow(strPhotoId);
 
         layoutPhotoDetails.getStyle().setOpacity("1");
 
-        VerticalLayout layoutInfoPanel = new VerticalLayout();
-        layoutInfoPanel.addClassNames(TextColor.BODY, Padding.Vertical.NONE, FontSize.SMALL);
-        if (isEditable) {
-            popoverPhoto.setTarget(layoutDateTimeShot);
-            layoutInfoPanel.add(popover,layoutUser, statsRow,popoverPhoto, layoutDateTimeShot);
-        } else {
-            popoverPhoto.setTarget(layoutDateRelUploaded);
-            layoutMemberTimeInfo.add(popover,layoutUser, statsRow, popoverPhoto, layoutDateRelUploaded);
-            layoutInfoPanel.add(layoutMemberTimeInfo);
-        }
+//        this.add((popover, popoverPhoto);
+
 //        divImage.add(layoutPhotoDetails);
 
 //        AvatarItem avatarLargeItemMe = new AvatarItem(strPhotoNameUser + " " + strPhotoSurnameUser, "@" + strPhotoUserName, imgAvatarMedium);
 //        avatarLargeItemMe.addClassNames(Width.FULL, Padding.MEDIUM, Margin.NONE);
 
-        HorizontalLayout layoutMemberInfo = new HorizontalLayout();
+/*        HorizontalLayout layoutMemberInfo = new HorizontalLayout();
         layoutMemberInfo.addClassNames(
                 Overflow.HIDDEN, Width.FULL,
                 AlignItems.CENTER, JustifyContent.AROUND,
@@ -589,7 +607,7 @@ public class GalleryImageViewCard extends Div {
                 //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
                 //   Background.CONTRAST_5,
                 BorderRadius.NONE
-        );
+        );*/
 
         HorizontalLayout layoutMemberPhotoCount = new HorizontalLayout();
         layoutMemberPhotoCount.addClassNames(
@@ -654,8 +672,30 @@ public class GalleryImageViewCard extends Div {
 
 
         if (!isEditable) {
-            //anyone logged in
-            this.add(divImage, layoutInfoPanel, divPhotoInfo);
+
+
+
+            if(size==CardSize.COMPACT) {
+                VerticalLayout layoutInfoPanel = new VerticalLayout();
+                layoutInfoPanel.addClassNames(Width.FULL,
+                        AlignItems.CENTER, JustifyContent.CENTER,
+                        Padding.XSMALL, Margin.NONE,
+                        TextColor.TERTIARY,
+                        FontSize.SMALL);
+                layoutInfoPanel.add(layoutUser, statsRow, layoutDateTimeShot);
+                this.add(divImage, layoutInfoPanel, divPhotoInfo);
+            }else {
+
+                HorizontalLayout layoutInfoPanel = new HorizontalLayout();
+                layoutInfoPanel.addClassNames(Width.FULL,
+                        AlignItems.CENTER, JustifyContent.BETWEEN,
+                        Padding.MEDIUM, Margin.NONE,
+                        TextColor.TERTIARY,
+                        FontSize.SMALL);
+                layoutInfoPanel.add(layoutUser, statsRow, layoutDateRelUploaded);
+                this.add(divImage, layoutInfoPanel, divPhotoInfo);
+            }
+
             if (isMobile) {
                 divPhotoInfo.add(subtitle, getActions(strPhotoId, strSubTitle,strFileName, strCity,isType, strSelection, strAlbumUsername));
             } else {
@@ -664,6 +704,14 @@ public class GalleryImageViewCard extends Div {
             //this.addClassNames(JustifyContent.EVENLY);
 
         } else {
+            VerticalLayout layoutInfoPanel = new VerticalLayout();
+            layoutInfoPanel.addClassNames(AlignItems.CENTER, JustifyContent.CENTER,
+                    Padding.XSMALL, Margin.NONE,
+                    TextColor.TERTIARY,
+                    FontSize.SMALL);
+
+
+            layoutInfoPanel.add(layoutUser, statsRow, layoutDateTimeShot);
             // user himself
             this.add(divImage, layoutInfoPanel, divPhotoInfo);
             if (isMobile) {
@@ -693,6 +741,8 @@ public class GalleryImageViewCard extends Div {
         } catch (NumberFormatException ignored) {}
 
         statsRow = new HorizontalLayout();
+
+
         statsRow.addClassNames(
                  AlignItems.CENTER, JustifyContent.CENTER,
                 Gap.MEDIUM, Padding.Horizontal.XSMALL, Padding.Vertical.NONE, Margin.NONE
@@ -760,7 +810,11 @@ public class GalleryImageViewCard extends Div {
                 baseUrl + "/photo/" + strPhotoId
         );
         ShareBottomBar shareBottomBar = new ShareBottomBar(photo, shareService, shareMetricService);
-
+        if(size == CardSize.COMPACT){
+            shareBottomBar.addClassName("btn-bar-wrapper-compact");
+        }else {
+            shareBottomBar.addClassName("btn-bar-wrapper");
+        }
 
 
         // ── Like button ───────────────────────────────────────────────────────
@@ -870,8 +924,8 @@ public class GalleryImageViewCard extends Div {
         }, "btn-bar-info");*/
 
         HorizontalLayout layoutActions = new HorizontalLayout();
-        layoutActions.addClassNames(AlignItems.CENTER, JustifyContent.CENTER,
-                Margin.NONE, Padding.SMALL);
+/*        layoutActions.addClassNames(AlignItems.CENTER, JustifyContent.CENTER,
+                Margin.NONE, Padding.SMALL);*/
         layoutActions.addClassName("actions");
         layoutActions.add(shareBottomBar);
         return layoutActions;
