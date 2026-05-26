@@ -2,6 +2,7 @@ package com.photo.act.photo_act.views.components;
 
 import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.dto.LearningDto;
+import com.vaadin.flow.component.Html;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;

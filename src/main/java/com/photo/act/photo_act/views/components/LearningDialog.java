@@ -60,7 +60,7 @@ public class LearningDialog extends Dialog {
     private final DatePicker  fldPublished   = new DatePicker("Published Date");
     private final ComboBox<TutorDto>             fldTutor    = new ComboBox<>("Tutor");
     private final ComboBox<LearningCategoryDto>  fldCategory = new ComboBox<>("Category");
-    private final ComboBox<LearningCategoryDto>  fldGenre    = new ComboBox<>("Genre");
+    /*private final ComboBox<LearningCategoryDto>  fldGenre    = new ComboBox<>("Genre");*/
 
     /** Create mode. */
     public LearningDialog(LearningService learningService, TutorService tutorService,
@@ -117,10 +117,10 @@ public class LearningDialog extends Dialog {
         fldCategory.setPlaceholder("Select category…");
         fldCategory.setClearButtonVisible(true);
 
-        fldGenre.setItems(categories);
+/*        fldGenre.setItems(categories);
         fldGenre.setItemLabelGenerator(LearningCategoryDto::getCatTitle);
         fldGenre.setPlaceholder("Select genre…");
-        fldGenre.setClearButtonVisible(true);
+        fldGenre.setClearButtonVisible(true);*/
 
         // ── Format select ──
         fldFormat.setLabel("Format");
@@ -139,7 +139,7 @@ public class LearningDialog extends Dialog {
 
         form.add(fldTitle, fldFormat,
                  fldTutor, fldCategory,
-                 fldGenre, fldPublished,
+                  fldPublished,
                  fldUrl, fldPicture,
                  fldDuration, fldPages,
                  fldArtistsRef);
@@ -188,11 +188,11 @@ public class LearningDialog extends Dialog {
                     .filter(c -> c.getId().equals(dto.getCategoryId()))
                     .findFirst().ifPresent(fldCategory::setValue);
         }
-        if (dto.getCatGenreId() != null) {
+/*        if (dto.getCatGenreId() != null) {
             fldGenre.getListDataView().getItems()
                     .filter(c -> c.getId().equals(dto.getCatGenreId()))
                     .findFirst().ifPresent(fldGenre::setValue);
-        }
+        }*/
     }
 
     private void save() {
@@ -237,7 +237,7 @@ public class LearningDialog extends Dialog {
         dto.setPublished(fldPublished.getValue());
         dto.setTutorId(fldTutor.getValue() != null ? fldTutor.getValue().getId() : null);
         dto.setCategoryId(fldCategory.getValue() != null ? fldCategory.getValue().getId() : null);
-        dto.setCatGenreId(fldGenre.getValue() != null ? fldGenre.getValue().getId() : null);
+        /*dto.setCatGenreId(fldGenre.getValue() != null ? fldGenre.getValue().getId() : null);*/
         dto.setUserIdPost(editing != null ? editing.getUserIdPost() : currentUserId);
         return dto;
     }

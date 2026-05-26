@@ -89,7 +89,8 @@ public class MemberLearningsGrid extends VerticalLayout {
                 GridVariant.LUMO_NO_ROW_BORDERS);
 
         grid.setWidthFull();
-        grid.setAllRowsVisible(true);
+//        grid.setHeightFull();
+        //grid.setAllRowsVisible(true);  // expands to fit all rows, no inner scroll bar
     }
 
     private void configureEmptyState() {
