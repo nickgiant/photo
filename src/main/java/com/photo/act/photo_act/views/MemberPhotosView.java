@@ -3,19 +3,15 @@ package com.photo.act.photo_act.views;
 import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
-import com.photo.act.photo_act.services.EmailSendService;
-import com.photo.act.photo_act.services.PhotoRatingService;
-import com.photo.act.photo_act.services.PhotoViewService;
-import com.photo.act.photo_act.services.ShareMetricService;
-import com.photo.act.photo_act.services.ShareService;
-import com.photo.act.photo_act.services.WeatherService;
+import com.photo.act.photo_act.dto.LearningDto;
+import com.photo.act.photo_act.services.*;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
-import com.photo.act.photo_act.views.components.GalleryImageViewCard;
-import com.photo.act.photo_act.views.components.GenericView;
+import com.photo.act.photo_act.views.components.*;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.HasStyle;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.*;
@@ -223,11 +219,14 @@ public class MemberPhotosView extends Main implements HasUrlParameter<String>, B
     private String strBrowser;
     private GenericView genericView;
     private EmailSendService emailSendService;
-
+    private LearningService learningService;
+    private TutorService tutorService;
 
     private ListBox<String> listBoxAlbums;
 
-    public MemberPhotosView(RecordService recordService, EmailSendService emailSendService, ShareService shareService, ShareMetricService shareMetricService, WeatherService weatherService, PhotoRatingService photoRatingService, PhotoViewService photoViewService) {
+    public MemberPhotosView(RecordService recordService, EmailSendService emailSendService, ShareService shareService,
+                            ShareMetricService shareMetricService, WeatherService weatherService, PhotoRatingService photoRatingService,
+                            PhotoViewService photoViewService, LearningService learningService, TutorService tutorService) {
         this.recordService = recordService;
         this.emailSendService = emailSendService;
         this.shareService = shareService;
@@ -235,6 +234,8 @@ public class MemberPhotosView extends Main implements HasUrlParameter<String>, B
         this.weatherService = weatherService;
         this.photoRatingService = photoRatingService;
         this.photoViewService = photoViewService;
+        this.learningService = learningService;
+        this.tutorService = tutorService;
 
         utilsDate = new UtilsDate();
         genericView = new GenericView(recordService);
@@ -290,10 +291,19 @@ public class MemberPhotosView extends Main implements HasUrlParameter<String>, B
                 AlignItems.CENTER, JustifyContent.EVENLY,
                 Margin.MEDIUM, Padding.LARGE,
                 Width.FULL);
-        layoutMemberNAlbums.add(loadMemberInfo(sqlMemberMe, arrColumnsMember, false));
-        layoutMemberNAlbums.add(loadAlbumsInfoPanel(sqlMemberOfAlbums, arrColumnsMemberAlbums, strMemberId));
+
+        int intMemberId = Integer.parseInt(strMemberId);
+
+        if(intMemberId==44){
+            layoutMemberNAlbums.add(loadLearningsPanel(intMemberId));
+            layoutMemberNAlbums.addClassNames(Height.FULL);
+        }else{
+            layoutMemberNAlbums.add(loadMemberInfo(sqlMemberMe, arrColumnsMember, false));
+//        layoutMemberNAlbums.add(loadLearningsPanel(sqlMemberOfAlbums, arrColumnsMemberAlbums, strMemberId));
+        }
 
         verticalLayout.add(layoutMemberNAlbums);
+
         verticalLayout.add(loadMemberPhotos(sqlGallery, arrColumnMemberGallery, intUserId, strMember));
 
 
@@ -755,6 +765,28 @@ public class MemberPhotosView extends Main implements HasUrlParameter<String>, B
         return layoutMember;
     }
 
+    private VerticalLayout loadLearningsPanel(int intMemberId){
+
+        VerticalLayout layoutLearnings = new VerticalLayout();
+        layoutLearnings.addClassNames(Width.FULL, Height.FULL,
+                AlignItems.CENTER, JustifyContent.CENTER,
+                Padding.NONE, Margin.NONE);
+
+        Button btnNew = new Button("New Learning");
+
+        String strPath = DIR_PHOTOS_SERVER + dirChar + subPathThumbs;
+        MemberLearningsGrid learningsGrid = new MemberLearningsGrid(intMemberId, learningService,tutorService,strPath);
+        learningsGrid.setMinHeight("600px");
+        learningsGrid.setWidthFull();
+        learningsGrid.setHeightFull();
+        layoutLearnings.add(btnNew,learningsGrid);
+
+        btnNew.addClickListener( e-> {
+            new LearningDialog(learningService, tutorService, intMemberId, saved -> learningsGrid.refresh(intMemberId)).open();
+        });
+       return  layoutLearnings;
+    }
+
 
     private GalleryImageViewCard getImagePanelFromDb(Record record, String strPath, int intUserId, String strMember) {
 
@@ -787,7 +819,7 @@ public class MemberPhotosView extends Main implements HasUrlParameter<String>, B
         return imageGalleryViewCard;
     }
 
-    private VerticalLayout loadAlbumsInfoPanel(String sqlMemberOfAlbums, String[] arrColumnsMemberAlbums, String strMemberId) {
+    private VerticalLayout loadAlbumsPanel(String sqlMemberOfAlbums, String[] arrColumnsMemberAlbums, String strMemberId) {
 
         String sqlMemberAlbums = sqlMemberOfAlbums + sqlMemberOfAlbumsOrderBy;
 
