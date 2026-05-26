@@ -49,8 +49,6 @@ import java.net.UnknownHostException;
 @Layout
 @AnonymousAllowed
 
-
-
 public class MainLayout extends AppLayout{
 
     public static final String APP_VERSION = "2026.04.1.14";
