@@ -192,9 +192,6 @@ public class LoginView extends VerticalLayout implements BeforeEnterObserver, Ha
 
         DIR_PHOTOS_SERVER = genericView.getAppProps(PROP_PHOTOS);
 
-        Html htmlTitle = new Html("<title>'photoact.net Through Photography, We Connect and Act'</title>");
-        Html htmlMeta = new Html("<meta name='description' content='Get the latest updates from our community of photographers.'>");
-        this.add(htmlTitle, htmlMeta);
 
         this.setWidthFull();
 
