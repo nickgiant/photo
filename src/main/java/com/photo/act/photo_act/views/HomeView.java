@@ -253,7 +253,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
 
         String[] arrColumnsLearning = {"title", "subtitle", "picture", "category_id", "cat_genre_id", "format", "url", "tutor_id", "artists_ref", "description", "duration", "pages", "published", "year_published",
-                "userId_post", "date_inserted",
+                "user_Id_post", "date_inserted",
                 "cat_title", "cat_type", "genre_title",
                 "tutor_name",
                 "username", "name", "surname"
@@ -262,15 +262,15 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         // learnings: l.id, l.title, l.picture, l.section , l.category, l.format, l.url, l.parent_id, l.child_index, l.tutor_id, l.artists_ref, l.description, l.duration, l.pages, l.published, l.userIdInsert, l.username, l.dateInsert
 // learnings_tutor:  lt.id, lt.tutor_name, lt.learnings_team_id, lt.website, lt.url_fb, lt.url_yt, lt.url_insta, lt.url_flickr, lt.url_wikipedia, lt.url_ref1, lt.url_ref2, lt.url_ref3, lt.url_flckr, lt.city_base, lt.country_base, lt.userIdInsert, lt.username, lt.date_inserted
         String sqlLearningsRead = "SELECT "
-                + " l.id, l.title,  l.subtitle, l.picture, l.category_id, l.cat_genre_id, l.format, l.url, l.tutor_id, l.artists_ref, l.description, l.duration, l.pages, l.published, DATE_FORMAT(l.published, '%Y') AS year_published,  l.userId_post, l.dateInsert, getDateDiffFromNow(l.dateInsert) AS date_inserted "
+                + " l.id, l.title,  l.subtitle, l.picture, l.category_id, l.cat_genre_id, l.format, l.url, l.tutor_id, l.artists_ref, l.description, l.duration, l.pages, l.published, DATE_FORMAT(l.published, '%Y') AS year_published,  l.user_Id_post, l.date_insert, getDateDiffFromNow(l.date_insert) AS date_inserted"
                 + " , lc.cat_title,  lc.cat_type, t.tutor_name "
                 + " , lcg.cat_title AS genre_title"
                 + " , usr.username, usr.name, usr.surname "
                 //  + " , l.tutor_id, l.tutor_id_team, l.category_id, l.category_id2, t.tutor_name, t.website, t.url_fb, t.url_yt, t.url_insta, t.url_flickr, t.url_wikipedia, t.url_ref1, t.url_ref2, t.url_ref3, t.city_base, t.country_base, t.userIdInsert, t.username, t.date_inserted "
                 + " FROM learnings_categories lc, learnings l LEFT JOIN learnings_categories lcg ON l.cat_genre_id = lcg.id,  tutor t, dbuser usr " //, tutor t  "
                 + " WHERE 1 = 1 "
-                + " AND lc.id = l.category_id AND l.tutor_id = t.id AND l.userId_post = usr.userId"
-                + " ORDER BY l.dateInsert DESC "
+                + " AND lc.id = l.category_id AND l.tutor_id = t.id AND l.user_Id_post = usr.userId"
+                + " ORDER BY l.date_insert DESC "
                 + " LIMIT 3";
 
 

@@ -143,7 +143,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
             " FROM  photo_meta pm LEFT JOIN destination d ON pm.destination_Id = d.id ";
     String[] arrColumnsLearning = {"id", "title", "cat_title_count", "picture", "cat_title", "cat_title_genre", "cat_title_type", "cat_title_type_genre", "cat_type", "format", "url", "artists_ref", "description", "duration", "pages", "published", "year_published",
             "category_id", "tutor_name", "website", "url_fb", "url_yt", "url_insta", "url_flickr", "url_wikipedia", "url_ref1", "url_ref2", "url_ref3",
-            "dateInsert", "date_created",
+            "date_insert", "date_created",
             "username", "username", "avatar_path", "member_since"};
 
 
@@ -172,24 +172,24 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
 
     String[] arrColumnsLearningFormat = {"id", "title", "picture", "format", "url", "artists_ref", "description", "duration", "pages", "published", "year_published",
             "category_id", "tutor_name", "website", "url_fb", "url_yt", "url_insta", "url_flickr", "url_wikipedia", "url_ref1", "url_ref2", "url_ref3",
-            "dateInsert", "date_created",
+            "date_insert", "date_created",
             "username", "username", "avatar_path", "member_since"};
     String sqlLearningsFormatRead = //f.nameShort, f.location, f.country, f.periodOfYear, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description  " +
             "SELECT " +
                     "  l.id, l.title, l.picture, l.format, l.url, l.tutor_id, l.artists_ref, l.description, l.duration, l.pages, l.published " +
                     " , DATE_FORMAT(l.published, '%Y') AS year_published " +
-                    " , l.dateInsert " +
-                    " ,  getDateDiffFromNow(l.dateInsert) AS date_created " +
+                    " , l.date_insert " +
+                    " ,  getDateDiffFromNow(l.date_insert) AS date_created " +
                     " , l.tutor_id, l.tutor_id_team, l.category_id, t.tutor_name, t.website, t.url_fb, t.url_yt, t.url_insta, t.url_flickr, t.url_wikipedia, t.url_ref1 " +
                     " , t.url_ref2, t.url_ref3, t.city_base, t.country_base, t.userIdInsert, t.username, t.date_inserted " +
-                    " , l.userId_post " +
+                    " , l.user_Id_post " +
                     " , usr.username, usr.username, usr.avatar_path, DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since " +
                     "  FROM learnings l , tutor t, dbuser usr " +
                     "  WHERE 1 = 1 " +
-                    " AND l.userId_post = usr.userId " +
+                    " AND l.user_Id_post = usr.userId " +
                     " AND l.tutor_id = t.id " +
                     " GROUP BY l.format " +
-                    " ORDER BY l.dateInsert DESC";
+                    " ORDER BY l.date_insert DESC";
 
 
     private String dirChar = FileSystems.getDefault().getSeparator();
@@ -201,15 +201,15 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
                     /*" , lc2.cat_title_type AS cat_title_type_genre " +*/
                     " , l.id, l.title, l.picture, l.format, l.url, l.tutor_id, l.artists_ref, l.description, l.duration, l.pages, l.published " +
                     " , DATE_FORMAT(l.published, '%Y') AS year_published " +
-                    " , l.dateInsert " +
-                    " ,  getDateDiffFromNow(l.dateInsert) AS date_created " +
+                    " , l.date_insert " +
+                    " ,  getDateDiffFromNow(l.date_insert) AS date_created " +
                     " , l.tutor_id, l.tutor_id_team, l.category_id, t.tutor_name, t.website, t.url_fb, t.url_yt, t.url_insta, t.url_flickr, t.url_wikipedia, t.url_ref1 " +
                     " , t.url_ref2, t.url_ref3, t.city_base, t.country_base, t.userIdInsert, t.username, t.date_inserted " +
-                    " , l.userId_post " +
+                    " , l.user_Id_post " +
                     " , usr.username, usr.username, usr.avatar_path, DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since " +
                     "  FROM learnings_categories lc, learnings l, tutor t, dbuser usr " +
                     "  WHERE 1 = 1 " +
-                    " AND l.userId_post = usr.userId " +
+                    " AND l.user_Id_post = usr.userId " +
                     " AND lc.id = l.category_id AND l.tutor_id = t.id ";
 
     // LEFT JOIN learnings_categories lc2 ON lc2.id = l.cat_genre_id
@@ -232,7 +232,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
     private Select<String> cmbSortBy;
 
     private String[] arrOrderByItems = {"Newest First", "Oldest First", "Most Liked", "Least Liked"};
-    private String[] arrOrderByItemsSql = {" ORDER BY l.dateInsert DESC", " ORDER BY l.dateInsert ASC", " ORDER BY l.dateInsert ASC", " ORDER BY l.dateInsert DESC"};
+    private String[] arrOrderByItemsSql = {" ORDER BY l.date_insert DESC", " ORDER BY l.date_insert ASC", " ORDER BY l.date_insert ASC", " ORDER BY l.date_insert DESC"};
     private String sqlOrderBy = " ORDER BY pm.date_inserted DESC";
     private String strDefOrderBy = arrOrderByItems[0];
     private VerticalLayout filtersContainer;
@@ -395,7 +395,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
             strWhereSubClause = strWhereSubClause + " AND lc.cat_title LIKE '" + genre + " '" ;// ( lc.cat_title LIKE '" + genre + "' OR lc2.cat_title LIKE '" + genre + "') ";
         }
 
-        sqlLearningsReadOrderBy = " ORDER BY l.dateInsert DESC";
+        sqlLearningsReadOrderBy = " ORDER BY l.date_insert DESC";
 
         String sqlLimit = "";
         if (intLimit == 0) {
@@ -586,7 +586,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
 
         String strYearPublished = record.getColumnData("year_published");
 
-        String strUserIdPost = record.getColumnData("userId_post");
+        String strUserIdPost = record.getColumnData("user_Id_post");
         String strUserIdSuggest = record.getColumnData("userId_suggest");
 
         String strUsername = record.getColumnData("username");
