@@ -124,8 +124,8 @@ header p {
 
 .home-view .learning-photo-genres div{
 
-         border-top: 1px solid #466ca8; /*#666666;*/
-         border-bottom: 1px solid #466ca8; /* #666666;*/
+         border-top: 1px solid #c7d8f1; /*#666666;*/
+         border-bottom: 1px solid #c7d8f1; /* #666666;*/
         min-height: 110px;
         font-size: 14px;
         font-weight: 400;
@@ -136,7 +136,7 @@ header p {
         text-align: center; /*justify*/
         font-family: 'Raleway', sans-serif;
         /*font-weight: normal;*/
-                color: var(--lumo-contrast-50pct);
+        color: var(--lumo-contrast-50pct);
 }
 
 .home-view .learning-photo-genres h6{
@@ -159,7 +159,7 @@ header p {
         /*color: #666666; /* #466ca8; /* #6c9494;*/
        /* min-height: 180px;*/
         background-color: #ffffff; /* #e3ebf7; /* #ffffff;/*#d9e5f7;*/
-        border-radius: 20px;
+        border-radius: 14px;
         border: 1px solid #c7d8f1;
         padding: 18px 10px 12px;
         margin: 12px;
@@ -173,7 +173,7 @@ header p {
         &:hover {
             color:  #466ca8; /* #6c9494;*/
             background-color: #e3ebf7; /* #eaeff7; /*#ffffff;/*#d9e5f7;*/
-            border: 1px solid #c7d8f1;
+            border: 1px solid #466ca8;
             /*border: #466ca8 1px solid; /* #6c9494;*/
             box-shadow: 2px 2px 10px lightgrey;
             transition: all 0.3s ease;
