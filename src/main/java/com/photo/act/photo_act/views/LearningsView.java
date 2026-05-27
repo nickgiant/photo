@@ -9,16 +9,20 @@ import com.github.appreciated.apexcharts.config.chart.Type;
 import com.github.appreciated.apexcharts.config.legend.HorizontalAlign;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
+import com.photo.act.photo_act.model.ShareType;
+import com.photo.act.photo_act.model.ShareableResource;
 import com.photo.act.photo_act.services.CacheService;
 import com.photo.act.photo_act.services.LearningViewService;
+import com.photo.act.photo_act.services.ShareMetricService;
+import com.photo.act.photo_act.services.ShareService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.SlugUtil;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.photo.act.photo_act.views.components.AvatarItem;
-import com.photo.act.photo_act.views.components.ButtonBar;
 import com.photo.act.photo_act.views.components.FilterDestinationTypeCard;
 import com.photo.act.photo_act.views.components.GenericView;
 import com.photo.act.photo_act.views.components.LikeButton;
+import com.photo.act.photo_act.views.components.ShareBottomBar;
 import com.vaadin.flow.component.*;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.CheckboxGroup;
@@ -43,6 +47,7 @@ import com.vaadin.flow.theme.lumo.LumoUtility.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.vaadin.lineawesome.LineAwesomeIcon;
 
 import java.io.File;
@@ -169,6 +174,10 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
 
     @Autowired
     private LearningViewService learningViewService;
+
+    @Autowired private ShareService shareService;
+    @Autowired private ShareMetricService shareMetricService;
+    @Value("${app.base-url}") private String baseUrl;
 
     String sqlLearningCategoriesRead = //f.nameShort, f.location, f.country, f.periodOfYear, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description  " +
             " SELECT lc.id, lc.cat_title, count(lc.cat_title) AS cat_title_count, lc.cat_title_type, lc.cat_type, l.cat_genre_id, cat_description_min, cat_description_big " +
@@ -1224,8 +1233,8 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
                 learningViewService.recordView(finalLearningId, finalSlug, viewUserId, publicIp,
                         LearningViewService.TYPE_LIST, sessionid, sdt);
             }
-            ButtonBar listBar = buildLearningButtonBar(finalLearningId, finalSlug, strTitle,
-                    viewCount, likeCount, false);
+            ShareBottomBar listBar = buildLearningButtonBar(finalLearningId, finalSlug, strTitle,
+                    strDescription, viewCount, likeCount, false);
             layoutLearningInfo.add(layoutPostTitle, layoutDataSmall, layoutSourceReviewSmall, listBar);
         } else {
             if (learningViewService != null && finalLearningId > 0) {
@@ -1255,8 +1264,8 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
 
             Span spUserPoster = new Span(detUserPosted);
 
-            ButtonBar fullBar = buildLearningButtonBar(finalLearningId, finalSlug, strTitle,
-                    viewCount, likeCount, true);
+            ShareBottomBar fullBar = buildLearningButtonBar(finalLearningId, finalSlug, strTitle,
+                    strDescription, viewCount, likeCount, true);
             layoutLearningInfo.add(layoutPostTitle, layoutDataNormal, layoutSourceCardNormal, layoutReviewNormal,
                     //getReviewResults(),
                     divRelated, spUserPoster, fullBar);
@@ -1585,15 +1594,30 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
     }*/
 
     /**
-     * Builds the standard ButtonBar for a learning item.
-     * Shows view count, a LikeButton, and (in list mode) a navigate button.
-     * Also shows per-type stats in full mode (list views, full views, likes).
+     * Builds the full action bar for a learning item using ShareBottomBar.
+     *
+     * Both list and full views get: view count, LikeButton, social share menu
+     * (Facebook, Instagram, Threads, Pinterest, LinkedIn, Twitter, WhatsApp,
+     * Web Share, Copy URL). List view also gets a "View More" navigate button.
+     * Full view additionally shows per-type breakdown (List / Full views).
      */
-    private ButtonBar buildLearningButtonBar(int learningId, String slug, String strTitle,
-                                             long viewCount, long likeCount, boolean isFull) {
-        ButtonBar bar = new ButtonBar();
+    private ShareBottomBar buildLearningButtonBar(int learningId, String slug, String strTitle,
+                                                  String strDescription,
+                                                  long viewCount, long likeCount, boolean isFull) {
+        String learningPublicUrl = baseUrl + "/learnings/title/" + strTitle;
+        ShareableResource learningResource = new ShareableResource(
+                ShareType.LEARNING,
+                String.valueOf(learningId),
+                (strTitle == null || strTitle.isBlank()) ? "Learning" : strTitle,
+                (strDescription == null || strDescription.isBlank()) ? "" : strDescription,
+                "",
+                learningPublicUrl
+        );
+
+        ShareBottomBar bar = new ShareBottomBar(learningResource, shareService, shareMetricService);
         bar.addClassName("btn-bar-wrapper");
 
+        // View count display
         HorizontalLayout layoutViewCount = new HorizontalLayout();
         layoutViewCount.addClassNames(AlignItems.CENTER, JustifyContent.CENTER,
                 Margin.NONE, Padding.NONE, Gap.XSMALL);
@@ -1601,10 +1625,10 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         layoutViewCount.add(FontAwesome.Regular.EYE.create(), divViews);
         bar.addComponent(layoutViewCount);
 
+        // Full view: show per-type breakdown (list views + full views)
         if (isFull && learningViewService != null && learningId > 0) {
             long listViews = learningViewService.getViewCountByType(learningId, LearningViewService.TYPE_LIST);
             long fullViews = learningViewService.getViewCountByType(learningId, LearningViewService.TYPE_FULL);
-
             HorizontalLayout layoutStats = new HorizontalLayout();
             layoutStats.addClassNames(AlignItems.CENTER, JustifyContent.CENTER,
                     Margin.NONE, Padding.NONE, Gap.XSMALL, FontSize.XSMALL, TextColor.SECONDARY);
@@ -1612,6 +1636,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
             bar.addComponent(layoutStats);
         }
 
+        // Like button
         LikeButton btnLike = new LikeButton(likeCount);
         bar.addButton("Like it!", btnLike, () -> {
             if (learningViewService != null && learningId > 0) {
@@ -1622,6 +1647,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
             }
         }, "btn-bar-share");
 
+        // List view only: navigate to the full learning page
         if (!isFull) {
             RouteParam routeTitle = new RouteParam("title", strTitle);
             bar.addButton("View More",
@@ -1630,6 +1656,10 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
                             ui.navigate(LearningsView.class, new RouteParameters(routeTitle))),
                     "btn-bar-view");
         }
+
+        // Social sharing: Facebook, Instagram, Threads, Pinterest, LinkedIn,
+        // Twitter/X, WhatsApp, Web Share, Copy URL
+        bar.addShareItemMenu();
 
         return bar;
     }
