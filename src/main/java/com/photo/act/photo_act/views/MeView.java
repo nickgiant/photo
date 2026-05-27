@@ -275,13 +275,9 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
     private void constructUI() {
         this.addClassNames("me-view");
         this.addClassNames(Overflow.HIDDEN, Width.FULL,
-                // Margin.LARGE, //.Left.MEDIUM, Margin.Right.MEDIUM,
-                //  Padding.Left.MEDIUM, Padding.Left.MEDIUM,
                 Margin.NONE,
                 Padding.NONE,
                 Gap.MEDIUM,
-                //  Padding.NONE, //.Left.MEDIUM, Padding.Right.MEDIUM,
-                //Margin.Vertical.MEDIUM, Padding.Vertical.NONE,
                 AlignItems.CENTER, JustifyContent.CENTER
         );
         this.addClassName("background");

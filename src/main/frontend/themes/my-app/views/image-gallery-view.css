@@ -161,17 +161,14 @@
 .image-gallery-view .gallery {
 
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(460px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(30rem, 1fr));
     grid-gap: 25px;
     grid-auto-flow: dense;
 
     padding: 15px;
-
-
     margin: 0 auto;
     align-items: center;
     justify-content: space-around;
-
 }
 
 .image-gallery-view .gallery-view-card {
