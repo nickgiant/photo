@@ -10,11 +10,15 @@ import com.github.appreciated.apexcharts.config.legend.HorizontalAlign;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.services.CacheService;
+import com.photo.act.photo_act.services.LearningViewService;
 import com.photo.act.photo_act.utils.NetUtils;
+import com.photo.act.photo_act.utils.SlugUtil;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.photo.act.photo_act.views.components.AvatarItem;
+import com.photo.act.photo_act.views.components.ButtonBar;
 import com.photo.act.photo_act.views.components.FilterDestinationTypeCard;
 import com.photo.act.photo_act.views.components.GenericView;
+import com.photo.act.photo_act.views.components.LikeButton;
 import com.vaadin.flow.component.*;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.CheckboxGroup;
@@ -47,6 +51,7 @@ import java.io.FileNotFoundException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.FileSystems;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -141,7 +146,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
             "  pm.location_by_user, pm.location_area, pm.location_country_code, pm.location_lat, pm.location_lon " +
             //, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description, DATE_FORMAT(f.dateInsert , '%D %M %Y') AS formatedDateUpdated  " +
             " FROM  photo_meta pm LEFT JOIN destination d ON pm.destination_Id = d.id ";
-    String[] arrColumnsLearning = {"id", "title", "cat_title_count", "picture", "cat_title", "cat_title_genre", "cat_title_type", "cat_title_type_genre", "cat_type", "format", "url", "artists_ref", "description", "duration", "pages", "published", "year_published",
+    String[] arrColumnsLearning = {"id", "slug", "title", "cat_title_count", "picture", "cat_title", "cat_title_genre", "cat_title_type", "cat_title_type_genre", "cat_type", "format", "url", "artists_ref", "description", "duration", "pages", "published", "year_published",
             "category_id", "tutor_name", "website", "url_fb", "url_yt", "url_insta", "url_flickr", "url_wikipedia", "url_ref1", "url_ref2", "url_ref3",
             "dateInsert", "date_created",
             "username", "username", "avatar_path", "member_since"};
@@ -161,6 +166,9 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
                     " ORDER BY lc.cat_order ASC";
     @Autowired
     private CacheService cacheService;
+
+    @Autowired
+    private LearningViewService learningViewService;
 
     String sqlLearningCategoriesRead = //f.nameShort, f.location, f.country, f.periodOfYear, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description  " +
             " SELECT lc.id, lc.cat_title, count(lc.cat_title) AS cat_title_count, lc.cat_title_type, lc.cat_type, l.cat_genre_id, cat_description_min, cat_description_big " +
@@ -199,7 +207,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
     String sqlLearningsRead = //f.nameShort, f.location, f.country, f.periodOfYear, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description  " +
             "SELECT lc.cat_title ,  lc.cat_type , lc.cat_title_type " +
                     /*" , lc2.cat_title_type AS cat_title_type_genre " +*/
-                    " , l.id, l.title, l.picture, l.format, l.url, l.tutor_id, l.artists_ref, l.description, l.duration, l.pages, l.published " +
+                    " , l.id, l.slug, l.title, l.picture, l.format, l.url, l.tutor_id, l.artists_ref, l.description, l.duration, l.pages, l.published " +
                     " , DATE_FORMAT(l.published, '%Y') AS year_published " +
                     " , l.dateInsert " +
                     " ,  getDateDiffFromNow(l.dateInsert) AS date_created " +
@@ -593,6 +601,23 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         String strNameOfUser = record.getColumnData("username");
         String strMemberSince = record.getColumnData("member_since");
         String strAvatarPath = record.getColumnData("avatar_path");
+
+        String strId = record.getColumnData("id");
+        String strSlug = record.getColumnData("slug");
+        int learningId = 0;
+        try { learningId = Integer.parseInt(strId); } catch (NumberFormatException ignored) {}
+        if (strSlug == null || strSlug.isBlank()) {
+            strSlug = SlugUtil.toSlug(strTitle);
+        }
+        final int finalLearningId = learningId;
+        final String finalSlug = strSlug;
+
+        long viewCount = 0;
+        long likeCount = 0;
+        if (learningViewService != null && learningId > 0) {
+            viewCount = learningViewService.getViewCount(learningId);
+            likeCount = learningViewService.getLikeCount(learningId);
+        }
 
         String strImage = record.getColumnData("picture");
         String dateCreated = record.getColumnData("date_created");
@@ -1191,24 +1216,25 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         layoutSourceReviewSmall.addClassName("item-description");
 
 
-        HorizontalLayout layoutAggregateInfo = getViewAggregateInfo();
-
-        RouteParam routeTitle = new RouteParam("title", strTitle);
-
-        Button btnMore = new Button("More");
-        btnMore.setIcon(VaadinIcon.ARROW_RIGHT.create());
-        btnMore.addClassName("btn-more");
-        btnMore.addClickListener(click -> {
-            btnMore.getUI().ifPresent(ui ->
-                    ui.navigate(LearningsView.class, new RouteParameters(routeTitle)));
-        });
-
-
 //        layoutPostRelated, layoutSubTabs, layoutAggregateInfo);
         if (title.equalsIgnoreCase(STR_ALL_TITLES) || title.isEmpty()) {
-            layoutAggregateInfo.add(btnMore);
-            layoutLearningInfo.add(layoutPostTitle, layoutDataSmall, layoutSourceReviewSmall, layoutAggregateInfo);
+            if (learningViewService != null && finalLearningId > 0) {
+                Integer viewUserId = userId > 0 ? userId : null;
+                LocalDateTime sdt = new UtilsDate().calcDateTimeFromLongInLDT(sessionCreation, "UTC");
+                learningViewService.recordView(finalLearningId, finalSlug, viewUserId, publicIp,
+                        LearningViewService.TYPE_LIST, sessionid, sdt);
+            }
+            ButtonBar listBar = buildLearningButtonBar(finalLearningId, finalSlug, strTitle,
+                    viewCount, likeCount, false);
+            layoutLearningInfo.add(layoutPostTitle, layoutDataSmall, layoutSourceReviewSmall, listBar);
         } else {
+            if (learningViewService != null && finalLearningId > 0) {
+                Integer viewUserId = userId > 0 ? userId : null;
+                LocalDateTime sdt = new UtilsDate().calcDateTimeFromLongInLDT(sessionCreation, "UTC");
+                learningViewService.recordView(finalLearningId, finalSlug, viewUserId, publicIp,
+                        LearningViewService.TYPE_FULL, sessionid, sdt);
+            }
+
             VerticalLayout layoutSubTabs = getSubTabs("Learning", strTitle, record);
 
             VerticalLayout layoutReviewNormal = getFormattedText(strDescription, false);
@@ -1221,8 +1247,6 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
             );
             layoutReviewNormal.addClassName("item-description");
 
-            layoutAggregateInfo.addClassName("aggregate-detail");
-
             Div divRelated = new Div(new Text(""));
 
             Details detUserPosted = getMemberDetail(strUserIdPost,
@@ -1231,9 +1255,11 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
 
             Span spUserPoster = new Span(detUserPosted);
 
+            ButtonBar fullBar = buildLearningButtonBar(finalLearningId, finalSlug, strTitle,
+                    viewCount, likeCount, true);
             layoutLearningInfo.add(layoutPostTitle, layoutDataNormal, layoutSourceCardNormal, layoutReviewNormal,
                     //getReviewResults(),
-                    divRelated, spUserPoster, getActions());
+                    divRelated, spUserPoster, fullBar);
         }
 
         return layoutLearningInfo;
@@ -1557,6 +1583,56 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
 
         return chkGroup;
     }*/
+
+    /**
+     * Builds the standard ButtonBar for a learning item.
+     * Shows view count, a LikeButton, and (in list mode) a navigate button.
+     * Also shows per-type stats in full mode (list views, full views, likes).
+     */
+    private ButtonBar buildLearningButtonBar(int learningId, String slug, String strTitle,
+                                             long viewCount, long likeCount, boolean isFull) {
+        ButtonBar bar = new ButtonBar();
+        bar.addClassName("btn-bar-wrapper");
+
+        HorizontalLayout layoutViewCount = new HorizontalLayout();
+        layoutViewCount.addClassNames(AlignItems.CENTER, JustifyContent.CENTER,
+                Margin.NONE, Padding.NONE, Gap.XSMALL);
+        Span divViews = new Span(viewCount > 0 ? String.valueOf(viewCount) : "");
+        layoutViewCount.add(FontAwesome.Regular.EYE.create(), divViews);
+        bar.addComponent(layoutViewCount);
+
+        if (isFull && learningViewService != null && learningId > 0) {
+            long listViews = learningViewService.getViewCountByType(learningId, LearningViewService.TYPE_LIST);
+            long fullViews = learningViewService.getViewCountByType(learningId, LearningViewService.TYPE_FULL);
+
+            HorizontalLayout layoutStats = new HorizontalLayout();
+            layoutStats.addClassNames(AlignItems.CENTER, JustifyContent.CENTER,
+                    Margin.NONE, Padding.NONE, Gap.XSMALL, FontSize.XSMALL, TextColor.SECONDARY);
+            layoutStats.add(new Span("List: " + listViews + "  Full: " + fullViews));
+            bar.addComponent(layoutStats);
+        }
+
+        LikeButton btnLike = new LikeButton(likeCount);
+        bar.addButton("Like it!", btnLike, () -> {
+            if (learningViewService != null && learningId > 0) {
+                Integer likeUserId = userId > 0 ? userId : null;
+                LocalDateTime sdt = new UtilsDate().calcDateTimeFromLongInLDT(sessionCreation, "UTC");
+                learningViewService.recordLike(learningId, slug, likeUserId, publicIp, sessionid, sdt);
+                btnLike.setCount(learningViewService.getLikeCount(learningId));
+            }
+        }, "btn-bar-share");
+
+        if (!isFull) {
+            RouteParam routeTitle = new RouteParam("title", strTitle);
+            bar.addButton("View More",
+                    FontAwesome.Solid.ARROW_RIGHT.create(),
+                    () -> getUI().ifPresent(ui ->
+                            ui.navigate(LearningsView.class, new RouteParameters(routeTitle))),
+                    "btn-bar-view");
+        }
+
+        return bar;
+    }
 
     private HorizontalLayout getActions() {
 

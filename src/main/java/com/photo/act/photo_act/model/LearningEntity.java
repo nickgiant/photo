@@ -82,6 +82,9 @@ public class LearningEntity {
     @Column(name = "dateInsert", updatable = false)
     private LocalDateTime dateInsert;
 
+    @Column(length = 255)
+    private String slug;
+
     protected LearningEntity() {}
 
     public LearningEntity(String title, String picture, String format, String url,
@@ -127,6 +130,7 @@ public class LearningEntity {
     public LearningCategoryEntity getCatGenre()  { return catGenre; }
     public Integer       getUserIdPost()  { return userIdPost; }
     public LocalDateTime getDateInsert()  { return dateInsert; }
+    public String        getSlug()        { return slug; }
 
     public void setTitle(String title)             { this.title = title; }
     public void setPicture(String picture)         { this.picture = picture; }
@@ -141,4 +145,5 @@ public class LearningEntity {
     public void setPublished(LocalDate published)  { this.published = published; }
     public void setCategoryId(Long categoryId)     { this.categoryId = categoryId; }
     public void setCatGenreId(Long catGenreId)     { this.catGenreId = catGenreId; }
+    public void setSlug(String slug)               { this.slug = slug; }
 }

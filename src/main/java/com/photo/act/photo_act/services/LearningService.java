@@ -8,6 +8,7 @@ import com.photo.act.photo_act.model.TutorEntity;
 import com.photo.act.photo_act.repository.LearningCategoryRepository;
 import com.photo.act.photo_act.repository.LearningRepository;
 import com.photo.act.photo_act.repository.TutorRepository;
+import com.photo.act.photo_act.utils.SlugUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -123,7 +124,9 @@ public class LearningService {
                 dto.getTutorId(), dto.getArtistsRef(), dto.getDescription(),
                 dto.getDuration(), dto.getPages(), dto.getPublished(),
                 dto.getCategoryId(), dto.getCatGenreId(), dto.getUserIdPost());
-        return toDto(learningRepo.save(entity));
+        LearningEntity saved = learningRepo.save(entity);
+        saved.setSlug(SlugUtil.toSlug(saved.getTitle()) + "-" + saved.getId());
+        return toDto(learningRepo.save(saved));
     }
 
     @Transactional
@@ -141,6 +144,7 @@ public class LearningService {
             entity.setPublished(dto.getPublished());
             entity.setCategoryId(dto.getCategoryId());
             entity.setCatGenreId(dto.getCatGenreId());
+            entity.setSlug(SlugUtil.toSlug(dto.getTitle()) + "-" + id);
             return toDto(learningRepo.save(entity));
         });
     }
@@ -175,6 +179,6 @@ public class LearningService {
                               .map(LearningCategoryEntity::getCatTitle).orElse(null)
                 : null;
         return LearningDto.from(e, tutorName, tutorWebsite, tutorUrlYt, tutorUrlInsta,
-                                tutorUrlWiki, categoryTitle, catGenreTitle);
+                                tutorUrlWiki, categoryTitle, catGenreTitle, e.getSlug());
     }
 }
