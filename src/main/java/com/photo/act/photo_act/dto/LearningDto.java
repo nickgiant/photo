@@ -17,6 +17,7 @@ import java.time.LocalDateTime;
 public class LearningDto implements Serializable {
 
     Long          id;
+    String        slug;
     String        title;
     String        picture;
     String        format;
@@ -43,9 +44,11 @@ public class LearningDto implements Serializable {
                                    String tutorName, String tutorWebsite,
                                    String tutorUrlYt, String tutorUrlInsta,
                                    String tutorUrlWikipedia,
-                                   String categoryTitle, String catGenreTitle) {
+                                   String categoryTitle, String catGenreTitle,
+                                   String slug) {
         return LearningDto.builder()
                 .id(e.getId())
+                .slug(slug)
                 .title(e.getTitle())
                 .picture(e.getPicture())
                 .format(e.getFormat())
