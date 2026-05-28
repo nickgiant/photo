@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
     indexes = {
         @Index(name = "idx_learning_category_id",  columnList = "category_id"),
         @Index(name = "idx_learning_tutor_id",      columnList = "tutor_id"),
-        @Index(name = "idx_learning_date_insert",   columnList = "dateInsert")
+        @Index(name = "idx_learning_date_insert",   columnList = "date_insert")
     })
 public class LearningEntity {
 
@@ -76,10 +76,10 @@ public class LearningEntity {
                 foreignKey = @ForeignKey(name = "fk_learning_cat_genre_id"))
     private LearningCategoryEntity catGenre;
 
-    @Column(name = "userId_post")
+    @Column(name = "user_Id_post")
     private Integer userIdPost;
 
-    @Column(name = "dateInsert", updatable = false)
+    @Column(name = "date_insert", updatable = false)
     private LocalDateTime dateInsert;
 
     @Column(length = 255)

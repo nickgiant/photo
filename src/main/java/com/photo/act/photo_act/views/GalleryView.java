@@ -993,6 +993,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
 
                         Record record = cacheService.getPhotoById(strId);
 
+
                         String strPath = DIR_PHOTOS_SERVER + dirChar + subPathMedium;
                         divGallery.add(getImageFromDb(record, strPath, isEditable));
                     }

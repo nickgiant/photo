@@ -1,6 +1,7 @@
 package com.photo.act.photo_act.views.components;
 
 import com.photo.act.photo_act.db.Record;
+import com.photo.act.photo_act.dto.LearningCategoryDto;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H3;
@@ -132,6 +133,61 @@ public class FilterDestinationTypeCard extends RouterLink {
 
     }
 
+
+    public FilterDestinationTypeCard(LearningCategoryDto dto, String nameUrlVariable, String strImagePath, boolean isMobile, int userId, long sessionCreation,
+                                     String publicIp, String strCaptionCounts, Component component) {
+
+        this.isMobile = isMobile;
+        this.publicIp = publicIp;
+        this.sessionCreation = sessionCreation;
+
+        if (dto == null) {
+            logger.error("dto is null");
+        }
+
+        String strDestinationCatTitle = dto.getCatTitle();
+        String strDestinationCatCount = String.valueOf(dto.getLearningCount());
+
+        VerticalLayout filterBar = new VerticalLayout();
+        if (isMobile) {
+            filterBar.addClassNames(
+                    Overflow.HIDDEN,
+                    Margin.NONE, Padding.SMALL,
+                    Gap.XSMALL,
+                    AlignItems.STRETCH, JustifyContent.CENTER,
+                    LumoUtility.FontSize.SMALL, LumoUtility.TextColor.SECONDARY,
+                    TextAlignment.CENTER
+            );
+        } else {
+            filterBar.addClassNames(
+                    Overflow.HIDDEN,
+                    Margin.NONE, Padding.MEDIUM,
+                    Gap.SMALL,
+                    AlignItems.STRETCH, JustifyContent.CENTER,
+                    LumoUtility.FontSize.SMALL, LumoUtility.TextColor.SECONDARY,
+                    TextAlignment.CENTER
+            );
+        }
+
+        H3 header = new H3();
+        header.setText(strDestinationCatTitle);
+        if (strDestinationCatTitle == null || strDestinationCatTitle.trim().isEmpty() || strDestinationCatTitle.equalsIgnoreCase("null")) {
+            header.setText("");
+            header.setHeight("1px");
+            header.setVisible(false);
+        }
+
+        Div divDescription = new Div(strDestinationCatCount + " " + strCaptionCounts);
+
+        filterBar.add(header, divDescription);
+
+        String captionCategory = dto.getCatTitle();
+        RouteParam routeCategory = new RouteParam(nameUrlVariable, captionCategory);
+
+        this.add(filterBar);
+
+        this.setRoute(component.getClass(), new RouteParameters(routeCategory));
+    }
 
     private Image getImage(String strImagePath) {
 
