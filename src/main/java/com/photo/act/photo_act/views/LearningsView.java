@@ -1626,15 +1626,15 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         bar.addComponent(layoutViewCount);
 
         // Full view: show per-type breakdown (list views + full views)
-        if (isFull && learningViewService != null && learningId > 0) {
-            long listViews = learningViewService.getViewCountByType(learningId, LearningViewService.TYPE_LIST);
-            long fullViews = learningViewService.getViewCountByType(learningId, LearningViewService.TYPE_FULL);
-            HorizontalLayout layoutStats = new HorizontalLayout();
+//        if (isFull && learningViewService != null && learningId > 0) {
+/*            long listViews = learningViewService.getViewCountByType(learningId, LearningViewService.TYPE_LIST);
+            long fullViews = learningViewService.getViewCountByType(learningId, LearningViewService.TYPE_FULL);*/
+/*            HorizontalLayout layoutStats = new HorizontalLayout();
             layoutStats.addClassNames(AlignItems.CENTER, JustifyContent.CENTER,
                     Margin.NONE, Padding.NONE, Gap.XSMALL, FontSize.XSMALL, TextColor.SECONDARY);
             layoutStats.add(new Span("List: " + listViews + "  Full: " + fullViews));
-            bar.addComponent(layoutStats);
-        }
+            bar.addComponent(layoutStats);*/
+//        }
 
         // Like button
         LikeButton btnLike = new LikeButton(likeCount);
