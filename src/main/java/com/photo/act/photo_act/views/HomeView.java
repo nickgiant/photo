@@ -320,11 +320,11 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         layoutUserBtns.setWrap(true);
         String usrName = genericView.checkIfAuthUserName();
         if (usrName == null) {
+            mainImage.setVisible(true);
             layoutUserBtns.add(btnLogin,btnRegister);
         } else {
 
-            mainImage.setHeight("16rem");
-            mainImage.setWidth("auto");
+            mainImage.setVisible(false);
             layoutUserBtns.add(genericView.getAuthUserPanel(usrName));
         }
 

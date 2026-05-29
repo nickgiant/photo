@@ -639,9 +639,9 @@
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.14);
 }
 
-@media (max-width: 768px) {
+/*@media (max-width: 768px) {
     .stats-gallery {
-        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
         gap: 8px;
     }
 }
@@ -651,7 +651,7 @@
         grid-template-columns: repeat(2, 1fr);
         gap: 6px;
     }
-}
+}*/
 
 /* ── Statistics filter / count buttons ──────────────────────────────────── */
 .stat-filter-btn,

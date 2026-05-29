@@ -924,7 +924,7 @@ public class MainLayout extends AppLayout{
         RouteParameters routeParametersMonth = new RouteParameters("month-uploaded", STR_ALL_MONTHS);
 
         Div divImage = new Div(FontAwesome.Solid.IMAGE.create());
-        SideNavItem itemPhotos = createSideNavItem("Photos", divImage, null, GalleryView.class);
+        SideNavItem itemPhotos = createSideNavItem("Photos", divImage, null, null);
         itemPhotos.setExpanded(true);
 
         Div divImageLocation = new Div(FontAwesome.Solid.LOCATION_DOT.create());
