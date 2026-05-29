@@ -32,52 +32,58 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * Reusable hero slider component for showcasing photos with transitions.
+ * Reusable hero photo slider component.
  *
- * <p>Features:
+ * <p><b>Features</b>
  * <ul>
- *   <li>Three filter tabs: Most Likes (default), Best Rating, Most Views</li>
- *   <li>Photo description or location fallback at the bottom of each slide</li>
- *   <li>Photographer name and "View Profile" button per slide</li>
- *   <li>Prev / Next navigation arrows</li>
+ *   <li>3 filter tabs: Most Likes (default), Best Rating, Most Views</li>
+ *   <li>Photo title/subtitle at the bottom; falls back to city or user-entered location</li>
+ *   <li>Photographer name + "View Profile" button per slide</li>
+ *   <li>← / → navigation arrows (client-side, no server round-trip)</li>
  *   <li>Right-side vertical action bar: Full View, Like, Rate, Meta Info</li>
- *   <li>4-second auto-advance (client-side timer) with CSS slide transitions</li>
- *   <li>Filter change restarts sequence from the first photo</li>
+ *   <li>4-second auto-advance; pauses on hover; resumes on mouse-out</li>
+ *   <li>Keyboard ← / → support while the slider is focused</li>
+ *   <li>Dot indicator strip below the slides</li>
+ *   <li>Fancy CSS {@code translateX} slide transition</li>
+ *   <li>Filter change restarts the sequence from slide 0</li>
  * </ul>
  *
- * <p>Usage:
- * <pre>
- *   HeroSliderComponent hero = new HeroSliderComponent(
- *       recordService, photoStatisticsService,
- *       photoViewService, photoRatingService,
- *       photosDir, isMobile, userId, publicIp);
- *   layout.addComponentAsFirst(hero);
- * </pre>
+ * <p><b>Usage</b>
+ * <pre>{@code
+ * HeroSliderComponent hero = new HeroSliderComponent(
+ *     recordService, photoStatisticsService,
+ *     photoViewService, photoRatingService,
+ *     DIR_PHOTOS_SERVER, isMobile, userId, publicIp);
+ * verticalLayout.addComponentAsFirst(hero);
+ * }</pre>
  */
 public class HeroSliderComponent extends Div {
 
     private static final Logger logger = LoggerFactory.getLogger(HeroSliderComponent.class);
 
+    // ── Filter constants (public so callers can reference them) ───────────
     public static final String FILTER_LIKES  = "Most Likes";
     public static final String FILTER_RATING = "Best Rating";
     public static final String FILTER_VIEWS  = "Most Views";
 
-    private static final int    SLIDE_COUNT      = 10;
-    private static final String SUBPATH_MEDIUM   = "photo-medium";
-    private static final String SUBPATH_SMALL    = "photo-small";
-    private static final String SUBPATH_LARGE    = "photo-large";
+    private static final int    SLIDE_COUNT    = 10;
+    private static final String SUBPATH_MEDIUM = "photo-medium";
+    private static final String SUBPATH_SMALL  = "photo-small";
+    private static final String SUBPATH_LARGE  = "photo-large";
 
-    private final RecordService           recordService;
-    private final PhotoStatisticsService  photoStatisticsService;
-    private final PhotoViewService        photoViewService;
-    private final PhotoRatingService      photoRatingService;
-    private final String                  photosDir;
-    private final String                  dirChar;
-    private final boolean                 isMobile;
-    private final int                     userId;
-    private final String                  publicIp;
-    private final String                  sessionId;
-    private final LocalDateTime           sessionDateTime;
+    // ── Dependencies ──────────────────────────────────────────────────────
+    private final RecordService          recordService;
+    private final PhotoStatisticsService photoStatisticsService;
+    private final PhotoViewService       photoViewService;
+    private final PhotoRatingService     photoRatingService;
+    private final String                 photosDir;
+    private final String                 dirChar;
+    private final int                    userId;
+    private final String                 publicIp;
+    private final String                 sessionId;
+    private final LocalDateTime          sessionDateTime;
+
+    // ─────────────────────────────────────────────────────────────────────
 
     public HeroSliderComponent(
             RecordService recordService,
@@ -95,7 +101,6 @@ public class HeroSliderComponent extends Div {
         this.photoRatingService     = photoRatingService;
         this.photosDir              = photosDir;
         this.dirChar                = FileSystems.getDefault().getSeparator();
-        this.isMobile               = isMobile;
         this.userId                 = userId;
         this.publicIp               = publicIp;
 
@@ -110,7 +115,9 @@ public class HeroSliderComponent extends Div {
         buildContent(FILTER_LIKES);
     }
 
-    // ─── Build ────────────────────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════════════
+    // Build
+    // ══════════════════════════════════════════════════════════════════════
 
     private void buildContent(String activeFilter) {
         removeAll();
@@ -125,20 +132,20 @@ public class HeroSliderComponent extends Div {
             return;
         }
 
+        // ── Body: [ ← ] [ slides ] [ → ] ─────────────────────────────────
         Div body = new Div();
         body.addClassName("hero-slider__body");
-
-        Div prevBtn = buildNavButton("prev");
-        Div slidesContainer = buildSlides(photos);
-        Div nextBtn = buildNavButton("next");
-
-        body.add(prevBtn, slidesContainer, nextBtn);
+        body.add(navDiv("prev"), buildSlidesContainer(photos), navDiv("next"));
         add(body);
 
+        // ── Dot indicator strip ────────────────────────────────────────────
+        add(buildDots(photos.size()));
+
+        // ── Client JS: timer, transitions, dots, keyboard, hover-pause ────
         injectClientJs(photos.size());
     }
 
-    // ─── Filter bar ───────────────────────────────────────────────────────
+    // ── Filter bar ────────────────────────────────────────────────────────
 
     private HorizontalLayout buildFilterBar(String activeFilter) {
         HorizontalLayout bar = new HorizontalLayout();
@@ -149,61 +156,74 @@ public class HeroSliderComponent extends Div {
             Button btn = new Button(label);
             btn.addClassName("hero-filter-btn");
             if (label.equals(activeFilter)) btn.addClassName("hero-filter-btn--active");
-
-            String filter = label;
-            btn.addClickListener(e -> buildContent(filter));
+            String f = label;
+            btn.addClickListener(e -> buildContent(f));
             bar.add(btn);
         }
         return bar;
     }
 
-    // ─── Navigation buttons (pure div, handled by JS) ─────────────────────
+    // ── Nav arrow (client-side div) ───────────────────────────────────────
 
-    private Div buildNavButton(String direction) {
+    private Div navDiv(String direction) {
         Div nav = new Div();
         nav.addClassNames("hero-slider__nav", "hero-slider__nav--" + direction);
-        nav.add(direction.equals("prev") ? VaadinIcon.ANGLE_LEFT.create() : VaadinIcon.ANGLE_RIGHT.create());
+        nav.add("prev".equals(direction)
+                ? VaadinIcon.ANGLE_LEFT.create()
+                : VaadinIcon.ANGLE_RIGHT.create());
         return nav;
     }
 
-    // ─── Slides container ─────────────────────────────────────────────────
+    // ── Slides container ──────────────────────────────────────────────────
 
-    private Div buildSlides(List<Record> photos) {
+    private Div buildSlidesContainer(List<Record> photos) {
         Div container = new Div();
         container.addClassName("hero-slider__slides");
-
         for (int i = 0; i < photos.size(); i++) {
             container.add(buildSlide(photos.get(i), i == 0));
         }
         return container;
     }
 
-    // ─── Individual slide ─────────────────────────────────────────────────
+    // ── Dot indicator row ─────────────────────────────────────────────────
+
+    private Div buildDots(int count) {
+        Div dotsBar = new Div();
+        dotsBar.addClassName("hero-slider__dots");
+        for (int i = 0; i < count; i++) {
+            Div dot = new Div();
+            dot.addClassName("hero-dot");
+            if (i == 0) dot.addClassName("hero-dot--active");
+            dotsBar.add(dot);
+        }
+        return dotsBar;
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    // Individual slide
+    // ══════════════════════════════════════════════════════════════════════
 
     private Div buildSlide(Record rec, boolean isActive) {
         Div slide = new Div();
         slide.addClassName("hero-slide");
         if (isActive) slide.addClassName("hero-slide--active");
 
-        // Photo section (image + info overlay)
         Div photoSection = new Div();
         photoSection.addClassName("hero-slide__photo-section");
-        photoSection.add(buildPhotoImage(rec));
-        photoSection.add(buildInfoOverlay(rec));
+        photoSection.add(buildPhotoDiv(rec), buildInfoOverlay(rec));
 
-        // Vertical action bar
-        Div actionBar = buildActionBar(rec);
-
-        slide.add(photoSection, actionBar);
+        slide.add(photoSection, buildActionBar(rec));
         return slide;
     }
 
-    private Div buildPhotoImage(Record rec) {
+    // ── Photo image ───────────────────────────────────────────────────────
+
+    private Div buildPhotoDiv(Record rec) {
         Div wrapper = new Div();
         wrapper.addClassName("hero-slide__photo");
 
         String nameNew = nvl(rec.getColumnData("name_new"));
-        Image img = loadImage(nameNew, SUBPATH_MEDIUM, SUBPATH_SMALL);
+        Image img = tryLoadImage(nameNew, SUBPATH_MEDIUM, SUBPATH_SMALL);
         if (img != null) {
             String alt = nvl(rec.getColumnData("title"));
             img.setAlt(alt.isEmpty() ? "photo" : alt);
@@ -213,40 +233,45 @@ public class HeroSliderComponent extends Div {
         return wrapper;
     }
 
+    // ── Info overlay (gradient at the bottom of the photo) ───────────────
+
     private Div buildInfoOverlay(Record rec) {
         Div overlay = new Div();
         overlay.addClassName("hero-slide__info");
 
-        String title    = nvl(rec.getColumnData("title"));
-        String subtitle = nvl(rec.getColumnData("subtitle"));
-        String city     = nvl(rec.getColumnData("city_name"));
-        String locUser  = nvl(rec.getColumnData("location_by_user"));
+        overlay.add(buildDescriptionDiv(rec), buildPhotographerRow(rec));
+        return overlay;
+    }
 
-        Div descriptionDiv = new Div();
-        descriptionDiv.addClassName("hero-slide__description");
+    private Div buildDescriptionDiv(Record rec) {
+        String title   = nvl(rec.getColumnData("title"));
+        String subtitle = nvl(rec.getColumnData("subtitle"));
+        String city    = nvl(rec.getColumnData("city_name"));
+        String locUser = nvl(rec.getColumnData("location_by_user"));
+
+        Div desc = new Div();
+        desc.addClassName("hero-slide__description");
 
         if (!title.isEmpty()) {
             Span titleSpan = new Span(title);
             titleSpan.addClassName("hero-slide__title");
-            descriptionDiv.add(titleSpan);
+            desc.add(titleSpan);
 
             if (!subtitle.isEmpty()) {
                 Span subSpan = new Span(subtitle);
                 subSpan.addClassName("hero-slide__subtitle");
-                descriptionDiv.add(subSpan);
+                desc.add(subSpan);
             }
         } else {
-            // Fallback to location
             String loc = !city.isEmpty() ? city : locUser;
             if (!loc.isEmpty()) {
+                // Inline icon + text
                 Span locSpan = new Span(VaadinIcon.MAP_MARKER.create(), new Span(" " + loc));
                 locSpan.addClassName("hero-slide__location");
-                descriptionDiv.add(locSpan);
+                desc.add(locSpan);
             }
         }
-
-        overlay.add(descriptionDiv, buildPhotographerRow(rec));
-        return overlay;
+        return desc;
     }
 
     private HorizontalLayout buildPhotographerRow(Record rec) {
@@ -271,54 +296,54 @@ public class HeroSliderComponent extends Div {
 
         if (!username.isEmpty()) {
             Button profileBtn = new Button("View Profile");
-            profileBtn.addClassNames("hero-slide__profile-btn");
+            profileBtn.addClassName("hero-slide__profile-btn");
             String un = username;
             profileBtn.addClickListener(e ->
                 profileBtn.getUI().ifPresent(ui ->
                     ui.navigate(PhotographersView.class,
-                        new RouteParameters(new RouteParam("member", un)))
-                )
+                        new RouteParameters(new RouteParam("member", un))))
             );
             row.add(profileBtn);
         }
-
         return row;
     }
 
-    // ─── Action bar ───────────────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════════════
+    // Vertical action bar (right side of each slide)
+    // ══════════════════════════════════════════════════════════════════════
 
     private Div buildActionBar(Record rec) {
         Div bar = new Div();
         bar.addClassName("hero-slide__actions");
 
-        String nameNew    = nvl(rec.getColumnData("name_new"));
-        int    photoId    = parseInt(rec.getColumnData("id"));
+        String nameNew = nvl(rec.getColumnData("name_new"));
+        int    photoId = parseInt(rec.getColumnData("id"));
 
-        // Full view
+        // ── Full View ─────────────────────────────────────────────────────
         Button fullViewBtn = new Button(VaadinIcon.EXPAND_FULL.create());
         fullViewBtn.addClassNames("hero-action-btn", "hero-action-btn--fullview");
         fullViewBtn.setTooltipText("Full View");
         fullViewBtn.addClickListener(e -> openFullViewDialog(rec));
 
-        // Like
-        long likeCount = photoId > 0 ? safeGetLikeCount(photoId) : 0;
+        // ── Like ──────────────────────────────────────────────────────────
+        long likeCount = photoId > 0 ? safeCount(() -> photoViewService.getLikeCount(photoId)) : 0;
         LikeButton likeBtn = new LikeButton(likeCount);
         likeBtn.addClassName("hero-action-btn");
         likeBtn.addLikeClickListener(e -> {
             if (photoId > 0) {
                 Integer uid = userId > 0 ? userId : null;
                 photoViewService.recordLike(photoId, nameNew, uid, publicIp, sessionId, sessionDateTime);
-                likeBtn.setCount(safeGetLikeCount(photoId));
+                likeBtn.setCount(safeCount(() -> photoViewService.getLikeCount(photoId)));
             }
         });
 
-        // Rate
-        long ratingCount = photoId > 0 ? safeGetRatingCount(photoId) : 0;
+        // ── Rate ──────────────────────────────────────────────────────────
+        long ratingCount = photoId > 0 ? safeCount(() -> photoRatingService.getRatingCount(photoId)) : 0;
         RateButton rateBtn = new RateButton(ratingCount);
         rateBtn.addClassName("hero-action-btn");
         rateBtn.addRateClickListener(e -> openRatingDialog(photoId, nameNew, rateBtn));
 
-        // Meta info
+        // ── Meta Info ─────────────────────────────────────────────────────
         Button metaBtn = new Button(VaadinIcon.INFO_CIRCLE_O.create());
         metaBtn.addClassNames("hero-action-btn", "hero-action-btn--meta");
         metaBtn.setTooltipText("Photo Info");
@@ -328,22 +353,23 @@ public class HeroSliderComponent extends Div {
         return bar;
     }
 
-    // ─── Dialogs ──────────────────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════════════
+    // Dialogs
+    // ══════════════════════════════════════════════════════════════════════
 
     private void openFullViewDialog(Record rec) {
         String nameNew = nvl(rec.getColumnData("name_new"));
-        int photoId    = parseInt(rec.getColumnData("id"));
+        int    photoId = parseInt(rec.getColumnData("id"));
 
         Dialog dialog = new Dialog();
         dialog.setCloseOnOutsideClick(true);
         dialog.setCloseOnEsc(true);
         dialog.addClassName("hero-fullview-dialog");
 
-        Image img = loadImage(nameNew, SUBPATH_LARGE, SUBPATH_MEDIUM);
+        Image img = tryLoadImage(nameNew, SUBPATH_LARGE, SUBPATH_MEDIUM);
         if (img != null) {
             img.addClassName("hero-fullview-img");
             dialog.add(img);
-
             if (photoId > 0) {
                 Integer uid = userId > 0 ? userId : null;
                 photoViewService.recordView(photoId, nameNew, uid, publicIp,
@@ -365,7 +391,7 @@ public class HeroSliderComponent extends Div {
 
         Select<Integer> ratingSelect = new Select<>();
         ratingSelect.setItems(1, 2, 3, 4, 5, 6, 7);
-        ratingSelect.setLabel("Your Rating (1 = poor, 7 = excellent)");
+        ratingSelect.setLabel("Your Rating  (1 = poor · 7 = excellent)");
 
         if (userId > 0) {
             int existing = photoRatingService.getUserRating(photoId, userId);
@@ -376,7 +402,8 @@ public class HeroSliderComponent extends Div {
 
         Button submitBtn = new Button("Submit", e -> {
             if (userId <= 0) {
-                Notification.show("Please log in to rate photos.", 2500, Notification.Position.MIDDLE);
+                Notification.show("Please log in to rate photos.",
+                        2500, Notification.Position.MIDDLE);
                 dialog.close();
                 return;
             }
@@ -384,8 +411,9 @@ public class HeroSliderComponent extends Div {
             if (rating != null) {
                 photoRatingService.saveOrUpdateRating(photoId, userId, rating,
                         nameNew, publicIp, sessionId, sessionDateTime);
-                rateBtn.setCount(safeGetRatingCount(photoId));
-                Notification n = Notification.show("Rating saved!", 1800, Notification.Position.BOTTOM_CENTER);
+                rateBtn.setCount(safeCount(() -> photoRatingService.getRatingCount(photoId)));
+                Notification n = Notification.show("Rating saved!",
+                        1800, Notification.Position.BOTTOM_CENTER);
                 n.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
             }
             dialog.close();
@@ -417,44 +445,44 @@ public class HeroSliderComponent extends Div {
 
         addMetaRow(content, "Title",         rec.getColumnData("title"));
         addMetaRow(content, "Date Taken",    rec.getColumnData("photo_time_shot"));
-        addMetaRow(content, "Camera",        joinNonEmpty(rec.getColumnData("meta_camera_make"),
-                                                           rec.getColumnData("meta_camera_model")));
+        addMetaRow(content, "Camera",        join(rec.getColumnData("meta_camera_make"),
+                                                   rec.getColumnData("meta_camera_model")));
         addMetaRow(content, "Lens",          rec.getColumnData("meta_lens_model"));
         addMetaRow(content, "Focal Length",  rec.getColumnData("meta_focal_length_ff"));
         addMetaRow(content, "ISO",           rec.getColumnData("meta_iso"));
         addMetaRow(content, "Aperture",      rec.getColumnData("meta_aperture"));
         addMetaRow(content, "Shutter Speed", rec.getColumnData("meta_shutter_speed"));
-        addMetaRow(content, "Location",      joinNonEmpty(rec.getColumnData("city_name"),
-                                                           rec.getColumnData("location_by_user")));
-        addMetaRow(content, "Photographer",  joinNonEmpty(rec.getColumnData("name"),
-                                                           rec.getColumnData("surname")));
+        addMetaRow(content, "Location",      join(rec.getColumnData("city_name"),
+                                                   rec.getColumnData("location_by_user")));
+        addMetaRow(content, "Photographer",  join(rec.getColumnData("name"),
+                                                   rec.getColumnData("surname")));
 
         if (content.getComponentCount() == 0) {
             content.add(new Span("No metadata available for this photo."));
         }
-
         dialog.add(content);
         dialog.open();
     }
 
     private void addMetaRow(VerticalLayout container, String label, String value) {
         if (value == null || value.isBlank() || "null".equalsIgnoreCase(value.trim())) return;
-
         HorizontalLayout row = new HorizontalLayout();
         row.addClassName("hero-meta-row");
         row.setSpacing(false);
 
-        Span labelSpan = new Span(label + ":");
-        labelSpan.addClassName("hero-meta-label");
+        Span lbl = new Span(label + ":");
+        lbl.addClassName("hero-meta-label");
 
-        Span valueSpan = new Span(value.trim());
-        valueSpan.addClassName("hero-meta-value");
+        Span val = new Span(value.trim());
+        val.addClassName("hero-meta-value");
 
-        row.add(labelSpan, valueSpan);
+        row.add(lbl, val);
         container.add(row);
     }
 
-    // ─── Data loading helpers ─────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════════════
+    // Data loading
+    // ══════════════════════════════════════════════════════════════════════
 
     private List<Record> loadPhotos(String filter) {
         String sql = switch (filter) {
@@ -465,25 +493,24 @@ public class HeroSliderComponent extends Div {
         try {
             return recordService.findAll(sql, PhotoStatisticsService.STATS_COLUMNS);
         } catch (Exception ex) {
-            logger.error("HeroSliderComponent failed to load photos for filter '{}': {}", filter, ex.getMessage());
+            logger.error("HeroSlider – could not load photos for filter '{}': {}", filter, ex.getMessage());
             return List.of();
         }
     }
 
-    // ─── Image helpers ────────────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════════════
+    // Image helpers
+    // ══════════════════════════════════════════════════════════════════════
 
-    /**
-     * Tries to load an image from the first available subfolder, then falls back.
-     */
-    private Image loadImage(String nameNew, String preferred, String fallback) {
+    /** Tries {@code preferred} subfolder first, falls back to {@code fallback}. */
+    private Image tryLoadImage(String nameNew, String preferred, String fallback) {
         if (nameNew == null || nameNew.isBlank()) return null;
-
-        File file = imageFile(nameNew, preferred);
-        if (!file.exists()) file = imageFile(nameNew, fallback);
-        if (!file.exists()) return null;
+        File f = imageFile(nameNew, preferred);
+        if (!f.exists()) f = imageFile(nameNew, fallback);
+        if (!f.exists()) return null;
 
         Image img = new Image();
-        img.setSrc(DownloadHandler.forFile(file));
+        img.setSrc(DownloadHandler.forFile(f));
         return img;
     }
 
@@ -491,7 +518,9 @@ public class HeroSliderComponent extends Div {
         return Paths.get(photosDir + dirChar + subPath + dirChar + nameNew).toFile();
     }
 
-    // ─── Client-side JavaScript ───────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════════════
+    // Client-side JavaScript
+    // ══════════════════════════════════════════════════════════════════════
 
     private void injectClientJs(int total) {
         if (total < 1) return;
@@ -502,38 +531,46 @@ public class HeroSliderComponent extends Div {
               if (!hero) return;
               var heroId = hero.id || 'hero-slider';
 
-              // Clear any existing timer for this hero instance
+              /* ── Clear any stale timer from a previous filter render ── */
               if (window['_heroTimer_' + heroId]) {
                 clearInterval(window['_heroTimer_' + heroId]);
+                window['_heroTimer_' + heroId] = null;
               }
 
               var slides = Array.from(
                 hero.querySelectorAll('.hero-slider__slides > .hero-slide')
               );
-              var total = %d;
-              if (total < 2) return;
-
-              var current  = 0;
+              var dots = Array.from(
+                hero.querySelectorAll('.hero-slider__dots > .hero-dot')
+              );
+              var total     = %d;
+              var current   = 0;
               var animating = false;
+              var paused    = false;
 
+              /* ── Transition to a specific slide ─────────────────────── */
               function goTo(newIdx, dir) {
-                if (animating || newIdx === current) return;
+                if (animating || newIdx === current || total < 2) return;
                 animating = true;
 
-                var exitCls  = dir === 'next' ? 'hero-slide--exit-left'  : 'hero-slide--exit-right';
+                var exitCls  = dir === 'next' ? 'hero-slide--exit-left'   : 'hero-slide--exit-right';
                 var enterCls = dir === 'next' ? 'hero-slide--enter-right' : 'hero-slide--enter-left';
-                var fromSlide = slides[current];
-                var toSlide   = slides[newIdx];
+                var from = slides[current];
+                var to   = slides[newIdx];
 
-                toSlide.classList.add(enterCls, 'hero-slide--active');
-                fromSlide.classList.add(exitCls);
+                to.classList.add(enterCls, 'hero-slide--active');
+                from.classList.add(exitCls);
+
+                /* Sync dots */
+                if (dots[current]) dots[current].classList.remove('hero-dot--active');
+                if (dots[newIdx])  dots[newIdx].classList.add('hero-dot--active');
 
                 setTimeout(function() {
-                  fromSlide.classList.remove('hero-slide--active', exitCls);
-                  toSlide.classList.remove(enterCls);
+                  from.classList.remove('hero-slide--active', exitCls);
+                  to.classList.remove(enterCls);
                   current   = newIdx;
                   animating = false;
-                }, 650);
+                }, 620);
               }
 
               function advance(dir) {
@@ -543,23 +580,37 @@ public class HeroSliderComponent extends Div {
                 goTo(n, dir);
               }
 
+              /* ── Auto-advance timer ──────────────────────────────────── */
               function resetTimer() {
                 clearInterval(window['_heroTimer_' + heroId]);
                 window['_heroTimer_' + heroId] = setInterval(function() {
-                  advance('next');
+                  if (!paused) advance('next');
                 }, 4000);
               }
 
+              /* ── Navigation arrows ───────────────────────────────────── */
               var prevEl = hero.querySelector('.hero-slider__nav--prev');
               var nextEl = hero.querySelector('.hero-slider__nav--next');
+              if (prevEl) prevEl.addEventListener('click', function() { advance('prev'); resetTimer(); });
+              if (nextEl) nextEl.addEventListener('click', function() { advance('next'); resetTimer(); });
 
-              if (prevEl) prevEl.addEventListener('click', function() {
-                advance('prev');
-                resetTimer();
+              /* ── Dot clicks ──────────────────────────────────────────── */
+              dots.forEach(function(dot, idx) {
+                dot.addEventListener('click', function() {
+                  goTo(idx, idx > current ? 'next' : 'prev');
+                  resetTimer();
+                });
               });
-              if (nextEl) nextEl.addEventListener('click', function() {
-                advance('next');
-                resetTimer();
+
+              /* ── Hover: pause / resume ───────────────────────────────── */
+              hero.addEventListener('mouseenter', function() { paused = true; });
+              hero.addEventListener('mouseleave', function() { paused = false; });
+
+              /* ── Keyboard navigation (when hero or child is focused) ─── */
+              hero.setAttribute('tabindex', '0');
+              hero.addEventListener('keydown', function(e) {
+                if (e.key === 'ArrowLeft')  { advance('prev'); resetTimer(); e.preventDefault(); }
+                if (e.key === 'ArrowRight') { advance('next'); resetTimer(); e.preventDefault(); }
               });
 
               resetTimer();
@@ -569,19 +620,19 @@ public class HeroSliderComponent extends Div {
         getElement().executeJs(js);
     }
 
-    // ─── Utility ──────────────────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════════════
+    // Utility
+    // ══════════════════════════════════════════════════════════════════════
 
-    private long safeGetLikeCount(int photoId) {
-        try { return photoViewService.getLikeCount(photoId); }
+    @FunctionalInterface
+    private interface LongSupplier { long get(); }
+
+    private long safeCount(LongSupplier supplier) {
+        try { return supplier.get(); }
         catch (Exception e) { return 0; }
     }
 
-    private long safeGetRatingCount(int photoId) {
-        try { return photoRatingService.getRatingCount(photoId); }
-        catch (Exception e) { return 0; }
-    }
-
-    private static String joinNonEmpty(String a, String b) {
+    private static String join(String a, String b) {
         String na = nvl(a).trim();
         String nb = nvl(b).trim();
         if (na.isEmpty() && nb.isEmpty()) return "";
@@ -595,7 +646,5 @@ public class HeroSliderComponent extends Div {
         catch (NumberFormatException e) { return 0; }
     }
 
-    private static String nvl(String s) {
-        return s == null ? "" : s;
-    }
+    private static String nvl(String s) { return s == null ? "" : s; }
 }

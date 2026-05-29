@@ -1,5 +1,6 @@
 /* =============================================================
    hero-slider.css  –  Reusable Hero Photo Slider Component
+   All CSS is scoped under .hero-slider to avoid bleed-out.
    ============================================================= */
 
 /* ── Root container ─────────────────────────────────────────── */
@@ -10,8 +11,10 @@
   margin: 0 auto 32px;
   border-radius: 18px;
   overflow: hidden;
-  box-shadow: 0 6px 32px rgba(0, 0, 0, 0.18);
-  background: #0d0d0d;
+  box-shadow: 0 8px 36px rgba(0, 0, 0, 0.22);
+  background: #111;
+  position: relative;
+  user-select: none;
 }
 
 /* ── Filter bar ─────────────────────────────────────────────── */
@@ -20,82 +23,87 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 6px;
-  padding: 14px 20px;
-  background: rgba(0, 0, 0, 0.55);
-  backdrop-filter: blur(6px);
+  gap: 8px;
+  padding: 13px 20px 12px;
+  background: rgba(0, 0, 0, 0.60);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  flex-wrap: wrap;
 }
 
-.hero-filter-btn {
-  --vaadin-button-background: transparent;
-  --vaadin-button-text-color: rgba(255, 255, 255, 0.7);
-  font-size: 0.8rem;
-  font-weight: 500;
-  letter-spacing: 0.06em;
+/* Vaadin button — filter pill */
+.hero-slider__filter-bar vaadin-button {
+  color: rgba(255, 255, 255, 0.65);
+  background: transparent;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 20px;
-  padding: 4px 18px;
-  cursor: pointer;
-  transition: background 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+  padding: 0 18px;
+  min-height: 30px;
+  min-width: unset;
+  transition: background 0.22s ease, border-color 0.22s ease, color 0.22s ease;
+
+  &:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.45);
+  }
 }
 
-.hero-filter-btn:hover {
-  --vaadin-button-background: rgba(255, 255, 255, 0.1);
-  --vaadin-button-text-color: #fff;
-  border-color: rgba(255, 255, 255, 0.45);
-}
-
-.hero-filter-btn--active {
-  --vaadin-button-background: rgba(139, 26, 26, 0.85);
-  --vaadin-button-text-color: #fff;
+.hero-slider__filter-bar .hero-filter-btn--active {
+  color: #fff;
+  background: rgba(139, 26, 26, 0.85);
   border-color: #8b1a1a;
+
+  &:hover {
+    background: rgba(165, 40, 40, 0.9);
+  }
 }
 
-.hero-filter-btn--active:hover {
-  --vaadin-button-background: rgba(165, 40, 40, 0.9);
-}
-
-/* ── Body (prev | slides | next) ────────────────────────────── */
+/* ── Body: [ prev ][ slides ][ next ] ────────────────────────── */
 
 .hero-slider__body {
   display: flex;
   align-items: stretch;
-  height: clamp(300px, 52vw, 540px);
-  position: relative;
+  height: clamp(280px, 52vw, 560px);
 }
 
 /* ── Navigation arrows ──────────────────────────────────────── */
 
 .hero-slider__nav {
-  flex: 0 0 52px;
+  flex: 0 0 50px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  background: rgba(0, 0, 0, 0.35);
-  color: rgba(255, 255, 255, 0.75);
+  background: rgba(0, 0, 0, 0.30);
+  color: rgba(255, 255, 255, 0.70);
   z-index: 10;
-  user-select: none;
   transition: background 0.2s ease, color 0.2s ease;
 }
 
 .hero-slider__nav:hover {
-  background: rgba(139, 26, 26, 0.75);
+  background: rgba(139, 26, 26, 0.78);
   color: #fff;
 }
 
 .hero-slider__nav vaadin-icon {
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
+  pointer-events: none;
 }
 
-/* ── Slides container ────────────────────────────────────────── */
+/* ── Slides container ─────────────────────────────────────────── */
 
 .hero-slider__slides {
   flex: 1;
   position: relative;
   overflow: hidden;
+  /* height is inherited from the flex body */
 }
 
 /* ── Individual slide ─────────────────────────────────────────── */
@@ -106,6 +114,7 @@
   display: flex;
   opacity: 0;
   pointer-events: none;
+  will-change: transform, opacity;
 }
 
 .hero-slide--active {
@@ -113,12 +122,13 @@
   pointer-events: auto;
 }
 
-/* ── Photo section (image + info overlay) ─────────────────────── */
+/* ── Photo section ────────────────────────────────────────────── */
 
 .hero-slide__photo-section {
   flex: 1;
   position: relative;
   overflow: hidden;
+  min-width: 0;
 }
 
 .hero-slide__photo {
@@ -133,18 +143,18 @@
   display: block;
 }
 
-/* ── Info overlay (bottom of photo section) ───────────────────── */
+/* ── Info overlay (bottom gradient) ──────────────────────────── */
 
 .hero-slide__info {
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
-  padding: 60px 22px 18px;
+  padding: 64px 22px 18px;
   background: linear-gradient(
     to top,
-    rgba(0, 0, 0, 0.78) 0%,
-    rgba(0, 0, 0, 0.35) 60%,
+    rgba(0, 0, 0, 0.80) 0%,
+    rgba(0, 0, 0, 0.40) 55%,
     transparent 100%
   );
   color: #fff;
@@ -156,33 +166,42 @@
 
 .hero-slide__title {
   display: block;
-  font-size: 1.3rem;
+  font-size: 1.25rem;
   font-weight: 700;
-  letter-spacing: 0.02em;
-  line-height: 1.3;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+  letter-spacing: 0.025em;
+  line-height: 1.35;
+  text-shadow: 0 1px 5px rgba(0, 0, 0, 0.7);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 75%;
 }
 
 .hero-slide__subtitle {
   display: block;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 400;
-  opacity: 0.85;
-  margin-top: 4px;
+  opacity: 0.82;
+  margin-top: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 75%;
 }
 
 .hero-slide__location {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  font-size: 0.95rem;
+  gap: 5px;
+  font-size: 0.92rem;
   opacity: 0.88;
 }
 
 .hero-slide__location vaadin-icon {
-  width: 14px;
-  height: 14px;
-  opacity: 0.8;
+  width: 13px;
+  height: 13px;
+  opacity: 0.75;
+  flex-shrink: 0;
 }
 
 /* ── Photographer row ─────────────────────────────────────────── */
@@ -190,109 +209,161 @@
 .hero-slide__photographer {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   flex-wrap: wrap;
 }
 
 .hero-slide__photographer-name {
-  font-size: 0.88rem;
+  font-size: 0.84rem;
   font-weight: 500;
-  opacity: 0.9;
+  opacity: 0.88;
 }
 
-.hero-slide__profile-btn {
-  --vaadin-button-background: rgba(255, 255, 255, 0.15);
-  --vaadin-button-text-color: #fff;
-  font-size: 0.75rem;
-  font-weight: 500;
+/* Profile button – Vaadin */
+.hero-slide__photographer vaadin-button {
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.12);
+  font-size: 0.72rem;
+  font-weight: 600;
   letter-spacing: 0.04em;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.28);
   border-radius: 14px;
-  padding: 2px 14px;
+  padding: 0 13px;
+  min-height: 26px;
+  min-width: unset;
   backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   transition: background 0.2s ease, border-color 0.2s ease;
+
+  &:hover {
+    color: #fff;
+    background: rgba(139, 26, 26, 0.82);
+    border-color: #8b1a1a;
+  }
 }
 
-.hero-slide__profile-btn:hover {
-  --vaadin-button-background: rgba(139, 26, 26, 0.8);
-  border-color: rgba(139, 26, 26, 0.6);
-}
-
-/* ── Vertical action bar (right side of each slide) ──────────── */
+/* ── Vertical action bar (right edge of each slide) ──────────── */
 
 .hero-slide__actions {
-  flex: 0 0 58px;
+  flex: 0 0 56px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 16px;
-  background: rgba(0, 0, 0, 0.5);
-  padding: 16px 0;
+  gap: 14px;
+  background: rgba(0, 0, 0, 0.52);
+  padding: 14px 0;
   backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 
-.hero-action-btn {
-  --vaadin-button-background: transparent;
-  --vaadin-button-text-color: rgba(255, 255, 255, 0.75);
-  width: 38px;
-  height: 38px;
-  padding: 0;
+/* Vaadin buttons in the action bar */
+.hero-slide__actions vaadin-button {
+  color: rgba(255, 255, 255, 0.72);
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  min-height: 36px;
+  padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
   transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease;
+
+  &:hover {
+    color: #fff;
+    background: rgba(139, 26, 26, 0.78);
+    border-color: rgba(139, 26, 26, 0.55);
+    transform: scale(1.1);
+  }
 }
 
-.hero-action-btn:hover {
-  --vaadin-button-background: rgba(139, 26, 26, 0.75);
-  --vaadin-button-text-color: #fff;
-  border-color: rgba(139, 26, 26, 0.5);
-  transform: scale(1.1);
+.hero-slide__actions vaadin-button vaadin-icon {
+  width: 16px;
+  height: 16px;
+  pointer-events: none;
 }
 
-/* LikeButton / RateButton inside the action bar */
-
+/* LikeButton / RateButton (Div-based) inside the action bar */
 .hero-slide__actions .like-btn {
-  width: 38px;
-  height: 38px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.18);
   background: transparent;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background 0.2s ease, transform 0.15s ease;
   padding: 0;
+  transition: background 0.2s ease, transform 0.15s ease;
+  box-sizing: border-box;
 }
 
 .hero-slide__actions .like-btn:hover {
-  background: rgba(139, 26, 26, 0.75);
-  border-color: rgba(139, 26, 26, 0.5);
+  background: rgba(139, 26, 26, 0.78);
+  border-color: rgba(139, 26, 26, 0.55);
   transform: scale(1.1);
 }
 
-.hero-slide__actions .like-btn .like-btn-icon vaadin-icon,
-.hero-slide__actions .like-btn .like-btn-icon svg {
-  width: 1.2em;
-  height: 1.2em;
-  color: rgba(255, 255, 255, 0.8);
-  fill: rgba(255, 255, 255, 0.8);
+/* SVG icon inside LikeButton / RateButton */
+.hero-slide__actions .like-btn-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
 }
 
-.hero-slide__actions .like-btn .like-count {
-  font-size: 0.55rem;
-  color: rgba(255, 255, 255, 0.7);
+.hero-slide__actions .like-btn-icon svg,
+.hero-slide__actions .like-btn-icon vaadin-icon {
+  width: 1.15em;
+  height: 1.15em;
+  color: rgba(255, 255, 255, 0.78);
+  fill: rgba(255, 255, 255, 0.78);
+}
+
+.hero-slide__actions .like-count {
+  font-size: 0.52rem;
   line-height: 1;
-  margin-top: 2px;
+  color: rgba(255, 255, 255, 0.65);
+  margin-top: 1px;
 }
 
-/* ── Slide transition animations ─────────────────────────────── */
+/* ── Slide indicator dots ─────────────────────────────────────── */
+
+.hero-slider__dots {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 0 6px;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.hero-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.30);
+  cursor: pointer;
+  transition: background 0.25s ease, transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.hero-dot--active {
+  background: #fff;
+  transform: scale(1.25);
+}
+
+.hero-dot:hover:not(.hero-dot--active) {
+  background: rgba(255, 255, 255, 0.60);
+}
+
+/* ── Transition animations ────────────────────────────────────── */
 
 @keyframes heroExitLeft {
   from { transform: translateX(0);     opacity: 1; }
@@ -300,13 +371,13 @@
 }
 
 @keyframes heroEnterRight {
-  from { transform: translateX(100%); opacity: 0; }
-  to   { transform: translateX(0);    opacity: 1; }
+  from { transform: translateX(100%);  opacity: 0; }
+  to   { transform: translateX(0);     opacity: 1; }
 }
 
 @keyframes heroExitRight {
-  from { transform: translateX(0);    opacity: 1; }
-  to   { transform: translateX(100%); opacity: 0; }
+  from { transform: translateX(0);     opacity: 1; }
+  to   { transform: translateX(100%);  opacity: 0; }
 }
 
 @keyframes heroEnterLeft {
@@ -314,28 +385,32 @@
   to   { transform: translateX(0);     opacity: 1; }
 }
 
-.hero-slide--exit-left  { animation: heroExitLeft  0.6s ease forwards; }
-.hero-slide--enter-right { animation: heroEnterRight 0.6s ease forwards; }
-.hero-slide--exit-right  { animation: heroExitRight  0.6s ease forwards; }
-.hero-slide--enter-left  { animation: heroEnterLeft  0.6s ease forwards; }
+.hero-slide--exit-left   { animation: heroExitLeft   0.58s ease forwards; }
+.hero-slide--enter-right { animation: heroEnterRight  0.58s ease forwards; }
+.hero-slide--exit-right  { animation: heroExitRight   0.58s ease forwards; }
+.hero-slide--enter-left  { animation: heroEnterLeft   0.58s ease forwards; }
 
 /* ── Empty state ─────────────────────────────────────────────── */
 
 .hero-slider__empty {
-  padding: 60px 20px;
+  padding: 70px 24px;
   text-align: center;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.45);
   font-size: 1rem;
+  letter-spacing: 0.05em;
 }
 
 /* ── Full view dialog ─────────────────────────────────────────── */
 
 vaadin-dialog-overlay.hero-fullview-dialog::part(overlay) {
-  background: rgba(0, 0, 0, 0.92);
-  max-width: 96vw;
+  background: rgba(5, 5, 5, 0.93);
+  max-width: min(96vw, 1300px);
   max-height: 94vh;
-  border-radius: 8px;
+  border-radius: 10px;
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 vaadin-dialog-overlay.hero-fullview-dialog::part(content) {
@@ -344,8 +419,8 @@ vaadin-dialog-overlay.hero-fullview-dialog::part(content) {
 
 .hero-fullview-img {
   display: block;
-  max-width: 92vw;
-  max-height: 88vh;
+  max-width: 94vw;
+  max-height: 90vh;
   object-fit: contain;
   width: auto;
   height: auto;
@@ -355,14 +430,15 @@ vaadin-dialog-overlay.hero-fullview-dialog::part(content) {
 
 vaadin-dialog-overlay.hero-meta-dialog::part(overlay) {
   border-radius: 14px;
-  min-width: 320px;
+  min-width: 300px;
+  max-width: 480px;
 }
 
 .hero-meta-row {
   display: flex;
-  gap: 12px;
+  gap: 14px;
   align-items: baseline;
-  padding: 6px 0;
+  padding: 7px 16px;
   border-bottom: 1px solid var(--lumo-contrast-5pct);
 }
 
@@ -371,25 +447,25 @@ vaadin-dialog-overlay.hero-meta-dialog::part(overlay) {
 }
 
 .hero-meta-label {
-  min-width: 110px;
-  font-size: 0.78rem;
+  flex: 0 0 118px;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--lumo-secondary-text-color);
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  flex-shrink: 0;
 }
 
 .hero-meta-value {
-  font-size: 0.88rem;
+  font-size: 0.87rem;
   color: var(--lumo-body-text-color);
+  word-break: break-word;
 }
 
-/* ── Responsive ─────────────────────────────────────────────────── */
+/* ── Responsive ───────────────────────────────────────────────── */
 
-@media (max-width: 700px) {
+@media (max-width: 768px) {
   .hero-slider__body {
-    height: clamp(220px, 70vw, 360px);
+    height: clamp(200px, 72vw, 360px);
   }
 
   .hero-slider__nav {
@@ -401,18 +477,42 @@ vaadin-dialog-overlay.hero-meta-dialog::part(overlay) {
     gap: 10px;
   }
 
-  .hero-action-btn,
+  .hero-slide__actions vaadin-button,
   .hero-slide__actions .like-btn {
-    width: 32px;
-    height: 32px;
+    width: 30px;
+    min-width: 30px;
+    height: 30px;
+    min-height: 30px;
   }
 
   .hero-slide__title {
     font-size: 1rem;
+    max-width: 68%;
   }
 
-  .hero-filter-btn {
-    font-size: 0.7rem;
-    padding: 3px 12px;
+  .hero-slide__subtitle {
+    display: none;
+  }
+
+  .hero-slider__filter-bar vaadin-button {
+    font-size: 0.68rem;
+    padding: 0 12px;
+    min-height: 26px;
+  }
+
+  .hero-dot {
+    width: 6px;
+    height: 6px;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-slider {
+    border-radius: 0;
+    margin-bottom: 16px;
+  }
+
+  .hero-slide__photographer-name {
+    display: none;
   }
 }
