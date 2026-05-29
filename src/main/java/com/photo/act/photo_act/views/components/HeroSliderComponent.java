@@ -212,7 +212,7 @@ public class HeroSliderComponent extends Div {
         photoSection.addClassName("hero-slide__photo-section");
         photoSection.add(buildPhotoDiv(rec), buildInfoOverlay(rec));
 
-        slide.add(photoSection, buildActionBar(rec));
+        slide.add(photoSection); //, buildActionBar(rec));
         return slide;
     }
 
