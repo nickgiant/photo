@@ -65,7 +65,6 @@ public class HeroSliderComponent extends Div {
     public static final String FILTER_LIKES  = "Most Likes";
     public static final String FILTER_RATING = "Best Rating";
     public static final String FILTER_VIEWS  = "Most Views";
-
     private static final int    SLIDE_COUNT    = 10;
     private static final String SUBPATH_MEDIUM = "photo-medium";
     private static final String SUBPATH_SMALL  = "photo-small";
