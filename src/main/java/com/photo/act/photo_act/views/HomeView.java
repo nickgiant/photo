@@ -260,6 +260,14 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         String sqlGroupByWeekly = " GROUP BY DATE_FORMAT(pm.date_inserted, '%V-%Y') ";
         String sqlUploadsGroupedOrderBy = " ORDER BY DATE_FORMAT(pm.date_inserted, '%Y-%m-%V') DESC LIMIT 10";
 
+        // ── Hero slider — top of page ──────────────────────────────
+        HeroSliderComponent heroSlider = new HeroSliderComponent(
+                recordService, photoStatisticsService,
+                photoViewService, photoRatingService,
+                DIR_PHOTOS_SERVER, isMobile, userId, publicIp);
+        verticalLayout.add(heroSlider);
+        // ──────────────────────────────────────────────────────────
+
         H1 titlePage = new H1(APP_NAME);
         Span subTitle = new Span("[ Through Photography, We Connect and Act ]");
 

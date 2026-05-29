@@ -72,4 +72,12 @@ public class PhotoStatisticsService {
                 STATS_WHERE +
                 " ORDER BY pm.date_inserted DESC LIMIT " + limit;
     }
+
+    public String getBestRatingSql(int limit) {
+        return STATS_SELECT + STATS_FROM +
+                " LEFT JOIN (SELECT photo_id, AVG(rating) AS avg_rating, COUNT(*) AS rating_count" +
+                " FROM photo_rating GROUP BY photo_id) pr ON pm.id = pr.photo_id" +
+                STATS_WHERE +
+                " ORDER BY COALESCE(pr.avg_rating, 0) DESC, COALESCE(pr.rating_count, 0) DESC LIMIT " + limit;
+    }
 }
