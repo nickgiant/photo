@@ -11,12 +11,19 @@ import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.dto.LearningCategoryDto;
 import com.photo.act.photo_act.dto.LearningDto;
+import com.photo.act.photo_act.model.ShareType;
+import com.photo.act.photo_act.model.ShareableResource;
 import com.photo.act.photo_act.services.LearningService;
+import com.photo.act.photo_act.services.LearningViewService;
+import com.photo.act.photo_act.services.ShareMetricService;
+import com.photo.act.photo_act.services.ShareService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.photo.act.photo_act.views.components.AvatarItem;
 import com.photo.act.photo_act.views.components.FilterDestinationTypeCard;
 import com.photo.act.photo_act.views.components.GenericView;
+import com.photo.act.photo_act.views.components.LikeButton;
+import com.photo.act.photo_act.views.components.ShareBottomBar;
 import com.vaadin.flow.component.*;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.CheckboxGroup;
@@ -165,10 +172,19 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
     private String strDefOrderBy = arrOrderByItems[0];
     private VerticalLayout filtersContainer;
     private final LearningService learningService;
+    private final LearningViewService learningViewService;
+    private final ShareService shareService;
+    private final ShareMetricService shareMetricService;
+    private LocalDateTime sessionDateTimeLDT;
 
-    public LearningsView(RecordService recordService, LearningService learningService) {
+    public LearningsView(RecordService recordService, LearningService learningService,
+                         LearningViewService learningViewService,
+                         ShareService shareService, ShareMetricService shareMetricService) {
         this.recordService = recordService;
         this.learningService = learningService;
+        this.learningViewService = learningViewService;
+        this.shareService = shareService;
+        this.shareMetricService = shareMetricService;
         utilsDate = new UtilsDate();
         genericView = new GenericView(recordService);
         constructUI();
@@ -1058,25 +1074,79 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         );
         layoutSourceReviewSmall.addClassName("item-description");
 
+        // ── Resolve learning id and view counts ──────────────────────────────
+        int learningId = dto.getId() != null ? dto.getId().intValue() : 0;
+        Integer viewUserId = userId > 0 ? userId : null;
 
-        HorizontalLayout layoutAggregateInfo = getViewAggregateInfo();
+        String learningPublicUrl = baseUrl + "/learnings/title/" + strTitle;
+        ShareableResource learningResource = new ShareableResource(
+                ShareType.LEARNING,
+                String.valueOf(learningId),
+                strTitle,
+                strDescription,
+                "",
+                learningPublicUrl
+        );
 
         RouteParam routeTitle = new RouteParam("title", strTitle);
 
-        Button btnMore = new Button("More");
-        btnMore.setIcon(VaadinIcon.ARROW_RIGHT.create());
-        btnMore.addClassName("btn-more");
-        btnMore.addClickListener(click -> {
-            btnMore.getUI().ifPresent(ui ->
-                    ui.navigate(LearningsView.class, new RouteParameters(routeTitle)));
-        });
-
-
-//        layoutPostRelated, layoutSubTabs, layoutAggregateInfo);
         if (title.equalsIgnoreCase(STR_ALL_TITLES) || title.isEmpty()) {
-            layoutAggregateInfo.add(btnMore);
-            layoutLearningInfo.add(layoutPostTitle, layoutDataSmall, layoutSourceReviewSmall, layoutAggregateInfo);
+            // ── List mode: record List view and build list ButtonBar ──────────
+            if (learningViewService != null && learningId > 0) {
+                learningViewService.recordView(learningId, dto.getSlug(), viewUserId, publicIp,
+                        LearningViewService.TYPE_LIST, sessionid, sessionDateTimeLDT);
+            }
+
+            long listViewCount = learningViewService != null && learningId > 0
+                    ? learningViewService.getViewCountByType(learningId, LearningViewService.TYPE_LIST) : 0;
+            long fullViewCount = learningViewService != null && learningId > 0
+                    ? learningViewService.getViewCountByType(learningId, LearningViewService.TYPE_FULL) : 0;
+            long likeCount = learningViewService != null && learningId > 0
+                    ? learningViewService.getLikeCount(learningId) : 0;
+
+            HorizontalLayout layoutAggregateInfo = getViewAggregateInfo( fullViewCount);
+
+            LikeButton likeButton = new LikeButton(likeCount);
+            final int finalLearningId = learningId;
+            final String finalSlug = dto.getSlug();
+
+            ShareBottomBar listBar = new ShareBottomBar(learningResource, shareService, shareMetricService);
+            listBar.addClassName("btn-bar-wrapper");
+
+            listBar.addComponent(layoutAggregateInfo);
+
+            listBar.addButton("Like it!", likeButton, () -> {
+                if (learningViewService != null && finalLearningId > 0) {
+                    learningViewService.recordLike(finalLearningId, finalSlug, viewUserId, publicIp,
+                            sessionid, sessionDateTimeLDT);
+                    likeButton.setCount(learningViewService.getLikeCount(finalLearningId));
+                }
+            }, "btn-bar-share");
+
+            listBar.addButton("View", FontAwesome.Solid.ARROW_RIGHT.create(),
+                    () -> getUI().ifPresent(ui ->
+                            ui.navigate(LearningsView.class, new RouteParameters(routeTitle))),
+                    "btn-bar-view");
+
+            listBar.addShareItemMenu();
+
+            layoutLearningInfo.add(layoutPostTitle, layoutDataSmall, layoutSourceReviewSmall,
+                    buildActionBar(listBar));
+
         } else {
+            // ── Detail mode: record Full view and build detail ButtonBar ──────
+            if (learningViewService != null && learningId > 0) {
+                learningViewService.recordView(learningId, dto.getSlug(), viewUserId, publicIp,
+                        LearningViewService.TYPE_FULL, sessionid, sessionDateTimeLDT);
+            }
+
+            long likeCount = learningViewService != null && learningId > 0
+                    ? learningViewService.getLikeCount(learningId) : 0;
+
+            LikeButton likeButton = new LikeButton(likeCount);
+            final int finalLearningId = learningId;
+            final String finalSlug = dto.getSlug();
+
             VerticalLayout layoutSubTabs = getSubTabs("Learning", strTitle, dto);
 
             VerticalLayout layoutReviewNormal = getFormattedText(strDescription, false);
@@ -1084,12 +1154,9 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
                     Margin.SMALL,
                     Padding.MEDIUM,
                     Gap.SMALL,
-                    //TextColor.SECONDARY,
                     AlignItems.CENTER, JustifyContent.CENTER
             );
             layoutReviewNormal.addClassName("item-description");
-
-            layoutAggregateInfo.addClassName("aggregate-detail");
 
             Div divRelated = new Div(new Text(""));
 
@@ -1099,94 +1166,63 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
 
             Span spUserPoster = new Span(detUserPosted);
 
+            ShareBottomBar detailBar = new ShareBottomBar(learningResource, shareService, shareMetricService);
+            detailBar.addClassName("btn-bar-wrapper");
+
+            detailBar.addButton("Like it!", likeButton, () -> {
+                if (learningViewService != null && finalLearningId > 0) {
+                    learningViewService.recordLike(finalLearningId, finalSlug, viewUserId, publicIp,
+                            sessionid, sessionDateTimeLDT);
+                    likeButton.setCount(learningViewService.getLikeCount(finalLearningId));
+                }
+            }, "btn-bar-share");
+
+/*            detailBar.addButton("Comment", VaadinIcon.COMMENT.create(), () -> {
+            }, "btn-bar-comment");
+
+            detailBar.addButton("Save to list", VaadinIcon.BOOKMARK.create(), () -> {
+            }, "btn-bar-bookmark");
+
+            detailBar.addButton("Upload related photos", VaadinIcon.UPLOAD.create(), () -> {
+            }, "btn-bar-upload");*/
+
+            detailBar.addShareItemMenu();
+
             layoutLearningInfo.add(layoutPostTitle, layoutDataNormal, layoutSourceCardNormal, layoutReviewNormal,
-                    //getReviewResults(),
-                    divRelated, spUserPoster, getActions());
+                    divRelated, spUserPoster, buildActionBar(detailBar));
         }
 
         return layoutLearningInfo;
     }
 
-    private HorizontalLayout getViewAggregateInfo() {
+    private HorizontalLayout buildActionBar(ShareBottomBar bar) {
+        HorizontalLayout wrapper = new HorizontalLayout();
+        wrapper.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER,
+                Padding.XSMALL, Margin.NONE);
+        wrapper.addClassName("learning-bottom-bar");
+        wrapper.add(bar);
+        return wrapper;
+    }
+
+    private HorizontalLayout getViewAggregateInfo( long fullViews) {
         HorizontalLayout layoutPhotosInfo = new HorizontalLayout();
         layoutPhotosInfo.addClassNames(
-                Overflow.HIDDEN, Width.FULL,
+                Overflow.HIDDEN,
                 AlignItems.CENTER, JustifyContent.EVENLY,
                 Margin.NONE,
-                Padding.MEDIUM,
+                Padding.SMALL,
                 Gap.SMALL,
-                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                //   Background.CONTRAST_5,
                 TextColor.TERTIARY
         );
 
-        StreamResource iconRate = new StreamResource("star-empty-icon.svg",
-                () -> getClass().getResourceAsStream("/icons/star-empty-icon.svg"));
-        SvgIcon svgRate = new SvgIcon(iconRate);
 
-        HorizontalLayout layoutRate = new HorizontalLayout();
-        layoutRate.addClassNames(
-//                Overflow.HIDDEN, Width.FULL,
-                AlignItems.CENTER, JustifyContent.CENTER,
-                Margin.NONE,
-                Padding.XSMALL,
-                Gap.XSMALL,
-                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                //   Background.CONTRAST_5,
-                BorderRadius.NONE
-        );
-        Div divRate = new Div("1");
-        layoutRate.add(svgRate, divRate);
+        HorizontalLayout layoutFullViews = new HorizontalLayout();
+        layoutFullViews.addClassNames(AlignItems.CENTER, JustifyContent.CENTER,
+                Margin.NONE, Padding.XSMALL, Gap.XSMALL, BorderRadius.NONE);
+        layoutFullViews.add(VaadinIcon.EYE.create(),
+                new Span(fullViews > 0 ? String.valueOf(fullViews) : ""));
 
-
-        HorizontalLayout layoutViewCount = new HorizontalLayout();
-        layoutViewCount.addClassNames(
-//                Overflow.HIDDEN, Width.FULL,
-                AlignItems.CENTER, JustifyContent.CENTER,
-                Margin.NONE,
-                Padding.XSMALL,
-                Gap.XSMALL,
-                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                //   Background.CONTRAST_5,
-                BorderRadius.NONE
-        );
-        Div divViews = new Div("1");
-        layoutViewCount.add(FontAwesome.Regular.EYE.create(), divViews);
-
-        StreamResource iconComments = new StreamResource("comments.svg",
-                () -> getClass().getResourceAsStream("/icons/comments.svg"));
-        SvgIcon svgComments = new SvgIcon(iconComments);
-
-        HorizontalLayout layoutComment = new HorizontalLayout();
-        layoutComment.addClassNames(
-//                Overflow.HIDDEN, Width.FULL,
-                AlignItems.CENTER, JustifyContent.CENTER,
-                Margin.NONE,
-                Padding.XSMALL,
-                Gap.XSMALL,
-                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                //   Background.CONTRAST_5,
-                BorderRadius.NONE
-        );
-        Div divCommentCount = new Div("1");
-        layoutComment.add(svgComments, divCommentCount);
-
-
-        HorizontalLayout layoutSavedInListCount = new HorizontalLayout();
-        layoutSavedInListCount.addClassNames(
-//                Overflow.HIDDEN, Width.FULL,
-                AlignItems.CENTER, JustifyContent.CENTER,
-                Margin.NONE,
-                Padding.XSMALL,
-                Gap.XSMALL,
-                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                //   Background.CONTRAST_5,
-                BorderRadius.NONE
-        );
-        Div divDate = new Div("1");
-        layoutSavedInListCount.add(VaadinIcon.BOOKMARK.create(), divDate); // FontAwesome.Regular.CALENDAR.create()
-        layoutPhotosInfo.add(layoutRate, layoutViewCount, layoutComment, layoutSavedInListCount);
-
+        layoutPhotosInfo.add( layoutFullViews);
         return layoutPhotosInfo;
     }
 
@@ -1894,6 +1930,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
 
         sessionid = VaadinSession.getCurrent().getSession().getId();
         sessionCreation = VaadinSession.getCurrent().getSession().getCreationTime();
+        sessionDateTimeLDT = utilsDate.calcDateTimeFromLongInLDT(sessionCreation, "UTC");
         isMobile = VaadinSession.getCurrent().getBrowser().isAndroid() || VaadinSession.getCurrent().getBrowser().isIPhone() || VaadinSession.getCurrent().getBrowser().isWindowsPhone();
 
         if (VaadinSession.getCurrent().getBrowser().isAndroid()) {
