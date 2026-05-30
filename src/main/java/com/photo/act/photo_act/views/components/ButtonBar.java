@@ -20,7 +20,7 @@ import com.vaadin.flow.component.dependency.CssImport;
 public class ButtonBar extends Div {
 
     public ButtonBar() {
-        /*addClassName("btn-bar-wrapper");*/
+        addClassName("btn-bar-wrapper");
     }
 
     /**

@@ -562,14 +562,16 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
             divGallery.add(getStoryItemsFromDb(rec, isEditable));
         }
 
+        verticalLayout.add(divGallery);
+
         final int    finalStoryId  = detailStoryId;
         final String finalSlug     = detailSlug;
         final String finalUsername = detailUsername;
         final String finalTitle    = detailTitle;
         final String finalDesc     = detailDesc;
-        divGallery.add(getActions(likeCount, viewCount, finalStoryId, finalSlug,
+
+        verticalLayout.add(getActions(likeCount, viewCount, finalStoryId, finalSlug,
                 finalUsername, finalTitle, finalDesc));
-        verticalLayout.add(divGallery);
 
         String sqlMember = sqlMemberOfStories + " AND usr.username = '" + strMember + "' " + sqlMemberOfStoriesGroupBy;
         loadMemberOfStoriesFromDb(sqlMember, arrColumnsMemberStories, false);
@@ -781,26 +783,15 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
     private HorizontalLayout getActions(long likeCount, long viewCount, int storyId, String slug,
                                         String username, String title, String description) {
 
-        // Views display
-/*        HorizontalLayout viewsRow = new HorizontalLayout();
-        viewsRow.addClassNames(AlignItems.CENTER, JustifyContent.CENTER, Gap.XSMALL,
-                Margin.NONE, Padding.NONE);
-        Div divViewCount = new Div(viewCount > 0 ? String.valueOf(viewCount) : "");
-        viewsRow.add(FontAwesome.Regular.EYE.create(), divViewCount);
-
- */
-
         Span divViewCount = new Span(viewCount > 0 ? String.valueOf(viewCount) : "");
-//        viewsRow.add(FontAwesome.Regular.EYE.create(), divViewCount);
 
         HorizontalLayout viewsLayout = new HorizontalLayout();
         viewsLayout.addClassNames(AlignItems.CENTER, JustifyContent.CENTER,
                 Margin.NONE, Padding.NONE, Gap.XSMALL);
-//        Span viewsLabel = new Span("Views");
+        Span viewsLabel = new Span(FontAwesome.Regular.EYE.create());
         viewsLayout.addClassNames(FontSize.XXSMALL);
-        viewsLayout.add(FontAwesome.Regular.EYE.create(),divViewCount);
+        viewsLayout.add(viewsLabel,divViewCount);
 
-        // Like button
         LikeButton btnLike = new LikeButton(likeCount);
 //        btnLike.setTooltipText("Like It");
 /*        btnLike.addLikeClickListener(e -> {
@@ -833,7 +824,6 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
         ShareBottomBar shareBar = new ShareBottomBar(storyResource, shareService, shareMetricService);
 
         shareBar.addComponent(viewsLayout);
-
         shareBar.addButton("Like", btnLike,
                 () -> {
                     if (photoStoryViewService != null && storyId > 0) {
@@ -845,30 +835,14 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
                     }
                 }
                 ,"btn-bar-share");
-
-/*        RouteParam routeMember = new RouteParam("member", username);
-        RouteParam routeStory  = new RouteParam("story",  slug);*/
-/*
-        shareBar.addButton("View Story",
-                FontAwesome.Solid.ARROW_RIGHT.create(),
-                () -> shareBar.getUI().ifPresent(ui ->
-                        ui.navigate(StoriesView.class, new RouteParameters(routeMember, routeStory))),
-                "btn-bar-view");
-*/
-
         shareBar.addShareItemMenu();
 
-/*        final String infoText = (description != null && !description.isBlank()) ? description : title;
-        shareBar.addButton("Info", VaadinIcon.INFO_CIRCLE_O.create(), () -> {
-            if (infoText != null && !infoText.isBlank()) {
-                Notification.show(infoText, 5000, Notification.Position.BOTTOM_CENTER);
-            }
-        }, "btn-bar-info");*/
-
         HorizontalLayout layoutActions = new HorizontalLayout();
-        layoutActions.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER,
+        layoutActions.addClassNames(
+                Width.FULL,
+                AlignItems.CENTER, JustifyContent.CENTER,
                 Padding.SMALL, Margin.NONE);
-        layoutActions.addClassName("story-bottom-bar");
+
         layoutActions.add(shareBar);
 
         return layoutActions;
