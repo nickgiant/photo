@@ -94,11 +94,12 @@
 
 /* Slide tooltip up on hover */
 .btn-bar-item:hover .btn-bar-tooltip {
-    top: -40px;
+    top: -43px;
     opacity: 1;
 }
 
-/* Tooltip picks up the brand color on hover */
+
+    /* Tooltip picks up the brand color on hover */
 .btn-bar-item:hover .btn-bar-tooltip,
 .btn-bar-item:hover .btn-bar-tooltip::before {
     background: var(--brand-bg);
