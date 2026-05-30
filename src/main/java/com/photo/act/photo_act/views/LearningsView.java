@@ -1215,23 +1215,12 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
                 TextColor.TERTIARY
         );
 
-/*        HorizontalLayout layoutListViews = new HorizontalLayout();
-        layoutListViews.addClassNames(AlignItems.CENTER, JustifyContent.CENTER,
-                Margin.NONE, Padding.XSMALL, Gap.XSMALL, BorderRadius.NONE);
-        layoutListViews.add(FontAwesome.Regular.EYE.create(),
-                new Span(fullViews > 0 ? String.valueOf(fullViews) : ""));*/
 
         HorizontalLayout layoutFullViews = new HorizontalLayout();
         layoutFullViews.addClassNames(AlignItems.CENTER, JustifyContent.CENTER,
                 Margin.NONE, Padding.XSMALL, Gap.XSMALL, BorderRadius.NONE);
         layoutFullViews.add(VaadinIcon.EYE.create(),
                 new Span(fullViews > 0 ? String.valueOf(fullViews) : ""));
-
-/*        HorizontalLayout layoutLikes = new HorizontalLayout();
-        layoutLikes.addClassNames(AlignItems.CENTER, JustifyContent.CENTER,
-                Margin.NONE, Padding.XSMALL, Gap.XSMALL, BorderRadius.NONE);
-        layoutLikes.add(FontAwesome.Solid.HEART.create(),
-                new Span(likes > 0 ? String.valueOf(likes) : ""));*/
 
         layoutPhotosInfo.add( layoutFullViews);
         return layoutPhotosInfo;
