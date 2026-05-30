@@ -5,7 +5,7 @@
    ============================================================ */
 
 .news-view {
-    --nv-bg:          #f4f2ef;
+/*    --nv-bg:          #f4f2ef;*/
     --nv-card-bg:     #ffffff;
     --nv-border:      rgba(0,0,0,.07);
     --nv-radius:      16px;
@@ -25,7 +25,8 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 22px 32px 20px;
+    padding: 22px;
+    margin: 0;
     /*background: linear-gradient(135deg, #1c0808 0%, #2d1515 55%, #1c0808 100%);*/
     border-bottom: 1px solid rgba(216,171,65,.22);
     box-shadow: 0 4px 20px rgba(0,0,0,.28);
@@ -34,7 +35,7 @@
     width: 100%;
 }
 
-.nv-header-left {
+/*.nv-header-left {
     display: flex;
     align-items: center;
     gap: 14px;
@@ -48,9 +49,8 @@
     height: 46px;
     border-radius: 12px;
     background: linear-gradient(135deg, #8b1a1a, #c0392b);
-    box-shadow: 0 0 18px rgba(192,57,43,.5);
     flex-shrink: 0;
-}
+}*/
 
 .nv-header-icon vaadin-icon {
     color: #fff;
@@ -58,7 +58,7 @@
     height: 22px !important;
 }
 
-.nv-header-title {
+/*.nv-header-title {
 
     font-size: 1.5rem;
     font-weight: 800;
@@ -66,7 +66,7 @@
     letter-spacing: 2px;
     text-transform: uppercase;
     text-shadow: 0 0 28px rgba(216,171,65,.28);
-}
+}*/
 
 .nv-btn-create {
     background: linear-gradient(135deg, #d8ab41, #e6be5f) !important;
@@ -87,16 +87,6 @@
     box-shadow: 0 6px 18px rgba(216,171,65,.55) !important;
 }
 
-/* ── Aggregate stat bar (4 screenshot-style tiles) ──────── */
-.nv-stat-bar {
-    width: 100%;
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 14px;
-    padding: 20px 32px;
-    background: #faf9f7;
-    border-bottom: 1px solid var(--nv-border);
-}
 
 .nv-tile {
     display: flex;
@@ -158,17 +148,19 @@
 .nv-cat-wrapper {
     background: #faf9f7;
     border-bottom: 1px solid var(--nv-border);
+    margin: 0;
 }
 
 .nv-cat-strip {
     width: 100%;
     display: flex;
     gap: 10px;
-    padding: 16px 32px 18px;
-    overflow-x: auto;
+    padding: 18px;
+    margin: 0;
+/*    overflow-x: auto;
     scrollbar-width: thin;
     scrollbar-color: rgba(139,26,26,.25) transparent;
-    flex-wrap: nowrap;
+    flex-wrap: nowrap;*/
 }
 
 .nv-cat-strip::-webkit-scrollbar { height: 3px; }
@@ -283,7 +275,7 @@
 /* ── News feed + grid ─────────────────────────────────────── */
 .nv-feed {
     width: 100%;
-    padding: 28px 32px 0;
+    padding: 12px;
 }
 
 .nv-grid {
@@ -440,14 +432,12 @@
 .nv-page-info { font-size: .82rem; color: #888; font-weight: 600; letter-spacing: .5px; }
 
 /* ── Responsive ───────────────────────────────────────────── */
-@media (max-width: 900px) {
-    .nv-stat-bar { grid-template-columns: repeat(2, 1fr); }
-}
+
 
 @media (max-width: 560px) {
     .nv-header { padding: 14px 16px; }
-    .nv-header-title { font-size: 1.15rem; }
-    .nv-stat-bar { grid-template-columns: repeat(2, 1fr); padding: 14px 16px; gap: 10px; }
+/*    .nv-header-title { font-size: 1.15rem; }*/
+
     .nv-cat-strip { padding: 12px 16px 14px; }
     .nv-feed { padding: 16px 14px 0; }
     .nv-grid { grid-template-columns: 1fr; gap: 14px; }

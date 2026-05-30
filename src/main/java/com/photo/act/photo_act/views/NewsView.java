@@ -12,6 +12,7 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.popover.Popover;
 import com.vaadin.flow.component.popover.PopoverPosition;
@@ -53,11 +54,11 @@ public class NewsView extends VerticalLayout {
     public NewsView(NewsService newsService) {
         this.newsService = newsService;
         addClassName("news-view");
-        setPadding(false);
+        setPadding(true);
         setSpacing(false);
         setSizeFull();
 
-        add(buildPageHeader(), buildStatBar(), buildCategoryStrip(), newsFeed, pagination);
+        add(buildPageHeader(), buildCategoryStrip(), newsFeed, pagination);
 
         loadAll();
     }
@@ -65,15 +66,16 @@ public class NewsView extends VerticalLayout {
     // ─────────────────────────── Page header ────────────────────────────────
 
     private Component buildPageHeader() {
-        Div header = new Div();
-        header.addClassName("nv-header");
+        HorizontalLayout header = new HorizontalLayout();
+        header.setWidthFull();
+        header.addClassName("header-layout");
 
-        Div left = new Div();
-        left.addClassName("nv-header-left");
+        HorizontalLayout left = new HorizontalLayout();
+//        left.addClassName("nv-header-left");
         Span ico = new Span(FontAwesome.Solid.NEWSPAPER.create());
-        ico.addClassName("nv-header-icon");
-        H2 title = new H2("News");
-        title.addClassName("nv-header-title");
+//        ico.addClassName("nv-header-icon");
+        H1 title = new H1("News");
+//        title.addClassName("nv-header-title");
         left.add(ico, title);
 
         Button btnCreate = new Button("Write News", VaadinIcon.PLUS.create());
@@ -86,60 +88,15 @@ public class NewsView extends VerticalLayout {
         return header;
     }
 
-    // ────────────────────────── Aggregate stat bar ───────────────────────────
 
-    private Component buildStatBar() {
-        statBar.addClassName("nv-stat-bar");
-        return statBar;
-    }
-
-    private void refreshStatBar() {
-        statBar.removeAll();
-        long news, views, likes, authors;
-        if (selectedCat != null) {
-            news    = selectedCat.getNewsCount();
-            views   = selectedCat.getTotalViews();
-            likes   = selectedCat.getTotalLikes();
-            authors = selectedCat.getTotalAuthors();
-        } else {
-            news    = allCategories.stream().mapToLong(NewsCategoryDto::getNewsCount).sum();
-            views   = allCategories.stream().mapToLong(NewsCategoryDto::getTotalViews).sum();
-            likes   = allCategories.stream().mapToLong(NewsCategoryDto::getTotalLikes).sum();
-            authors = allCategories.stream().mapToLong(NewsCategoryDto::getTotalAuthors).sum();
-        }
-        statBar.add(
-            statTile(news,    "News",         VaadinIcon.FILE_TEXT,  "nv-tile--purple"),
-            statTile(views,   "Views",         VaadinIcon.EYE,        "nv-tile--blue"),
-            statTile(likes,   "Likes",         VaadinIcon.HEART,      "nv-tile--pink"),
-            statTile(authors, "Contributors",  VaadinIcon.USERS,      "nv-tile--orange")
-        );
-    }
-
-    /** Single colored stat tile (matches screenshot design). */
-    private Div statTile(long value, String label, VaadinIcon iconType, String colorClass) {
-        Div tile = new Div();
-        tile.addClassNames("nv-tile", colorClass);
-
-        Span iconBox = new Span(iconType.create());
-        iconBox.addClassName("nv-tile-icon");
-
-        Div textCol = new Div();
-        textCol.addClassName("nv-tile-text");
-        Span num = new Span(fmtCount(value));
-        num.addClassName("nv-tile-value");
-        Span lbl = new Span(label);
-        lbl.addClassName("nv-tile-label");
-        textCol.add(num, lbl);
-
-        tile.add(iconBox, textCol);
-        return tile;
-    }
 
     // ─────────────────────── Category strip ─────────────────────────────────
 
     private Component buildCategoryStrip() {
         Div wrapper = new Div();
+        wrapper.setWidthFull();
         wrapper.addClassName("nv-cat-wrapper");
+        catStrip.setWidthFull();
         catStrip.addClassName("nv-cat-strip");
         wrapper.add(catStrip);
         return wrapper;
@@ -191,7 +148,7 @@ public class NewsView extends VerticalLayout {
             selectedCat        = cat;
             currentPage        = 0;
             markActive(catId);
-            refreshStatBar();
+
             loadNews();
         });
         return chip;
@@ -356,7 +313,6 @@ public class NewsView extends VerticalLayout {
         } catch (Exception e) {
             allCategories = List.of();
         }
-        refreshStatBar();
         refreshCategoryStrip();
         loadNews();
     }

@@ -203,106 +203,7 @@ public class MainLayout extends AppLayout{
     }
 
 
-    private Component createHeaderContent() {
-        Header header = new Header();
-        if (isMobile) {
-            header.addClassNames(BoxSizing.BORDER, Display.FLEX, FlexDirection.ROW, Width.FULL,
-                    Padding.Horizontal.SMALL, Padding.Vertical.XSMALL,
-                    Margin.SMALL,
-                    Gap.SMALL
-            );
-        } else {
-            header.addClassNames(BoxSizing.BORDER, Display.FLEX, FlexDirection.ROW, Width.FULL,
-                    Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL,
-                    Margin.SMALL,
-                    Gap.MEDIUM
-            );
-        }
 
-        Div logoLayout = new Div();
-        logoLayout.addClassNames(Display.FLEX, AlignItems.CENTER, JustifyContent.CENTER,
-                Gap.XSMALL,
-                Margin.SMALL,
-                Padding.NONE);
-
-        H1 appName = new H1(APP_NAME);
-        //appName.addClassNames(Margin.Vertical.MEDIUM, AlignItems.CENTER, Margin.End.AUTO, FontSize.LARGE, FontWeight.BOLD, TextColor.TERTIARY);
-        appName.addClassNames(FontSize.MEDIUM, FontWeight.SEMIBOLD, TextColor.TERTIARY,
-                Padding.NONE, Margin.NONE);
-//        appName.getStyle().set("font-family", "Times-New-Roman, serif");
-//        appName.getStyle().set("font-stretch", "semi-expanded");
-        appName.setClassName("brand-text");
-        // appName.getStyle().setColor("#d64f00");//"#f9943b");//""#bd3450");
-
-        Div divLogo = new Div();
-        divLogo.add(VaadinIcon.CAMERA.create());
-        divLogo.addClassName("logo-icon");
-        // divLogo.addClassNames(Margin.Vertical.MEDIUM, AlignItems.CENTER, Margin.End.LARGE, FontSize.LARGE, FontWeight.BOLD,TextColor.TERTIARY);
-        divLogo.addClassNames(FontSize.MEDIUM, FontWeight.BOLD, TextColor.TERTIARY,
-                Padding.NONE, Margin.NONE);
-        //divLogo.getStyle().setColor("#cd5c5c");
-
-        logoLayout.add(divLogo, appName);
-
-        Nav nav = new Nav();
-        if (isMobile) {
-            nav.addClassNames(Display.FLEX, Overflow.AUTO, Width.FULL,
-                    Margin.NONE, Padding.NONE, AlignItems.CENTER, JustifyContent.EVENLY //Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL,
-            );
-        } else {
-            nav.addClassNames(Display.FLEX, Overflow.AUTO,
-                    Margin.NONE, Padding.NONE, AlignItems.CENTER, JustifyContent.EVENLY //Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL,
-            );
-        }
-
-        // Wrap the links in a list; improves accessibility
-        UnorderedList list = new UnorderedList();
-        if (isMobile) {
-            list.addClassNames(Display.FLEX, Width.FULL,
-                    ListStyleType.NONE, Margin.NONE, Padding.NONE,
-                    AlignItems.CENTER, JustifyContent.EVENLY
-            );
-        } else {
-            list.addClassNames(Display.FLEX, Width.FULL,
-                    ListStyleType.NONE, Margin.NONE, Padding.NONE,
-                    AlignItems.CENTER, JustifyContent.EVENLY
-            );
-        }
-        nav.add(list);
-
-        for (MenuItemInfo menuItem : createMenuItems()) {
-            menuItem.addClassNames(FontWeight.BOLD);
-            list.add(menuItem);
-        }
-
-        TextField txtObject1 = new TextField();
-        TextField txtValue1 = new TextField();
-
-        TextField txtObject2 = new TextField();
-        TextField txtValue2 = new TextField();
-
-        Button btnStyle = new Button("Style");
-        btnStyle.addClickListener(e -> {
-            UI.getCurrent().getElement().getStyle().set(txtObject1.getValue(), txtValue1.getValue());
-            UI.getCurrent().getElement().getStyle().set(txtObject2.getValue(), txtValue2.getValue());
-        });
-
-        HorizontalLayout headerLayout = new HorizontalLayout();
-        headerLayout.addClassNames(Width.FULL,
-                AlignItems.CENTER, JustifyContent.EVENLY,
-                Padding.NONE, Margin.NONE,
-                Gap.MEDIUM
-        );
-
-        if (isMobile) {
-            headerLayout.add(nav);
-        } else {
-            headerLayout.add(logoLayout, nav);
-        }
-
-
-        return headerLayout;
-    }
 
     private Component createMobileHeader() {
         Header header = new Header();
@@ -911,10 +812,13 @@ public class MainLayout extends AppLayout{
         nav.addClassName("label-text");
 
         Div divImageHome = new Div(FontAwesome.Solid.HOME.create());
-        nav.addItem(createSideNavItem("Home", divImageHome, "Introduction and Updates",
+        nav.addItem(createSideNavItem("Home", divImageHome, "Introduction",
                 HomeView.class));
 
 
+        Div divImageNews = new Div(FontAwesome.Solid.NEWSPAPER.create());
+        nav.addItem(createSideNavItem("News", divImageNews, "News and Updates",
+                NewsView.class));
 
         Div divStories = new Div(FontAwesome.Solid.PHOTO_FILM.create());
         nav.addItem(createSideNavItem("Photo-Stories", divStories, "Collections of photos from members",

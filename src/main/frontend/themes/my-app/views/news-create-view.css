@@ -28,7 +28,7 @@
     padding: 20px 32px 18px;
     /*background: linear-gradient(135deg, #1c0808 0%, #2d1515 55%, #1c0808 100%);*/
     border-bottom: 1px solid rgba(216,171,65,.22);
-    box-shadow: 0 4px 20px rgba(0,0,0,.28);
+    /*box-shadow: 0 4px 20px rgba(0,0,0,.28);*/
     flex-wrap: wrap;
 }
 
@@ -59,7 +59,7 @@
     height: 40px;
     border-radius: 10px;
     background: linear-gradient(135deg, #8b1a1a, #c0392b);
-    box-shadow: 0 0 16px rgba(192,57,43,.45);
+    /*box-shadow: 0 0 16px rgba(192,57,43,.45);*/
     flex-shrink: 0;
     color: #fff;
     font-size: 1.1rem;
@@ -71,8 +71,8 @@
     font-weight: 800;
     margin: 0;
     letter-spacing: 1.5px;
-    text-transform: uppercase;
-    text-shadow: 0 0 24px rgba(216,171,65,.25);
+    /*text-transform: uppercase;
+    text-shadow: 0 0 24px rgba(216,171,65,.25);*/
 }
 
 /* ── Content sections ────────────────────────────────────── */
