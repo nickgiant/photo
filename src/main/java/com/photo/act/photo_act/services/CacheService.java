@@ -43,7 +43,7 @@ public class CacheService {
         return lstLearnings;
     }
 
-//    @Cacheable(value = "learnings", key = "#id")
+    @Cacheable(value = "learnings", key = "#id")
     public Record getLearningById(String id) {
         logger.info("Fetching learning from in-memory list..." + id);
         for (int r = 0; r < lstLearnings.size(); r++) {
@@ -62,7 +62,7 @@ public class CacheService {
         return lstPhotos;
     }
 
-//    @Cacheable(value = "photos", key = "#id")
+    @Cacheable(value = "photos", key = "#id")
     public Record getPhotoById(String id) {
         logger.info("Fetching photo from in-memory list..." + id);
         for (int r = 0; r < lstPhotos.size(); r++) {

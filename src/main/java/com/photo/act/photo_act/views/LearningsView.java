@@ -1104,7 +1104,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
             long likeCount = learningViewService != null && learningId > 0
                     ? learningViewService.getLikeCount(learningId) : 0;
 
-            HorizontalLayout layoutAggregateInfo = getViewAggregateInfo(listViewCount, fullViewCount, likeCount);
+            HorizontalLayout layoutAggregateInfo = getViewAggregateInfo( fullViewCount);
 
             LikeButton likeButton = new LikeButton(likeCount);
             final int finalLearningId = learningId;
@@ -1177,14 +1177,14 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
                 }
             }, "btn-bar-share");
 
-            detailBar.addButton("Comment", VaadinIcon.COMMENT.create(), () -> {
+/*            detailBar.addButton("Comment", VaadinIcon.COMMENT.create(), () -> {
             }, "btn-bar-comment");
 
             detailBar.addButton("Save to list", VaadinIcon.BOOKMARK.create(), () -> {
             }, "btn-bar-bookmark");
 
             detailBar.addButton("Upload related photos", VaadinIcon.UPLOAD.create(), () -> {
-            }, "btn-bar-upload");
+            }, "btn-bar-upload");*/
 
             detailBar.addShareItemMenu();
 
@@ -1204,7 +1204,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         return wrapper;
     }
 
-    private HorizontalLayout getViewAggregateInfo(long listViews, long fullViews, long likes) {
+    private HorizontalLayout getViewAggregateInfo( long fullViews) {
         HorizontalLayout layoutPhotosInfo = new HorizontalLayout();
         layoutPhotosInfo.addClassNames(
                 Overflow.HIDDEN,
@@ -1215,25 +1215,25 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
                 TextColor.TERTIARY
         );
 
-        HorizontalLayout layoutListViews = new HorizontalLayout();
+/*        HorizontalLayout layoutListViews = new HorizontalLayout();
         layoutListViews.addClassNames(AlignItems.CENTER, JustifyContent.CENTER,
                 Margin.NONE, Padding.XSMALL, Gap.XSMALL, BorderRadius.NONE);
         layoutListViews.add(FontAwesome.Regular.EYE.create(),
-                new Span(listViews > 0 ? String.valueOf(listViews) : ""));
+                new Span(fullViews > 0 ? String.valueOf(fullViews) : ""));*/
 
         HorizontalLayout layoutFullViews = new HorizontalLayout();
         layoutFullViews.addClassNames(AlignItems.CENTER, JustifyContent.CENTER,
                 Margin.NONE, Padding.XSMALL, Gap.XSMALL, BorderRadius.NONE);
-        layoutFullViews.add(VaadinIcon.EXPAND_FULL.create(),
+        layoutFullViews.add(VaadinIcon.EYE.create(),
                 new Span(fullViews > 0 ? String.valueOf(fullViews) : ""));
 
-        HorizontalLayout layoutLikes = new HorizontalLayout();
+/*        HorizontalLayout layoutLikes = new HorizontalLayout();
         layoutLikes.addClassNames(AlignItems.CENTER, JustifyContent.CENTER,
                 Margin.NONE, Padding.XSMALL, Gap.XSMALL, BorderRadius.NONE);
         layoutLikes.add(FontAwesome.Solid.HEART.create(),
-                new Span(likes > 0 ? String.valueOf(likes) : ""));
+                new Span(likes > 0 ? String.valueOf(likes) : ""));*/
 
-        layoutPhotosInfo.add(layoutListViews, layoutFullViews, layoutLikes);
+        layoutPhotosInfo.add( layoutFullViews);
         return layoutPhotosInfo;
     }
 
