@@ -183,7 +183,7 @@
   bottom: 0;
   left: 0;
   right: 0;
-  padding: 64px 62px 18px 22px;
+  padding: 64px 22px 18px;
   background: linear-gradient(
     to top,
     rgba(0, 0, 0, 0.80) 0%,
@@ -279,95 +279,14 @@
   }
 }
 
-/* ── Action bar (absolute overlay, bottom-right of each slide) ── */
+/* ── Action bar — uses the shared btn-bar-wrapper / btn-bar-item system ── */
 
 .hero-slide__actions {
   position: absolute;
   bottom: 14px;
   right: 14px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  z-index: 15;
-  background: transparent;
-  padding: 0;
-}
-
-/* Vaadin buttons in the action bar */
-.hero-slide__actions vaadin-button {
-  color: rgba(255, 255, 255, 0.90);
-  background: transparent;
-  border: 1.5px solid rgba(255, 255, 255, 0.65);
-  border-radius: 50%;
-  width: 36px;
-  min-width: 36px;
-  height: 36px;
-  min-height: 36px;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease, border-color 0.2s ease;
-
-  &:hover {
-    color: #fff;
-    background: rgba(0, 0, 0, 0.45);
-    border-color: rgba(255, 255, 255, 0.90);
-    transform: scale(1.1);
-  }
-}
-
-.hero-slide__actions vaadin-button vaadin-icon {
-  width: 16px;
-  height: 16px;
-  pointer-events: none;
-}
-
-/* LikeButton / RateButton (Div-based) inside the action bar */
-.hero-slide__actions .like-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: 1.5px solid rgba(255, 255, 255, 0.65);
-  background: transparent;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  padding: 0;
-  transition: background 0.2s ease, transform 0.15s ease, border-color 0.2s ease;
-  box-sizing: border-box;
-}
-
-.hero-slide__actions .like-btn:hover {
-  background: rgba(0, 0, 0, 0.45);
-  border-color: rgba(255, 255, 255, 0.90);
-  transform: scale(1.1);
-}
-
-/* SVG icon inside LikeButton / RateButton */
-.hero-slide__actions .like-btn-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 0;
-}
-
-.hero-slide__actions .like-btn-icon svg,
-.hero-slide__actions .like-btn-icon vaadin-icon {
-  width: 1.15em;
-  height: 1.15em;
-  color: rgba(255, 255, 255, 0.90);
-  fill: rgba(255, 255, 255, 0.90);
-}
-
-.hero-slide__actions .like-count {
-  font-size: 0.52rem;
-  line-height: 1;
-  color: rgba(255, 255, 255, 0.80);
-  margin-top: 1px;
+  z-index: 20;
+  /* inline-flex layout comes from btn-bar-wrapper */
 }
 
 /* ── Slide indicator dots ─────────────────────────────────────── */
@@ -510,17 +429,8 @@ vaadin-dialog-overlay.hero-meta-dialog::part(overlay) {
   }
 
   .hero-slide__actions {
-    bottom: 10px;
-    right: 10px;
-    gap: 6px;
-  }
-
-  .hero-slide__actions vaadin-button,
-  .hero-slide__actions .like-btn {
-    width: 30px;
-    min-width: 30px;
-    height: 30px;
-    min-height: 30px;
+    bottom: 8px;
+    right: 8px;
   }
 
   .hero-slide__title {

@@ -245,9 +245,11 @@ public class HeroSliderComponent extends Div {
 
         Div photoSection = new Div();
         photoSection.addClassName("hero-slide__photo-section");
-        photoSection.add(buildPhotoDiv(rec), buildInfoOverlay(rec), buildActionBar(rec));
+        photoSection.add(buildPhotoDiv(rec), buildInfoOverlay(rec));
 
-        slide.add(photoSection);
+        // Action bar is a sibling of photo-section (not inside it) so tooltips
+        // are not clipped by photo-section's overflow: hidden
+        slide.add(photoSection, buildActionBar(rec));
         return slide;
     }
 
@@ -346,44 +348,39 @@ public class HeroSliderComponent extends Div {
     // Vertical action bar (right side of each slide)
     // ══════════════════════════════════════════════════════════════════════
 
-    private Div buildActionBar(Record rec) {
-        Div bar = new Div();
-        bar.addClassName("hero-slide__actions");
-
+    private ButtonBar buildActionBar(Record rec) {
         String nameNew = nvl(rec.getColumnData("name_new"));
         int    photoId = parseInt(rec.getColumnData("id"));
 
-        // ── Full View ─────────────────────────────────────────────────────
-        Button fullViewBtn = new Button(VaadinIcon.EXPAND_FULL.create());
-        fullViewBtn.addClassNames("hero-action-btn", "hero-action-btn--fullview");
-        fullViewBtn.setTooltipText("Full View");
-        fullViewBtn.addClickListener(e -> openFullViewDialog(rec));
+        long likeCount   = photoId > 0 ? safeCount(() -> photoViewService.getLikeCount(photoId))    : 0;
+        long ratingCount = photoId > 0 ? safeCount(() -> photoRatingService.getRatingCount(photoId)) : 0;
 
-        // ── Like ──────────────────────────────────────────────────────────
-        long likeCount = photoId > 0 ? safeCount(() -> photoViewService.getLikeCount(photoId)) : 0;
         LikeButton likeBtn = new LikeButton(likeCount);
-        likeBtn.addClassName("hero-action-btn");
-        likeBtn.addLikeClickListener(e -> {
+        RateButton rateBtn = new RateButton(ratingCount);
+
+        ButtonBar bar = new ButtonBar();
+        bar.addClassName("hero-slide__actions");
+
+        bar.addButton("Like it!", likeBtn, () -> {
             if (photoId > 0) {
                 Integer uid = userId > 0 ? userId : null;
                 photoViewService.recordLike(photoId, nameNew, uid, publicIp, sessionId, sessionDateTime);
                 likeBtn.setCount(safeCount(() -> photoViewService.getLikeCount(photoId)));
             }
-        });
+        }, "btn-bar-share");
 
-        // ── Rate ──────────────────────────────────────────────────────────
-        long ratingCount = photoId > 0 ? safeCount(() -> photoRatingService.getRatingCount(photoId)) : 0;
-        RateButton rateBtn = new RateButton(ratingCount);
-        rateBtn.addClassName("hero-action-btn");
-        rateBtn.addRateClickListener(e -> openRatingDialog(photoId, nameNew, rateBtn));
+        bar.addButton("Rate it!", rateBtn,
+                () -> openRatingDialog(photoId, nameNew, rateBtn),
+                "btn-bar-rate");
 
-        // ── Meta Info ─────────────────────────────────────────────────────
-        Button metaBtn = new Button(VaadinIcon.INFO_CIRCLE_O.create());
-        metaBtn.addClassNames("hero-action-btn", "hero-action-btn--meta");
-        metaBtn.setTooltipText("Photo Info");
-        metaBtn.addClickListener(e -> openMetaDialog(rec));
+        bar.addButton("Full View", VaadinIcon.EXPAND_FULL.create(),
+                () -> openFullViewDialog(rec),
+                "btn-bar-view");
 
-        bar.add(fullViewBtn, likeBtn, rateBtn, metaBtn);
+        bar.addButton("Photo Info", VaadinIcon.INFO_CIRCLE_O.create(),
+                () -> openMetaDialog(rec),
+                "btn-bar-info");
+
         return bar;
     }
 
