@@ -1,5 +1,6 @@
 package com.photo.act.photo_act.views.components;
 
+import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.services.PhotoRatingService;
@@ -7,10 +8,12 @@ import com.photo.act.photo_act.services.PhotoStatisticsService;
 import com.photo.act.photo_act.services.PhotoViewService;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.photo.act.photo_act.views.PhotographersView;
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.*;
+import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
@@ -65,6 +68,7 @@ public class HeroSliderComponent extends Div {
     public static final String FILTER_LIKES  = "Most Likes";
     public static final String FILTER_RATING = "Best Rating";
     public static final String FILTER_VIEWS  = "Most Views";
+    public static final String FILTER_RECENT = "Most Recent";
     private static final int    SLIDE_COUNT    = 10;
     private static final String SUBPATH_MEDIUM = "photo-medium";
     private static final String SUBPATH_SMALL  = "photo-small";
@@ -150,16 +154,48 @@ public class HeroSliderComponent extends Div {
         HorizontalLayout bar = new HorizontalLayout();
         bar.addClassName("hero-slider__filter-bar");
         bar.setSpacing(false);
+        bar.setWidthFull();
 
-        for (String label : new String[]{FILTER_LIKES, FILTER_RATING, FILTER_VIEWS}) {
-            Button btn = new Button(label);
-            btn.addClassName("hero-filter-btn");
-            if (label.equals(activeFilter)) btn.addClassName("hero-filter-btn--active");
-            String f = label;
-            btn.addClickListener(e -> buildContent(f));
-            bar.add(btn);
-        }
+        bar.add(makeFilterBtn(FILTER_LIKES,  filterIcon(FILTER_LIKES),  activeFilter));
+        bar.add(makeFilterBtn(FILTER_RATING, filterIcon(FILTER_RATING), activeFilter));
+        bar.add(makeFilterBtn(FILTER_VIEWS,  filterIcon(FILTER_VIEWS),  activeFilter));
+
+        // Spacer pushes Most Recent to the far right
+        Span spacer = new Span();
+        spacer.getStyle().set("flex-grow", "1");
+        bar.add(spacer);
+
+        Button recentBtn = makeFilterBtn(FILTER_RECENT, filterIcon(FILTER_RECENT), activeFilter);
+        recentBtn.addClassName("hero-filter-btn--recent");
+        bar.add(recentBtn);
+
         return bar;
+    }
+
+    private Button makeFilterBtn(String label, Component icon, String activeFilter) {
+        Button btn = new Button(label, icon);
+        btn.addClassName("hero-filter-btn");
+        if (label.equals(activeFilter)) btn.addClassName("hero-filter-btn--active");
+        String f = label;
+        btn.addClickListener(e -> buildContent(f));
+        return btn;
+    }
+
+    private Component filterIcon(String filter) {
+        return switch (filter) {
+            case FILTER_LIKES  -> svgIcon("/icons/like-icon.svg");
+            case FILTER_RATING -> svgIcon("/icons/star-empty-icon.svg");
+            case FILTER_VIEWS  -> FontAwesome.Solid.EYE.create();
+            case FILTER_RECENT -> FontAwesome.Solid.CLOCK.create();
+            default            -> VaadinIcon.FILTER.create();
+        };
+    }
+
+    private SvgIcon svgIcon(String classpathResource) {
+        SvgIcon icon = new SvgIcon(
+                DownloadHandler.forClassResource(HeroSliderComponent.class, classpathResource));
+        icon.addClassName("hero-filter-svg-icon");
+        return icon;
     }
 
     // ── Nav arrow (client-side div) ───────────────────────────────────────
@@ -209,9 +245,9 @@ public class HeroSliderComponent extends Div {
 
         Div photoSection = new Div();
         photoSection.addClassName("hero-slide__photo-section");
-        photoSection.add(buildPhotoDiv(rec), buildInfoOverlay(rec));
+        photoSection.add(buildPhotoDiv(rec), buildInfoOverlay(rec), buildActionBar(rec));
 
-        slide.add(photoSection); //, buildActionBar(rec));
+        slide.add(photoSection);
         return slide;
     }
 
@@ -287,14 +323,9 @@ public class HeroSliderComponent extends Div {
         row.setAlignItems(FlexComponent.Alignment.CENTER);
         row.setSpacing(true);
 
-        if (!displayName.isEmpty()) {
-            Span nameSpan = new Span(displayName);
-            nameSpan.addClassName("hero-slide__photographer-name");
-            row.add(nameSpan);
-        }
-
         if (!username.isEmpty()) {
-            Button profileBtn = new Button("View Profile");
+            String btnText = !displayName.isEmpty() ? displayName : "@" + username;
+            Button profileBtn = new Button(btnText);
             profileBtn.addClassName("hero-slide__profile-btn");
             String un = username;
             profileBtn.addClickListener(e ->
@@ -303,6 +334,10 @@ public class HeroSliderComponent extends Div {
                         new RouteParameters(new RouteParam("member", un))))
             );
             row.add(profileBtn);
+        } else if (!displayName.isEmpty()) {
+            Span nameSpan = new Span(displayName);
+            nameSpan.addClassName("hero-slide__photographer-name");
+            row.add(nameSpan);
         }
         return row;
     }
@@ -487,6 +522,7 @@ public class HeroSliderComponent extends Div {
         String sql = switch (filter) {
             case FILTER_RATING -> photoStatisticsService.getBestRatingSql(SLIDE_COUNT);
             case FILTER_VIEWS  -> photoStatisticsService.getMostViewedSql(SLIDE_COUNT);
+            case FILTER_RECENT -> photoStatisticsService.getMostRecentSql(SLIDE_COUNT);
             default            -> photoStatisticsService.getMostLikedSql(SLIDE_COUNT);
         };
         try {
