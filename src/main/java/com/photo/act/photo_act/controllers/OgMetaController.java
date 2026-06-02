@@ -167,7 +167,7 @@ public class OgMetaController {
             return "forward:/og/" + type + "/" + slug;
         }
         // Not a bot — forward to Vaadin's catch-all servlet
-        return "forward:/vaadin-forward/" + type + "/" + slug;
+        return "forward:/" + type + "/" + slug;
     }
 
     @GetMapping("/og/ping")

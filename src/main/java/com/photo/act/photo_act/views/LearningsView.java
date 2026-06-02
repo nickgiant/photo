@@ -65,13 +65,12 @@ import static com.photo.act.photo_act.views.MainLayout.*;
 
 @AnonymousAllowed
 
-@Route(value = "learnings") //":category?")
-@RouteAlias(value = "learnings/category/:category?", layout = MainLayout.class)
-@RouteAlias(value = "learnings/genre/:genre?", layout = MainLayout.class)
-@RouteAlias(value = "learnings/tutor/:tutor?", layout = MainLayout.class)
-@RouteAlias(value = "learnings/title/:title?", layout = MainLayout.class)
-//@RouteAlias(value = "learnings/tutors/:tutor?", layout = MainLayout.class) // when tutors team
-//@RouteAlias(value = "learnings/category/:category/tutor/:tutor?", layout = MainLayout.class)
+@Route(value = "news") //":category?")
+@RouteAlias(value = "news/category/:category?", layout = MainLayout.class)
+@RouteAlias(value = "news/genre/:genre?", layout = MainLayout.class)
+@RouteAlias(value = "news/tutor/:tutor?", layout = MainLayout.class)
+@RouteAlias(value = "news/title/:title?", layout = MainLayout.class)
+
 
 //@Menu(order = 0, icon = "line-awesome/svg/th-list-solid.svg")
 public class LearningsView extends Main implements HasUrlParameter<String>, BeforeEnterObserver, HasComponents, HasDynamicTitle, HasStyle {
@@ -211,23 +210,23 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         verticalLayout.removeAll();
 
         if (!category.equalsIgnoreCase(STR_ALL_CATEGORIES)) {
-            layoutHeaderParameters = loadHeader("Learnings", "Lessons to improve our photography skills", "Learning Category", category);
+            layoutHeaderParameters = loadHeader("News", "News around the globe related to photography", "", category);
             VerticalLayout layoutResults = loadResults(0);
             verticalLayout.add(layoutResults);
         } else if (!genre.equalsIgnoreCase(STR_ALL_GENRES)) {
-            layoutHeaderParameters = loadHeader("Learnings", "Lessons to improve our photography skills", "Photo Genre", genre);
+            layoutHeaderParameters = loadHeader("News", "News around the globe related to photography", "Photo Genre", genre);
             VerticalLayout layoutResults = loadResults(0);
             verticalLayout.add(layoutResults);
         } else if (!title.equalsIgnoreCase(STR_ALL_TITLES)) {
-            layoutHeaderParameters = loadHeader("Learnings", "Lessons to improve our photography skills", "","");
+            layoutHeaderParameters = loadHeader("News", "News around the globe related to photography", "","");
             VerticalLayout layoutResults = loadResults(0);
             verticalLayout.add(layoutResults);
         } else if (category.equalsIgnoreCase(STR_ALL_CATEGORIES) || genre.equalsIgnoreCase(STR_ALL_GENRES)) {
-            layoutHeaderParameters = loadHeader("Learnings", "Lessons to improve our photography skills", "","");
+            layoutHeaderParameters = loadHeader("News", "News around the globe related to photography", "","");
             VerticalLayout layoutResults = loadResults(25);
             verticalLayout.add(layoutResults);
         } else {
-            layoutHeaderParameters = loadHeader("Learnings", "Lessons to improve our photography skills", "","");
+            layoutHeaderParameters = loadHeader("News", "News around the globe related to photography", "","");
             logger.warn(category + "  " + tutor + "  " + genre);
         }
 
@@ -318,9 +317,6 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         }
 
 
-//        Html htmlTitle = new Html("<title>'photoact.net Network and Act around Photography'</title>");
-//        Html htmlMeta = new Html("<meta name='description' content='Get reviews of the latest uploaded video learnings and books.'>");
-//        verticalLayout.add(htmlTitle, htmlMeta);
 
 
     }
@@ -1078,7 +1074,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         int learningId = dto.getId() != null ? dto.getId().intValue() : 0;
         Integer viewUserId = userId > 0 ? userId : null;
 
-        String learningPublicUrl = baseUrl + "/learnings/title/" + strTitle;
+        String learningPublicUrl = baseUrl + "/news/title/" + strTitle;
         ShareableResource learningResource = new ShareableResource(
                 ShareType.LEARNING,
                 String.valueOf(learningId),
@@ -1816,7 +1812,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
     }
 
     private List<Record> getRecordsFromDb(String sql, String[] arrColumnNames) {
-        logger.info(" learnings  getRecordsFromDb:   " + sql);
+        logger.info(" news  getRecordsFromDb:   " + sql);
         return recordService.findAll(sql, arrColumnNames);
     }
 

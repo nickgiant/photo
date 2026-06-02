@@ -818,7 +818,7 @@ public class MainLayout extends AppLayout{
 
         Div divImageNews = new Div(FontAwesome.Solid.NEWSPAPER.create());
         nav.addItem(createSideNavItem("News", divImageNews, "News and Updates",
-                NewsView.class));
+                LearningsView.class));
 
         Div divStories = new Div(FontAwesome.Solid.PHOTO_FILM.create());
         nav.addItem(createSideNavItem("Photo-Stories", divStories, "Collections of photos from members",
@@ -849,9 +849,9 @@ public class MainLayout extends AppLayout{
                 AlbumsView.class));
 */
 
-        Div divImageLearnings = new Div(FontAwesome.Solid.BOOK.create());
+/*        Div divImageLearnings = new Div(FontAwesome.Solid.BOOK.create());
         nav.addItem(createSideNavItem("Learnings", divImageLearnings, "Lessons to improve our photography skills",
-                LearningsView.class));
+                LearningsView.class));*/
 
         Div divImageFestivals = new Div(VaadinIcon.CALENDAR_USER.create());
         nav.addItem(createSideNavItem("Events", divImageFestivals, "Photo events around the globe",

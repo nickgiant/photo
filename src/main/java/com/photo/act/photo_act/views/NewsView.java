@@ -24,7 +24,7 @@ import com.vaadin.flow.server.auth.AnonymousAllowed;
 import java.util.ArrayList;
 import java.util.List;
 
-@Route(value = "news", layout = MainLayout.class)
+//@Route(value = "news", layout = MainLayout.class)
 @PageTitle("News · PhotoAct")
 @AnonymousAllowed
 public class NewsView extends VerticalLayout {
