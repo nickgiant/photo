@@ -23,7 +23,7 @@
 
 .hero-slider__filter-bar {
   display: flex;
-  justify-content: flex-start;
+  justify-content: center;
   align-items: center;
   gap: 8px;
   padding: 13px 20px 12px;
@@ -58,7 +58,7 @@
     border-color: rgba(0, 0, 0, 0.35);
   }
   &:active{
-    scale: 0.94;
+    scale: 0.95;
   }
 }
 
@@ -66,14 +66,14 @@
 .hero-slider__filter-bar vaadin-button vaadin-icon,
 .hero-slider__filter-bar vaadin-button svg,
 .hero-slider__filter-bar vaadin-button .hero-filter-svg-icon {
-  width: 0.85em;
-  height: 0.85em;
+  width: 1.85em;
+  height: 1.85em;
   flex-shrink: 0;
 }
-
+/*
 .hero-filter-btn--recent {
   margin-left: auto;
-}
+}*/
 
 .hero-slider__filter-bar .hero-filter-btn--active {
   color: #fff;
@@ -192,6 +192,37 @@
   );
   color: #fff;
 }
+
+.hero-slide__actions .btn-bar-item {
+  position: relative;
+  background: transparent;
+  border-radius: 12px;
+  margin: 2px;
+  width: 40px;
+  height: 40px;
+  font-size: 18px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  box-shadow: 0 10px 10px rgba(0, 0, 0, 0.04);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  color: #ffffff;
+  user-select: none;
+
+
+  :active{
+    transform: scale(0.90);
+  }
+
+  :hover{
+    transform: scale(1.2);
+  }
+}
+
+
+
 
 .hero-slide__description {
   margin-bottom: 10px;

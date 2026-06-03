@@ -3,17 +3,11 @@ package com.photo.act.photo_act.views;
 import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
-import com.photo.act.photo_act.services.CacheService;
-import com.photo.act.photo_act.services.EmailSendService;
-import com.photo.act.photo_act.services.ImageService;
-import com.photo.act.photo_act.services.PhotoProcessingService;
+import com.photo.act.photo_act.services.*;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.photo.act.photo_act.utils.UtilsString;
-import com.photo.act.photo_act.views.components.AvatarItem;
-import com.photo.act.photo_act.views.components.DialogMessage;
-import com.photo.act.photo_act.views.components.GenericView;
-import com.photo.act.photo_act.views.components.UploadImageCard;
+import com.photo.act.photo_act.views.components.*;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.HasStyle;
 import com.vaadin.flow.component.UI;
@@ -37,6 +31,7 @@ import com.vaadin.flow.component.tabs.TabSheetVariant;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
+import com.vaadin.flow.dom.Element;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.VaadinService;
@@ -64,6 +59,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.function.Consumer;
 
 import static com.photo.act.photo_act.views.HomeView.*;
 import static com.photo.act.photo_act.views.MainLayout.*;
@@ -184,13 +180,29 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
     private GenericView genericView;
     private UtilsString utilsString;
     private EmailSendService emailSendService;
+    private WeatherService weatherService;
     private  PhotoProcessingService photoProcessingService;
+    private ShareService shareService;
+    private ShareMetricService shareMetricService;
+    private PhotoRatingService photoRatingService;
+    private PhotoViewService photoViewService;
+    private PhotoStatisticsService photoStatisticsService;
 
 
-    public PhotographersView(RecordService recordService, EmailSendService emailSendService, PhotoProcessingService photoProcessingService) {
+    public PhotographersView(RecordService recordService, EmailSendService emailSendService, PhotoProcessingService photoProcessingService,
+                             WeatherService weatherService,
+                             ShareService shareService, ShareMetricService shareMetricService,
+                             PhotoRatingService photoRatingService, PhotoViewService photoViewService,
+                             PhotoStatisticsService photoStatisticsService) {
         this.recordService = recordService;
         this.emailSendService = emailSendService;
         this.photoProcessingService = photoProcessingService;
+        this.weatherService = weatherService;
+        this.shareService = shareService;
+        this.shareMetricService = shareMetricService;
+        this.photoRatingService = photoRatingService;
+        this.photoViewService = photoViewService;
+        this.photoStatisticsService = photoStatisticsService;
 
         utilsDate = new UtilsDate();
         utilsString = new UtilsString();
@@ -236,6 +248,7 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
 //          ") UNION (" + sqlMemberGallery2 + "  AND usr.username = '" + strMember + "' " + sqlMemberGallery2OrderBy + " ) ";
 
                 verticalLayout.add(loadMemberInfo(sqlMemberMe, arrColumnsMembers, false));
+                verticalLayout.add(loadStatisticsSection());
             } else {
                 verticalLayout.add(new Div(" '" + strMember + "' is not a valid member!"));
             }
@@ -795,47 +808,11 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
         );
         uploadImageCard.setMinHeight("280px");
 
-//            verticalLayout.add(uploadImageCard.getLocationSelectionLayout());
-//        Button btnRefreshPhotoMeta = new Button("Refresh Photo Meta");
-//        btnRefreshPhotoMeta.addClickListener(e -> {
-//            reUpdateMyPhotoMetadata(intUserId);
-//        });
-
-//        HorizontalLayout layoutTextFilters = new HorizontalLayout();
-//        TextField txtFrom = new TextField();
-//        TextField txtTo = new TextField();
-//        layoutTextFilters.add(txtFrom, txtTo);
-
-//
-//        Button btnRecompressPhotos = new Button("Recompress Large");
-//        btnRecompressPhotos.addClickListener(e -> {
-//            reCompressPhotos(4, txtFrom.getValue(), txtTo.getValue());
-//        });
-//
-//        Button btnRecompressMediumPhotos = new Button("Recompress Medium");
-//        btnRecompressMediumPhotos.addClickListener(e -> {
-//            reCompressPhotos(3, txtFrom.getValue(), txtTo.getValue());
-//        });
-//
-//        Button btnRecompressSmallPhotos = new Button("Recompress Small");
-//        btnRecompressSmallPhotos.addClickListener(e -> {
-//            reCompressPhotos(2, txtFrom.getValue(), txtTo.getValue());
-//        });
-//
-//        Button btnRecompressThumbsPhotos = new Button("Recompress Thumbs");
-//        btnRecompressThumbsPhotos.addClickListener(e -> {
-//            reCompressPhotos(1, txtFrom.getValue(), txtTo.getValue());
-//        });
-
-
-        // layoutTextFilters, btnRecompressPhotos, btnRecompressSmallPhotos, btnRecompressMediumPhotos,
-
         verticalLayout.add(uploadImageCard.getUploadImageCard());
     }
 
 
     private Div loadUploadedPhotos(String sqlRead, String[] arrColumnNames, boolean isEditable, boolean isThumbnails) {
-
 
         strPath = DIR_PHOTOS_SERVER + dirChar;
         String strPath;
@@ -1172,9 +1149,7 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
                 Padding.MEDIUM,
                 Margin.NONE,
                 Gap.XLARGE
-//                BorderRadius.LARGE, Background.CONTRAST_5
         );
-
 
         List<Record> lstRecords = getRecordsFromDb(sqlRead, arrColumnNames);
 
@@ -1410,7 +1385,6 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
                 TextColor.TERTIARY,
                 Padding.NONE,
                 Gap.SMALL
-//                BorderRadius.LARGE, Background.CONTRAST_5
         );
         layoutMember.addClassNames("photographer-profile");
 
@@ -1575,8 +1549,9 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
 
             Div divResident = new Div("Lives at " + strResident);
 
-            String sqlGallerForMember = sqlReadGallery+" AND usr.userId = "+strUserId+" "+sqlGalleryOrderBy;
+//            String sqlGallerForMember = sqlReadGallery+" AND usr.userId = "+strUserId+" "+sqlGalleryOrderBy;
 
+/*
             Div layoutLastPhotos = new Div();
             layoutLastPhotos.addClassNames(Overflow.HIDDEN, Width.FULL,
                     AlignItems.CENTER, JustifyContent.CENTER,
@@ -1584,8 +1559,9 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
                     Gap.LARGE
             );
             layoutLastPhotos.addClassName("container-uploaded-lines");
+*/
 
-            HorizontalLayout layoutTabViewPhotos = new HorizontalLayout();
+/*            HorizontalLayout layoutTabViewPhotos = new HorizontalLayout();
             layoutTabViewPhotos.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER);
             layoutTabViewPhotos.addClassName("tab-select");
             RadioButtonGroup<String> btnGroupShowPhotos = new RadioButtonGroup<>();
@@ -1606,10 +1582,7 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
             btnGroupShowPhotos.setValue("Last 5 Photos");
             layoutTabViewPhotos.add(btnGroupShowPhotos);
 
-
-            layoutMember.add(layoutTabViewPhotos,layoutLastPhotos);
-
-
+            layoutMember.add(layoutTabViewPhotos,layoutLastPhotos);*/
 
         } else {
             logger.warn(" lstRecords is more than one record");
@@ -1747,6 +1720,130 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
         }
         return false;
     }
+
+
+
+    private VerticalLayout loadStatisticsSection() {
+        VerticalLayout layout = new VerticalLayout();
+        layout.addClassName("page-section");
+        layout.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER, Padding.MEDIUM);
+
+        H2 title = new H2("Member's Popular Photos");
+
+        Div statsContainer = new Div();
+        statsContainer.addClassName("stats-gallery");
+        statsContainer.addClassNames(Width.FULL);
+
+        final String[] activeFilter = {"Most Viewed"};
+        final int[] activeCount = {5};
+
+        HorizontalLayout filterTiles = buildRadioTiles("stat-filter",
+                new String[]{"Most Viewed", "Most Liked", "Most Recent"},
+                new Icon[]{FontAwesome.Solid.EYE.create(), FontAwesome.Solid.THUMBS_UP.create(), FontAwesome.Solid.FILE_UPLOAD.create()},
+                val -> {
+                    activeFilter[0] = val;
+                    statsContainer.removeAll();
+                    loadStatsPhotos(statsContainer, activeFilter[0], activeCount[0]);
+                });
+
+        HorizontalLayout countTiles = buildRadioTiles("stat-count",
+                new String[]{"5", "10", "15", "20"},
+                null,
+                val -> {
+                    activeCount[0] = Integer.parseInt(val);
+                    statsContainer.removeAll();
+                    loadStatsPhotos(statsContainer, activeFilter[0], activeCount[0]);
+                });
+        countTiles.addClassName("radio-inputs--compact");
+
+        loadStatsPhotos(statsContainer, "Most Viewed", 5);
+
+        layout.add(title, filterTiles, countTiles, statsContainer);
+        return layout;
+    }
+
+    private HorizontalLayout buildRadioTiles(String groupName, String[] labels, Icon[] icons,
+                                             Consumer<String> onChange) {
+        HorizontalLayout container = new HorizontalLayout();
+        container.setWrap(true);
+        container.addClassName("radio-inputs");
+
+        for (int i = 0; i < labels.length; i++) {
+            Element labelEl = new Element("label");
+
+            Element inputEl = new Element("input");
+            inputEl.setAttribute("class", "radio-input");
+            inputEl.setAttribute("type", "radio");
+            inputEl.setAttribute("name", groupName);
+            inputEl.setAttribute("value", labels[i]);
+            if (i == 0) inputEl.setAttribute("checked", "");
+
+            Element tileEl = new Element("div");
+            tileEl.setAttribute("class", "radio-tile");
+
+            if (icons != null && icons[i] != null) {
+                Element iconDiv = new Element("div");
+                iconDiv.setAttribute("class", "radio-icon");
+                iconDiv.appendChild(icons[i].getElement());
+                tileEl.appendChild(iconDiv);
+            }
+
+            Element labelSpan = new Element("span");
+            labelSpan.setAttribute("class", "radio-label");
+            labelSpan.setText(labels[i]);
+            tileEl.appendChild(labelSpan);
+
+            String val = labels[i];
+            inputEl.addEventListener("change", e -> onChange.accept(val));
+
+            labelEl.appendChild(inputEl, tileEl);
+            container.getElement().appendChild(labelEl);
+        }
+
+        return container;
+    }
+
+
+    private void loadStatsPhotos(Div container, String filter, int count) {
+        String sql;
+        switch (filter) {
+            case "Most Liked":
+                sql = photoStatisticsService.getMostLikedSql(count);
+                break;
+            case "Most Recent":
+                sql = photoStatisticsService.getMostRecentSql(count);
+                break;
+            default:
+                sql = photoStatisticsService.getMostViewedSql(count);
+        }
+
+        String strPath = DIR_PHOTOS_SERVER + dirChar + subPathSmall;
+        List<Record> lstRecords = getRecordsFromDb(sql, PhotoStatisticsService.STATS_COLUMNS);
+
+        String sqlCarouselForStats = photoStatisticsService.getMostRecentSql(20);
+        String sqlCarouselOrderBy = " ORDER BY pm.date_inserted DESC";
+
+        for (Record record : lstRecords) {
+            String strFileName = record.getColumnData("name_new");
+            String strImagePath = strPath + dirChar + strFileName;
+
+            GalleryImageViewCard card = new GalleryImageViewCard(
+                    record, strImagePath, isMobile, userId, strMember,
+                    sessionCreation, hostname, publicIp,
+                    false,
+                    recordService,
+                    2,
+                    sqlCarouselForStats,
+                    sqlCarouselOrderBy,
+                    PhotoStatisticsService.STATS_COLUMNS,
+                    shareService, shareMetricService, weatherService,
+                    photoRatingService, photoViewService,
+                    GalleryImageViewCard.CardSize.COMPACT
+            );
+            container.add(card);
+        }
+    }
+
 
 
     private void logVisitorToDb(String logText) {

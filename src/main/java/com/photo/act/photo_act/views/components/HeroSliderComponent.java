@@ -172,13 +172,13 @@ public class HeroSliderComponent extends Div {
         bar.add(makeFilterBtn(FILTER_RATING, filterIcon(FILTER_RATING), activeFilter));
         bar.add(makeFilterBtn(FILTER_VIEWS,  filterIcon(FILTER_VIEWS),  activeFilter));
 
-        // Spacer pushes Most Recent to the far right
+/*        // Spacer pushes Most Recent to the far right
         Span spacer = new Span();
         spacer.getStyle().set("flex-grow", "1");
-        bar.add(spacer);
+        bar.add(spacer);*/
 
         Button recentBtn = makeFilterBtn(FILTER_RECENT, filterIcon(FILTER_RECENT), activeFilter);
-        recentBtn.addClassName("hero-filter-btn--recent");
+//        recentBtn.addClassName("hero-filter-btn--recent");
         bar.add(recentBtn);
 
         return bar;
