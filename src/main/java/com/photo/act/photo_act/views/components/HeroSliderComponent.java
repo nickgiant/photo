@@ -127,7 +127,7 @@ public class HeroSliderComponent extends Div {
         setId("hero-slider");
         addClassName("hero-slider");
 
-        buildContent(FILTER_LIKES);
+        buildContent(FILTER_RECENT);
     }
 
     // ══════════════════════════════════════════════════════════════════════
@@ -168,6 +168,8 @@ public class HeroSliderComponent extends Div {
         bar.setSpacing(false);
         bar.setWidthFull();
 
+        Button recentBtn = makeFilterBtn(FILTER_RECENT, filterIcon(FILTER_RECENT), activeFilter);
+        bar.add(recentBtn);
         bar.add(makeFilterBtn(FILTER_LIKES,  filterIcon(FILTER_LIKES),  activeFilter));
         bar.add(makeFilterBtn(FILTER_RATING, filterIcon(FILTER_RATING), activeFilter));
         bar.add(makeFilterBtn(FILTER_VIEWS,  filterIcon(FILTER_VIEWS),  activeFilter));
@@ -177,9 +179,9 @@ public class HeroSliderComponent extends Div {
         spacer.getStyle().set("flex-grow", "1");
         bar.add(spacer);*/
 
-        Button recentBtn = makeFilterBtn(FILTER_RECENT, filterIcon(FILTER_RECENT), activeFilter);
+
 //        recentBtn.addClassName("hero-filter-btn--recent");
-        bar.add(recentBtn);
+
 
         return bar;
     }
@@ -195,10 +197,10 @@ public class HeroSliderComponent extends Div {
 
     private Component filterIcon(String filter) {
         return switch (filter) {
+            case FILTER_RECENT -> FontAwesome.Solid.CLOCK.create();
             case FILTER_LIKES  -> svgIcon("/icons/like-icon.svg");
             case FILTER_RATING -> svgIcon("/icons/star-empty-icon.svg");
             case FILTER_VIEWS  -> FontAwesome.Solid.EYE.create();
-            case FILTER_RECENT -> FontAwesome.Solid.CLOCK.create();
             default            -> VaadinIcon.FILTER.create();
         };
     }

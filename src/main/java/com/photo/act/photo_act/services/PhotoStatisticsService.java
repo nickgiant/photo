@@ -51,11 +51,23 @@ public class PhotoStatisticsService {
     private static final String STATS_WHERE =
             " WHERE pm.visible_to = 'ALL'";
 
+    private static String statsWhereForUser(int userId) {
+        return STATS_WHERE + " AND pm.uploaderId = " + userId;
+    }
+
     public String getMostViewedSql(int limit) {
         return STATS_SELECT + STATS_FROM +
                 " LEFT JOIN (SELECT photo_id, COUNT(*) AS view_count FROM photo_view" +
                 " WHERE view_type IN ('List', 'Full') GROUP BY photo_id) pv ON pm.id = pv.photo_id" +
                 STATS_WHERE +
+                " ORDER BY COALESCE(pv.view_count, 0) DESC LIMIT " + limit;
+    }
+
+    public String getMostViewedSql(int limit, int userId) {
+        return STATS_SELECT + STATS_FROM +
+                " LEFT JOIN (SELECT photo_id, COUNT(*) AS view_count FROM photo_view" +
+                " WHERE view_type IN ('List', 'Full') GROUP BY photo_id) pv ON pm.id = pv.photo_id" +
+                statsWhereForUser(userId) +
                 " ORDER BY COALESCE(pv.view_count, 0) DESC LIMIT " + limit;
     }
 
@@ -67,9 +79,23 @@ public class PhotoStatisticsService {
                 " ORDER BY COALESCE(pl.like_count, 0) DESC LIMIT " + limit;
     }
 
+    public String getMostLikedSql(int limit, int userId) {
+        return STATS_SELECT + STATS_FROM +
+                " LEFT JOIN (SELECT photo_id, COUNT(DISTINCT ip_address) AS like_count FROM photo_view" +
+                " WHERE view_type = 'Like' GROUP BY photo_id) pl ON pm.id = pl.photo_id" +
+                statsWhereForUser(userId) +
+                " ORDER BY COALESCE(pl.like_count, 0) DESC LIMIT " + limit;
+    }
+
     public String getMostRecentSql(int limit) {
         return STATS_SELECT + STATS_FROM +
                 STATS_WHERE +
+                " ORDER BY pm.date_inserted DESC LIMIT " + limit;
+    }
+
+    public String getMostRecentSql(int limit, int userId) {
+        return STATS_SELECT + STATS_FROM +
+                statsWhereForUser(userId) +
                 " ORDER BY pm.date_inserted DESC LIMIT " + limit;
     }
 
@@ -78,6 +104,14 @@ public class PhotoStatisticsService {
                 " LEFT JOIN (SELECT photo_id, AVG(rating) AS avg_rating, COUNT(*) AS rating_count" +
                 " FROM photo_rating GROUP BY photo_id) pr ON pm.id = pr.photo_id" +
                 STATS_WHERE +
+                " ORDER BY COALESCE(pr.avg_rating, 0) DESC, COALESCE(pr.rating_count, 0) DESC LIMIT " + limit;
+    }
+
+    public String getBestRatingSql(int limit, int userId) {
+        return STATS_SELECT + STATS_FROM +
+                " LEFT JOIN (SELECT photo_id, AVG(rating) AS avg_rating, COUNT(*) AS rating_count" +
+                " FROM photo_rating GROUP BY photo_id) pr ON pm.id = pr.photo_id" +
+                statsWhereForUser(userId) +
                 " ORDER BY COALESCE(pr.avg_rating, 0) DESC, COALESCE(pr.rating_count, 0) DESC LIMIT " + limit;
     }
 }

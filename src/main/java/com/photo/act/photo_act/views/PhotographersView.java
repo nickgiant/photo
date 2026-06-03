@@ -1808,19 +1808,19 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
         String sql;
         switch (filter) {
             case "Most Liked":
-                sql = photoStatisticsService.getMostLikedSql(count);
+                sql = photoStatisticsService.getMostLikedSql(count, userId);
                 break;
             case "Most Recent":
-                sql = photoStatisticsService.getMostRecentSql(count);
+                sql = photoStatisticsService.getMostRecentSql(count, userId);
                 break;
             default:
-                sql = photoStatisticsService.getMostViewedSql(count);
+                sql = photoStatisticsService.getMostViewedSql(count, userId);
         }
 
         String strPath = DIR_PHOTOS_SERVER + dirChar + subPathSmall;
         List<Record> lstRecords = getRecordsFromDb(sql, PhotoStatisticsService.STATS_COLUMNS);
 
-        String sqlCarouselForStats = photoStatisticsService.getMostRecentSql(20);
+        String sqlCarouselForStats = photoStatisticsService.getMostRecentSql(20, userId);
         String sqlCarouselOrderBy = " ORDER BY pm.date_inserted DESC";
 
         for (Record record : lstRecords) {
