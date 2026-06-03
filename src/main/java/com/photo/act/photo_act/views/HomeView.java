@@ -334,6 +334,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         HeroSliderComponent heroSlider = new HeroSliderComponent(
                 recordService, photoStatisticsService,
                 photoViewService, photoRatingService,
+                shareService, shareMetricService,
                 DIR_PHOTOS_SERVER, isMobile, userId, publicIp);
         verticalLayout.add(heroSlider);
         // ──────────────────────────────────────────────────────────

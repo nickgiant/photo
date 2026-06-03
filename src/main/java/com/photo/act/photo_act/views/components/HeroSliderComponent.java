@@ -3,9 +3,13 @@ package com.photo.act.photo_act.views.components;
 import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
+import com.photo.act.photo_act.model.ShareType;
+import com.photo.act.photo_act.model.ShareableResource;
 import com.photo.act.photo_act.services.PhotoRatingService;
 import com.photo.act.photo_act.services.PhotoStatisticsService;
 import com.photo.act.photo_act.services.PhotoViewService;
+import com.photo.act.photo_act.services.ShareMetricService;
+import com.photo.act.photo_act.services.ShareService;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.photo.act.photo_act.views.PhotographersView;
 import com.vaadin.flow.component.Component;
@@ -27,6 +31,8 @@ import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.streams.DownloadHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static com.photo.act.photo_act.views.MainLayout.baseUrl;
 
 import java.io.File;
 import java.nio.file.FileSystems;
@@ -79,6 +85,8 @@ public class HeroSliderComponent extends Div {
     private final PhotoStatisticsService photoStatisticsService;
     private final PhotoViewService       photoViewService;
     private final PhotoRatingService     photoRatingService;
+    private final ShareService           shareService;
+    private final ShareMetricService     shareMetricService;
     private final String                 photosDir;
     private final String                 dirChar;
     private final int                    userId;
@@ -93,6 +101,8 @@ public class HeroSliderComponent extends Div {
             PhotoStatisticsService photoStatisticsService,
             PhotoViewService photoViewService,
             PhotoRatingService photoRatingService,
+            ShareService shareService,
+            ShareMetricService shareMetricService,
             String photosDir,
             boolean isMobile,
             int userId,
@@ -102,6 +112,8 @@ public class HeroSliderComponent extends Div {
         this.photoStatisticsService = photoStatisticsService;
         this.photoViewService       = photoViewService;
         this.photoRatingService     = photoRatingService;
+        this.shareService           = shareService;
+        this.shareMetricService     = shareMetricService;
         this.photosDir              = photosDir;
         this.dirChar                = FileSystems.getDefault().getSeparator();
         this.userId                 = userId;
@@ -348,9 +360,11 @@ public class HeroSliderComponent extends Div {
     // Vertical action bar (right side of each slide)
     // ══════════════════════════════════════════════════════════════════════
 
-    private ButtonBar buildActionBar(Record rec) {
-        String nameNew = nvl(rec.getColumnData("name_new"));
-        int    photoId = parseInt(rec.getColumnData("id"));
+    private ShareBottomBar buildActionBar(Record rec) {
+        String nameNew  = nvl(rec.getColumnData("name_new"));
+        String title    = nvl(rec.getColumnData("title"));
+        String subtitle = nvl(rec.getColumnData("subtitle"));
+        int    photoId  = parseInt(rec.getColumnData("id"));
 
         long likeCount   = photoId > 0 ? safeCount(() -> photoViewService.getLikeCount(photoId))    : 0;
         long ratingCount = photoId > 0 ? safeCount(() -> photoRatingService.getRatingCount(photoId)) : 0;
@@ -358,7 +372,16 @@ public class HeroSliderComponent extends Div {
         LikeButton likeBtn = new LikeButton(likeCount);
         RateButton rateBtn = new RateButton(ratingCount);
 
-        ButtonBar bar = new ButtonBar();
+        ShareableResource shareResource = new ShareableResource(
+                ShareType.PHOTO,
+                String.valueOf(photoId),
+                !subtitle.isEmpty() ? subtitle : title,
+                "",
+                baseUrl + "/photo/" + nameNew,
+                baseUrl + "/photo/" + photoId
+        );
+
+        ShareBottomBar bar = new ShareBottomBar(shareResource, shareService, shareMetricService);
         bar.addClassName("hero-slide__actions");
 
         bar.addButton("Like it!", likeBtn, () -> {
@@ -370,18 +393,25 @@ public class HeroSliderComponent extends Div {
         }, "btn-bar-share");
 
         bar.addButton("Rate it!", rateBtn,
-                () -> openRatingDialog(photoId, nameNew, rateBtn),
+                () -> showPhotoPage(photoId, nameNew),
                 "btn-bar-rate");
 
-        bar.addButton("Full View", VaadinIcon.EXPAND_FULL.create(),
-                () -> openFullViewDialog(rec),
+        bar.addButton("View Larger", VaadinIcon.VIEWPORT.create(),
+                () -> showPhotoPage(photoId, nameNew),
                 "btn-bar-view");
 
-        bar.addButton("Photo Info", VaadinIcon.INFO_CIRCLE_O.create(),
-                () -> openMetaDialog(rec),
-                "btn-bar-info");
+        bar.addShareItemMenu();
 
         return bar;
+    }
+
+    private void showPhotoPage(int photoId, String nameNew) {
+        if (photoId > 0) {
+            Integer uid = userId > 0 ? userId : null;
+            photoViewService.recordView(photoId, nameNew, uid, publicIp,
+                    PhotoViewService.TYPE_FULL, sessionId, sessionDateTime);
+        }
+        getUI().ifPresent(ui -> ui.navigate("photo/" + photoId));
     }
 
     // ══════════════════════════════════════════════════════════════════════
