@@ -40,13 +40,13 @@
 .hero-slider__filter-bar vaadin-button {
   color:  rgba(0, 0, 0, 0.6);
   background: transparent;
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: 0.90rem;
+  font-weight: 900;
   letter-spacing: 0.07em;
-  text-transform: uppercase;
+  /*text-transform: capitalize;*/
   border: 1px solid rgba(0, 0, 0, 0.18);
   border-radius: 20px;
-  padding: 0 14px;
+  padding: 0 18px;
   min-height: 30px;
   min-width: unset;
   transition: background 0.22s ease, border-color 0.22s ease, color 0.22s ease;
