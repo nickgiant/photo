@@ -799,13 +799,7 @@ public class MainLayout extends AppLayout{
                         .getResourceAsStream("/icons/story.svg"));
         SvgIcon svgStories = new SvgIcon(imageResourceStories);
 
-
         String strColorOfMenuIcons = "#8d4c7c"; //"#985163"; // "#823b4d";//"#f9943b";//"#a62c5c";//"#7d1e32";
-
-
-
-
-
 
         SideNav nav = new SideNav();
         nav.setWidthFull();
@@ -842,16 +836,6 @@ public class MainLayout extends AppLayout{
         itemPhotos.addItem(itemPhotosMonth);
 
         nav.addItem(itemPhotos);
-
-/*
-        Div divAlbums = new Div(FontAwesome.Solid.PHOTO_FILM.create());
-        nav.addItem(createSideNavItem("Albums", divAlbums, "Collections of photos from members",
-                AlbumsView.class));
-*/
-
-/*        Div divImageLearnings = new Div(FontAwesome.Solid.BOOK.create());
-        nav.addItem(createSideNavItem("Learnings", divImageLearnings, "Lessons to improve our photography skills",
-                LearningsView.class));*/
 
         Div divImageFestivals = new Div(VaadinIcon.CALENDAR_USER.create());
         nav.addItem(createSideNavItem("Events", divImageFestivals, "Photo events around the globe",

@@ -27,7 +27,7 @@
 /* ── Individual button ── */
 .btn-bar-item {
     position: relative;
-    background: #ffffff;
+    background: transparent;
     border-radius: 12px;
     margin: 2px;
     width: 40px;
@@ -47,7 +47,7 @@
     --brand-bg: #51459f;
     --brand-color: #ffffff;
 
-    transition: 0.2s;
+
     &:active{
         transform: scale(0.95);
     }

@@ -32,6 +32,8 @@
   -webkit-backdrop-filter: blur(8px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   flex-wrap: wrap;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* Vaadin button — filter pill */
@@ -42,9 +44,9 @@
   font-weight: 600;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(0, 0, 0, 0.18);
   border-radius: 20px;
-  padding: 0 18px;
+  padding: 0 14px;
   min-height: 30px;
   min-width: unset;
   transition: background 0.22s ease, border-color 0.22s ease, color 0.22s ease;
@@ -53,12 +55,25 @@
     cursor: pointer;
     color:  rgba(0, 0, 0, 0.8);
     background: rgba(255, 255, 255, 0.9);
-    border-color: rgba(255, 255, 255, 0.8);
+    border-color: rgba(0, 0, 0, 0.35);
   }
   &:active{
-    scale: 0.94;
+    scale: 0.95;
   }
 }
+
+/* Icons inside filter buttons */
+.hero-slider__filter-bar vaadin-button vaadin-icon,
+.hero-slider__filter-bar vaadin-button svg,
+.hero-slider__filter-bar vaadin-button .hero-filter-svg-icon {
+  width: 1.85em;
+  height: 1.85em;
+  flex-shrink: 0;
+}
+/*
+.hero-filter-btn--recent {
+  margin-left: auto;
+}*/
 
 .hero-slider__filter-bar .hero-filter-btn--active {
   color: #fff;
@@ -178,6 +193,37 @@
   color: #fff;
 }
 
+.hero-slide__actions .btn-bar-item {
+  position: relative;
+  background: transparent;
+  border-radius: 12px;
+  margin: 2px;
+  width: 40px;
+  height: 40px;
+  font-size: 18px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  box-shadow: 0 10px 10px rgba(0, 0, 0, 0.04);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  color: #ffffff;
+  user-select: none;
+
+
+  :active{
+    transform: scale(0.90);
+  }
+
+  :hover{
+    transform: scale(1.2);
+  }
+}
+
+
+
+
 .hero-slide__description {
   margin-bottom: 10px;
 }
@@ -264,95 +310,14 @@
   }
 }
 
-/* ── Vertical action bar (right edge of each slide) ──────────── */
+/* ── Action bar — uses the shared btn-bar-wrapper / btn-bar-item system ── */
 
 .hero-slide__actions {
-  flex: 0 0 56px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
-  background: transparent;
-  padding: 14px 0;
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-}
-
-/* Vaadin buttons in the action bar */
-.hero-slide__actions vaadin-button {
-  color: rgba(255, 255, 255, 0.72);
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 50%;
-  width: 36px;
-  min-width: 36px;
-  height: 36px;
-  min-height: 36px;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease;
-
-  &:hover {
-    color: #fff;
-    background: rgba(139, 26, 26, 0.78);
-    border-color: rgba(139, 26, 26, 0.55);
-    transform: scale(1.1);
-  }
-}
-
-.hero-slide__actions vaadin-button vaadin-icon {
-  width: 16px;
-  height: 16px;
-  pointer-events: none;
-}
-
-/* LikeButton / RateButton (Div-based) inside the action bar */
-.hero-slide__actions .like-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  background: transparent;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  padding: 0;
-  transition: background 0.2s ease, transform 0.15s ease;
-  box-sizing: border-box;
-}
-
-.hero-slide__actions .like-btn:hover {
-  background: rgba(139, 26, 26, 0.78);
-  border-color: rgba(139, 26, 26, 0.55);
-  transform: scale(1.1);
-}
-
-/* SVG icon inside LikeButton / RateButton */
-.hero-slide__actions .like-btn-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 0;
-}
-
-.hero-slide__actions .like-btn-icon svg,
-.hero-slide__actions .like-btn-icon vaadin-icon {
-  width: 1.15em;
-  height: 1.15em;
-  color: rgba(255, 255, 255, 0.78);
-  fill: rgba(255, 255, 255, 0.78);
-}
-
-.hero-slide__actions .like-count {
-  font-size: 0.52rem;
-  line-height: 1;
-  color: rgba(255, 255, 255, 0.65);
-  margin-top: 1px;
+  position: absolute;
+  bottom: 14px;
+  right: 14px;
+  z-index: 20;
+  /* inline-flex layout comes from btn-bar-wrapper */
 }
 
 /* ── Slide indicator dots ─────────────────────────────────────── */
@@ -495,16 +460,8 @@ vaadin-dialog-overlay.hero-meta-dialog::part(overlay) {
   }
 
   .hero-slide__actions {
-    flex: 0 0 44px;
-    gap: 10px;
-  }
-
-  .hero-slide__actions vaadin-button,
-  .hero-slide__actions .like-btn {
-    width: 30px;
-    min-width: 30px;
-    height: 30px;
-    min-height: 30px;
+    bottom: 8px;
+    right: 8px;
   }
 
   .hero-slide__title {

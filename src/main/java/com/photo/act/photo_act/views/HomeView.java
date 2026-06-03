@@ -230,10 +230,6 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         userId = 1;
         strUsername = "visitor-user";
         verticalLayout.removeAll();
-//        VerticalLayout layoutHeaderParameters = loadHeader("", "", "");
-//
-//        verticalLayout.add(layoutHeaderParameters);
-
 
         String[] arrColumnNamesGallery = {"name_org", "name_new", "title", "subtitle", "photo_type", "uploader", "uploaderId", "photo_type", "contains",
                 "space_size", "space_size_medium", "space_size_thumb", "city_name", "meta_date", "date_inserted",
@@ -334,16 +330,15 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         HeroSliderComponent heroSlider = new HeroSliderComponent(
                 recordService, photoStatisticsService,
                 photoViewService, photoRatingService,
+                shareService, shareMetricService,
                 DIR_PHOTOS_SERVER, isMobile, userId, publicIp);
         verticalLayout.add(heroSlider);
         // ──────────────────────────────────────────────────────────
-
+/*
         verticalLayout.add(layoutUserBtns);
 
         VerticalLayout layoutStatistics = loadStatisticsSection();
-        verticalLayout.add(layoutStatistics);
-
-
+        verticalLayout.add(layoutStatistics);*/
 
         Div divLearningTopics = loadLearningTopics();
         VerticalLayout layoutLearningTopics = new VerticalLayout();
@@ -855,17 +850,6 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         } else {
             strPath = DIR_PHOTOS_SERVER + dirChar + subPathThumbs;
         }
-
-//
-//        Div layoutLastPhotos = new Div();
-//        layoutLastPhotos.addClassNames(Overflow.HIDDEN,
-//                AlignItems.CENTER, JustifyContent.CENTER,
-//                Margin.NONE, Padding.MEDIUM);
-/*                Width.FULL, AlignItems.CENTER, JustifyContent.CENTER,
-                Margin.Horizontal.XLARGE, Margin.Vertical.SMALL,
-                Padding.Horizontal.XLARGE, Padding.Vertical.SMALL,
-                Gap.LARGE);*/
-
 
         List<Record> lstRecords = getRecordsFromDb(sqlRead, arrColumnNames);
         HorizontalLayout[] layoutPhotoUploaded = new HorizontalLayout[lstRecords.size()];
@@ -1622,130 +1606,6 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 //        return recordService.findAll(sql,arrColumnNames, sqlParValue, sqlParType);
 //    }
 
-    private VerticalLayout loadStatisticsSection() {
-        VerticalLayout layout = new VerticalLayout();
-        layout.addClassName("page-section");
-        layout.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER, Padding.MEDIUM);
-
-        H2 title = new H2("Popular Photos");
-
-        Div statsContainer = new Div();
-        statsContainer.addClassName("stats-gallery");
-        statsContainer.addClassNames(Width.FULL);
-
-        final String[] activeFilter = {"Most Viewed"};
-        final int[] activeCount = {5};
-/*
-        SvgIcon iconLike = new SvgIcon(
-                DownloadHandler.forClassResource(LikeButton.class, "/icons/like-icon.svg"));
-        Icon icLike = new Icon( DownloadHandler.forClassResource(LikeButton.class, "/icons/like-icon.svg").getUrlPostfix());*/
-
-        HorizontalLayout filterTiles = buildRadioTiles("stat-filter",
-                new String[]{"Most Viewed", "Most Liked", "Most Recent"},
-                new Icon[]{FontAwesome.Solid.EYE.create(), FontAwesome.Solid.THUMBS_UP.create(), FontAwesome.Solid.FILE_UPLOAD.create()},
-                val -> {
-                    activeFilter[0] = val;
-                    statsContainer.removeAll();
-                    loadStatsPhotos(statsContainer, activeFilter[0], activeCount[0]);
-                });
-
-        HorizontalLayout countTiles = buildRadioTiles("stat-count",
-                new String[]{"5", "10", "15", "20"},
-                null,
-                val -> {
-                    activeCount[0] = Integer.parseInt(val);
-                    statsContainer.removeAll();
-                    loadStatsPhotos(statsContainer, activeFilter[0], activeCount[0]);
-                });
-        countTiles.addClassName("radio-inputs--compact");
-
-        loadStatsPhotos(statsContainer, "Most Viewed", 5);
-
-        layout.add(title, filterTiles, countTiles, statsContainer);
-        return layout;
-    }
-
-    private HorizontalLayout buildRadioTiles(String groupName, String[] labels, Icon[] icons,
-                                Consumer<String> onChange) {
-        HorizontalLayout container = new HorizontalLayout();
-        container.setWrap(true);
-        container.addClassName("radio-inputs");
-
-        for (int i = 0; i < labels.length; i++) {
-            Element labelEl = new Element("label");
-
-            Element inputEl = new Element("input");
-            inputEl.setAttribute("class", "radio-input");
-            inputEl.setAttribute("type", "radio");
-            inputEl.setAttribute("name", groupName);
-            inputEl.setAttribute("value", labels[i]);
-            if (i == 0) inputEl.setAttribute("checked", "");
-
-            Element tileEl = new Element("div");
-            tileEl.setAttribute("class", "radio-tile");
-
-            if (icons != null && icons[i] != null) {
-                Element iconDiv = new Element("div");
-                iconDiv.setAttribute("class", "radio-icon");
-                iconDiv.appendChild(icons[i].getElement());
-                tileEl.appendChild(iconDiv);
-            }
-
-            Element labelSpan = new Element("span");
-            labelSpan.setAttribute("class", "radio-label");
-            labelSpan.setText(labels[i]);
-            tileEl.appendChild(labelSpan);
-
-            String val = labels[i];
-            inputEl.addEventListener("change", e -> onChange.accept(val));
-
-            labelEl.appendChild(inputEl, tileEl);
-            container.getElement().appendChild(labelEl);
-        }
-
-        return container;
-    }
-
-
-    private void loadStatsPhotos(Div container, String filter, int count) {
-        String sql;
-        switch (filter) {
-            case "Most Liked":
-                sql = photoStatisticsService.getMostLikedSql(count);
-                break;
-            case "Most Recent":
-                sql = photoStatisticsService.getMostRecentSql(count);
-                break;
-            default:
-                sql = photoStatisticsService.getMostViewedSql(count);
-        }
-
-        String strPath = DIR_PHOTOS_SERVER + dirChar + subPathSmall;
-        List<Record> lstRecords = getRecordsFromDb(sql, PhotoStatisticsService.STATS_COLUMNS);
-
-        String sqlCarouselForStats = photoStatisticsService.getMostRecentSql(20);
-        String sqlCarouselOrderBy = " ORDER BY pm.date_inserted DESC";
-
-        for (Record record : lstRecords) {
-            String strFileName = record.getColumnData("name_new");
-            String strImagePath = strPath + dirChar + strFileName;
-
-            GalleryImageViewCard card = new GalleryImageViewCard(
-                    record, strImagePath, isMobile, userId, strUsername,
-                    sessionCreation, hostname, publicIp,
-                    false,
-                    recordService,
-                    2,
-                    sqlCarouselForStats,
-                    sqlCarouselOrderBy,
-                    PhotoStatisticsService.STATS_COLUMNS,
-                    shareService, shareMetricService, weatherService,
-                    photoRatingService, photoViewService,
-                    GalleryImageViewCard.CardSize.COMPACT
-            );
-            container.add(card);
-        }
-    }
 
     private void logVisitorToDb() {
 
