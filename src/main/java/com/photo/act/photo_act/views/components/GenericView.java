@@ -755,6 +755,11 @@ public class GenericView {
                 LumoUtility.Padding.NONE, LumoUtility.Margin.NONE,
                 LumoUtility.Gap.XSMALL
         );
+        if(isMobile){
+            layoutMeta.setVisible(false);
+        }else{
+            layoutMeta.setVisible(true);
+        }
 
         final Record finalRec = record;
         HorizontalLayout layoutTabSelect = new HorizontalLayout();

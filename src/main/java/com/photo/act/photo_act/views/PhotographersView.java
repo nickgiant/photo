@@ -248,7 +248,9 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
 //          ") UNION (" + sqlMemberGallery2 + "  AND usr.username = '" + strMember + "' " + sqlMemberGallery2OrderBy + " ) ";
 
                 verticalLayout.add(loadMemberInfo(sqlMemberMe, arrColumnsMembers, false));
-                verticalLayout.add(loadStatisticsSection());
+
+                verticalLayout.add(loadStatisticsSection(sqlMemberMe, arrColumnsMembers));
+
             } else {
                 verticalLayout.add(new Div(" '" + strMember + "' is not a valid member!"));
             }
@@ -1723,7 +1725,24 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
 
 
 
-    private VerticalLayout loadStatisticsSection() {
+    private VerticalLayout loadStatisticsSection(String sqlRead, String[] arrColumnNames) {
+
+
+        List<Record> lstRecords = getRecordsFromDb(sqlRead, arrColumnNames);
+
+        if (lstRecords == null) {
+            logger.warn(" lstRecords is null");
+        } else if (lstRecords.isEmpty()) {
+            logger.warn(" lstRecords is empty");
+        } else if (lstRecords.size() == 1) {
+
+            Record rec = lstRecords.get(0);
+            String strUserId = rec.getColumnData("userId");
+            intUserId = Integer.parseInt(strUserId);
+        }
+
+
+
         VerticalLayout layout = new VerticalLayout();
         layout.addClassName("page-section");
         layout.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER, Padding.MEDIUM);
@@ -1743,7 +1762,7 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
                 val -> {
                     activeFilter[0] = val;
                     statsContainer.removeAll();
-                    loadStatsPhotos(statsContainer, activeFilter[0], activeCount[0]);
+                    loadStatsPhotos(statsContainer, activeFilter[0], activeCount[0],intUserId);
                 });
 
         HorizontalLayout countTiles = buildRadioTiles("stat-count",
@@ -1752,11 +1771,11 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
                 val -> {
                     activeCount[0] = Integer.parseInt(val);
                     statsContainer.removeAll();
-                    loadStatsPhotos(statsContainer, activeFilter[0], activeCount[0]);
+                    loadStatsPhotos(statsContainer, activeFilter[0], activeCount[0],intUserId);
                 });
         countTiles.addClassName("radio-inputs--compact");
 
-        loadStatsPhotos(statsContainer, "Most Viewed", 5);
+        loadStatsPhotos(statsContainer, "Most Viewed", 5,intUserId);
 
         layout.add(title, filterTiles, countTiles, statsContainer);
         return layout;
@@ -1804,7 +1823,7 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
     }
 
 
-    private void loadStatsPhotos(Div container, String filter, int count) {
+    private void loadStatsPhotos(Div container, String filter, int count, int userId) {
         String sql;
         switch (filter) {
             case "Most Liked":
