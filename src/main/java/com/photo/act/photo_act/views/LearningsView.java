@@ -65,6 +65,7 @@ import static com.photo.act.photo_act.views.MainLayout.*;
 
 @AnonymousAllowed
 
+@PageTitle("News · PhotoAct.net")
 @Route(value = "news") //":category?")
 @RouteAlias(value = "news/category/:category?", layout = MainLayout.class)
 @RouteAlias(value = "news/genre/:genre?", layout = MainLayout.class)
@@ -73,7 +74,7 @@ import static com.photo.act.photo_act.views.MainLayout.*;
 
 
 //@Menu(order = 0, icon = "line-awesome/svg/th-list-solid.svg")
-public class LearningsView extends Main implements HasUrlParameter<String>, BeforeEnterObserver, HasComponents, HasDynamicTitle, HasStyle {
+public class LearningsView extends Main implements HasUrlParameter<String>, BeforeEnterObserver, HasComponents, HasStyle {
 
     private String strColorOfIcons = "#a62f03"; //"#f9943b";//"#a62c5c";//"#7d1e32";
 
@@ -189,10 +190,10 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         constructUI();
     }
 
-    @Override
+/*    @Override
     public String getPageTitle() {
         return strHeader;
-    }
+    }*/
 
     @Override
     public void beforeEnter(@OptionalParameter BeforeEnterEvent event) {

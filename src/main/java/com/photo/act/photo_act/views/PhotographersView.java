@@ -67,12 +67,12 @@ import static com.photo.act.photo_act.views.MainLayout.*;
 
 //@RolesAllowed("Admin")
 @AnonymousAllowed
-
+@PageTitle("Photographers · PhotoAct.net")
 @Route(value = "photographers") //":section?")
 @RouteAlias(value = "photographer/:member", layout = MainLayout.class)
 //@RouteAlias(value = ":section/:member?", layout = MainLayout.class)
 //@Menu(order = 0, icon = "line-awesome/svg/th-list-solid.svg")
-public class PhotographersView extends Main implements HasUrlParameter<String>, BeforeEnterObserver, HasComponents, HasDynamicTitle, HasStyle {
+public class PhotographersView extends Main implements HasUrlParameter<String>, BeforeEnterObserver, HasComponents, HasStyle {
 
     private static final Logger logger = LoggerFactory.getLogger(PhotographersView.class);
 
@@ -211,10 +211,7 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
         constructUI();
     }
 
-    @Override
-    public String getPageTitle() {
-        return strHeader;
-    }
+
 
     @Override
     public void beforeEnter(@OptionalParameter BeforeEnterEvent event) {

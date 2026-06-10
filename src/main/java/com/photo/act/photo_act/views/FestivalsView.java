@@ -43,13 +43,14 @@ import static com.photo.act.photo_act.views.MainLayout.*;
 
 @AnonymousAllowed
 
+@PageTitle("Events · PhotoAct.net")
 @Route(value = "events")
 @RouteAlias(value = "events/country/:country?", layout = MainLayout.class)
 @RouteAlias(value = "events/genre/:genre?", layout = MainLayout.class)
 @RouteAlias(value = "events/organizer/:organizer?", layout = MainLayout.class)
 @RouteAlias(value = "events/title/:title?", layout = MainLayout.class)
 
-public class FestivalsView extends Main implements HasUrlParameter<String>, BeforeEnterObserver, HasComponents, HasDynamicTitle, HasStyle {
+public class FestivalsView extends Main implements HasUrlParameter<String>, BeforeEnterObserver, HasComponents, HasStyle {
 
     private String strColorOfIcons = "#a62f03"; //"#f9943b";//"#a62c5c";//"#7d1e32";
 
@@ -152,10 +153,10 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
     }
 
 
-    @Override
+/*    @Override
     public String getPageTitle() {
         return strHeader;
-    }
+    }*/
 
     @Override
     public void beforeEnter(@OptionalParameter BeforeEnterEvent event) {

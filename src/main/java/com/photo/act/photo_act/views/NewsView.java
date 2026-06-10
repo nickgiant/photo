@@ -25,7 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 //@Route(value = "news", layout = MainLayout.class)
-@PageTitle("News · PhotoAct")
+@PageTitle("News · PhotoAct.net")
 @AnonymousAllowed
 public class NewsView extends VerticalLayout {
 
