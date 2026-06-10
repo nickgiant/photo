@@ -166,8 +166,8 @@ public class OgMetaController {
             log.info("Bot detected ({}), forwarding to OG controller: {}/{}", ua, type, slug);
             return "forward:/og/" + type + "/" + slug;
         }
-        // Not a bot — forward to Vaadin's catch-all servlet
-        return "forward:/" + type + "/" + slug;
+        // Not a bot — let Vaadin serve the SPA bootstrap (same pattern as storyRoute)
+        return "forward:/vaadin-forward/" + type + "/" + slug;
     }
 
     @GetMapping("/og/ping")
