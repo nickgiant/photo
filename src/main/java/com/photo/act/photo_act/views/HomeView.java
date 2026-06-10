@@ -256,8 +256,6 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         String sqlGroupByWeekly = " GROUP BY DATE_FORMAT(pm.date_inserted, '%V-%Y') ";
         String sqlUploadsGroupedOrderBy = " ORDER BY DATE_FORMAT(pm.date_inserted, '%Y-%m-%V') DESC LIMIT 10";
 
-
-
         H1 titlePage = new H1(APP_NAME);
         Span subTitle = new Span("[ Through Photography, We Connect and Act ]");
 
@@ -288,12 +286,8 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
         divMainImage.add(mainImage);
 
-
         Div div1 = new Div("We are a community site, with members exchanging info and links in order to improve our skills in photography!");
         Div div2 = new Div("Currently, we share info about events and learnings. Of course, we also have space for our photos and albums.");
-
-
-
 
         Button btnLogin = new Button("Login");
         btnLogin.addClassName("btn-register");
@@ -334,11 +328,6 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
                 DIR_PHOTOS_SERVER, isMobile, userId, publicIp);
         verticalLayout.add(heroSlider);
         // ──────────────────────────────────────────────────────────
-/*
-        verticalLayout.add(layoutUserBtns);
-
-        VerticalLayout layoutStatistics = loadStatisticsSection();
-        verticalLayout.add(layoutStatistics);*/
 
         Div divLearningTopics = loadLearningTopics();
         VerticalLayout layoutLearningTopics = new VerticalLayout();
@@ -419,10 +408,6 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         Div divLastLearnings = loadLastLearnings();
         layoutLastLearnings.add(titleLastLearnings, divLastLearnings);
         verticalLayout.add(layoutLastLearnings);
-
-
-
-
 
         String finalSqlGalleryAll = sqlGalleryAll;
 
@@ -1648,7 +1633,6 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
             strPath = strPath.replace("\\", "-");
             strPath = "'" + strPath + "'";
         }
-
 
         logger.info("photo visitor:" + publicIp + " . " + hostname + " . " + hostAddress + " . " + canonicalHostname + "  .  " + browser + " " + sessionid);
 

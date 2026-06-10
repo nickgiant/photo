@@ -72,13 +72,11 @@ import static com.photo.act.photo_act.views.MainLayout.*;
 //@Menu(order = 0, icon = "line-awesome/svg/th-list-solid.svg")
 public class GalleryView extends Main implements HasUrlParameter<String>, BeforeEnterObserver, HasComponents, HasDynamicTitle, HasStyle {
 
-    private String strColorOfIcons = "#a62f03"; //"#f9943b";//"#a62c5c";//"#7d1e32";
+    private String strColorOfIcons = "#a62f03";
 
     private static final Logger logger = LoggerFactory.getLogger(GalleryView.class);
-
-    String sqlGalleryReadOrderBy;
+    private String sqlGalleryReadOrderBy;
     private VerticalLayout verticalLayout;
-
     private String sysUserName;
     private boolean isMobile;
     private String timeZoneId;
@@ -108,8 +106,6 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
     private Span lightboxCounter;
 
     private String strUrlRequestToBeLogged;
-
-
 
     private int userId;
     private String strUsername;
@@ -182,11 +178,9 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
             , "count_photos", "count_stories"
     };
 
-
     private int intPage = 1;
     private int intRecsOnPage = 20;
     private String strDefCountPerPage = "20";
-
 
     private String sqlReadGalleryDestinations =
             " SELECT pm.id, pm.name_new, pm.title, pm.subtitle, pm.notes, pm.photo_type, pm.uploader, pm.creator, pm.visible_to,  DATE_FORMAT(pm.meta_date, '%W %D %M %Y %H:%i %p') AS meta_date, DATE_FORMAT(pm.meta_date, '%M %Y') AS photo_date, DATE_FORMAT(pm.meta_date, '%H:%i') AS photo_time " +
@@ -216,9 +210,6 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
                     " AND usr.userId = ux.user_id ";
     private String sqlReadGallery2OrderBy = " ORDER BY pm.date_inserted DESC ";
 
-    // private String sqlReadGallery = "( " + sqlReadGalleryDestinations + " " + sqlReadGallery1OrderBy + " LIMIT " + (intRecsOnPage) + " ";
-//            ") UNION (" + sqlReadGallery2 + " " + sqlReadGallery2OrderBy + " LIMIT " + (intRecsOnPage / 2) + ") ";
-
     private String sessionid;
     private long sessionCreation;
     private String publicIp;
@@ -236,11 +227,6 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
     private String dirChar = FileSystems.getDefault().getSeparator();
 
     public static String DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
-
-
-//    private Select<String> cmbCount;
-//    private Select<String> cmbSortBy;
-    // private VerticalLayout recsHolder;
 
     private HorizontalLayout layoutRecControl;
 
@@ -269,7 +255,6 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
 
         constructUI();
     }
-
 
     @Override
     public String getPageTitle() {
@@ -941,7 +926,9 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         int intResultsCount = 0;
 
         if (strPhotoView.equalsIgnoreCase(VIEW_ONE_PHOTO)) {
-            showDialogWithCarousel("", sqlWhereSubClause, strPhotoId, false);
+
+                showDialogWithCarousel("", sqlWhereSubClause, strPhotoId, false);
+
             return 1;
         } else {
 
