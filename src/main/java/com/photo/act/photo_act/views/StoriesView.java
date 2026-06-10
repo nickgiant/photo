@@ -56,8 +56,6 @@ import static com.photo.act.photo_act.views.LearningsView.STR_ALL_TITLES;
 import static com.photo.act.photo_act.views.MainLayout.*;
 
 @AnonymousAllowed
-
-//@PageTitle("Image Gallery")
 @Route(value = "stories") //":category?")
 @RouteAlias(value = "stories/category/:category?", layout = MainLayout.class)
 @RouteAlias(value = "stories/member/:member?/story/:story?", layout = MainLayout.class)

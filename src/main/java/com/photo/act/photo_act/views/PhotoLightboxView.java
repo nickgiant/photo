@@ -466,43 +466,52 @@ public class PhotoLightboxView extends VerticalLayout
         panel.setSpacing(false);
         panel.addClassName("plv-info-panel-inner");
 
+        if(isMobile){
+            panel.setVisible(false);
+        }else{
+            panel.setVisible(true);
+        }
+
         return panel;
     }
 
     // ── Load info panel data for a given photoId ──────────────────────────────
 
     private void loadInfoPanel(long photoId) {
-        Record photo = photos.stream()
-                .filter(p -> String.valueOf(photoId).equals(p.getColumnData("id")))
-                .findFirst()
-                .orElse(photos.isEmpty() ? null : photos.get(currentIndex));
 
-        if (photo != null) {
-            String title = photo.getColumnData("title");
-            photoTitle.setText(title != null ? title : "");
+            Record photo = photos.stream()
+                    .filter(p -> String.valueOf(photoId).equals(p.getColumnData("id")))
+                    .findFirst()
+                    .orElse(photos.isEmpty() ? null : photos.get(currentIndex));
+
+            if (photo != null) {
+                String title = photo.getColumnData("title");
+                photoTitle.setText(title != null ? title : "");
 
 //            String name = (safe(photo.getColumnData("name")) + " " + safe(photo.getColumnData("surname"))).trim();
 //            String username = safe(photo.getColumnData("username"));
 //            authorSpan.setText(name.isEmpty() ? username : name + (username.isEmpty() ? "" : " · @" + username));
 
-            String strCreatorId = photo.getColumnData("uploaderId");
-            String strUsername = photo.getColumnData("username");
-            String strName = photo.getColumnData("name");
-            String strSurname = photo.getColumnData("surname");
-            String strShortBio = photo.getColumnData("short_bio");
-            String strMemberSince = photo.getColumnData("member_since");
-            String strAvatarPath = photo.getColumnData("avatar_path");
-            String strResident = photo.getColumnData("resident");
-            String strResidentCountry = photo.getColumnData("resident_country");
+                String strCreatorId = photo.getColumnData("uploaderId");
+                String strUsername = photo.getColumnData("username");
+                String strName = photo.getColumnData("name");
+                String strSurname = photo.getColumnData("surname");
+                String strShortBio = photo.getColumnData("short_bio");
+                String strMemberSince = photo.getColumnData("member_since");
+                String strAvatarPath = photo.getColumnData("avatar_path");
+                String strResident = photo.getColumnData("resident");
+                String strResidentCountry = photo.getColumnData("resident_country");
 
-            String strCountPhotos = photo.getColumnData("count_photos");
-            String strCountStories = photo.getColumnData("count_stories");
+                String strCountPhotos = photo.getColumnData("count_photos");
+                String strCountStories = photo.getColumnData("count_stories");
 
-            authorSpan.removeAll();
-            authorSpan.setWidthFull();
-            authorSpan.add(fetchPhotographer(strUsername,strName,strSurname,strAvatarPath,strCountPhotos,strCountStories,false));
-            populateTags(photo.getColumnData("contains_tags"));
-            populateExif(photo);
+                authorSpan.removeAll();
+                authorSpan.setWidthFull();
+                authorSpan.add(fetchPhotographer(strUsername, strName, strSurname, strAvatarPath, strCountPhotos, strCountStories, false));
+                populateTags(photo.getColumnData("contains_tags"));
+                populateExif(photo);
+
+
         }
 
         if (photoViewService != null && likeButton != null) {
