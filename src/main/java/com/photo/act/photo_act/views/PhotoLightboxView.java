@@ -353,6 +353,14 @@ public class PhotoLightboxView extends VerticalLayout
         String nameNew = photo.getColumnData("name_new");
         int w = parseIntSafe(photo.getColumnData("meta_i_width"));
         int h = parseIntSafe(photo.getColumnData("meta_i_height"));
+
+        String notes = photo.getColumnData("notes");
+        String subtitle = photo.getColumnData("subtitle");
+        String description = (notes != null && !notes.isBlank() && !"null".equalsIgnoreCase(notes.trim()))
+                ? notes
+                : subtitle;
+        photoFrame.setDescription(description);
+
         if (nameNew != null) {
             File file = Paths.get(strPathLargePhotos + dirChar + nameNew).toFile();
             if (file.exists()) {
