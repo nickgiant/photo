@@ -160,7 +160,8 @@
 
 .sort-order-bar {
     display: flex;
-    align-items: center;
+    justify-content: center;
+    align-items: end;
     flex-shrink: 0;
     gap: 4px;
     padding: 6px 8px;

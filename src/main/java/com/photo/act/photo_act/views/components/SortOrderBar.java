@@ -43,12 +43,11 @@ public class SortOrderBar extends HorizontalLayout {
     }
 
     private void buildUI() {
+        addClassNames(LumoUtility.AlignItems.BASELINE, LumoUtility.Padding.NONE, LumoUtility.Margin.NONE, LumoUtility.Gap.XSMALL);
         addClassName("sort-order-bar");
-        setAlignItems(FlexComponent.Alignment.CENTER);
-        setSpacing(false);
-        addClassNames(LumoUtility.Gap.XSMALL, LumoUtility.Padding.XSMALL);
 
         Select<String> sortSelect = new Select<>();
+        sortSelect.setLabel("Sort by");
         sortSelect.addClassName("sort-select");
         sortSelect.setItems(SORT_LABELS);
         sortSelect.setValue(SORT_LABELS[selectedIndex]);
@@ -64,7 +63,7 @@ public class SortOrderBar extends HorizontalLayout {
 
         directionBtn = new Button(new Icon(VaadinIcon.ARROW_DOWN));
         directionBtn.addClassName("sort-direction-btn");
-        directionBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_SMALL);
+        directionBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY,  ButtonVariant.LUMO_ICON);
         directionBtn.setTooltipText("Descending");
         directionBtn.addClickListener(e -> {
             ascending = !ascending;

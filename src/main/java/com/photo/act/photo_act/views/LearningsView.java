@@ -32,6 +32,7 @@ import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
@@ -450,13 +451,21 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         return headerContainer;
     }
 
-    private Div loadFiltersHeader(String nameUrlVariable, String strCaptionsCount) {
+    private HorizontalLayout loadFiltersHeader(String nameUrlVariable, String strCaptionsCount) {
         // Reset sort state on each navigation
         sortAscending = false;
 
+        HorizontalLayout filterRow = new HorizontalLayout();
+        filterRow.setWrap(true);
+        filterRow.setWidthFull();
+        filterRow.setAlignItems(FlexComponent.Alignment.CENTER);
+        filterRow.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
+        filterRow.setPadding(false);
+        filterRow.setSpacing(false);
+        filterRow.addClassName("filter-sort-row");
+
         Div filtersPanel = new Div();
         filtersPanel.addClassName("top-tall-filters-layout");
-        filtersPanel.getStyle().set("flex", "1 1 auto").set("min-width", "0");
 
         List<LearningCategoryDto> categories = learningService.getAllCategories().stream()
                 .filter(c -> !"not show".equalsIgnoreCase(c.getCatType()))
@@ -475,11 +484,13 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         cmbSortBy.setItems(SORT_TIME, SORT_MOST_LIKED, SORT_MOST_VIEWED);
         cmbSortBy.setValue(SORT_TIME);
         cmbSortBy.setLabel("Sort by");
-        cmbSortBy.getStyle().set("min-width", "140px");
+        cmbSortBy.addClassName("sort-select");
+
 
         // Direction toggle button
         btnSortDir = new Button(VaadinIcon.ARROW_DOWN.create());
         btnSortDir.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_ICON);
+        btnSortDir.addClassName("sort-direction-btn");
         btnSortDir.setTooltipText("Toggle sort direction");
 
         cmbSortBy.addValueChangeListener(e -> {
@@ -497,20 +508,16 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         });
 
         HorizontalLayout sortControls = new HorizontalLayout(cmbSortBy, btnSortDir);
-        sortControls.addClassNames(AlignItems.CENTER, Padding.NONE, Margin.NONE, Gap.XSMALL);
-        sortControls.getStyle().set("flex-shrink", "0");
+        sortControls.addClassNames(AlignItems.BASELINE, Padding.NONE, Margin.NONE, Gap.XSMALL);
+        sortControls.addClassName("sort-order-bar");
 
+        filterRow.expand(filtersPanel);
+        filterRow.add(filtersPanel, sortControls);
         // Outer row: filter chips left, sort controls right
-        Div outerRow = new Div();
-        outerRow.getStyle()
-                .set("display", "flex")
-                .set("align-items", "center")
-                .set("width", "100%")
-                .set("flex-wrap", "wrap")
-                .set("gap", "8px");
-        outerRow.add(filtersPanel, sortControls);
+/*        HorizontalLayout outerRow = new HorizontalLayout();
+        outerRow.add(filtersPanel, sortControls);*/
 
-        return outerRow;
+        return filterRow;
     }
 
 
