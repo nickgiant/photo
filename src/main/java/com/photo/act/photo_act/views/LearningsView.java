@@ -269,13 +269,9 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
 
     private void constructUI() {
         this.addClassNames(Overflow.HIDDEN, Width.FULL,
-                // Margin.LARGE, //.Left.MEDIUM, Margin.Right.MEDIUM,
-                //  Padding.Left.MEDIUM, Padding.Left.MEDIUM,
                 Margin.NONE,
                 Padding.NONE,
                 Gap.MEDIUM,
-                //  Padding.NONE, //.Left.MEDIUM, Padding.Right.MEDIUM,
-                //Margin.Vertical.MEDIUM, Padding.Vertical.NONE,
                 AlignItems.CENTER, JustifyContent.CENTER
         );
         this.addClassName("background");
@@ -316,10 +312,6 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
                     AlignItems.CENTER, JustifyContent.CENTER
             );
         }
-
-
-
-
     }
 
     private VerticalLayout loadResults(int intLimit) {
@@ -377,10 +369,6 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
                     AlignItems.START, JustifyContent.BETWEEN,
                     Overflow.HIDDEN,// Width.FULL,
                     Margin.NONE,
-//                    Padding.NONE,
-//                    Gap.SMALL,
-                    // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
-                    //   Background.CONTRAST_5,
                     BorderRadius.NONE
             );
         } else {
@@ -388,10 +376,6 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
                     AlignItems.START, JustifyContent.BETWEEN,
                     Overflow.HIDDEN, //Width.FULL,
                     Margin.NONE,
-//                    Padding.NONE,
-//                    Gap.SMALL,
-                    // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
-                    //   Background.CONTRAST_5,
                     BorderRadius.LARGE
             );
         }
