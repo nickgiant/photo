@@ -151,6 +151,44 @@
     padding: 8px;
 }
 
+/* ── Sort order bar ────────────────────────────────────────────────────────── */
+.filter-sort-row {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.sort-order-bar {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    gap: 4px;
+    padding: 6px 8px;
+/*    background-color: #ffffff;
+    border: #c7d8f1 1px solid;
+    box-shadow: 1px 1px 5px var(--lumo-contrast-10pct);*/
+    border-radius: 6px;
+    margin: 4px;
+}
+
+.sort-order-bar .sort-select {
+    min-width: 148px;
+    font-family: "Lucida Console", "Lucida Sans Typewriter", sans-serif;
+    font-size: 11pt;
+    font-weight: 600;
+    color: #4f5a83;
+}
+
+.sort-order-bar .sort-direction-btn {
+    color: #4f5a83;
+    transition: all 0.2s ease;
+}
+
+.sort-order-bar .sort-direction-btn:hover {
+    color: #466ca8;
+    background-color: #d9e5f7;
+}
+
 .top-tall-filters{
     min-width: 123px;
     padding: 1px;

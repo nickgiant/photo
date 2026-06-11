@@ -133,7 +133,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
     private String sqlUploadedPeriodCatGroupby =
             " GROUP BY photo_up_month_id " +
                     " ORDER BY photo_up_month_id DESC " +
-                    " LIMIT 20 ";
+                    " LIMIT 16 ";
 
     private String[] arrDestinationCatNames = {"id", "dest_cat_title", "dest_cat_count"};
     private String sqlReadDestinationCat = " SELECT  dc.id, dc.dest_cat_title, COUNT(d.category_id) AS dest_cat_count " +
@@ -234,6 +234,10 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
     private String[] arrOrderByItemsSql = {"ORDER BY pm.date_inserted DESC", "ORDER BY pm.date_inserted ASC", "ORDER BY pm.meta_date DESC", "ORDER BY pm.meta_date ASC"};
     private String sqlOrderBy = " ORDER BY pm.date_inserted DESC";
     private String strDefOrderBy = arrOrderByItems[0];
+
+    private SortOrderBar sortOrderBar;
+    private String currentSqlWhereSubClause = "";
+    private Div currentDivGallery;
 
     private Section sidebar;
 
@@ -473,6 +477,15 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         layoutRecControl.addClassName("actions");
         layoutRecControl.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER);
 
+        sortOrderBar = new SortOrderBar(() -> {
+            sqlOrderBy = sortOrderBar.getSqlOrderBy();
+            if (currentDivGallery != null) {
+                intPage = 1;
+                currentDivGallery.removeAll();
+                filter(currentDivGallery, currentSqlWhereSubClause, VIEW_PHOTO_GRID);
+            }
+        });
+
     }
 
     private VerticalLayout loadHeader(String strHeader, String strSubHeader, String strSectionCaption, String strSection) {
@@ -528,8 +541,18 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         Div divLineB = new Div();
         divLineB.addClassNames(Border.BOTTOM, Width.FULL);
 
+        HorizontalLayout filterRow = new HorizontalLayout();
+        filterRow.setWidthFull();
+        filterRow.setAlignItems(FlexComponent.Alignment.CENTER);
+        filterRow.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
+        filterRow.setPadding(false);
+        filterRow.setSpacing(false);
+        filterRow.addClassName("filter-sort-row");
+        filterRow.expand(filtersContainer);
+        filterRow.add(filtersContainer, sortOrderBar);
+
         headerContainer.add(header, subheader, divLine);
-        headerContainer.add(filtersContainer);
+        headerContainer.add(filterRow);
         headerContainer.add(headerSection, headerSectionCaption, divLineB);
 
         logger.info("--->   strHeader: "+strHeader+" strSection: "+strSection);
@@ -923,6 +946,9 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
     }
 
     private int filter(Div divGallery, String sqlWhereSubClause, String strPhotoView) {
+        this.currentDivGallery = divGallery;
+        this.currentSqlWhereSubClause = sqlWhereSubClause;
+
         int intResultsCount = 0;
 
         if (strPhotoView.equalsIgnoreCase(VIEW_ONE_PHOTO)) {
@@ -939,53 +965,37 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
 
             String sqlOrderNLimit;
             if (intRecsOnPage == intPage * intRecsOnPage) {
-                sqlOrderNLimit = sqlReadGallery1OrderBy + " LIMIT " + (intRecsOnPage);
+                sqlOrderNLimit = sqlOrderBy + " LIMIT " + (intRecsOnPage);
             } else {
-                sqlOrderNLimit = sqlReadGallery1OrderBy + " LIMIT " + (intRecsOnPage) + " OFFSET " + ((intPage -1) * intRecsOnPage);
+                sqlOrderNLimit = sqlOrderBy + " LIMIT " + (intRecsOnPage) + " OFFSET " + ((intPage -1) * intRecsOnPage);
             }
 
             String sqlReadPage;
-            sqlReadPage = sqlReadGalleryDestinations + " " + sqlWhereSubClause + sqlWhereMember + " " + sqlOrderNLimit; //+ sqlReadGallery1OrderBy + " LIMIT " + (intRecsOnPage) + " ";
+            sqlReadPage = sqlReadGalleryDestinations + " " + sqlWhereSubClause + sqlWhereMember + " " + sqlOrderNLimit;
 
-            List<Record> lstRecords = cacheService.getAllPhotos(sqlReadPage, arrColumnNamesGallery, "id"); //getRecordsFromDb(sqlRead, arrColumnsLearning);
+            List<Record> lstRecords = cacheService.getAllPhotos(sqlReadPage, arrColumnNamesGallery, "id");
             intResultsCount = lstRecords.size();
             logger.info(" record size: " + lstRecords.size());
 
             boolean isEditable = false;
 
-
-
-/*            verticalLayout.add(createGalleryGrid(lstRecords));
-            buildLightbox();*/
-
             verticalLayout.remove(layoutRecControl);
             if (strPhotoView.equalsIgnoreCase(VIEW_PHOTO_GRID)) {
 
+                boolean alreadyAttached = divGallery.getParent().isPresent();
 
-                if (divGallery.getComponentCount() > 0) {
-                    for (int r = 0; r < lstRecords.size(); r++) {
-                        Record rec = lstRecords.get(r);
-                        String strId = rec.getColumnData("id");
+                for (int r = 0; r < lstRecords.size(); r++) {
+                    Record rec = lstRecords.get(r);
+                    String strId = rec.getColumnData("id");
+                    Record record = cacheService.getPhotoById(strId);
+                    String strPath = DIR_PHOTOS_SERVER + dirChar + subPathMedium;
+                    divGallery.add(getImageFromDb(record, strPath, isEditable));
+                }
 
-                        Record record = cacheService.getPhotoById(strId);
-
-                        String strPath = DIR_PHOTOS_SERVER + dirChar + subPathMedium;
-                        divGallery.add(getImageFromDb(record, strPath, isEditable));
-                    }
-
-                } else {
-                    for (int r = 0; r < lstRecords.size(); r++) {
-                        Record rec = lstRecords.get(r);
-                        String strId = rec.getColumnData("id");
-
-                        Record record = cacheService.getPhotoById(strId);
-
-
-                        String strPath = DIR_PHOTOS_SERVER + dirChar + subPathMedium;
-                        divGallery.add(getImageFromDb(record, strPath, isEditable));
-                    }
+                if (!alreadyAttached) {
                     verticalLayout.add(divGallery);
                 }
+
                 layoutRecControl = getFooterControls(divGallery, sqlWhereSubClause, sqlOrderNLimit);
                 verticalLayout.add(layoutRecControl);
             }
