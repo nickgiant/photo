@@ -26,6 +26,7 @@ import com.photo.act.photo_act.views.components.LikeButton;
 import com.photo.act.photo_act.views.components.ShareBottomBar;
 import com.vaadin.flow.component.*;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.CheckboxGroup;
 import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.html.*;
@@ -109,6 +110,10 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
     public static String STR_ORDER_BY_NEWEST = "newest";
     public static String STR_ORDER_BY_OLDER = "older";
 
+    public static final String SORT_TIME       = "Time Posted";
+    public static final String SORT_MOST_LIKED  = "Most Liked";
+    public static final String SORT_MOST_VIEWED = "Most Viewed";
+
     public static String subPathThumbs = "photo-thumbs";
     public static String subPathMedium = "photo-medium";
     public static String subPathUpload = "photo-upload";
@@ -166,6 +171,8 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
     private CheckboxGroup<String> checkboxFormat;*/
     private Select<String> cmbCount;
     private Select<String> cmbSortBy;
+    private Button btnSortDir;
+    private boolean sortAscending = false;
 
     private String[] arrOrderByItems = {"Newest First", "Oldest First", "Most Liked", "Least Liked"};
     private String sqlOrderBy = " ORDER BY pm.date_inserted DESC";
@@ -317,6 +324,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
     private VerticalLayout loadResults(int intLimit) {
         List<LearningDto> learnings;
         int pageSize = intLimit > 0 ? intLimit : 25;
+        String sortOption = cmbSortBy != null && cmbSortBy.getValue() != null ? cmbSortBy.getValue() : SORT_TIME;
 
         if (!title.isEmpty() && !title.equalsIgnoreCase(STR_ALL_TITLES)) {
             learnings = learningService.searchLearnings(title, 0, pageSize).getContent();
@@ -330,8 +338,14 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
             learnings = learningService.getCategoryByTitle(genre)
                     .map(cat -> learningService.getLearningsByGenre(cat.getId()))
                     .orElse(List.of());
+        } else if (SORT_MOST_LIKED.equals(sortOption)) {
+            learnings = learningService.getLearningsSortedByLikes(sortAscending, 0, pageSize).getContent();
+        } else if (SORT_MOST_VIEWED.equals(sortOption)) {
+            learnings = learningService.getLearningsSortedByViews(sortAscending, 0, pageSize).getContent();
         } else {
-            learnings = learningService.getLatestLearnings(0, pageSize).getContent();
+            learnings = sortAscending
+                    ? learningService.getOldestLearnings(0, pageSize).getContent()
+                    : learningService.getLatestLearnings(0, pageSize).getContent();
         }
 
         VerticalLayout layoutLearnings = new VerticalLayout();
@@ -357,6 +371,11 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
             layoutLearnings.add(getLearningItem(dto));
         }
         return layoutLearnings;
+    }
+
+    private void reloadResults() {
+        verticalLayout.removeAll();
+        verticalLayout.add(loadResults(25));
     }
 
     private VerticalLayout loadHeader(String strHeader, String strSubHeader, String strSectionCaption, String strSection) {
@@ -432,8 +451,12 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
     }
 
     private Div loadFiltersHeader(String nameUrlVariable, String strCaptionsCount) {
+        // Reset sort state on each navigation
+        sortAscending = false;
+
         Div filtersPanel = new Div();
         filtersPanel.addClassName("top-tall-filters-layout");
+        filtersPanel.getStyle().set("flex", "1 1 auto").set("min-width", "0");
 
         List<LearningCategoryDto> categories = learningService.getAllCategories().stream()
                 .filter(c -> !"not show".equalsIgnoreCase(c.getCatType()))
@@ -446,7 +469,48 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
             card.addClassName("top-tall-filters");
             filtersPanel.add(card);
         }
-        return filtersPanel;
+
+        // Sort combobox
+        cmbSortBy = new Select<>();
+        cmbSortBy.setItems(SORT_TIME, SORT_MOST_LIKED, SORT_MOST_VIEWED);
+        cmbSortBy.setValue(SORT_TIME);
+        cmbSortBy.setLabel("Sort by");
+        cmbSortBy.getStyle().set("min-width", "140px");
+
+        // Direction toggle button
+        btnSortDir = new Button(VaadinIcon.ARROW_DOWN.create());
+        btnSortDir.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_ICON);
+        btnSortDir.setTooltipText("Toggle sort direction");
+
+        cmbSortBy.addValueChangeListener(e -> {
+            if (e.isFromClient()) {
+                sortAscending = false;
+                btnSortDir.setIcon(VaadinIcon.ARROW_DOWN.create());
+                reloadResults();
+            }
+        });
+
+        btnSortDir.addClickListener(e -> {
+            sortAscending = !sortAscending;
+            btnSortDir.setIcon(sortAscending ? VaadinIcon.ARROW_UP.create() : VaadinIcon.ARROW_DOWN.create());
+            reloadResults();
+        });
+
+        HorizontalLayout sortControls = new HorizontalLayout(cmbSortBy, btnSortDir);
+        sortControls.addClassNames(AlignItems.CENTER, Padding.NONE, Margin.NONE, Gap.XSMALL);
+        sortControls.getStyle().set("flex-shrink", "0");
+
+        // Outer row: filter chips left, sort controls right
+        Div outerRow = new Div();
+        outerRow.getStyle()
+                .set("display", "flex")
+                .set("align-items", "center")
+                .set("width", "100%")
+                .set("flex-wrap", "wrap")
+                .set("gap", "8px");
+        outerRow.add(filtersPanel, sortControls);
+
+        return outerRow;
     }
 
 

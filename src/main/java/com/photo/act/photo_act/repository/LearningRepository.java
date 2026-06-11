@@ -34,4 +34,34 @@ public interface LearningRepository extends JpaRepository<LearningEntity, Long> 
            "LOWER(l.description) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            "LOWER(l.artistsRef) LIKE LOWER(CONCAT('%', :keyword, '%'))")
     Page<LearningEntity> searchByKeyword(@Param("keyword") String keyword, Pageable pageable);
+
+    Page<LearningEntity> findAllByOrderByDateInsertAsc(Pageable pageable);
+
+    @Query(value = "SELECT l.* FROM learnings l " +
+                   "LEFT JOIN (SELECT learning_id, COUNT(*) AS cnt FROM learnings_view WHERE view_type = 'Like' GROUP BY learning_id) lv ON l.id = lv.learning_id " +
+                   "ORDER BY COALESCE(lv.cnt, 0) DESC",
+           countQuery = "SELECT COUNT(*) FROM learnings",
+           nativeQuery = true)
+    Page<LearningEntity> findAllOrderByLikeCountDesc(Pageable pageable);
+
+    @Query(value = "SELECT l.* FROM learnings l " +
+                   "LEFT JOIN (SELECT learning_id, COUNT(*) AS cnt FROM learnings_view WHERE view_type = 'Like' GROUP BY learning_id) lv ON l.id = lv.learning_id " +
+                   "ORDER BY COALESCE(lv.cnt, 0) ASC",
+           countQuery = "SELECT COUNT(*) FROM learnings",
+           nativeQuery = true)
+    Page<LearningEntity> findAllOrderByLikeCountAsc(Pageable pageable);
+
+    @Query(value = "SELECT l.* FROM learnings l " +
+                   "LEFT JOIN (SELECT learning_id, COUNT(*) AS cnt FROM learnings_view WHERE view_type = 'Full' GROUP BY learning_id) lv ON l.id = lv.learning_id " +
+                   "ORDER BY COALESCE(lv.cnt, 0) DESC",
+           countQuery = "SELECT COUNT(*) FROM learnings",
+           nativeQuery = true)
+    Page<LearningEntity> findAllOrderByViewCountDesc(Pageable pageable);
+
+    @Query(value = "SELECT l.* FROM learnings l " +
+                   "LEFT JOIN (SELECT learning_id, COUNT(*) AS cnt FROM learnings_view WHERE view_type = 'Full' GROUP BY learning_id) lv ON l.id = lv.learning_id " +
+                   "ORDER BY COALESCE(lv.cnt, 0) ASC",
+           countQuery = "SELECT COUNT(*) FROM learnings",
+           nativeQuery = true)
+    Page<LearningEntity> findAllOrderByViewCountAsc(Pageable pageable);
 }
