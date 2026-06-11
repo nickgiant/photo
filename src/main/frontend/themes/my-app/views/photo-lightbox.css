@@ -144,6 +144,46 @@
     background: #0d0d0d;
 }
 
+/* ── Photo description overlay ──────────────────────────────────────────── */
+
+.pf-desc-bar {
+    position: absolute;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.50);
+    color: #ffffff;
+    padding: 10px 20px 12px;
+    font-size: 0.88rem;
+    line-height: 1.5;
+    letter-spacing: 0.01em;
+    z-index: 5;
+    display: none;
+    opacity: 0.65;
+    pointer-events: none;
+}
+
+@keyframes pf-desc-slide-in {
+    from { transform: translateY(100%); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+}
+
+@keyframes pf-desc-slide-out {
+    from { transform: translateY(0);    opacity: 1; }
+    to   { transform: translateY(100%); opacity: 0; }
+}
+
+.pf-desc-bar--visible {
+    animation: pf-desc-slide-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.pf-desc-bar--hiding {
+    animation: pf-desc-slide-out 0.32s ease-in forwards;
+}
+
 /* ── ThumbnailStrip ─────────────────────────────────────────────────────── */
 
 .ts-strip {

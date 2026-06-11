@@ -66,8 +66,8 @@ import static com.photo.act.photo_act.views.MainLayout.SUB_PATH_AVATARS_THUMBS;
 
 @AnonymousAllowed
 @Route(value ="photo/:photo-id", autoLayout = false)
-//@RouteAlias(value = "photo/:photo-id?", layout = MainLayout.class)
-@PageTitle("Photo Viewer")
+//@RouteAlias(value = "photo/:photo-id?", layout = MainLayout.class)  not this. it shows it inside side menu
+@PageTitle("photo · PhotoAct.net")
 @Slf4j
 
 public class PhotoLightboxView extends VerticalLayout
@@ -353,6 +353,14 @@ public class PhotoLightboxView extends VerticalLayout
         String nameNew = photo.getColumnData("name_new");
         int w = parseIntSafe(photo.getColumnData("meta_i_width"));
         int h = parseIntSafe(photo.getColumnData("meta_i_height"));
+
+        String notes = photo.getColumnData("notes");
+        String subtitle = photo.getColumnData("subtitle");
+        String description = (notes != null && !notes.isBlank() && !"null".equalsIgnoreCase(notes.trim()))
+                ? notes
+                : subtitle;
+        photoFrame.setDescription(description);
+
         if (nameNew != null) {
             File file = Paths.get(strPathLargePhotos + dirChar + nameNew).toFile();
             if (file.exists()) {

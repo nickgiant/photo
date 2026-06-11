@@ -53,9 +53,10 @@ public class SecurityConfiguration {
                         "/static/**",       // static images, favicon
                         "/uploads/**",      // media files
                         "/actuator/health", // load balancer health check
-                        "/actuator/**", // load balancer health check
+                        "/actuator/**",
                         "/og/ping",
-                        "/admin/cache/**"
+                        "/admin/cache/**",
+                        "/vaadin-forward/**" // OgMetaController non-bot pass-through to Vaadin
                 ).permitAll()
         );
 

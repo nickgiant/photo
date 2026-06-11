@@ -20,6 +20,7 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.router.AfterNavigationEvent;
 import com.vaadin.flow.router.AfterNavigationObserver;
+import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
@@ -39,7 +40,7 @@ import java.util.Locale;
 import static com.photo.act.photo_act.views.MainLayout.*;
 
 @AnonymousAllowed
-//@PageTitle("Feed")
+@PageTitle("Feed · PhotoAct.net")
 @Route("feed")
 //@Menu(order = 2, icon = "line-awesome/svg/list-solid.svg")  //, icon = LineAwesomeIconUrl.LIST_SOLID)
 public class FeedView extends Div implements AfterNavigationObserver {

@@ -155,11 +155,10 @@
     min-width: 123px;
     padding: 1px;
     margin: 1px;
-    /*background-color: #ffffff;*/
 
     background-color: #ffffff ;
     text-decoration: none;
-    color: #466ca8;
+    color: #4f5a83; /* #466ca8;*/
     border: #c7d8f1 1px solid;
     box-shadow: 1px 1px 5px var(--lumo-contrast-10pct);
     border-radius: 6px;
@@ -170,7 +169,7 @@
         transition: all 0.3s ease;
         border: 1px solid #466ca8;
         color: #466ca8;
-        background-color: #edf4fd;
+        background-color: #ffffff;
         box-shadow: 1px 1px 8px var(--lumo-contrast-20pct);
         cursor: pointer;
         &h5{
@@ -186,13 +185,13 @@
 .top-tall-filters h3{
     font-family: "Lucida Console", "Lucida Sans Typewriter", sans-serif;
     font-weight: 600;
-    font-size: 12pt;
+    font-size: 11pt;
     text-align: center;
-    letter-spacing: 1px;
-    padding-top: 1px;
-    padding-bottom: 2px;
-    color: #466ca8;
-    border-bottom: var(--lumo-contrast-10pct) 1px solid; /* do not remove */
+    /*letter-spacing: 1px;*/
+    padding: 1px;
+    /*padding-bottom: 1px;*/
+    color:  #4f5a83; /* #466ca8;*/
+    border-bottom: transparent 1px solid;
     transition: all 0.3s ease;
     text-wrap: nowrap;
     text-shadow: 1px 2px 6px var(--shadow-medium);

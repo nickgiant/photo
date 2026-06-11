@@ -133,7 +133,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
     private String sqlUploadedPeriodCatGroupby =
             " GROUP BY photo_up_month_id " +
                     " ORDER BY photo_up_month_id DESC " +
-                    " LIMIT 12 ";
+                    " LIMIT 20 ";
 
     private String[] arrDestinationCatNames = {"id", "dest_cat_title", "dest_cat_count"};
     private String sqlReadDestinationCat = " SELECT  dc.id, dc.dest_cat_title, COUNT(d.category_id) AS dest_cat_count " +

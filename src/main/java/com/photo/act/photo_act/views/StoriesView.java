@@ -56,6 +56,8 @@ import static com.photo.act.photo_act.views.LearningsView.STR_ALL_TITLES;
 import static com.photo.act.photo_act.views.MainLayout.*;
 
 @AnonymousAllowed
+
+@PageTitle("Stories · PhotoAct.net")
 @Route(value = "stories") //":category?")
 @RouteAlias(value = "stories/category/:category?", layout = MainLayout.class)
 @RouteAlias(value = "stories/member/:member?/story/:story?", layout = MainLayout.class)
@@ -64,7 +66,7 @@ import static com.photo.act.photo_act.views.MainLayout.*;
 //@RouteAlias(value = "gallery/location/:destination?", layout = MainLayout.class)
 
 //@Menu(order = 0, icon = "line-awesome/svg/th-list-solid.svg")
-public class StoriesView extends Main implements BeforeEnterObserver, HasComponents, HasDynamicTitle, HasStyle {
+public class StoriesView extends Main implements BeforeEnterObserver, HasComponents, HasStyle {
 
     private static final Logger logger = LoggerFactory.getLogger(StoriesView.class);
     public static String subPathThumbs = "photo-thumbs";
@@ -188,10 +190,10 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
         constructUI();
     }
 
-    @Override
+/*    @Override
     public String getPageTitle() {
         return strHeader;
-    }
+    }*/
 
     @Override
     public void beforeEnter(@OptionalParameter BeforeEnterEvent event) {

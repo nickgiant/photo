@@ -154,6 +154,22 @@ public class OgMetaController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    /** Spring MVC fallback: intercept Vaadin routes for bots */
+    @GetMapping("/{type}/{slug}")
+    public String contentRoute(
+            @PathVariable String type,
+            @PathVariable String slug,
+            HttpServletRequest request) {
+
+        String ua = request.getHeader(HttpHeaders.USER_AGENT);
+        if (botDetectionService.isBot(ua)) {
+            log.info("Bot detected ({}), forwarding to OG controller: {}/{}", ua, type, slug);
+            return "forward:/og/" + type + "/" + slug;
+        }
+        // Not a bot — let Vaadin serve the SPA bootstrap (same pattern as storyRoute)
+        return "forward:/vaadin-forward/" + type + "/" + slug;
+    }
+
     @GetMapping("/og/ping")
     @ResponseBody
     public String ping() {

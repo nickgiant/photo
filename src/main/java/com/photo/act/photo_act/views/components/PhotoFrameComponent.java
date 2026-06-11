@@ -38,7 +38,9 @@ public class PhotoFrameComponent extends Div {
             { "pf-img--portrait", "pf-img--landscape", "pf-img--unknown" };
 
     private final Image img = new Image();
+    private final Div descriptionBar = new Div();
     private Effect effect = Effect.FADE;
+    private boolean descriptionVisible = false;
 
     public PhotoFrameComponent() {
         setSizeFull();
@@ -53,7 +55,8 @@ public class PhotoFrameComponent extends Div {
         img.getStyle()
             .set("display", "block")
             .set("object-fit", "contain");
-        add(img);
+        descriptionBar.addClassName("pf-desc-bar");
+        add(img, descriptionBar);
     }
 
     // ── Public API ────────────────────────────────────────────────────────────
@@ -77,6 +80,41 @@ public class PhotoFrameComponent extends Div {
         img.setSrc(staticSrc);
         img.setAlt("");
         setOrientationClass("pf-img--unknown");
+    }
+
+    /**
+     * Show or hide the description bar at the bottom of the photo.
+     * Non-blank text → slide up + fade in; null/blank text (or "null") → slide down + fade out.
+     */
+    public void setDescription(String text) {
+        boolean hasText = text != null && !text.isBlank() && !"null".equalsIgnoreCase(text.trim());
+        if (hasText) {
+            descriptionBar.setText(text);
+            if (!descriptionVisible) {
+                getElement().executeJs(
+                    "var bar = this.querySelector('.pf-desc-bar');" +
+                    "bar.style.display = 'block';" +
+                    "bar.classList.remove('pf-desc-bar--hiding');" +
+                    "void bar.offsetWidth;" +
+                    "bar.classList.add('pf-desc-bar--visible');"
+                );
+                descriptionVisible = true;
+            }
+        } else {
+            if (descriptionVisible) {
+                getElement().executeJs(
+                    "var bar = this.querySelector('.pf-desc-bar');" +
+                    "bar.classList.remove('pf-desc-bar--visible');" +
+                    "void bar.offsetWidth;" +
+                    "bar.classList.add('pf-desc-bar--hiding');" +
+                    "bar.addEventListener('animationend', function() {" +
+                    "    bar.style.display = 'none';" +
+                    "    bar.classList.remove('pf-desc-bar--hiding');" +
+                    "}, {once: true});"
+                );
+                descriptionVisible = false;
+            }
+        }
     }
 
     /**

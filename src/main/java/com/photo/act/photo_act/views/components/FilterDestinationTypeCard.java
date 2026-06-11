@@ -115,13 +115,13 @@ public class FilterDestinationTypeCard extends RouterLink {
             header.setVisible(false);
         }
 
-        Div divDescription = new Div(strDestinationCatCount + " " + strCaptionCounts);
+//        Div divDescription = new Div(strDestinationCatCount + " " + strCaptionCounts);
 
         // H5 subtitle = new H5(strCatTypeCount + " " + strCaptionCounts);
 
         // subtitle.addClassName("bottom-line");
 
-        filterBar.add(header, divDescription);
+        filterBar.add(header);
 
         String captionCategory = record.getColumnData(columnNames[1]);
         RouteParam routeCategory = new RouteParam(nameUrlVariable, captionCategory);
@@ -177,9 +177,9 @@ public class FilterDestinationTypeCard extends RouterLink {
             header.setVisible(false);
         }
 
-        Div divDescription = new Div(strDestinationCatCount + " " + strCaptionCounts);
+//        Div divDescription = new Div(strDestinationCatCount + " " + strCaptionCounts);
 
-        filterBar.add(header, divDescription);
+        filterBar.add(header);
 
         String captionCategory = dto.getCatTitle();
         RouteParam routeCategory = new RouteParam(nameUrlVariable, captionCategory);

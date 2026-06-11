@@ -65,6 +65,7 @@ import static com.photo.act.photo_act.views.MainLayout.*;
 
 @AnonymousAllowed
 
+@PageTitle("News · PhotoAct.net")
 @Route(value = "news") //":category?")
 @RouteAlias(value = "news/category/:category?", layout = MainLayout.class)
 @RouteAlias(value = "news/genre/:genre?", layout = MainLayout.class)
@@ -73,7 +74,7 @@ import static com.photo.act.photo_act.views.MainLayout.*;
 
 
 //@Menu(order = 0, icon = "line-awesome/svg/th-list-solid.svg")
-public class LearningsView extends Main implements HasUrlParameter<String>, BeforeEnterObserver, HasComponents, HasDynamicTitle, HasStyle {
+public class LearningsView extends Main implements HasUrlParameter<String>, BeforeEnterObserver, HasComponents, HasStyle {
 
     private String strColorOfIcons = "#a62f03"; //"#f9943b";//"#a62c5c";//"#7d1e32";
 
@@ -189,10 +190,10 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         constructUI();
     }
 
-    @Override
+/*    @Override
     public String getPageTitle() {
         return strHeader;
-    }
+    }*/
 
     @Override
     public void beforeEnter(@OptionalParameter BeforeEnterEvent event) {
@@ -268,13 +269,9 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
 
     private void constructUI() {
         this.addClassNames(Overflow.HIDDEN, Width.FULL,
-                // Margin.LARGE, //.Left.MEDIUM, Margin.Right.MEDIUM,
-                //  Padding.Left.MEDIUM, Padding.Left.MEDIUM,
                 Margin.NONE,
                 Padding.NONE,
                 Gap.MEDIUM,
-                //  Padding.NONE, //.Left.MEDIUM, Padding.Right.MEDIUM,
-                //Margin.Vertical.MEDIUM, Padding.Vertical.NONE,
                 AlignItems.CENTER, JustifyContent.CENTER
         );
         this.addClassName("background");
@@ -315,10 +312,6 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
                     AlignItems.CENTER, JustifyContent.CENTER
             );
         }
-
-
-
-
     }
 
     private VerticalLayout loadResults(int intLimit) {
@@ -376,10 +369,6 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
                     AlignItems.START, JustifyContent.BETWEEN,
                     Overflow.HIDDEN,// Width.FULL,
                     Margin.NONE,
-//                    Padding.NONE,
-//                    Gap.SMALL,
-                    // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
-                    //   Background.CONTRAST_5,
                     BorderRadius.NONE
             );
         } else {
@@ -387,10 +376,6 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
                     AlignItems.START, JustifyContent.BETWEEN,
                     Overflow.HIDDEN, //Width.FULL,
                     Margin.NONE,
-//                    Padding.NONE,
-//                    Gap.SMALL,
-                    // Padding.Left.MEDIUM, Padding.Right.MEDIUM,
-                    //   Background.CONTRAST_5,
                     BorderRadius.LARGE
             );
         }
