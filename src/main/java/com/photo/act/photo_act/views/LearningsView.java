@@ -26,11 +26,13 @@ import com.photo.act.photo_act.views.components.LikeButton;
 import com.photo.act.photo_act.views.components.ShareBottomBar;
 import com.vaadin.flow.component.*;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.CheckboxGroup;
 import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
@@ -109,6 +111,10 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
     public static String STR_ORDER_BY_NEWEST = "newest";
     public static String STR_ORDER_BY_OLDER = "older";
 
+    public static final String SORT_TIME       = "Time Posted";
+    public static final String SORT_MOST_LIKED  = "Most Liked";
+    public static final String SORT_MOST_VIEWED = "Most Viewed";
+
     public static String subPathThumbs = "photo-thumbs";
     public static String subPathMedium = "photo-medium";
     public static String subPathUpload = "photo-upload";
@@ -166,6 +172,8 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
     private CheckboxGroup<String> checkboxFormat;*/
     private Select<String> cmbCount;
     private Select<String> cmbSortBy;
+    private Button btnSortDir;
+    private boolean sortAscending = false;
 
     private String[] arrOrderByItems = {"Newest First", "Oldest First", "Most Liked", "Least Liked"};
     private String sqlOrderBy = " ORDER BY pm.date_inserted DESC";
@@ -317,6 +325,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
     private VerticalLayout loadResults(int intLimit) {
         List<LearningDto> learnings;
         int pageSize = intLimit > 0 ? intLimit : 25;
+        String sortOption = cmbSortBy != null && cmbSortBy.getValue() != null ? cmbSortBy.getValue() : SORT_TIME;
 
         if (!title.isEmpty() && !title.equalsIgnoreCase(STR_ALL_TITLES)) {
             learnings = learningService.searchLearnings(title, 0, pageSize).getContent();
@@ -330,8 +339,14 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
             learnings = learningService.getCategoryByTitle(genre)
                     .map(cat -> learningService.getLearningsByGenre(cat.getId()))
                     .orElse(List.of());
+        } else if (SORT_MOST_LIKED.equals(sortOption)) {
+            learnings = learningService.getLearningsSortedByLikes(sortAscending, 0, pageSize).getContent();
+        } else if (SORT_MOST_VIEWED.equals(sortOption)) {
+            learnings = learningService.getLearningsSortedByViews(sortAscending, 0, pageSize).getContent();
         } else {
-            learnings = learningService.getLatestLearnings(0, pageSize).getContent();
+            learnings = sortAscending
+                    ? learningService.getOldestLearnings(0, pageSize).getContent()
+                    : learningService.getLatestLearnings(0, pageSize).getContent();
         }
 
         VerticalLayout layoutLearnings = new VerticalLayout();
@@ -357,6 +372,11 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
             layoutLearnings.add(getLearningItem(dto));
         }
         return layoutLearnings;
+    }
+
+    private void reloadResults() {
+        verticalLayout.removeAll();
+        verticalLayout.add(loadResults(25));
     }
 
     private VerticalLayout loadHeader(String strHeader, String strSubHeader, String strSectionCaption, String strSection) {
@@ -431,7 +451,19 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         return headerContainer;
     }
 
-    private Div loadFiltersHeader(String nameUrlVariable, String strCaptionsCount) {
+    private HorizontalLayout loadFiltersHeader(String nameUrlVariable, String strCaptionsCount) {
+        // Reset sort state on each navigation
+        sortAscending = false;
+
+        HorizontalLayout filterRow = new HorizontalLayout();
+        filterRow.setWrap(true);
+        filterRow.setWidthFull();
+        filterRow.setAlignItems(FlexComponent.Alignment.CENTER);
+        filterRow.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
+        filterRow.setPadding(false);
+        filterRow.setSpacing(false);
+        filterRow.addClassName("filter-sort-row");
+
         Div filtersPanel = new Div();
         filtersPanel.addClassName("top-tall-filters-layout");
 
@@ -446,7 +478,46 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
             card.addClassName("top-tall-filters");
             filtersPanel.add(card);
         }
-        return filtersPanel;
+
+        // Sort combobox
+        cmbSortBy = new Select<>();
+        cmbSortBy.setItems(SORT_TIME, SORT_MOST_LIKED, SORT_MOST_VIEWED);
+        cmbSortBy.setValue(SORT_TIME);
+        cmbSortBy.setLabel("Sort by");
+        cmbSortBy.addClassName("sort-select");
+
+
+        // Direction toggle button
+        btnSortDir = new Button(VaadinIcon.ARROW_DOWN.create());
+        btnSortDir.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_ICON);
+        btnSortDir.addClassName("sort-direction-btn");
+        btnSortDir.setTooltipText("Toggle sort direction");
+
+        cmbSortBy.addValueChangeListener(e -> {
+            if (e.isFromClient()) {
+                sortAscending = false;
+                btnSortDir.setIcon(VaadinIcon.ARROW_DOWN.create());
+                reloadResults();
+            }
+        });
+
+        btnSortDir.addClickListener(e -> {
+            sortAscending = !sortAscending;
+            btnSortDir.setIcon(sortAscending ? VaadinIcon.ARROW_UP.create() : VaadinIcon.ARROW_DOWN.create());
+            reloadResults();
+        });
+
+        HorizontalLayout sortControls = new HorizontalLayout(cmbSortBy, btnSortDir);
+        sortControls.addClassNames(AlignItems.BASELINE, Padding.NONE, Margin.NONE, Gap.XSMALL);
+        sortControls.addClassName("sort-order-bar");
+
+        filterRow.expand(filtersPanel);
+        filterRow.add(filtersPanel, sortControls);
+        // Outer row: filter chips left, sort controls right
+/*        HorizontalLayout outerRow = new HorizontalLayout();
+        outerRow.add(filtersPanel, sortControls);*/
+
+        return filterRow;
     }
 
 

@@ -84,6 +84,23 @@ public class LearningService {
                 .map(this::toDto);
     }
 
+    public Page<LearningDto> getOldestLearnings(int page, int size) {
+        return learningRepo.findAllByOrderByDateInsertAsc(PageRequest.of(page, size))
+                .map(this::toDto);
+    }
+
+    public Page<LearningDto> getLearningsSortedByLikes(boolean ascending, int page, int size) {
+        PageRequest pr = PageRequest.of(page, size);
+        return (ascending ? learningRepo.findAllOrderByLikeCountAsc(pr) : learningRepo.findAllOrderByLikeCountDesc(pr))
+                .map(this::toDto);
+    }
+
+    public Page<LearningDto> getLearningsSortedByViews(boolean ascending, int page, int size) {
+        PageRequest pr = PageRequest.of(page, size);
+        return (ascending ? learningRepo.findAllOrderByViewCountAsc(pr) : learningRepo.findAllOrderByViewCountDesc(pr))
+                .map(this::toDto);
+    }
+
     public Optional<LearningDto> getLearningById(Long id) {
         return learningRepo.findById(id).map(this::toDto);
     }
