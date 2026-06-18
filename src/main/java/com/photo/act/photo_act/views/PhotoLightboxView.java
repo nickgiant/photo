@@ -831,7 +831,8 @@ public class PhotoLightboxView extends VerticalLayout
         final String finalNameNew    = (nameNew != null) ? nameNew : "";
 
         Button btnRate = new Button("Submit Rating");
-        btnRate.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL);
+        btnRate.addClassName("btn-rate");
+        btnRate.addThemeVariants(com.vaadin.flow.component.button.ButtonVariant.LUMO_PRIMARY);
         btnRate.setWidthFull();
         btnRate.addClickListener(event -> {
             String[] selected = radioGroup.getValue();

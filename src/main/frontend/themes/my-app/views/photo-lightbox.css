@@ -44,7 +44,7 @@
     padding: 6px;
     border-radius: 14px;
     background-color: #ffffff;
-    border: solid 1px #e9e9e7;
+    border: solid 1px transparent;
 }
 
 .plv-exif-grid {
@@ -87,8 +87,9 @@
     width: calc(100% + 32px);   /* bleed past the panel's 16px padding on each side */
     margin-left: -16px;
     background: var(--lumo-contrast-5pct, #f2f2f2);
-    border-top: 1px solid var(--lumo-contrast-10pct, #e0e0e0);
+    border-top: 1px solid transparent;
     border-bottom: 2px solid var(--lumo-contrast-20pct, #d0d0d0);
+
 }
 
 /* Individual tab items — these are real DOM elements, can be styled directly */
@@ -104,7 +105,7 @@
     border-bottom: 2px solid transparent;
     margin-bottom: -2px;        /* sits on top of the container border-bottom */
     transition: color 0.18s, background 0.18s, border-color 0.18s;
-    padding: 0 8px;
+
     cursor: pointer;
     -moz-border-radius-topleft: 6px;
 }
@@ -134,7 +135,7 @@
 
 .plv-rating-content {
     gap: 6px !important;
-    padding-top: 4px;
+    padding: 8px;
 }
 
 /* Star icon in the summary row */
@@ -150,13 +151,14 @@
     width: 100%;
     border: 1px solid var(--lumo-contrast-10pct, #e0e0e0);
     border-radius: 8px;
-    padding: 2px 6px;
+    padding: 4px 8px;
     margin-bottom: 3px;
     transition: border-color 0.15s, background 0.15s;
     background: #fff;
 }
 
 .plv-rating-content vaadin-radio-button:hover {
+    cursor: pointer;
     border-color: var(--lumo-primary-color-50pct, #90caf9);
     background: var(--lumo-primary-color-10pct, #e3f2fd);
 }
