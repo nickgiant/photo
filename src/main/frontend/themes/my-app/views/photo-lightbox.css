@@ -78,48 +78,132 @@
 
 .plv-tag-chip { cursor: pointer; }
 
-/* ── Info-panel tabs ────────────────────────────────────────────────────── */
-
-.plv-panel-tabs {
-    border-bottom: 1px solid var(--lumo-contrast-10pct);
-    padding: 0;
-    flex-shrink: 0;
-}
-
 /* ── Action row (like + rate buttons) ───────────────────────────────────── */
 
 .plv-action-row {
     display: flex;
+    align-items: center;
     gap: 8px;
-    padding: 4px 0;
+    padding: 4px 0 2px;
+}
+
+/* ── Info-panel tabs ────────────────────────────────────────────────────── */
+
+.plv-panel-tabs {
+    flex-shrink: 0;
+    width: calc(100% + 32px);   /* bleed past the panel's 16px padding on each side */
+    margin-left: -16px;
+    background: var(--lumo-contrast-5pct, #f2f2f2);
+    border-top: 1px solid var(--lumo-contrast-10pct, #e0e0e0);
+    border-bottom: 2px solid var(--lumo-contrast-20pct, #d0d0d0);
+}
+
+/* Individual tab items — these are real DOM elements, can be styled directly */
+.plv-panel-tabs vaadin-tab {
+    flex: 1;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    min-height: 38px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--lumo-secondary-text-color, #888);
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;        /* sits on top of the container border-bottom */
+    transition: color 0.18s, background 0.18s, border-color 0.18s;
+    padding: 0 8px;
+    cursor: pointer;
+}
+
+.plv-panel-tabs vaadin-tab:hover {
+    background: rgba(0, 0, 0, 0.04);
+    color: var(--lumo-body-text-color, #444);
+}
+
+/* Selected tab — attribute is set by Vaadin on the host element */
+.plv-panel-tabs vaadin-tab[selected] {
+    color: var(--lumo-primary-color, #1976d2);
+    font-weight: 700;
+    background: white;
+    border-bottom-color: var(--lumo-primary-color, #1976d2);
+}
+
+/* Icon inside the Rate It tab */
+.plv-panel-tabs vaadin-tab vaadin-icon {
+    width: 1em;
+    height: 1em;
+    flex-shrink: 0;
 }
 
 /* ── Rating panel ───────────────────────────────────────────────────────── */
 
 .plv-rating-content {
-    gap: 8px !important;
+    gap: 6px !important;
+    padding-top: 4px;
 }
 
+/* Star icon in the summary row */
 .plv-rate-star-icon {
-    color: var(--lumo-warning-color, #f5a623);
-    width: 1.2em;
-    height: 1.2em;
+    color: var(--lumo-warning-color, #e8a000);
+    width: 1.25em;
+    height: 1.25em;
     flex-shrink: 0;
 }
 
+/* Each radio-button option gets a card-like border */
+.plv-rating-content vaadin-radio-button {
+    width: 100%;
+    border: 1px solid var(--lumo-contrast-10pct, #e0e0e0);
+    border-radius: 8px;
+    padding: 2px 6px;
+    margin-bottom: 3px;
+    transition: border-color 0.15s, background 0.15s;
+    background: #fff;
+}
+
+.plv-rating-content vaadin-radio-button:hover {
+    border-color: var(--lumo-primary-color-50pct, #90caf9);
+    background: var(--lumo-primary-color-10pct, #e3f2fd);
+}
+
+/* Checked state — Vaadin sets the [checked] attribute */
+.plv-rating-content vaadin-radio-button[checked] {
+    border-color: var(--lumo-primary-color, #1976d2);
+    background: var(--lumo-primary-color-10pct, #e3f2fd);
+}
+
+/* Content rendered inside each radio option */
 .plv-rating-option {
     display: flex;
     flex-direction: column;
     gap: 2px;
-    padding: 2px 0;
+    padding: 4px 2px;
+    width: 100%;
 }
 
+/* Option title (bold label, e.g. "5 Compelling") */
+.plv-rating-option span:first-child {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--lumo-body-text-color, #333);
+}
+
+/* Option description */
+.plv-rating-option span:last-child {
+    font-size: 0.72rem;
+    line-height: 1.35;
+    color: var(--lumo-secondary-text-color, #888);
+}
+
+/* "Please log in" message */
 .plv-login-to-rate {
     display: block;
-    background: var(--lumo-contrast-5pct);
-    border-radius: var(--lumo-border-radius-m);
-    padding: 8px 12px;
+    background: var(--lumo-contrast-5pct, #f5f5f5);
+    border: 1px solid var(--lumo-contrast-10pct, #e0e0e0);
+    border-radius: var(--lumo-border-radius-m, 6px);
+    padding: 10px 14px;
     font-style: italic;
+    text-align: center;
 }
 
 /* Prev / next overlay nav buttons */

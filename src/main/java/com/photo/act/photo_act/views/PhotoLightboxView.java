@@ -51,6 +51,7 @@ import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.component.radiobutton.RadioGroupVariant;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.Tabs;
+import com.vaadin.flow.component.tabs.TabsVariant;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import java.time.LocalDateTime;
 
@@ -452,15 +453,22 @@ public class PhotoLightboxView extends VerticalLayout
         tagsRow.addClassName("plv-tags-row");
         commentsDiv.setWidthFull();
 
-        // ── Tabs ─────────────────────────────────────────────────────────────
+        // ── Always-visible header: title + photographer card + action buttons ──
+        HorizontalLayout actionRow = new HorizontalLayout(likeButton, rateButton);
+        actionRow.addClassName("plv-action-row");
+        actionRow.setPadding(false);
+        actionRow.setSpacing(true);
+
+        // ── Tabs (below the photographer card) ────────────────────────────────
         tabMeta = new Tab("Info");
         tabRate = new Tab(VaadinIcon.STAR_O.create(), new Span("Rate It"));
         panelTabs = new Tabs(tabMeta, tabRate);
         panelTabs.setWidthFull();
         panelTabs.addClassName("plv-panel-tabs");
+        panelTabs.addThemeVariants(TabsVariant.LUMO_SMALL, TabsVariant.LUMO_EQUAL_WIDTH_TABS);
 
-        // ── Metadata content pane ─────────────────────────────────────────────
-        metaContent = new VerticalLayout(photoTitle, authorSpan, exifGrid, tagsRow);
+        // ── Info tab content: only EXIF + tags (title/author always visible above) ─
+        metaContent = new VerticalLayout(exifGrid, tagsRow);
         metaContent.setPadding(false);
         metaContent.setSpacing(false);
         metaContent.addClassName("plv-meta-content");
@@ -484,13 +492,11 @@ public class PhotoLightboxView extends VerticalLayout
         // Rate button click → switch to Rate tab
         rateButton.addRateClickListener(e -> panelTabs.setSelectedTab(tabRate));
 
-        // Action row: like + rate buttons
-        HorizontalLayout actionRow = new HorizontalLayout(likeButton, rateButton);
-        actionRow.addClassName("plv-action-row");
-        actionRow.setPadding(false);
-        actionRow.setSpacing(true);
-
-        VerticalLayout panel = new VerticalLayout(panelTabs, actionRow, metaContent, ratingContent);
+        // Panel: title + author card always on top, then tabs, then tab content
+        VerticalLayout panel = new VerticalLayout(
+                photoTitle, authorSpan, actionRow,
+                panelTabs,
+                metaContent, ratingContent);
         panel.setWidthFull();
         panel.setPadding(true);
         panel.setSpacing(false);
@@ -801,6 +807,7 @@ public class PhotoLightboxView extends VerticalLayout
 
         Button btnRate = new Button("Submit Rating");
         btnRate.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL);
+        btnRate.setWidthFull();
         btnRate.addClickListener(event -> {
             String[] selected = radioGroup.getValue();
             if (selected == null) {
