@@ -114,6 +114,7 @@ public class PhotoLightboxView extends VerticalLayout
     private Tab            tabMeta;
     private Tab            tabRate;
     private Tabs           panelTabs;
+    private boolean        initialLoad = true;
 
     // State
     private List<Record> photos   = new ArrayList<>();
@@ -300,12 +301,14 @@ public class PhotoLightboxView extends VerticalLayout
         updatePhotoImage(0);
         thumbnailStrip.setActiveIndex(currentIndex);
 
+        initialLoad = true;
         if (!photos.isEmpty()) {
             try {
                 currentPhotoId = Long.parseLong(photos.get(currentIndex).getColumnData("id"));
                 loadInfoPanel(currentPhotoId);
             } catch (NumberFormatException ignored) {}
         }
+        initialLoad = false;
     }
 
     // ── Build the full layout ─────────────────────────────────────────────────
@@ -550,8 +553,8 @@ public class PhotoLightboxView extends VerticalLayout
             rateButton.setCount(photoRatingService.getRatingCount((int) photoId));
         }
 
-        // Auto-select Rate tab if the logged-in user has already rated this photo
-        if (panelTabs != null && photoRatingService != null) {
+        // On navigation (not direct URL load): auto-select Rate tab if user already rated this photo
+        if (!initialLoad && panelTabs != null && photoRatingService != null) {
             String authUserId = genericView.checkIfAuthMemberId();
             if (authUserId != null) {
                 try {
