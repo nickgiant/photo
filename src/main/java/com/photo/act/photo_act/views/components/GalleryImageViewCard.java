@@ -35,6 +35,7 @@ import com.vaadin.flow.component.popover.PopoverPosition;
 import com.vaadin.flow.component.popover.PopoverVariant;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.textfield.TextArea;
+import com.vaadin.flow.router.QueryParameters;
 import com.vaadin.flow.router.RouteParam;
 import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.router.RouterLink;
@@ -56,6 +57,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static com.photo.act.photo_act.views.HomeView.subPathLarge;
@@ -989,7 +991,8 @@ public class GalleryImageViewCard extends Div {
                         PhotoViewService.TYPE_FULL, cardSessionId, cardSessionDateTime);
             } catch (NumberFormatException ignored) {}
         }
-        getUI().ifPresent(ui -> ui.navigate("photo/" + strPhotoId + "?tab=rate"));
+        getUI().ifPresent(ui -> ui.navigate("photo/" + strPhotoId,
+                QueryParameters.simple(Map.of("tab", "rate"))));
     }
 
     private void showDialogWithCarousel(int isType, String strSelection, String strPhotoId, String strAlbumUsername, boolean isOnlyRating) {

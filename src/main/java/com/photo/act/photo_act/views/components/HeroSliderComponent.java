@@ -25,6 +25,7 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
+import com.vaadin.flow.router.QueryParameters;
 import com.vaadin.flow.router.RouteParam;
 import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.server.VaadinSession;
@@ -39,6 +40,7 @@ import java.nio.file.FileSystems;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Reusable hero photo slider component.
@@ -422,7 +424,8 @@ public class HeroSliderComponent extends Div {
             photoViewService.recordView(photoId, nameNew, uid, publicIp,
                     PhotoViewService.TYPE_FULL, sessionId, sessionDateTime);
         }
-        getUI().ifPresent(ui -> ui.navigate("photo/" + photoId + "?tab=rate"));
+        getUI().ifPresent(ui -> ui.navigate("photo/" + photoId,
+                QueryParameters.simple(Map.of("tab", "rate"))));
     }
 
     // ══════════════════════════════════════════════════════════════════════
