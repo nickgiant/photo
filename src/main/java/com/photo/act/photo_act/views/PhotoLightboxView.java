@@ -549,6 +549,22 @@ public class PhotoLightboxView extends VerticalLayout
         if (rateButton != null && photoRatingService != null) {
             rateButton.setCount(photoRatingService.getRatingCount((int) photoId));
         }
+
+        // Auto-select Rate tab if the logged-in user has already rated this photo
+        if (panelTabs != null && photoRatingService != null) {
+            String authUserId = genericView.checkIfAuthMemberId();
+            if (authUserId != null) {
+                try {
+                    int existingRating = photoRatingService.getUserRating(
+                            (int) photoId, Integer.parseInt(authUserId));
+                    if (existingRating > 0) {
+                        panelTabs.setSelectedTab(tabRate);
+                        metaContent.setVisible(false);
+                        ratingContent.setVisible(true);
+                    }
+                } catch (NumberFormatException ignored) {}
+            }
+        }
     }
 
     private VerticalLayout fetchPhotographer(String strUsername, String strName, String strSurname, String strAvatarPath,
