@@ -78,6 +78,50 @@
 
 .plv-tag-chip { cursor: pointer; }
 
+/* ── Info-panel tabs ────────────────────────────────────────────────────── */
+
+.plv-panel-tabs {
+    border-bottom: 1px solid var(--lumo-contrast-10pct);
+    padding: 0;
+    flex-shrink: 0;
+}
+
+/* ── Action row (like + rate buttons) ───────────────────────────────────── */
+
+.plv-action-row {
+    display: flex;
+    gap: 8px;
+    padding: 4px 0;
+}
+
+/* ── Rating panel ───────────────────────────────────────────────────────── */
+
+.plv-rating-content {
+    gap: 8px !important;
+}
+
+.plv-rate-star-icon {
+    color: var(--lumo-warning-color, #f5a623);
+    width: 1.2em;
+    height: 1.2em;
+    flex-shrink: 0;
+}
+
+.plv-rating-option {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 2px 0;
+}
+
+.plv-login-to-rate {
+    display: block;
+    background: var(--lumo-contrast-5pct);
+    border-radius: var(--lumo-border-radius-m);
+    padding: 8px 12px;
+    font-style: italic;
+}
+
 /* Prev / next overlay nav buttons */
 .plv-nav-btn {
     position: absolute;
