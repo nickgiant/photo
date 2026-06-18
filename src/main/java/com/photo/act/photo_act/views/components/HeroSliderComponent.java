@@ -395,7 +395,7 @@ public class HeroSliderComponent extends Div {
         }, "btn-bar-share");
 
         bar.addButton("Rate it!", rateBtn,
-                () -> showPhotoPage(photoId, nameNew),
+                () -> showPhotoPageOnRateTab(photoId, nameNew),
                 "btn-bar-rate");
 
         bar.addButton("View Larger", VaadinIcon.VIEWPORT.create(),
@@ -414,6 +414,15 @@ public class HeroSliderComponent extends Div {
                     PhotoViewService.TYPE_FULL, sessionId, sessionDateTime);
         }
         getUI().ifPresent(ui -> ui.navigate("photo/" + photoId));
+    }
+
+    private void showPhotoPageOnRateTab(int photoId, String nameNew) {
+        if (photoId > 0) {
+            Integer uid = userId > 0 ? userId : null;
+            photoViewService.recordView(photoId, nameNew, uid, publicIp,
+                    PhotoViewService.TYPE_FULL, sessionId, sessionDateTime);
+        }
+        getUI().ifPresent(ui -> ui.navigate("photo/" + photoId + "?tab=rate"));
     }
 
     // ══════════════════════════════════════════════════════════════════════

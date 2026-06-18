@@ -230,6 +230,10 @@ public class PhotoLightboxView extends VerticalLayout
         currentSlug = event.getRouteParameters().get("slug").orElse("");
         strPhotoId = event.getRouteParameters().get("photo-id").orElse("");
 
+        // Detect ?tab=rate — set when arriving from a Rate It button on a card or hero
+        boolean openOnRateTab = event.getLocation().getQueryParameters()
+                .getParameters().getOrDefault("tab", List.of()).contains("rate");
+
         String[] arrNames = null;
         String sqlRead = "";
 
@@ -308,6 +312,14 @@ public class PhotoLightboxView extends VerticalLayout
                 loadInfoPanel(currentPhotoId);
             } catch (NumberFormatException ignored) {}
         }
+
+        // If opened via "Rate it!" from a card or hero, switch to Rate tab immediately
+        if (openOnRateTab && panelTabs != null) {
+            panelTabs.setSelectedTab(tabRate);
+            metaContent.setVisible(false);
+            ratingContent.setVisible(true);
+        }
+
         initialLoad = false;
     }
 
