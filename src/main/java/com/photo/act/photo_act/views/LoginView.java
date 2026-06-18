@@ -107,7 +107,7 @@ public class LoginView extends VerticalLayout implements BeforeEnterObserver, Ha
 
         Div divMainImage = new Div();
         Image mainImage = new Image();
-        String strMainImagePath = DIR_PHOTOS_SERVER + dirChar + "photographerM.jpg";
+        String strMainImagePath = DIR_PHOTOS_SERVER + dirChar + "photographer.png";
 
         Path path = Paths.get(strMainImagePath);
         File file = path.toFile();

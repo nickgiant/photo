@@ -1296,8 +1296,7 @@ public class GenericView {
 
         Button btnRate = new Button("Submit Rating");
         btnRate.addClassName("btn-rate");
-        btnRate.addThemeVariants(com.vaadin.flow.component.button.ButtonVariant.LUMO_PRIMARY,
-                com.vaadin.flow.component.button.ButtonVariant.LUMO_SMALL);
+        btnRate.addThemeVariants(com.vaadin.flow.component.button.ButtonVariant.LUMO_PRIMARY);
         btnRate.addClickListener(event -> {
             String[] selected = radioButtonGroup.getValue();
             if (selected == null) {

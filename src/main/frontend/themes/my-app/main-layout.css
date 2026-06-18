@@ -1166,6 +1166,7 @@ nav ul:hover li:hover ~ li:before {
 }
 
 .rating-options vaadin-radio-button:hover {
+    cursor: pointer;
     background-color: var(--lumo-contrast-5pct);
 }
 
@@ -1183,14 +1184,13 @@ nav ul:hover li:hover ~ li:before {
 .btn-rate{
     text-decoration: none;
     font-size: 11pt;
-    letter-spacing: 2px;
     text-align: center;
 /*    font-family: Times-New-Roman, serif;*/
     font-weight: 500;
     color: #006d77; /* #6c9494;*/
     background-color: #ABE4DD;/* #B5F0EA; /* #A7E2DC;*/
     margin: 2px;
-    padding: 15px;
+    padding: 10px;
     padding-left: 22px;
     padding-right: 22px;
     border: #9DD8D2 2px solid;

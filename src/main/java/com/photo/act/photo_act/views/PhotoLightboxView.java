@@ -22,7 +22,6 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.VaadinService;
@@ -46,6 +45,15 @@ import static com.photo.act.photo_act.views.AlbumsView.subPathThumbs;
 import static com.photo.act.photo_act.views.HomeView.subPathLarge;
 import static com.photo.act.photo_act.views.MainLayout.PROP_PHOTOS;
 import static com.photo.act.photo_act.views.MainLayout.SUB_PATH_AVATARS_THUMBS;
+import com.photo.act.photo_act.services.PhotoRatingService;
+import com.photo.act.photo_act.views.components.RateButton;
+import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
+import com.vaadin.flow.component.radiobutton.RadioGroupVariant;
+import com.vaadin.flow.component.tabs.Tab;
+import com.vaadin.flow.component.tabs.Tabs;
+import com.vaadin.flow.component.tabs.TabsVariant;
+import com.vaadin.flow.data.renderer.ComponentRenderer;
+import java.time.LocalDateTime;
 
 /**
  * Full-screen photo viewer.
@@ -79,6 +87,7 @@ public class PhotoLightboxView extends VerticalLayout
 
     // ── Dependencies ──────────────────────────────────────────────────────────
     private final PhotoViewService  photoViewService;
+    private final PhotoRatingService photoRatingService;
 
     // ── Components ────────────────────────────────────────────────────────────
     private PhotoFrameComponent photoFrame;
@@ -94,9 +103,18 @@ public class PhotoLightboxView extends VerticalLayout
     private final Div   exifGrid     = new Div();
     private final Div   tagsRow      = new Div();
     private LikeButton  likeButton;
+    private RateButton  rateButton;
     private final Button downloadBtn = new Button("Download");
     private final Button shareBtn    = new Button("Share");
     private final Div   commentsDiv  = new Div();
+
+    // Right-panel tab components
+    private VerticalLayout metaContent;
+    private VerticalLayout ratingContent;
+    private Tab            tabMeta;
+    private Tab            tabRate;
+    private Tabs           panelTabs;
+    private boolean        initialLoad = true;
 
     // State
     private List<Record> photos   = new ArrayList<>();
@@ -192,9 +210,11 @@ public class PhotoLightboxView extends VerticalLayout
     // ── View setup ────────────────────────────────────────────────────────────
 
     public PhotoLightboxView(RecordService recordService,
-                             PhotoViewService photoViewService) {
-        this.recordService    = recordService;
-        this.photoViewService = photoViewService;
+                             PhotoViewService photoViewService,
+                             PhotoRatingService photoRatingService) {
+        this.recordService      = recordService;
+        this.photoViewService   = photoViewService;
+        this.photoRatingService = photoRatingService;
 
         setSizeFull();
         setPadding(true);
@@ -209,6 +229,10 @@ public class PhotoLightboxView extends VerticalLayout
     public void beforeEnter(BeforeEnterEvent event) {
         currentSlug = event.getRouteParameters().get("slug").orElse("");
         strPhotoId = event.getRouteParameters().get("photo-id").orElse("");
+
+        // Detect ?tab=rate — set when arriving from a Rate It button on a card or hero
+        boolean openOnRateTab = event.getLocation().getQueryParameters()
+                .getParameters().getOrDefault("tab", List.of()).contains("rate");
 
         String[] arrNames = null;
         String sqlRead = "";
@@ -281,12 +305,22 @@ public class PhotoLightboxView extends VerticalLayout
         updatePhotoImage(0);
         thumbnailStrip.setActiveIndex(currentIndex);
 
+        initialLoad = true;
         if (!photos.isEmpty()) {
             try {
                 currentPhotoId = Long.parseLong(photos.get(currentIndex).getColumnData("id"));
                 loadInfoPanel(currentPhotoId);
             } catch (NumberFormatException ignored) {}
         }
+
+        // If opened via "Rate it!" from a card or hero, switch to Rate tab immediately
+        if (openOnRateTab && panelTabs != null) {
+            panelTabs.setSelectedTab(tabRate);
+            metaContent.setVisible(false);
+            ratingContent.setVisible(true);
+        }
+
+        initialLoad = false;
     }
 
     // ── Build the full layout ─────────────────────────────────────────────────
@@ -370,7 +404,7 @@ public class PhotoLightboxView extends VerticalLayout
             }
             log.warn("Photo file not found: {}", strPathLargePhotos + dirChar + nameNew);
         }
-        photoFrame.setFallback("/static/photographerM.jpg");
+        photoFrame.setFallback("/static/photographer.jpg");
     }
 
     private static int parseIntSafe(String s) {
@@ -420,17 +454,13 @@ public class PhotoLightboxView extends VerticalLayout
 
     private VerticalLayout buildInfoPanel() {
         // Like button
-        likeButton = new LikeButton(0); // count is refreshed in loadInfoPanel()
+        likeButton = new LikeButton(0);
         likeButton.setTitle("Like this photo");
         likeButton.addLikeClickListener(e -> handleLike());
 
-        downloadBtn.addThemeVariants(ButtonVariant.LUMO_SUCCESS, ButtonVariant.LUMO_SMALL);
-        downloadBtn.setWidthFull();
-        downloadBtn.addClickListener(e -> handleDownload());
-
-        shareBtn.addThemeVariants(ButtonVariant.LUMO_SMALL);
-        shareBtn.setWidthFull();
-        shareBtn.addClickListener(e -> handleShare());
+        // Rate button — clicking it switches the panel to the Rate tab
+        rateButton = new RateButton(0);
+        rateButton.setTitle("Rate this photo");
 
         photoTitle.addClassName("plv-photo-title");
         authorSpan.addClassName("plv-author");
@@ -438,37 +468,52 @@ public class PhotoLightboxView extends VerticalLayout
         tagsRow.addClassName("plv-tags-row");
         commentsDiv.setWidthFull();
 
-        Select<String> effectSelect = new Select<>();
-        effectSelect.setLabel("Transition effect");
-        effectSelect.setItems("fade", "zoom", "slide", "none");
-        effectSelect.setValue("fade");
-        effectSelect.setWidthFull();
-        effectSelect.addValueChangeListener(e -> {
-            if (photoFrame != null) photoFrame.setEffect(e.getValue());
+
+
+        // ── Tabs (below the photographer card) ────────────────────────────────
+        tabMeta = new Tab(FontAwesome.Solid.INFO.create(), new Span("Info"));
+        tabRate = new Tab(FontAwesome.Solid.STAR.create(), new Span("Rate It"));
+        panelTabs = new Tabs(tabMeta, tabRate);
+        panelTabs.addClassName("plv-panel-tabs");
+
+        // ── Info tab content: only EXIF + tags (title/author always visible above) ─
+        metaContent = new VerticalLayout(exifGrid, tagsRow);
+        metaContent.setPadding(false);
+        metaContent.setSpacing(false);
+        metaContent.addClassName("plv-meta-content");
+        metaContent.setWidthFull();
+
+        // ── Rating content pane (populated per photo in loadInfoPanel) ─────────
+        ratingContent = new VerticalLayout();
+        ratingContent.setPadding(false);
+        ratingContent.setSpacing(false);
+        ratingContent.addClassName("plv-rating-content");
+        ratingContent.setWidthFull();
+        ratingContent.setVisible(false);
+
+        // Tab switch — show/hide content panes
+        panelTabs.addSelectedChangeListener(e -> {
+            boolean showRate = panelTabs.getSelectedTab() == tabRate;
+            metaContent.setVisible(!showRate);
+            ratingContent.setVisible(showRate);
         });
 
+        // Rate button click → switch to Rate tab
+        rateButton.addRateClickListener(e -> panelTabs.setSelectedTab(tabRate));
+
+        // Panel: title + author card always on top, then tabs, then tab content
         VerticalLayout panel = new VerticalLayout(
-                photoTitle,
-//                new Hr(),
-                authorSpan,
-//                new Hr(),
-//                likeButton, downloadBtn, shareBtn,
-//                new Hr(),
-//                effectSelect,
-//                new Hr(),
-                /*new H4("Camera Info"),*/ exifGrid,
-                /*new H4("Tags"),*/ tagsRow
-//                new Hr(),
-//                new H4("Comments"), commentsDiv
-        );
+                photoTitle, authorSpan,
+                panelTabs,
+                metaContent, ratingContent);
         panel.setWidthFull();
         panel.setPadding(true);
         panel.setSpacing(false);
         panel.addClassName("plv-info-panel-inner");
 
-        if(isMobile){
+        if (isMobile) {
             panel.setVisible(false);
-        }else{
+        } else {
             panel.setVisible(true);
         }
 
@@ -479,43 +524,61 @@ public class PhotoLightboxView extends VerticalLayout
 
     private void loadInfoPanel(long photoId) {
 
-            Record photo = photos.stream()
-                    .filter(p -> String.valueOf(photoId).equals(p.getColumnData("id")))
-                    .findFirst()
-                    .orElse(photos.isEmpty() ? null : photos.get(currentIndex));
+        Record photo = photos.stream()
+                .filter(p -> String.valueOf(photoId).equals(p.getColumnData("id")))
+                .findFirst()
+                .orElse(photos.isEmpty() ? null : photos.get(currentIndex));
 
-            if (photo != null) {
-                String title = photo.getColumnData("title");
-                photoTitle.setText(title != null ? title : "");
+        String photoNameNew = "";
+        if (photo != null) {
+            String title = photo.getColumnData("title");
+            photoTitle.setText(title != null ? title : "");
 
-//            String name = (safe(photo.getColumnData("name")) + " " + safe(photo.getColumnData("surname"))).trim();
-//            String username = safe(photo.getColumnData("username"));
-//            authorSpan.setText(name.isEmpty() ? username : name + (username.isEmpty() ? "" : " · @" + username));
+            String strUsername = photo.getColumnData("username");
+            String strName     = photo.getColumnData("name");
+            String strSurname  = photo.getColumnData("surname");
+            String strAvatarPath   = photo.getColumnData("avatar_path");
+            String strCountPhotos  = photo.getColumnData("count_photos");
+            String strCountStories = photo.getColumnData("count_stories");
 
-                String strCreatorId = photo.getColumnData("uploaderId");
-                String strUsername = photo.getColumnData("username");
-                String strName = photo.getColumnData("name");
-                String strSurname = photo.getColumnData("surname");
-                String strShortBio = photo.getColumnData("short_bio");
-                String strMemberSince = photo.getColumnData("member_since");
-                String strAvatarPath = photo.getColumnData("avatar_path");
-                String strResident = photo.getColumnData("resident");
-                String strResidentCountry = photo.getColumnData("resident_country");
+            photoNameNew = safe(photo.getColumnData("name_new"));
 
-                String strCountPhotos = photo.getColumnData("count_photos");
-                String strCountStories = photo.getColumnData("count_stories");
-
-                authorSpan.removeAll();
-                authorSpan.setWidthFull();
-                authorSpan.add(fetchPhotographer(strUsername, strName, strSurname, strAvatarPath, strCountPhotos, strCountStories, false));
-                populateTags(photo.getColumnData("contains_tags"));
-                populateExif(photo);
-
-
+            authorSpan.removeAll();
+            authorSpan.setWidthFull();
+            authorSpan.add(fetchPhotographer(strUsername, strName, strSurname, strAvatarPath, strCountPhotos, strCountStories, false));
+            populateTags(photo.getColumnData("contains_tags"));
+            populateExif(photo);
         }
 
         if (photoViewService != null && likeButton != null) {
             likeButton.setCount(photoViewService.getLikeCount((int) photoId));
+        }
+
+        // Reset to Info tab and rebuild rating panel for the current photo
+        if (panelTabs != null) {
+            panelTabs.setSelectedTab(tabMeta);
+            metaContent.setVisible(true);
+            ratingContent.setVisible(false);
+        }
+        buildRatingPanel(photoId, photoNameNew);
+        if (rateButton != null && photoRatingService != null) {
+            rateButton.setCount(photoRatingService.getRatingCount((int) photoId));
+        }
+
+        // On navigation (not direct URL load): auto-select Rate tab if user already rated this photo
+        if (!initialLoad && panelTabs != null && photoRatingService != null) {
+            String authUserId = genericView.checkIfAuthMemberId();
+            if (authUserId != null) {
+                try {
+                    int existingRating = photoRatingService.getUserRating(
+                            (int) photoId, Integer.parseInt(authUserId));
+                    if (existingRating > 0) {
+                        panelTabs.setSelectedTab(tabRate);
+                        metaContent.setVisible(false);
+                        ratingContent.setVisible(true);
+                    }
+                } catch (NumberFormatException ignored) {}
+            }
         }
     }
 
@@ -692,6 +755,119 @@ public class PhotoLightboxView extends VerticalLayout
                     getUI().ifPresent(ui -> ui.navigate("search?tag=" + tag)));
             tagsRow.add(chip);
         }
+    }
+
+    // ── Rating panel ──────────────────────────────────────────────────────────
+
+    private void buildRatingPanel(long photoId, String nameNew) {
+        ratingContent.removeAll();
+
+        int photoIdInt = (int) photoId;
+        double avgRating  = photoRatingService != null ? photoRatingService.getAverageRating(photoIdInt)  : 0.0;
+        long   ratingCount = photoRatingService != null ? photoRatingService.getRatingCount(photoIdInt) : 0;
+
+        // ── Average summary row ───────────────────────────────────────────────
+        Icon starIcon = VaadinIcon.STAR_O.create();
+        starIcon.addClassName("plv-rate-star-icon");
+        Span spanAvg = new Span(ratingCount > 0
+                ? String.format("%.1f  (%d ratings)", avgRating, ratingCount)
+                : "No ratings yet");
+        spanAvg.addClassNames(LumoUtility.FontSize.SMALL, LumoUtility.TextColor.SECONDARY);
+        HorizontalLayout layoutSummary = new HorizontalLayout(starIcon, spanAvg);
+        layoutSummary.addClassNames(LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER,
+                LumoUtility.Gap.SMALL, LumoUtility.Padding.XSMALL);
+
+        // ── Auth check — panel is always visible but submit requires login ────
+        String authUserId = genericView.checkIfAuthMemberId();
+        if (authUserId == null) {
+            Span loginMsg = new Span("Please log in to rate this photo.");
+            loginMsg.addClassNames(LumoUtility.FontSize.SMALL, LumoUtility.TextColor.SECONDARY,
+                    LumoUtility.Padding.SMALL);
+            loginMsg.addClassName("plv-login-to-rate");
+            ratingContent.add(layoutSummary, loginMsg);
+            return;
+        }
+
+        // ── Rating options ────────────────────────────────────────────────────
+        String[] str1 = {"1 Snapshot",   "Unplanned capture with minimal intent, weak composition, and technical flaws."};
+        String[] str2 = {"2 Basic",      "Technically acceptable image but lacks clear subject and visual direction."};
+        String[] str3 = {"3 Competent",  "Clear subject, balanced exposure, showing emerging compositional awareness and control."};
+        String[] str4 = {"4 Polished",   "Intentional composition, effective lighting, strong clarity, and cohesive visual storytelling."};
+        String[] str5 = {"5 Compelling", "Powerful imagery with distinct vision, emotional impact, and confident artistic execution."};
+        String[][] allRatings = {str5, str4, str3, str2, str1};
+
+        RadioButtonGroup<String[]> radioGroup = new RadioButtonGroup<>();
+        radioGroup.setWidthFull();
+        radioGroup.setRenderer(new ComponentRenderer<>(strings -> {
+            Span title = new Span(strings[0]);
+            title.addClassNames(LumoUtility.FontWeight.BOLD, LumoUtility.FontSize.SMALL);
+            Span desc = new Span(strings[1]);
+            desc.addClassNames(LumoUtility.FontSize.XSMALL, LumoUtility.TextColor.SECONDARY);
+            Div col = new Div(title, desc);
+            col.addClassName("plv-rating-option");
+            return col;
+        }));
+        radioGroup.addThemeVariants(RadioGroupVariant.LUMO_VERTICAL);
+        radioGroup.setItems(str5, str4, str3, str2, str1);
+
+        // Pre-select the user's existing rating if any
+        if (photoRatingService != null) {
+            try {
+                int userIdInt = Integer.parseInt(authUserId);
+                int existing  = photoRatingService.getUserRating(photoIdInt, userIdInt);
+                if (existing > 0 && existing <= allRatings.length) {
+                    radioGroup.setValue(allRatings[allRatings.length - existing]);
+                }
+            } catch (NumberFormatException ignored) {}
+        }
+
+        Span spanStatus = new Span();
+        spanStatus.addClassNames(LumoUtility.FontSize.SMALL);
+        spanStatus.setVisible(false);
+
+        final int    finalPhotoId    = photoIdInt;
+        final String finalAuthUserId = authUserId;
+        final String finalIp         = (publicIp != null && !publicIp.isBlank()) ? publicIp : "unknown";
+        final String finalNameNew    = (nameNew != null) ? nameNew : "";
+
+        Button btnRate = new Button("Submit Rating");
+        btnRate.addClassName("btn-rate");
+        btnRate.addThemeVariants(com.vaadin.flow.component.button.ButtonVariant.LUMO_PRIMARY);
+        btnRate.setWidthFull();
+        btnRate.addClickListener(event -> {
+            String[] selected = radioGroup.getValue();
+            if (selected == null) {
+                spanStatus.setText("Please select a rating first.");
+                spanStatus.getStyle().set("color", "var(--lumo-error-color)");
+                spanStatus.setVisible(true);
+                return;
+            }
+            int ratingValue = Character.getNumericValue(selected[0].charAt(0));
+            if (photoRatingService != null) {
+                try {
+                    int userIdInt = Integer.parseInt(finalAuthUserId);
+                    String sid         = VaadinSession.getCurrent().getSession().getId();
+                    long   sessionMs   = VaadinSession.getCurrent().getSession().getCreationTime();
+                    LocalDateTime sessionDt = utilsDate.calcDateTimeFromLongInLDT(sessionMs, "UTC");
+                    photoRatingService.saveOrUpdateRating(finalPhotoId, userIdInt, ratingValue,
+                            finalNameNew, finalIp, sid, sessionDt);
+                    double newAvg   = photoRatingService.getAverageRating(finalPhotoId);
+                    long   newCount = photoRatingService.getRatingCount(finalPhotoId);
+                    spanAvg.setText(String.format("%.1f  (%d ratings)", newAvg, newCount));
+                    rateButton.setCount(newCount);
+                    spanStatus.setText("Rating saved!");
+                    spanStatus.getStyle().set("color", "var(--lumo-success-color)");
+                    spanStatus.setVisible(true);
+                } catch (Exception ex) {
+                    logger.error("Error saving rating: {}", ex.getMessage());
+                    spanStatus.setText("Could not save rating. Please try again.");
+                    spanStatus.getStyle().set("color", "var(--lumo-error-color)");
+                    spanStatus.setVisible(true);
+                }
+            }
+        });
+
+        ratingContent.add(layoutSummary, radioGroup, btnRate, spanStatus);
     }
 
     // ── Actions ───────────────────────────────────────────────────────────────

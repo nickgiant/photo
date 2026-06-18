@@ -35,6 +35,7 @@ import com.vaadin.flow.component.popover.PopoverPosition;
 import com.vaadin.flow.component.popover.PopoverVariant;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.textfield.TextArea;
+import com.vaadin.flow.router.QueryParameters;
 import com.vaadin.flow.router.RouteParam;
 import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.router.RouterLink;
@@ -56,6 +57,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static com.photo.act.photo_act.views.HomeView.subPathLarge;
@@ -890,19 +892,8 @@ public class GalleryImageViewCard extends Div {
                 }
                 ,"btn-bar-share");
         shareBottomBar.addButton("Rate it!",rateButton,
-                ()-> {
-                    if (photoViewService != null) {
-                        Integer rateUserId = null;
-                        if (strAvailableAlbumsMemberId != null && !strAvailableAlbumsMemberId.isBlank()) {
-                            try {
-                                rateUserId = Integer.parseInt(strAvailableAlbumsMemberId);
-                            } catch (NumberFormatException ignored) {
-                            }
-                        }
-                        showFullPhoto(strPhotoId);
-                    }
-                }
-                ,"btn-bar-rate");
+                () -> showFullPhotoOnRateTab(strPhotoId),
+                "btn-bar-rate");
         shareBottomBar.addButton("View Larger",
                 VaadinIcon.VIEWPORT.create(),
                 () -> showFullPhoto(strPhotoId),
@@ -985,6 +976,23 @@ public class GalleryImageViewCard extends Div {
             } catch (NumberFormatException ignored) {}
         }
         getUI().ifPresent(ui -> ui.navigate("photo/" + strPhotoId));
+    }
+
+    private void showFullPhotoOnRateTab(String strPhotoId) {
+        if (photoViewService != null && strPhotoId != null) {
+            try {
+                int photoIdInt = Integer.parseInt(strPhotoId);
+                Integer viewUserId = null;
+                if (strAvailableAlbumsMemberId != null && !strAvailableAlbumsMemberId.isBlank()) {
+                    try { viewUserId = Integer.parseInt(strAvailableAlbumsMemberId); } catch (NumberFormatException ignored) {}
+                }
+                String nameNew = (record != null) ? record.getColumnData("name_new") : "";
+                photoViewService.recordView(photoIdInt, nameNew, viewUserId, cardPublicIp,
+                        PhotoViewService.TYPE_FULL, cardSessionId, cardSessionDateTime);
+            } catch (NumberFormatException ignored) {}
+        }
+        getUI().ifPresent(ui -> ui.navigate("photo/" + strPhotoId,
+                QueryParameters.simple(Map.of("tab", "rate"))));
     }
 
     private void showDialogWithCarousel(int isType, String strSelection, String strPhotoId, String strAlbumUsername, boolean isOnlyRating) {
