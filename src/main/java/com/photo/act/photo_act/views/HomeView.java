@@ -267,10 +267,10 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         Div divMainImage = new Div();
         divMainImage.setWidthFull();
         divMainImage.setHeight("auto");
-        divMainImage.setMaxWidth("47rem");
-        divMainImage.setMaxHeight("24rem");
+        divMainImage.setMaxWidth("44rem");
+        divMainImage.setMaxHeight("30rem");
         Image mainImage = new Image();
-        String strMainImagePath = DIR_PHOTOS_SERVER + dirChar + "photographerM.jpg";
+        String strMainImagePath = DIR_PHOTOS_SERVER + dirChar + "photographer.png";
 
 
         Path path = Paths.get(strMainImagePath);

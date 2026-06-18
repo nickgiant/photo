@@ -389,7 +389,7 @@ public class PhotoLightboxView extends VerticalLayout
             }
             log.warn("Photo file not found: {}", strPathLargePhotos + dirChar + nameNew);
         }
-        photoFrame.setFallback("/static/photographerM.jpg");
+        photoFrame.setFallback("/static/photographer.jpg");
     }
 
     private static int parseIntSafe(String s) {
@@ -453,19 +453,13 @@ public class PhotoLightboxView extends VerticalLayout
         tagsRow.addClassName("plv-tags-row");
         commentsDiv.setWidthFull();
 
-        // ── Always-visible header: title + photographer card + action buttons ──
-        HorizontalLayout actionRow = new HorizontalLayout(likeButton, rateButton);
-        actionRow.addClassName("plv-action-row");
-        actionRow.setPadding(false);
-        actionRow.setSpacing(true);
+
 
         // ── Tabs (below the photographer card) ────────────────────────────────
-        tabMeta = new Tab("Info");
-        tabRate = new Tab(VaadinIcon.STAR_O.create(), new Span("Rate It"));
+        tabMeta = new Tab(FontAwesome.Solid.INFO.create(), new Span("Info"));
+        tabRate = new Tab(FontAwesome.Solid.STAR.create(), new Span("Rate It"));
         panelTabs = new Tabs(tabMeta, tabRate);
-        panelTabs.setWidthFull();
         panelTabs.addClassName("plv-panel-tabs");
-        panelTabs.addThemeVariants(TabsVariant.LUMO_SMALL, TabsVariant.LUMO_EQUAL_WIDTH_TABS);
 
         // ── Info tab content: only EXIF + tags (title/author always visible above) ─
         metaContent = new VerticalLayout(exifGrid, tagsRow);
@@ -494,7 +488,7 @@ public class PhotoLightboxView extends VerticalLayout
 
         // Panel: title + author card always on top, then tabs, then tab content
         VerticalLayout panel = new VerticalLayout(
-                photoTitle, authorSpan, actionRow,
+                photoTitle, authorSpan,
                 panelTabs,
                 metaContent, ratingContent);
         panel.setWidthFull();

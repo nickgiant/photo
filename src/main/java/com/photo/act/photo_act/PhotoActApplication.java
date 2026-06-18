@@ -36,7 +36,7 @@ public class PhotoActApplication implements AppShellConfigurator {
 //        settings.addFavIcon("icon", "/static/favicon.ico", "32x32");
 
         // Default OG image — shown when no specific content meta is set
-        settings.addMetaTag("og:image", "https://www.photoact.net/static/photographerM.jpg");
+        settings.addMetaTag("og:image", "https://www.photoact.net/static/photographer.jpg");
         settings.addMetaTag("og:image:width",  "1200");
         settings.addMetaTag("og:image:height", "630");
 //        settings.setPageTitle("YourSiteName — Discover Amazing Content");

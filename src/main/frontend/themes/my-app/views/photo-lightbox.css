@@ -78,14 +78,7 @@
 
 .plv-tag-chip { cursor: pointer; }
 
-/* ── Action row (like + rate buttons) ───────────────────────────────────── */
 
-.plv-action-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 4px 0 2px;
-}
 
 /* ── Info-panel tabs ────────────────────────────────────────────────────── */
 
@@ -113,11 +106,13 @@
     transition: color 0.18s, background 0.18s, border-color 0.18s;
     padding: 0 8px;
     cursor: pointer;
+    -moz-border-radius-topleft: 6px;
 }
 
 .plv-panel-tabs vaadin-tab:hover {
     background: rgba(0, 0, 0, 0.04);
     color: var(--lumo-body-text-color, #444);
+    cursor: pointer;
 }
 
 /* Selected tab — attribute is set by Vaadin on the host element */
@@ -130,8 +125,8 @@
 
 /* Icon inside the Rate It tab */
 .plv-panel-tabs vaadin-tab vaadin-icon {
-    width: 1em;
-    height: 1em;
+    width: 2.1em;
+    height: 2.1em;
     flex-shrink: 0;
 }
 
