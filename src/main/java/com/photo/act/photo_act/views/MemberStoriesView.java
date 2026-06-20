@@ -3,6 +3,7 @@ package com.photo.act.photo_act.views;
 import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
+import com.photo.act.photo_act.dto.StoryMapPointDto;
 import com.photo.act.photo_act.services.*;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.SlugUtil;
@@ -269,8 +270,9 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
     private Map<String, Object> draggedItem;
 
     private VerticalLayout layoutStoryItems;
+    private StoryMapService storyMapService;
 
-    public MemberStoriesView(PhotoStoryService photoStoryService, RecordService recordService, EmailSendService emailSendService, ShareService shareService, ShareMetricService shareMetricService, WeatherService weatherService, PhotoRatingService photoRatingService, PhotoViewService photoViewService) {
+    public MemberStoriesView(PhotoStoryService photoStoryService, RecordService recordService, EmailSendService emailSendService, ShareService shareService, ShareMetricService shareMetricService, WeatherService weatherService, PhotoRatingService photoRatingService, PhotoViewService photoViewService, StoryMapService storyMapService) {
         this.photoStoryService = photoStoryService;
         this.recordService = recordService;
         this.emailSendService = emailSendService;
@@ -279,6 +281,7 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
         this.weatherService = weatherService;
         this.photoRatingService = photoRatingService;
         this.photoViewService = photoViewService;
+        this.storyMapService = storyMapService;
 
         utilsDate = new UtilsDate();
         genericView = new GenericView(recordService);
@@ -1027,13 +1030,28 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
             }
         });
 
+        Dialog dlgAddMap = loadMapEditorDialog(strMemberId, strStoryId, null);
+        dlgAddMap.addDialogCloseActionListener(close -> {
+            dpStoryItems.refreshAll();
+        });
+
+        Button btnAddMap = new Button("Add Map");
+        btnAddMap.setIcon(VaadinIcon.MAP_MARKER.create());
+        btnAddMap.addClickListener(clickEvent -> {
+            if (dvStoryTitle.getText().isEmpty()) {
+                Notification.show("Create the Photo-Story first!", 3000, Notification.Position.TOP_CENTER);
+            } else {
+                dlgAddMap.open();
+            }
+        });
+
         HorizontalLayout layoutControls = new HorizontalLayout();
         layoutControls.addClassNames(
                 AlignItems.CENTER, JustifyContent.EVENLY,
                 Padding.SMALL, Margin.NONE,
                 Gap.MEDIUM
         );
-        layoutControls.add(btnSelectStory, btnRefresh, btnAddText, btnAddPhoto);
+        layoutControls.add(btnSelectStory, btnRefresh, btnAddText, btnAddPhoto, btnAddMap);
 
 
         layoutItems.add(layoutControls);
@@ -1209,12 +1227,20 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
                     // String strTitle = row.get("inc") == null ? "" : row.get("inc").toString();
 
                     String strItemId = row.get("story_item_id") == null ? "" : row.get("story_item_id").toString();
+                    String strRowItemType = row.get("item_type") == null ? "" : row.get("item_type").toString();
                     Div divId = new Div(strItemId);
 
-                    Dialog dlgItemEditSelection = loadStoryItemEditDialog("Επεξεργασία", false, sqlMemberOfAlbums, arrColumnsMemberAlbums,
-                            sqlReadStoryItems, arrColStoryItems,
-                            dlgPhotoSelection,
-                            strMemberId, strItemId);
+                    boolean isMapItem = strRowItemType.equalsIgnoreCase("Map");
+
+                    Dialog dlgItemEditSelection;
+                    if (isMapItem) {
+                        dlgItemEditSelection = loadMapEditorDialog(strMemberId, strStoryId, strItemId);
+                    } else {
+                        dlgItemEditSelection = loadStoryItemEditDialog("Επεξεργασία", false, sqlMemberOfAlbums, arrColumnsMemberAlbums,
+                                sqlReadStoryItems, arrColStoryItems,
+                                dlgPhotoSelection,
+                                strMemberId, strItemId);
+                    }
 
                     dlgItemEditSelection.addDialogCloseActionListener(close -> {
                         layoutStoryItems.removeAll();
@@ -1236,6 +1262,11 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
                     SvgIcon iconBin = new SvgIcon(DownloadHandler.forClassResource(getClass(), "/icons/delete-bin-line.svg"));
                     btnDelete.setIcon(iconBin);
                     btnDelete.addClickListener(del -> {
+                        if (isMapItem && !strItemId.isEmpty()) {
+                            try {
+                                storyMapService.deleteByStoryItemId(Integer.parseInt(strItemId));
+                            } catch (NumberFormatException ignored) {}
+                        }
                         deleteStoryItem(strStoryId, strItemId, strMemberId);
 
 
@@ -1689,6 +1720,170 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
 
     }
 
+
+    private Dialog loadMapEditorDialog(String strMemberId, String strStoryId, String strStoryItemId) {
+        Dialog dlg = new Dialog();
+        dlg.setWidth("700px");
+        dlg.setMaxHeight("90vh");
+        dlg.setResizable(true);
+        dlg.setDraggable(true);
+
+        boolean isEdit = strStoryItemId != null && !strStoryItemId.isEmpty();
+
+        VerticalLayout layout = new VerticalLayout();
+        layout.setWidthFull();
+        layout.setPadding(true);
+        layout.setSpacing(true);
+
+        Div dlgTitle = new Div(isEdit ? "Edit Map Panel" : "Add Map Panel");
+        dlgTitle.addClassNames(FontWeight.BOLD, FontSize.LARGE);
+
+        TextField txtLocationArea = new TextField("Location Area Name");
+        txtLocationArea.setWidthFull();
+        txtLocationArea.setPlaceholder("e.g. Athens City Centre");
+
+        VerticalLayout pointsLayout = new VerticalLayout();
+        pointsLayout.setWidthFull();
+        pointsLayout.setPadding(false);
+        pointsLayout.setSpacing(true);
+
+        List<HorizontalLayout> pointRows = new ArrayList<>();
+
+        if (isEdit) {
+            String[] mapCols = {"id", "location_area"};
+            String sqlMap = "SELECT id, location_area FROM photo_story_map WHERE story_item_id = " + strStoryItemId;
+            List<Record> lstMap = getRecordsFromDb(sqlMap, mapCols);
+            if (!lstMap.isEmpty()) {
+                String area = lstMap.get(0).getColumnData("location_area");
+                if (area != null && !area.equalsIgnoreCase("null")) {
+                    txtLocationArea.setValue(area);
+                }
+                String mapId = lstMap.get(0).getColumnData("id");
+                String[] ptCols = {"point_name", "lat", "lon", "description"};
+                String sqlPts = "SELECT point_name, lat, lon, description FROM photo_story_map_point WHERE map_id = " + mapId + " ORDER BY point_order ASC";
+                List<Record> lstPts = getRecordsFromDb(sqlPts, ptCols);
+                for (Record pt : lstPts) {
+                    HorizontalLayout row = buildPointRow(
+                            pt.getColumnData("point_name"),
+                            pt.getColumnData("lat"),
+                            pt.getColumnData("lon"),
+                            pt.getColumnData("description"),
+                            pointRows, pointsLayout
+                    );
+                    pointRows.add(row);
+                    pointsLayout.add(row);
+                }
+            }
+        }
+
+        if (pointRows.isEmpty()) {
+            HorizontalLayout row = buildPointRow("", "", "", "", pointRows, pointsLayout);
+            pointRows.add(row);
+            pointsLayout.add(row);
+        }
+
+        Button btnAddPoint = new Button("+ Add Point");
+        btnAddPoint.addClickListener(e -> {
+            HorizontalLayout row = buildPointRow("", "", "", "", pointRows, pointsLayout);
+            pointRows.add(row);
+            pointsLayout.add(row);
+        });
+
+        Button btnSave = new Button("Save");
+        btnSave.setIcon(FontAwesome.Regular.CHECK_SQUARE.create());
+        btnSave.addClickListener(e -> {
+            String locationArea = txtLocationArea.getValue();
+            List<StoryMapPointDto> points = new ArrayList<>();
+            for (HorizontalLayout row : pointRows) {
+                TextField tfName = (TextField) row.getComponentAt(0);
+                TextField tfLat  = (TextField) row.getComponentAt(1);
+                TextField tfLon  = (TextField) row.getComponentAt(2);
+                TextField tfDesc = (TextField) row.getComponentAt(3);
+                if (!tfLat.getValue().isEmpty() && !tfLon.getValue().isEmpty()) {
+                    try {
+                        StoryMapPointDto pt = new StoryMapPointDto();
+                        pt.setPointName(tfName.getValue());
+                        pt.setLat(Double.parseDouble(tfLat.getValue()));
+                        pt.setLon(Double.parseDouble(tfLon.getValue()));
+                        pt.setDescription(tfDesc.getValue());
+                        points.add(pt);
+                    } catch (NumberFormatException ignored) {
+                        Notification.show("Invalid lat/lon in one of the points.", 3000, Notification.Position.TOP_CENTER);
+                        return;
+                    }
+                }
+            }
+            if (points.isEmpty()) {
+                Notification.show("Add at least one location point with valid lat/lon.", 3000, Notification.Position.TOP_CENTER);
+                return;
+            }
+            try {
+                Integer storyItemIdInt;
+                if (isEdit) {
+                    storyItemIdInt = Integer.parseInt(strStoryItemId);
+                } else {
+                    String sqlInsertItem = "INSERT INTO photo_stories_photo (user_id, story_id, item_type, item_title) VALUES (?, ?, 'Map', ?)";
+                    storyItemIdInt = photoStoryService.insertAndGetGeneratedId(sqlInsertItem,
+                            Integer.parseInt(strMemberId), Integer.parseInt(strStoryId), locationArea);
+                    if (storyItemIdInt == null) {
+                        Notification.show("Failed to create story item.", 3000, Notification.Position.TOP_CENTER);
+                        return;
+                    }
+                }
+                var mapEntity = storyMapService.saveMap(storyItemIdInt, Integer.parseInt(strMemberId), Integer.parseInt(strStoryId), locationArea);
+                storyMapService.savePoints(mapEntity.getId(), points);
+                Notification.show("Map panel saved!", 3000, Notification.Position.TOP_CENTER);
+                dlg.close();
+            } catch (NumberFormatException ex) {
+                Notification.show("Invalid member or story ID.", 3000, Notification.Position.TOP_CENTER);
+            }
+        });
+
+        Button btnCancel = new Button("Cancel");
+        btnCancel.addClickListener(e -> dlg.close());
+
+        HorizontalLayout btnRow = new HorizontalLayout(btnSave, btnCancel);
+
+        layout.add(dlgTitle, txtLocationArea, pointsLayout, btnAddPoint, btnRow);
+        dlg.add(layout);
+        return dlg;
+    }
+
+    private HorizontalLayout buildPointRow(String name, String lat, String lon, String desc,
+                                            List<HorizontalLayout> pointRows, VerticalLayout pointsLayout) {
+        TextField tfName = new TextField("Name");
+        tfName.setPlaceholder("e.g. Acropolis");
+        tfName.setValue(name != null && !name.equalsIgnoreCase("null") ? name : "");
+
+        TextField tfLat = new TextField("Lat");
+        tfLat.setPlaceholder("37.9715");
+        tfLat.setValue(lat != null && !lat.equalsIgnoreCase("null") ? lat : "");
+        tfLat.setWidth("110px");
+
+        TextField tfLon = new TextField("Lon");
+        tfLon.setPlaceholder("23.7269");
+        tfLon.setValue(lon != null && !lon.equalsIgnoreCase("null") ? lon : "");
+        tfLon.setWidth("110px");
+
+        TextField tfDesc = new TextField("Description");
+        tfDesc.setPlaceholder("Optional");
+        tfDesc.setValue(desc != null && !desc.equalsIgnoreCase("null") ? desc : "");
+        tfDesc.getStyle().setFlexGrow("1");
+
+        Button btnRemove = new Button("-");
+        btnRemove.getStyle().setAlignSelf("flex-end");
+
+        HorizontalLayout row = new HorizontalLayout(tfName, tfLat, tfLon, tfDesc, btnRemove);
+        row.setAlignItems(com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment.END);
+        row.setWidthFull();
+
+        btnRemove.addClickListener(e -> {
+            pointRows.remove(row);
+            pointsLayout.remove(row);
+        });
+
+        return row;
+    }
 
     private void getUserClientInfo() {
 

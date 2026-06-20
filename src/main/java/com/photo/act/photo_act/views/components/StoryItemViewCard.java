@@ -24,6 +24,13 @@ import com.vaadin.flow.server.streams.DownloadHandler;
 import com.vaadin.flow.theme.lumo.LumoUtility.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.xdev.vaadin.maps.leaflet.MapContainer;
+import software.xdev.vaadin.maps.leaflet.basictypes.LLatLng;
+import software.xdev.vaadin.maps.leaflet.layer.raster.LTileLayer;
+import software.xdev.vaadin.maps.leaflet.layer.ui.LMarker;
+import software.xdev.vaadin.maps.leaflet.map.LMap;
+import software.xdev.vaadin.maps.leaflet.registry.LComponentManagementRegistry;
+import software.xdev.vaadin.maps.leaflet.registry.LDefaultComponentManagementRegistry;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -31,6 +38,7 @@ import java.io.FileNotFoundException;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 
 public class StoryItemViewCard extends Div {
 
@@ -402,6 +410,13 @@ public class StoryItemViewCard extends Div {
         }
 
 
+        if (strItemType.equalsIgnoreCase("Map")) {
+            this.addClassName("map-item");
+            String strStoryItemId = record.getColumnData("story_item_id");
+            buildMapPanel(strStoryItemId);
+            return;
+        }
+
         if (strItemType.contains("Header")) {
             divTextDescription.addClassName("header-item");
         } else if (strItemType.contains("Summary")) {
@@ -440,6 +455,75 @@ public class StoryItemViewCard extends Div {
                 this.add(layoutImage, divPhotoInfo);
             }
 
+    }
+
+    private void buildMapPanel(String strStoryItemId) {
+        if (strStoryItemId == null || strStoryItemId.isEmpty() || strStoryItemId.equalsIgnoreCase("null")) {
+            return;
+        }
+
+        String[] mapCols = {"id", "location_area"};
+        String sqlMap = "SELECT id, location_area FROM photo_story_map WHERE story_item_id = " + strStoryItemId;
+        List<Record> lstMap = recordService.findAll(sqlMap, mapCols);
+        if (lstMap.isEmpty()) return;
+
+        Record mapRecord = lstMap.get(0);
+        String mapId = mapRecord.getColumnData("id");
+        String locationArea = mapRecord.getColumnData("location_area");
+
+        String[] pointCols = {"point_name", "lat", "lon", "description"};
+        String sqlPoints = "SELECT point_name, lat, lon, description FROM photo_story_map_point WHERE map_id = " + mapId + " ORDER BY point_order ASC";
+        List<Record> lstPoints = recordService.findAll(sqlPoints, pointCols);
+        if (lstPoints.isEmpty()) return;
+
+        if (locationArea != null && !locationArea.isEmpty() && !locationArea.equalsIgnoreCase("null")) {
+            H4 areaTitle = new H4(locationArea);
+            areaTitle.addClassName("map-area-title");
+            this.add(areaTitle);
+        }
+
+        final LComponentManagementRegistry reg = new LDefaultComponentManagementRegistry(this);
+        final MapContainer mapContainer = new MapContainer(reg);
+        mapContainer.addClassName("story-map-container");
+        mapContainer.setHeight("400px");
+        mapContainer.setWidthFull();
+
+        final LMap lmap = mapContainer.getlMap();
+        lmap.addLayer(LTileLayer.createDefaultForOpenStreetMapTileServer(reg));
+
+        double firstLat = 0, firstLon = 0;
+        boolean first = true;
+        for (Record pt : lstPoints) {
+            try {
+                double lat = Double.parseDouble(pt.getColumnData("lat"));
+                double lon = Double.parseDouble(pt.getColumnData("lon"));
+                String name = pt.getColumnData("point_name");
+                String desc = pt.getColumnData("description");
+
+                if (first) {
+                    firstLat = lat;
+                    firstLon = lon;
+                    first = false;
+                }
+
+                String popup = (name != null && !name.equalsIgnoreCase("null")) ? name : "";
+                if (desc != null && !desc.isEmpty() && !desc.equalsIgnoreCase("null")) {
+                    popup = popup.isEmpty() ? desc : popup + "<br>" + desc;
+                }
+
+                LMarker marker = new LMarker(reg, new LLatLng(reg, lat, lon));
+                if (!popup.isEmpty()) {
+                    marker.bindPopup(popup);
+                }
+                marker.addTo(lmap);
+            } catch (NumberFormatException ignored) {}
+        }
+
+        if (!first) {
+            lmap.setView(new LLatLng(reg, firstLat, firstLon), lstPoints.size() == 1 ? 13 : 10);
+        }
+
+        this.add(mapContainer);
     }
 
 
