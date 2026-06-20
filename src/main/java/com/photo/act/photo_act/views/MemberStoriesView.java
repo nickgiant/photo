@@ -10,10 +10,14 @@ import com.photo.act.photo_act.utils.SlugUtil;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.photo.act.photo_act.views.components.GalleryImageViewCard;
 import com.photo.act.photo_act.views.components.GenericView;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.HasStyle;
+import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
@@ -44,7 +48,13 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.net.InetAddress;
+import java.net.URI;
+import java.net.URLEncoder;
 import java.net.UnknownHostException;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
 import java.util.*;
 
@@ -1839,9 +1849,10 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
             List<StoryMapPointDto> points = new ArrayList<>();
             for (HorizontalLayout row : pointRows) {
                 TextField tfName = (TextField) row.getComponentAt(0);
-                TextField tfLat  = (TextField) row.getComponentAt(1);
-                TextField tfLon  = (TextField) row.getComponentAt(2);
-                TextField tfDesc = (TextField) row.getComponentAt(3);
+                // index 1 = search button, skip
+                TextField tfLat  = (TextField) row.getComponentAt(2);
+                TextField tfLon  = (TextField) row.getComponentAt(3);
+                TextField tfDesc = (TextField) row.getComponentAt(4);
                 if (!tfLat.getValue().isEmpty() && !tfLon.getValue().isEmpty()) {
                     try {
                         StoryMapPointDto pt = new StoryMapPointDto();
@@ -1919,10 +1930,15 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
         tfDesc.setValue(desc != null && !desc.equalsIgnoreCase("null") ? desc : "");
         tfDesc.getStyle().setFlexGrow("1");
 
+        Button btnSearch = new Button(VaadinIcon.SEARCH.create());
+        btnSearch.getStyle().setAlignSelf("flex-end");
+        btnSearch.getElement().setAttribute("title", "Search location");
+        btnSearch.addClickListener(e -> openLocationSearch(tfName, tfLat, tfLon));
+
         Button btnRemove = new Button("-");
         btnRemove.getStyle().setAlignSelf(Style.AlignSelf.CENTER);
 
-        HorizontalLayout row = new HorizontalLayout(tfName, tfLat, tfLon, tfDesc, btnRemove);
+        HorizontalLayout row = new HorizontalLayout(tfName, btnSearch, tfLat, tfLon, tfDesc, btnRemove);
         row.setAlignItems(com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment.END);
         row.setWidthFull();
 
@@ -1932,6 +1948,113 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
         });
 
         return row;
+    }
+
+    private void openLocationSearch(TextField tfName, TextField tfLat, TextField tfLon) {
+        Dialog dlg = new Dialog();
+        dlg.setWidth("520px");
+        dlg.setMaxHeight("80vh");
+
+        H4 dlgTitle = new H4("Search Location");
+        dlgTitle.getStyle().set("margin", "0 0 var(--lumo-space-s) 0");
+
+        TextField tfQuery = new TextField("Location");
+        tfQuery.setPlaceholder("e.g. Athens, Greece");
+        tfQuery.setWidthFull();
+
+        VerticalLayout resultsLayout = new VerticalLayout();
+        resultsLayout.setPadding(false);
+        resultsLayout.setSpacing(false);
+        resultsLayout.setWidthFull();
+        resultsLayout.getStyle().set("overflow-y", "auto").set("max-height", "340px");
+
+        Paragraph statusMsg = new Paragraph();
+        statusMsg.getStyle().set("color", "var(--lumo-secondary-text-color)").set("font-size", "var(--lumo-font-size-s)").set("margin", "0");
+
+        Button btnSearch = new Button("Search", VaadinIcon.SEARCH.create());
+        btnSearch.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        btnSearch.addClickListener(e -> {
+            String q = tfQuery.getValue().trim();
+            if (q.isEmpty()) return;
+            resultsLayout.removeAll();
+            statusMsg.setText("Searching…");
+            List<String[]> hits = searchNominatim(q);
+            statusMsg.setText("");
+            if (hits.isEmpty()) {
+                statusMsg.setText("No results found.");
+            } else {
+                for (String[] hit : hits) {
+                    String displayName = hit[0];
+                    String lat = hit[1];
+                    String lon = hit[2];
+                    Button btnResult = new Button(displayName);
+                    btnResult.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+                    btnResult.setWidthFull();
+                    btnResult.getStyle()
+                            .set("text-align", "left")
+                            .set("white-space", "normal")
+                            .set("height", "auto")
+                            .set("min-height", "2.5em")
+                            .set("padding", "var(--lumo-space-xs) var(--lumo-space-s)");
+                    btnResult.addClickListener(ce -> {
+                        tfLat.setValue(lat);
+                        tfLon.setValue(lon);
+                        if (tfName.getValue().isBlank()) {
+                            String shortName = displayName.contains(",")
+                                    ? displayName.substring(0, displayName.indexOf(",")).trim()
+                                    : displayName;
+                            tfName.setValue(shortName);
+                        }
+                        dlg.close();
+                    });
+                    resultsLayout.add(btnResult);
+                }
+            }
+        });
+
+        tfQuery.addKeyPressListener(Key.ENTER, e -> btnSearch.click());
+
+        HorizontalLayout searchRow = new HorizontalLayout(tfQuery, btnSearch);
+        searchRow.setWidthFull();
+        searchRow.setAlignItems(com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment.END);
+        searchRow.setFlexGrow(1, tfQuery);
+
+        VerticalLayout content = new VerticalLayout(dlgTitle, searchRow, statusMsg, resultsLayout);
+        content.setPadding(true);
+        content.setSpacing(false);
+        content.setWidthFull();
+        content.getStyle().set("gap", "var(--lumo-space-s)");
+        dlg.add(content);
+        dlg.open();
+        tfQuery.focus();
+    }
+
+    private List<String[]> searchNominatim(String query) {
+        List<String[]> results = new ArrayList<>();
+        try {
+            String encoded = URLEncoder.encode(query, StandardCharsets.UTF_8);
+            HttpClient client = HttpClient.newHttpClient();
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("https://nominatim.openstreetmap.org/search?q=" + encoded + "&format=json&limit=5&addressdetails=0"))
+                    .header("User-Agent", "PhotoActApp/1.0 (nickgiant@yahoo.com)")
+                    .header("Accept-Language", "en")
+                    .GET()
+                    .build();
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode arr = mapper.readTree(response.body());
+            for (JsonNode node : arr) {
+                String displayName = node.path("display_name").asText("");
+                String lat = node.path("lat").asText("");
+                String lon = node.path("lon").asText("");
+                if (!lat.isEmpty() && !lon.isEmpty()) {
+                    results.add(new String[]{displayName, lat, lon});
+                }
+            }
+        } catch (Exception ex) {
+            logger.error("Nominatim search failed for query '{}': {}", query, ex.getMessage());
+        }
+        return results;
     }
 
     private void getUserClientInfo() {
