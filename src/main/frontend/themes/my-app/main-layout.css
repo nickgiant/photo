@@ -655,7 +655,7 @@
     width: 100%;
     padding: 4px;
     border-radius: 10px;
-    background-color: #f4eae7;
+    background-color: #e9e9e7;
     /* border: 2px solid  #ecdcd7;*/
     gap: 20px;
     font-size: 9pt;
@@ -1289,10 +1289,13 @@ nav ul:hover li:hover ~ li:before {
 }
 
 footer {
-    background-color: #514c3f;
-    color: #fff;
+    background-color: #b0b0b0;
+    color:  #777777;
     text-align: center;
     padding: 30px 0 20px;
+    div{
+       background-color:  #bd0852;
+    }
 }
 
 footer h1 {
@@ -1304,7 +1307,8 @@ footer h1 {
     letter-spacing: 2px;
     line-height: 0.8;
     padding: 32px 0 20px;
-    font-family:  "Lucida Console", "Lucida Sans Typewriter", Courier;
+    font-family:  "Lucida Console", "Lucida Sans Typewriter", sans-serif;
+    text-shadow: 1px 2px 6px var(--shadow-strong);
 }
 
 footer span {
@@ -1380,4 +1384,45 @@ vaadin-app-layout[drawer].minimized vaadin-side-nav-item vaadin-icon {
 
 vaadin-side-nav-item[expanded] > vaadin-side-nav {
     animation: slideDown 0.16s ease-out;
+}
+
+
+/* ============================================
+   MEMBER STORIES DIALOG STYLES
+   ============================================ */
+
+:root {
+    --ms-btn-color: #51459f;
+    --ms-btn-hover-bg: #efebfa;
+    --ms-btn-transition: ease-out 0.45s;
+    --ms-dialog-radius: 16px;
+    --ms-dialog-border: rgba(81, 69, 159, 0.12);
+    --ms-dialog-shadow: 0 8px 32px rgba(81, 69, 159, 0.15), 0 2px 8px rgba(0, 0, 0, 0.10);
+}
+
+vaadin-dialog-overlay::part(overlay) {
+    border-radius: var(--ms-dialog-radius);
+    box-shadow: var(--ms-dialog-shadow);
+    border: 1px solid var(--ms-dialog-border);
+}
+
+vaadin-dialog-overlay vaadin-button {
+    border-radius: 8px;
+    color: var(--ms-btn-color);
+    font-weight: 600;
+    transition: var(--ms-btn-transition);
+    box-shadow: inset 0 0 0 0 var(--ms-btn-hover-bg);
+}
+
+vaadin-dialog-overlay vaadin-button:hover {
+    cursor: pointer;
+    box-shadow: inset 0 -100px 0 0 var(--ms-btn-hover-bg);
+}
+
+vaadin-dialog-overlay vaadin-button:active {
+    scale: 0.95;
+}
+
+vaadin-dialog-overlay vaadin-button > vaadin-icon {
+    color: var(--ms-btn-color);
 }

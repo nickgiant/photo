@@ -31,6 +31,8 @@ import java.io.FileNotFoundException;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 
 public class StoryItemViewCard extends Div {
 
@@ -45,6 +47,7 @@ public class StoryItemViewCard extends Div {
 
     private Record record;
     private String strImagePath;
+    private boolean mapBuilt = false;
 
 
     public StoryItemViewCard(Record record, String strImagePath, boolean isMobile, int userId, String strUserName, long sessionCreation,
@@ -56,6 +59,41 @@ public class StoryItemViewCard extends Div {
 
 
         this.addClassName("story-item-panel");
+
+        // Map items have no photo – show a placeholder immediately, build map on attach
+        String strItemTypeEarly = record.getColumnData("item_type");
+        if (strItemTypeEarly != null && strItemTypeEarly.equalsIgnoreCase("Map")) {
+            this.addClassName("map-item");
+            final String storyItemIdFinal = record.getColumnData("story_item_id");
+
+            // Static placeholder: visible before Leaflet loads
+            Div ph = new Div();
+            ph.getStyle()
+                    .set("display", "flex")
+                    .set("flex-direction", "column")
+                    .set("align-items", "center")
+                    .set("justify-content", "center")
+                    .set("gap", "8px")
+                    .set("width", "100%")
+                    .set("height", "600px")
+                    .set("background", "var(--lumo-contrast-5pct)")
+                    .set("border-radius", "var(--lumo-border-radius-m)")
+                    .set("color", "var(--lumo-secondary-text-color)");
+            Span phIcon = new Span("🗺"); // 🗺
+            phIcon.getStyle().set("font-size", "3rem");
+            Span phLabel = new Span("Map");
+            phLabel.getStyle().set("font-size", "var(--lumo-font-size-s)").set("font-weight", "600");
+            ph.add(phIcon, phLabel);
+            this.add(ph);
+
+            this.addAttachListener(event -> {
+                if (mapBuilt) return;
+                mapBuilt = true;
+                this.remove(ph);
+                buildMapPanel(storyItemIdFinal);
+            });
+            return;
+        }
 
         genericView = new GenericView(recordService);
 
@@ -440,6 +478,217 @@ public class StoryItemViewCard extends Div {
                 this.add(layoutImage, divPhotoInfo);
             }
 
+    }
+
+    private void buildMapPanel(String strStoryItemId) {
+        if (strStoryItemId == null || strStoryItemId.isEmpty() || strStoryItemId.equalsIgnoreCase("null")) {
+            logger.warn("buildMapPanel: no story_item_id, skipping");
+            return;
+        }
+
+        logger.info("buildMapPanel: story_item_id={}", strStoryItemId);
+
+        String itemTitle = record.getColumnData("item_title");
+        String itemDescr = record.getColumnData("descr");
+
+        String[] mapCols = {"id", "location_area"};
+        List<Record> lstMap = recordService.findAll(
+                "SELECT id, location_area FROM photo_story_map WHERE story_item_id = " + strStoryItemId, mapCols);
+        if (lstMap.isEmpty()) {
+            logger.warn("buildMapPanel: no photo_story_map row for story_item_id={}", strStoryItemId);
+            return;
+        }
+
+        Record mapRecord = lstMap.get(0);
+        String mapId = mapRecord.getColumnData("id");
+        String locationArea = mapRecord.getColumnData("location_area");
+        logger.info("buildMapPanel: mapId={} area={}", mapId, locationArea);
+
+        String displayTitle = (itemTitle != null && !itemTitle.isEmpty() && !itemTitle.equalsIgnoreCase("null"))
+                ? itemTitle : locationArea;
+
+        String[] pointCols = {"point_name", "lat", "lon", "description", "color"};
+        List<Record> lstPoints = recordService.findAll(
+                "SELECT point_name, lat, lon, description, IFNULL(color, '#3498db') AS color FROM photo_story_map_point WHERE map_id = " + mapId + " ORDER BY point_order ASC",
+                pointCols);
+        logger.info("buildMapPanel: {} point(s) found", lstPoints.size());
+
+        // Build markers JSON to pass to JavaScript; also collect legend items
+        StringBuilder markersJson = new StringBuilder("[");
+        List<String[]> legendItems = new ArrayList<>();
+        for (Record pt : lstPoints) {
+            try {
+                double lat = Double.parseDouble(pt.getColumnData("lat"));
+                double lon = Double.parseDouble(pt.getColumnData("lon"));
+                String name = pt.getColumnData("point_name");
+                String desc = pt.getColumnData("description");
+                String color = pt.getColumnData("color");
+                if (color == null || color.isBlank() || color.equalsIgnoreCase("null")) color = "#3498db";
+
+                String popup = (name != null && !name.equalsIgnoreCase("null") && !name.isEmpty()) ? name : "";
+                if (desc != null && !desc.equalsIgnoreCase("null") && !desc.isEmpty()) {
+                    popup = popup.isEmpty() ? desc : popup + "<br>" + desc;
+                }
+
+                if (name != null && !name.isBlank() && !name.equalsIgnoreCase("null")) {
+                    legendItems.add(new String[]{name, color});
+                }
+
+                if (markersJson.length() > 1) markersJson.append(",");
+                markersJson.append("{\"lat\":").append(lat)
+                           .append(",\"lon\":").append(lon)
+                           .append(",\"color\":\"").append(color.replace("\"", "\\\"")).append("\"")
+                           .append(",\"name\":\"").append((name != null ? name : "").replace("\\", "\\\\").replace("\"", "\\\"")).append("\"")
+                           .append(",\"popup\":\"").append(popup.replace("\\", "\\\\").replace("\"", "\\\"")).append("\"}");
+            } catch (NumberFormatException e) {
+                logger.warn("buildMapPanel: skipping point with bad lat/lon: {}", e.getMessage());
+            }
+        }
+        markersJson.append("]");
+
+        // Title above map
+        if (displayTitle != null && !displayTitle.isEmpty() && !displayTitle.equalsIgnoreCase("null")) {
+            H4 areaTitle = new H4(displayTitle);
+            areaTitle.addClassName("map-area-title");
+            this.add(areaTitle);
+        }
+
+        // Wrapper with fixed height so Leaflet can measure it
+        Div wrapperDiv = new Div();
+        wrapperDiv.getStyle()
+                .set("position", "relative")
+                .set("width", "100%")
+                .set("height", "650px")
+                .set("border-radius", "var(--lumo-border-radius-m)")
+                .set("overflow", "hidden");
+
+        // Loading overlay: map icon shown while Leaflet CDN loads
+        Div loadingOverlay = new Div();
+        loadingOverlay.getStyle()
+                .set("position", "absolute")
+                .set("inset", "0")
+                .set("z-index", "10")
+                .set("display", "flex")
+                .set("flex-direction", "column")
+                .set("align-items", "center")
+                .set("justify-content", "center")
+                .set("gap", "8px")
+                .set("background", "var(--lumo-contrast-5pct)")
+                .set("color", "var(--lumo-secondary-text-color)");
+        Span loadIcon = new Span("🗺");
+        loadIcon.getStyle().set("font-size", "2.5rem");
+        Span loadLabel = new Span("Loading map...");
+        loadLabel.getStyle().set("font-size", "var(--lumo-font-size-s)");
+        loadingOverlay.add(loadIcon, loadLabel);
+        wrapperDiv.add(loadingOverlay);
+
+        // The div Leaflet renders into (below the overlay)
+        Div mapDiv = new Div();
+        mapDiv.getStyle()
+                .set("position", "absolute")
+                .set("inset", "0")
+                .set("z-index", "5");
+        wrapperDiv.add(mapDiv);
+
+        // Floating legend with colored pill badges for each named location
+        if (!legendItems.isEmpty()) {
+            Div legendDiv = new Div();
+            legendDiv.getStyle()
+                    .set("position", "absolute")
+                    .set("top", "8px")
+                    .set("left", "0")
+                    .set("right", "0")
+                    .set("z-index", "20")
+                    .set("display", "flex")
+                    .set("flex-wrap", "wrap")
+                    .set("justify-content", "center")
+                    .set("gap", "6px")
+                    .set("pointer-events", "none");
+            for (String[] item : legendItems) {
+                Span badge = new Span(item[0]);
+                badge.getStyle()
+                        .set("background", item[1])
+                        .set("color", "#fff")
+                        .set("padding", "2px 8px")
+                        .set("border-radius", "12px")
+                        .set("font-size", "0.75rem")
+                        .set("font-weight", "600")
+                        .set("box-shadow", "0 1px 4px rgba(0,0,0,0.35)")
+                        .set("white-space", "nowrap");
+                legendDiv.add(badge);
+            }
+            wrapperDiv.add(legendDiv);
+        }
+
+        this.add(wrapperDiv);
+
+        // Description below map
+        if (itemDescr != null && !itemDescr.isEmpty() && !itemDescr.equalsIgnoreCase("null")) {
+            Div descrDiv = new Div(itemDescr);
+            descrDiv.addClassName("map-area-description");
+            this.add(descrDiv);
+        }
+
+        // Initialize Leaflet from CDN; the overlay hides until the map is ready
+        mapDiv.getElement().executeJs("""
+            (function(mapEl, overlayEl, markersJson) {
+                function initMap() {
+                    overlayEl.style.display = 'none';
+                    var map = L.map(mapEl);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '\\u00a9 OpenStreetMap contributors',
+                        maxZoom: 19
+                    }).addTo(map);
+                    var markers = JSON.parse(markersJson);
+                    if (markers.length > 0) {
+                        markers.forEach(function(m) {
+                            var icon = L.divIcon({
+                                html: '<div style="width:14px;height:14px;border-radius:50%;background:' + (m.color||'#3498db') + ';border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,.5)"></div>',
+                                className: '',
+                                iconSize: [14, 14],
+                                iconAnchor: [7, 7],
+                                popupAnchor: [0, -10]
+                            });
+                            var marker = L.marker([m.lat, m.lon], {icon: icon}).addTo(map);
+                            if (m.popup) marker.bindPopup(m.popup);
+                        });
+                        if (markers.length === 1) {
+                            map.setView([markers[0].lat, markers[0].lon], 13);
+                        } else {
+                            var latlngs = markers.map(function(m) { return [m.lat, m.lon]; });
+                            map.fitBounds(latlngs, { padding: [30, 30] });
+                        }
+                    }
+                    setTimeout(function() { map.invalidateSize(); }, 300);
+                }
+                if (window.L) { initMap(); return; }
+                if (!document.querySelector('link[href*="leaflet"]')) {
+                    var css = document.createElement('link');
+                    css.rel = 'stylesheet';
+                    css.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+                    document.head.appendChild(css);
+                }
+                if (window._leafletLoading) {
+                    window._leafletCbs = window._leafletCbs || [];
+                    window._leafletCbs.push(initMap);
+                    return;
+                }
+                window._leafletLoading = true;
+                window._leafletCbs = [initMap];
+                var s = document.createElement('script');
+                s.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+                s.onload = function() {
+                    window._leafletLoading = false;
+                    (window._leafletCbs || []).forEach(function(cb) { cb(); });
+                    window._leafletCbs = [];
+                };
+                document.head.appendChild(s);
+            })(this, $0, $1)
+            """,
+            loadingOverlay.getElement(),
+            markersJson.toString());
+
+        logger.info("buildMapPanel: Leaflet JS queued for {} point(s)", lstPoints.size());
     }
 
 

@@ -162,9 +162,9 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
             , "inc"
             , "date_inserted"
             , "username", "name", "surname", "resident", "date_joined", "avatar_path"
-            , "story_id"
+            , "story_id", "story_item_id"
     };
-    private String sqlReadStoryPhotos = "SELECT s.id AS story_id, s.title AS story_title, s.slug, s.user_id, s.story_visible_to, s.description, " +
+    private String sqlReadStoryPhotos = "SELECT s.id AS story_id, sp.id AS story_item_id, s.title AS story_title, s.slug, s.user_id, s.story_visible_to, s.description, " +
             " getDateDiffFromNow(s.date_inserted) AS datetime_story_created, " +
             " sp.item_title, sp.descr, sp.item_type, " +
             " pm.name_new, pm.title, pm.subtitle, pm.photo_type, pm.uploader, pm.creator, pm.visible_to,  " +
@@ -847,6 +847,8 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
 
         return layoutActions;
     }
+
+
 
 
     private void getUserClientInfo() {

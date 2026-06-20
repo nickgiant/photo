@@ -3,19 +3,25 @@ package com.photo.act.photo_act.views;
 import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
+import com.photo.act.photo_act.dto.StoryMapPointDto;
 import com.photo.act.photo_act.services.*;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.SlugUtil;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.photo.act.photo_act.views.components.GalleryImageViewCard;
 import com.photo.act.photo_act.views.components.GenericView;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.HasStyle;
+import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
+import com.vaadin.flow.component.grid.dnd.GridDropLocation;
 import com.vaadin.flow.component.grid.dnd.GridDropMode;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.SvgIcon;
@@ -29,8 +35,10 @@ import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.provider.CallbackDataProvider;
+import com.vaadin.flow.data.provider.ListDataProvider;
 import com.vaadin.flow.data.provider.SortDirection;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
+import com.vaadin.flow.dom.Style;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
@@ -42,7 +50,13 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.net.InetAddress;
+import java.net.URI;
+import java.net.URLEncoder;
 import java.net.UnknownHostException;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
 import java.util.*;
 
@@ -248,6 +262,7 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
             " WHERE 1=1 AND pc.cat_visible = 1 " +
             " ORDER BY cat_title ASC";
     private String strSelectedStoryId = "";
+    private String strCurrentStoryTitle = "";
 
     private ListBox<String> listBoxAlbums;
 
@@ -269,8 +284,9 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
     private Map<String, Object> draggedItem;
 
     private VerticalLayout layoutStoryItems;
+    private StoryMapService storyMapService;
 
-    public MemberStoriesView(PhotoStoryService photoStoryService, RecordService recordService, EmailSendService emailSendService, ShareService shareService, ShareMetricService shareMetricService, WeatherService weatherService, PhotoRatingService photoRatingService, PhotoViewService photoViewService) {
+    public MemberStoriesView(PhotoStoryService photoStoryService, RecordService recordService, EmailSendService emailSendService, ShareService shareService, ShareMetricService shareMetricService, WeatherService weatherService, PhotoRatingService photoRatingService, PhotoViewService photoViewService, StoryMapService storyMapService) {
         this.photoStoryService = photoStoryService;
         this.recordService = recordService;
         this.emailSendService = emailSendService;
@@ -279,6 +295,7 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
         this.weatherService = weatherService;
         this.photoRatingService = photoRatingService;
         this.photoViewService = photoViewService;
+        this.storyMapService = storyMapService;
 
         utilsDate = new UtilsDate();
         genericView = new GenericView(recordService);
@@ -344,7 +361,7 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
 
         HorizontalLayout layoutTitleStory = new HorizontalLayout();
         layoutTitleStory.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.BETWEEN);
-        Span spTitleStory = new Span("Επιλέξτε");
+        Span spTitleStory = new Span("Choose");
 
         Dialog dlgPhotoSelection = new Dialog();
         dlgPhotoSelection.setHeightFull();
@@ -382,6 +399,15 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
             initStoryId = lstStoriesInit.get(0).getColumnData("id");
             initStoryTitle = lstStoriesInit.get(0).getColumnData("title");
         }
+        strSelectedStoryId = initStoryId;
+        strCurrentStoryTitle = initStoryTitle;
+
+        dlgPhotoSelection.addOpenedChangeListener(photoEvt -> {
+            if (!photoEvt.isOpened()) {
+                layoutStoryItems.removeAll();
+                layoutStoryItems.add(loadStoryItems(dlgStorySelection, sqlReadStoryItems, arrColStoryItems, dlgPhotoSelection, strSelectedStoryId, strCurrentStoryTitle, strMemberId));
+            }
+        });
 
         layoutStoryItems.add(loadStoryItems(dlgStorySelection, sqlReadStoryItems, arrColStoryItems, dlgPhotoSelection, initStoryId, initStoryTitle, strMemberId));
 
@@ -405,6 +431,7 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
                 if (lstStoriesTitle.get(i).equalsIgnoreCase(listBoxAlbums.getValue())) {
                     strSelectedStoryId = lstStoriesId.get(i);
                     strStoryTitle = lstStoriesTitle.get(i);
+                    strCurrentStoryTitle = strStoryTitle;
                 }
             }
 
@@ -548,6 +575,10 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
     }
 
     private VerticalLayout loadPhotos(String sqlMemberPhotos, String[] arrColMemberPhotos) {
+        return loadPhotos(sqlMemberPhotos, arrColMemberPhotos, null);
+    }
+
+    private VerticalLayout loadPhotos(String sqlMemberPhotos, String[] arrColMemberPhotos, Dialog dlgToClose) {
 
         VerticalLayout layoutMemberPhotos = new VerticalLayout();
         layoutMemberPhotos.addClassNames(Height.FULL,
@@ -785,12 +816,17 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
                 Padding.SMALL, Margin.NONE
         );
 
-        Button btnSelect = new Button("Insert Selected");
-        btnSelect.setIcon(FontAwesome.Regular.CHECK_SQUARE.create());
-        btnSelect.addClickListener(clickEvent -> {
-            saveStoryItemPhoto(strMemberId, strSelectedStoryId, strSelectedPhotoId);
-
-        });
+        Button btnSelect;
+        if (dlgToClose != null) {
+            btnSelect = new Button("Set Cover Photo");
+            btnSelect.setIcon(VaadinIcon.PICTURE.create());
+            btnSelect.addClickListener(clickEvent -> dlgToClose.close());
+        } else {
+            btnSelect = new Button("Insert Selected");
+            btnSelect.setIcon(FontAwesome.Regular.CHECK_SQUARE.create());
+            btnSelect.addClickListener(clickEvent ->
+                saveStoryItemPhoto(strMemberId, strSelectedStoryId, strSelectedPhotoId));
+        }
 
         layoutControls.add(btnSelect);
 
@@ -957,32 +993,33 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
 
 
 
-        CallbackDataProvider<Map<String, Object>, Void> dpStoryItems = new CallbackDataProvider<Map<String, Object>, Void>(
-                query -> {
-
-                    int offset = query.getOffset();
-                    int limit = query.getLimit();
-
-                    var sort = query.getSortOrders().stream().findFirst();
-
-                    String sortField = sort.map(s -> s.getSorted())
-                            .orElse("id");
-
-                    boolean asc = sort.map(s -> s.getDirection()
-                                    == SortDirection.ASCENDING)
-                            .orElse(true);
-
-                    return photoStoryService.fetch(sqlAllStoryItems, arrColMemberPhotos, limit, offset, sortField, asc)
-                            .stream();
-                },
-                query -> photoStoryService.count(sqlAllStoryItems)
-        );
+        List<Map<String, Object>> itemsList = new ArrayList<>(photoStoryService.findAll(sqlAllStoryItems));
+        // Ensure every item for this story has an inc; assign 10, 20, 30... and persist if any are missing
+        if (!strStoryId.isEmpty() && !itemsList.isEmpty()) {
+            boolean anyMissing = itemsList.stream()
+                    .anyMatch(r -> r.get("inc") == null
+                            || r.get("inc").toString().isBlank()
+                            || r.get("inc").toString().equals("0"));
+            if (anyMissing) {
+                for (int i = 0; i < itemsList.size(); i++) {
+                    int newInc = (i + 1) * 10;
+                    String itemId = itemsList.get(i).get("story_item_id").toString();
+                    itemsList.get(i).put("inc", newInc);
+                    recordService.insertOneRecordWithQuery(
+                            "UPDATE photo_stories_photo SET inc = ? WHERE id = ?",
+                            new Object[]{newInc, itemId},
+                            new String[]{"java.lang.Integer", "java.lang.String"}
+                    );
+                }
+            }
+        }
+        ListDataProvider<Map<String, Object>> dpStoryItems = new ListDataProvider<>(itemsList);
 
         H4 dvStoryTitle = new H4();
         dvStoryTitle.setWidthFull();
         dvStoryTitle.setText(strStoryTitle);
 
-        Button btnSelectStory = new Button("Select a Photo-Story");
+        Button btnSelectStory = new Button("Select a Story");
         btnSelectStory.setIcon(FontAwesome.Solid.PHOTO_FILM.create());
         btnSelectStory.addClickListener(clickEvent -> {
             dlgStorySelection.open();
@@ -1001,8 +1038,11 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
                 dlgPhotoSelection,
                 strMemberId, "");
 
-        dlgItemNew.addDialogCloseActionListener(close -> {
-            dpStoryItems.refreshAll();
+        dlgItemNew.addOpenedChangeListener(e -> {
+            if (!e.isOpened()) {
+                layoutStoryItems.removeAll();
+                layoutStoryItems.add(loadStoryItems(dlgStorySelection, sqlReadStoryItems, arrColStoryItems, dlgPhotoSelection, strSelectedStoryId, strStoryTitle, strMemberId));
+            }
         });
 
         Button btnAddText = new Button("Add Text");
@@ -1027,13 +1067,48 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
             }
         });
 
+        Dialog dlgAddMap = loadMapEditorDialog(strMemberId, strStoryId, null);
+        dlgAddMap.addOpenedChangeListener(e -> {
+            if (!e.isOpened()) {
+                layoutStoryItems.removeAll();
+                layoutStoryItems.add(loadStoryItems(dlgStorySelection, sqlReadStoryItems, arrColStoryItems, dlgPhotoSelection, strSelectedStoryId, strStoryTitle, strMemberId));
+            }
+        });
+
+        Button btnAddMap = new Button("Add Map");
+        btnAddMap.setIcon(VaadinIcon.MAP_MARKER.create());
+        btnAddMap.addClickListener(clickEvent -> {
+            if (dvStoryTitle.getText().isEmpty()) {
+                Notification.show("Create the Photo-Story first!", 3000, Notification.Position.TOP_CENTER);
+            } else {
+                dlgAddMap.open();
+            }
+        });
+
+        Button btnCreateStory = new Button("Create a Story");
+        btnCreateStory.setIcon(VaadinIcon.PLUS.create());
+        btnCreateStory.addClickListener(e -> {
+            Dialog dlgCreate = loadStoryEditDialog(sqlAlbumCategories, arrAlbumCategoriesColumns, "New Photo-Story",
+                    sqlMemberOfAlbums, arrColumnsMemberAlbums, null, strMemberId);
+            if (dlgCreate != null) dlgCreate.open();
+        });
+
+        Button btnEditStory = new Button("Edit This Story");
+        btnEditStory.setIcon(VaadinIcon.EDIT.create());
+        btnEditStory.setEnabled(!strStoryId.isEmpty() && !strStoryId.equals("0"));
+        btnEditStory.addClickListener(e -> {
+            Dialog dlgEdit = loadStoryEditDialog(sqlAlbumCategories, arrAlbumCategoriesColumns, "Edit a Photo-Story",
+                    sqlMemberOfAlbums, arrColumnsMemberAlbums, strStoryId, strMemberId);
+            if (dlgEdit != null) dlgEdit.open();
+        });
+
         HorizontalLayout layoutControls = new HorizontalLayout();
         layoutControls.addClassNames(
                 AlignItems.CENTER, JustifyContent.EVENLY,
                 Padding.SMALL, Margin.NONE,
                 Gap.MEDIUM
         );
-        layoutControls.add(btnSelectStory, btnRefresh, btnAddText, btnAddPhoto);
+        layoutControls.add(btnCreateStory, btnEditStory, btnSelectStory, btnRefresh, btnAddText, btnAddPhoto, btnAddMap);
 
 
         layoutItems.add(layoutControls);
@@ -1076,19 +1151,32 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
                 }
         );
 
-        gridStoryItems.addDropListener(
-                event -> {
-                    Object dropOverItem = event.getDropTargetItem().get();
-               //        if (!dropOverItem.equals(draggedItem)) {
-                    // reorder dragged item the backing gridItems container
-             //            gridStoryItems.remove(draggedItem);
-                    // calculate drop index based on the dropOverItem
-             //         int dropIndex = gridStoryItems.indexOf(dropOverItem) + (event.getDropLocation() == GridDropLocation.BELOW ? 1 : 0);
-             //        gridStoryItems.add(dropIndex, draggedItem);
-                    gridStoryItems.getDataProvider().refreshAll();
-                    //  }
+        gridStoryItems.addDropListener(event -> {
+            event.getDropTargetItem().ifPresent(target -> {
+                if (draggedItem == null || draggedItem.equals(target)) return;
+
+                itemsList.remove(draggedItem);
+                int insertIdx = itemsList.indexOf(target);
+                if (event.getDropLocation() == GridDropLocation.BELOW) {
+                    insertIdx++;
                 }
-        );
+                insertIdx = Math.max(0, Math.min(insertIdx, itemsList.size()));
+                itemsList.add(insertIdx, draggedItem);
+
+                for (int i = 0; i < itemsList.size(); i++) {
+                    int newInc = (i + 1) * 10;
+                    String itemId = itemsList.get(i).get("story_item_id").toString();
+                    itemsList.get(i).put("inc", newInc);
+                    recordService.insertOneRecordWithQuery(
+                            "UPDATE photo_stories_photo SET inc = ? WHERE id = ?",
+                            new Object[]{newInc, itemId},
+                            new String[]{"java.lang.Integer", "java.lang.String"}
+                    );
+                }
+                layoutStoryItems.removeAll();
+                layoutStoryItems.add(loadStoryItems(dlgStorySelection, sqlReadStoryItems, arrColStoryItems, dlgPhotoSelection, strSelectedStoryId, strStoryTitle, strMemberId));
+            });
+        });
 
 
         // For convenience you could set also click listener to do the selection
@@ -1151,18 +1239,30 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
                         })
                 );
 
-        Grid.Column<Map<String, Object>> colDateShoot = gridStoryItems.addColumn(row -> row.get("inc"))
-                .setHeader("inc / Type").setWidth("120px")
+        Grid.Column<Map<String, Object>> colDateShoot = gridStoryItems.addColumn(row -> row.get("item_type"))
+                .setHeader("Type").setWidth("100px")
                 .setRenderer(new ComponentRenderer<>(row -> {
                             VerticalLayout layoutLine = new VerticalLayout();
                             layoutLine.addClassNames(AlignItems.START, JustifyContent.START);
-                            String strTitle = row.get("inc") == null ? "" : row.get("inc").toString();
-                            String strSubtitle = row.get("item_type") == null ? "" : row.get("item_type").toString();
-                            Div divTitle = new Div(strTitle);
-                            Div divSubtitle = new Div(strSubtitle);
-                            divSubtitle.addClassNames("tag");
-                            layoutLine.add(divTitle, divSubtitle);
-
+                            layoutLine.setPadding(false);
+                            layoutLine.setSpacing(false);
+                            layoutLine.getStyle().set("gap", "3px");
+                            String strInc = row.get("inc") == null ? "" : row.get("inc").toString();
+                            String strType = row.get("item_type") == null ? "" : row.get("item_type").toString();
+                            Div divInc = new Div("#" + strInc);
+                            divInc.getStyle().set("font-size", "10px").set("color", "var(--lumo-secondary-text-color)");
+                            Span pillTag = new Span(strType);
+                            pillTag.getStyle()
+                                    .set("display", "inline-block")
+                                    .set("padding", "2px 9px")
+                                    .set("border-radius", "12px")
+                                    .set("font-size", "11px")
+                                    .set("font-weight", "600")
+                                    .set("letter-spacing", "0.4px")
+                                    .set("white-space", "nowrap")
+                                    .set("background", getTypePillBg(strType))
+                                    .set("color", getTypePillColor(strType));
+                            layoutLine.add(divInc, pillTag);
                             return layoutLine;
                         })
                 );
@@ -1209,12 +1309,20 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
                     // String strTitle = row.get("inc") == null ? "" : row.get("inc").toString();
 
                     String strItemId = row.get("story_item_id") == null ? "" : row.get("story_item_id").toString();
+                    String strRowItemType = row.get("item_type") == null ? "" : row.get("item_type").toString();
                     Div divId = new Div(strItemId);
 
-                    Dialog dlgItemEditSelection = loadStoryItemEditDialog("Επεξεργασία", false, sqlMemberOfAlbums, arrColumnsMemberAlbums,
-                            sqlReadStoryItems, arrColStoryItems,
-                            dlgPhotoSelection,
-                            strMemberId, strItemId);
+                    boolean isMapItem = strRowItemType.equalsIgnoreCase("Map");
+
+                    Dialog dlgItemEditSelection;
+                    if (isMapItem) {
+                        dlgItemEditSelection = loadMapEditorDialog(strMemberId, strStoryId, strItemId);
+                    } else {
+                        dlgItemEditSelection = loadStoryItemEditDialog("Edit", false, sqlMemberOfAlbums, arrColumnsMemberAlbums,
+                                sqlReadStoryItems, arrColStoryItems,
+                                dlgPhotoSelection,
+                                strMemberId, strItemId);
+                    }
 
                     dlgItemEditSelection.addDialogCloseActionListener(close -> {
                         layoutStoryItems.removeAll();
@@ -1224,7 +1332,7 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
                     });
 
                     Button btnEdit = new Button("");
-                    btnEdit.setTooltipText("Επεξεργασία");
+                    btnEdit.setTooltipText("Edit");
                     btnEdit.setIcon(FontAwesome.Solid.PENCIL.create());
                     btnEdit.addClickListener(event -> {
                         dlgItemEditSelection.open();
@@ -1232,10 +1340,15 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
                     });
 
                     Button btnDelete = new Button("");
-                    btnDelete.setTooltipText("Διαγραφή");
+                    btnDelete.setTooltipText("Delete");
                     SvgIcon iconBin = new SvgIcon(DownloadHandler.forClassResource(getClass(), "/icons/delete-bin-line.svg"));
                     btnDelete.setIcon(iconBin);
                     btnDelete.addClickListener(del -> {
+                        if (isMapItem && !strItemId.isEmpty()) {
+                            try {
+                                storyMapService.deleteByStoryItemId(Integer.parseInt(strItemId));
+                            } catch (NumberFormatException ignored) {}
+                        }
                         deleteStoryItem(strStoryId, strItemId, strMemberId);
 
 
@@ -1385,6 +1498,15 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
 
     private boolean saveStoryItemPhoto(String strMemberId, String strStoryId, String strSelectedPhotoId) {
 
+        int nextInc = 10;
+        if (strStoryId != null && !strStoryId.isEmpty()) {
+            List<Map<String, Object>> maxRes = photoStoryService.findAll(
+                    "SELECT COALESCE(MAX(inc), 0) AS max_inc FROM photo_stories_photo WHERE story_id = " + strStoryId);
+            if (!maxRes.isEmpty() && maxRes.get(0).get("max_inc") != null) {
+                nextInc = ((Number) maxRes.get(0).get("max_inc")).intValue() + 10;
+            }
+        }
+
         StringBuilder strInsert = new StringBuilder("INSERT INTO photo_stories_photo (");
         StringBuilder placeholders = new StringBuilder("(");
         Object[] fieldValue = new Object[3];
@@ -1433,6 +1555,8 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
         }
         strInsert.append("item_type");
         placeholders.append("'Photo'");
+        strInsert.append(", inc");
+        placeholders.append(", " + nextInc);
         first = false;
 /*        if (!first) {
             strInsert.append(", ");
@@ -1689,6 +1813,400 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
 
     }
 
+
+    private Dialog loadMapEditorDialog(String strMemberId, String strStoryId, String strStoryItemId) {
+        Dialog dlg = new Dialog();
+        dlg.setWidth("700px");
+        dlg.setMaxHeight("90vh");
+        dlg.setResizable(true);
+        dlg.setDraggable(true);
+
+        boolean isEdit = strStoryItemId != null && !strStoryItemId.isEmpty();
+
+        VerticalLayout layout = new VerticalLayout();
+        layout.setWidthFull();
+        layout.setPadding(true);
+        layout.setSpacing(true);
+
+        Div dlgTitle = new Div(isEdit ? "Edit Map Panel" : "Add Map Panel");
+        dlgTitle.addClassNames(FontWeight.BOLD, FontSize.LARGE);
+
+        TextField txtLocationArea = new TextField("Title");
+        txtLocationArea.setWidthFull();
+        txtLocationArea.setPlaceholder("e.g. Athens City Centre");
+
+        TextArea txtMapDescription = new TextArea("Description");
+        txtMapDescription.setWidthFull();
+        txtMapDescription.setPlaceholder("Optional description for this map area");
+        txtMapDescription.setMinRows(2);
+
+        VerticalLayout pointsLayout = new VerticalLayout();
+        pointsLayout.setWidthFull();
+        pointsLayout.setPadding(false);
+        pointsLayout.setSpacing(true);
+
+        List<HorizontalLayout> pointRows = new ArrayList<>();
+
+        if (isEdit) {
+            String[] mapCols = {"id", "location_area"};
+            String sqlMap = "SELECT id, location_area FROM photo_story_map WHERE story_item_id = " + strStoryItemId;
+            List<Record> lstMap = getRecordsFromDb(sqlMap, mapCols);
+            if (!lstMap.isEmpty()) {
+                String area = lstMap.get(0).getColumnData("location_area");
+                if (area != null && !area.equalsIgnoreCase("null")) {
+                    txtLocationArea.setValue(area);
+                }
+                String mapId = lstMap.get(0).getColumnData("id");
+                String[] ptCols = {"point_name", "lat", "lon", "description", "color"};
+                String sqlPts = "SELECT point_name, lat, lon, description, IFNULL(color, '#3498db') AS color FROM photo_story_map_point WHERE map_id = " + mapId + " ORDER BY point_order ASC";
+                List<Record> lstPts = getRecordsFromDb(sqlPts, ptCols);
+                for (Record pt : lstPts) {
+                    HorizontalLayout row = buildPointRow(
+                            pt.getColumnData("point_name"),
+                            pt.getColumnData("lat"),
+                            pt.getColumnData("lon"),
+                            pt.getColumnData("description"),
+                            pt.getColumnData("color"),
+                            pointRows, pointsLayout
+                    );
+                    pointRows.add(row);
+                    pointsLayout.add(row);
+                }
+            }
+            // Load description from photo_stories_photo
+            String[] itemDescCols = {"descr"};
+            List<Record> lstItemDesc = getRecordsFromDb(
+                    "SELECT descr FROM photo_stories_photo WHERE id = " + strStoryItemId, itemDescCols);
+            if (!lstItemDesc.isEmpty()) {
+                String existingDesc = lstItemDesc.get(0).getColumnData("descr");
+                if (existingDesc != null && !existingDesc.equalsIgnoreCase("null")) {
+                    txtMapDescription.setValue(existingDesc);
+                }
+            }
+        }
+
+        if (pointRows.isEmpty()) {
+            HorizontalLayout row = buildPointRow("", "", "", "", "", pointRows, pointsLayout);
+            pointRows.add(row);
+            pointsLayout.add(row);
+        }
+
+        Button btnAddPoint = new Button("+ Add Point");
+        btnAddPoint.addClickListener(e -> {
+            HorizontalLayout row = buildPointRow("", "", "", "", "", pointRows, pointsLayout);
+            pointRows.add(row);
+            pointsLayout.add(row);
+        });
+
+        Button btnSave = new Button("Save");
+        btnSave.setIcon(FontAwesome.Regular.CHECK_SQUARE.create());
+        btnSave.addClickListener(e -> {
+            String locationArea = txtLocationArea.getValue();
+            String mapDescription = txtMapDescription.getValue();
+            List<StoryMapPointDto> points = new ArrayList<>();
+            for (HorizontalLayout row : pointRows) {
+                TextField tfName = (TextField) row.getComponentAt(0);
+                // index 1 = search button, skip
+                TextField tfLat  = (TextField) row.getComponentAt(2);
+                TextField tfLon  = (TextField) row.getComponentAt(3);
+                TextField tfDesc = (TextField) row.getComponentAt(4);
+                // index 5 = swatch picker, index 6 = remove button
+                String rowColor = row.getElement().getAttribute("data-color");
+                if (rowColor == null || rowColor.isBlank()) rowColor = "#3498db";
+                if (!tfLat.getValue().isEmpty() && !tfLon.getValue().isEmpty()) {
+                    try {
+                        StoryMapPointDto pt = new StoryMapPointDto();
+                        pt.setPointName(tfName.getValue());
+                        pt.setLat(Double.parseDouble(tfLat.getValue()));
+                        pt.setLon(Double.parseDouble(tfLon.getValue()));
+                        pt.setDescription(tfDesc.getValue());
+                        pt.setColor(rowColor);
+                        points.add(pt);
+                    } catch (NumberFormatException ignored) {
+                        Notification.show("Invalid lat/lon in one of the points.", 3000, Notification.Position.TOP_CENTER);
+                        return;
+                    }
+                }
+            }
+            if (points.isEmpty()) {
+                Notification.show("Add at least one location point with valid lat/lon.", 3000, Notification.Position.TOP_CENTER);
+                return;
+            }
+            try {
+                Integer storyItemIdInt;
+                if (isEdit) {
+                    storyItemIdInt = Integer.parseInt(strStoryItemId);
+                    // Update title and description in photo_stories_photo
+                    Object[] updVals = {locationArea, mapDescription, storyItemIdInt};
+                    String[] updTypes = {"java.lang.String", "java.lang.String", "java.lang.Integer"};
+                    recordService.insertOneRecordWithQuery(
+                            "UPDATE photo_stories_photo SET item_title = ?, descr = ? WHERE id = ?",
+                            updVals, updTypes);
+                } else {
+                    int nextMapInc = 10;
+                    List<Map<String, Object>> maxRes = photoStoryService.findAll(
+                            "SELECT COALESCE(MAX(inc), 0) AS max_inc FROM photo_stories_photo WHERE story_id = " + strStoryId);
+                    if (!maxRes.isEmpty() && maxRes.get(0).get("max_inc") != null) {
+                        nextMapInc = ((Number) maxRes.get(0).get("max_inc")).intValue() + 10;
+                    }
+                    String sqlInsertItem = "INSERT INTO photo_stories_photo (user_id, story_id, item_type, item_title, descr, inc) VALUES (?, ?, 'Map', ?, ?, ?)";
+                    storyItemIdInt = photoStoryService.insertAndGetGeneratedId(sqlInsertItem,
+                            Integer.parseInt(strMemberId), Integer.parseInt(strStoryId), locationArea, mapDescription, nextMapInc);
+                    if (storyItemIdInt == null) {
+                        Notification.show("Failed to create story item.", 3000, Notification.Position.TOP_CENTER);
+                        return;
+                    }
+                }
+                var mapEntity = storyMapService.saveMap(storyItemIdInt, Integer.parseInt(strMemberId), Integer.parseInt(strStoryId), locationArea);
+                storyMapService.savePoints(mapEntity.getId(), points);
+                Notification.show("Map panel saved!", 3000, Notification.Position.TOP_CENTER);
+                dlg.close();
+            } catch (NumberFormatException ex) {
+                Notification.show("Invalid member or story ID.", 3000, Notification.Position.TOP_CENTER);
+            }
+        });
+
+        Button btnCancel = new Button("Cancel");
+        btnCancel.addClickListener(e -> dlg.close());
+
+        HorizontalLayout btnRow = new HorizontalLayout(btnSave, btnCancel);
+
+        layout.add(dlgTitle, txtLocationArea, txtMapDescription, pointsLayout, btnAddPoint, btnRow);
+        dlg.add(layout);
+        return dlg;
+    }
+
+    private static final String[] MAP_PIN_COLORS = {
+        "#e74c3c","#e67e22","#f1c40f","#2ecc71","#1abc9c",
+        "#3498db","#9b59b6","#e91e63","#795548","#607d8b"
+    };
+
+    private HorizontalLayout buildPointRow(String name, String lat, String lon, String desc, String color,
+                                            List<HorizontalLayout> pointRows, VerticalLayout pointsLayout) {
+        TextField tfName = new TextField("Name");
+        tfName.setPlaceholder("e.g. Acropolis");
+        tfName.setValue(name != null && !name.equalsIgnoreCase("null") ? name : "");
+
+        TextField tfLat = new TextField("Lat");
+        tfLat.setPlaceholder("37.9715");
+        tfLat.setValue(lat != null && !lat.equalsIgnoreCase("null") ? lat : "");
+        tfLat.setWidth("110px");
+
+        TextField tfLon = new TextField("Lon");
+        tfLon.setPlaceholder("23.7269");
+        tfLon.setValue(lon != null && !lon.equalsIgnoreCase("null") ? lon : "");
+        tfLon.setWidth("110px");
+
+        TextField tfDesc = new TextField("Description");
+        tfDesc.setPlaceholder("Optional");
+        tfDesc.setValue(desc != null && !desc.equalsIgnoreCase("null") ? desc : "");
+        tfDesc.getStyle().setFlexGrow("1");
+
+        Button btnSearch = new Button(VaadinIcon.SEARCH.create());
+        btnSearch.getStyle().setAlignSelf(Style.AlignSelf.CENTER);
+        btnSearch.getElement().setAttribute("title", "Search location");
+        btnSearch.addClickListener(e -> openLocationSearch(tfName, tfLat, tfLon));
+
+        Button btnRemove = new Button("-");
+        btnRemove.getStyle().setAlignSelf(Style.AlignSelf.CENTER);
+
+        // Color swatch picker (10 predefined pin colors)
+        String initialColor = (color != null && !color.isBlank() && !color.equalsIgnoreCase("null"))
+                ? color : MAP_PIN_COLORS[5]; // default blue
+
+        Div swatchPicker = new Div();
+        swatchPicker.getStyle()
+                .set("display", "flex")
+                .set("gap", "4px")
+                .set("align-items", "center")
+                .set("padding", "0 4px")
+                .set("align-self", "flex-end")
+                .set("padding-bottom", "6px");
+
+        List<Div> swatchDivs = new ArrayList<>();
+        for (String hex : MAP_PIN_COLORS) {
+            Div swatch = new Div();
+            swatch.getStyle()
+                    .set("width", "18px")
+                    .set("height", "18px")
+                    .set("border-radius", "50%")
+                    .set("background", hex)
+                    .set("cursor", "pointer")
+                    .set("flex-shrink", "0")
+                    .set("box-sizing", "border-box");
+            swatchDivs.add(swatch);
+            swatchPicker.add(swatch);
+        }
+
+        // Build row — swatchPicker at index 5, btnRemove at index 6
+        HorizontalLayout row = new HorizontalLayout(tfName, btnSearch, tfLat, tfLon, tfDesc, swatchPicker, btnRemove);
+        row.setAlignItems(com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment.END);
+        row.setWidthFull();
+
+        // Store selected color on the row element for easy reading in save handler
+        row.getElement().setAttribute("data-color", initialColor);
+
+        // Helper to refresh swatch borders
+        Runnable updateSwatches = () -> {
+            String current = row.getElement().getAttribute("data-color");
+            for (int i = 0; i < MAP_PIN_COLORS.length; i++) {
+                boolean sel = MAP_PIN_COLORS[i].equalsIgnoreCase(current);
+                swatchDivs.get(i).getStyle()
+                        .set("border", sel ? "3px solid #111" : "2px solid rgba(0,0,0,0.12)")
+                        .set("transform", sel ? "scale(1.25)" : "scale(1)");
+            }
+        };
+        updateSwatches.run();
+
+        // Wire swatch click listeners (row is now defined)
+        for (int i = 0; i < MAP_PIN_COLORS.length; i++) {
+            final String hex = MAP_PIN_COLORS[i];
+            swatchDivs.get(i).addClickListener(e -> {
+                row.getElement().setAttribute("data-color", hex);
+                updateSwatches.run();
+            });
+        }
+
+        btnRemove.addClickListener(e -> {
+            pointRows.remove(row);
+            pointsLayout.remove(row);
+        });
+
+        return row;
+    }
+
+    private void openLocationSearch(TextField tfName, TextField tfLat, TextField tfLon) {
+        Dialog dlg = new Dialog();
+        dlg.setWidth("520px");
+        dlg.setMaxHeight("80vh");
+
+        H4 dlgTitle = new H4("Search Location");
+        dlgTitle.getStyle().set("margin", "0 0 var(--lumo-space-s) 0");
+
+        TextField tfQuery = new TextField("Location");
+        tfQuery.setPlaceholder("e.g. Athens, Greece");
+        tfQuery.setWidthFull();
+
+        VerticalLayout resultsLayout = new VerticalLayout();
+        resultsLayout.setPadding(false);
+        resultsLayout.setSpacing(false);
+        resultsLayout.setWidthFull();
+        resultsLayout.getStyle().set("overflow-y", "auto").set("max-height", "340px");
+
+        Paragraph statusMsg = new Paragraph();
+        statusMsg.getStyle().set("color", "var(--lumo-secondary-text-color)").set("font-size", "var(--lumo-font-size-s)").set("margin", "0");
+
+        Button btnSearch = new Button("Search", VaadinIcon.SEARCH.create());
+        btnSearch.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        btnSearch.addClickListener(e -> {
+            String q = tfQuery.getValue().trim();
+            if (q.isEmpty()) return;
+            resultsLayout.removeAll();
+            statusMsg.setText("Searching…");
+            List<String[]> hits = searchNominatim(q);
+            statusMsg.setText("");
+            if (hits.isEmpty()) {
+                statusMsg.setText("No results found.");
+            } else {
+                for (String[] hit : hits) {
+                    String displayName = hit[0];
+                    String lat = hit[1];
+                    String lon = hit[2];
+                    Button btnResult = new Button(displayName);
+                    btnResult.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+                    btnResult.setWidthFull();
+                    btnResult.getStyle()
+                            .set("text-align", "left")
+                            .set("white-space", "normal")
+                            .set("height", "auto")
+                            .set("min-height", "2.5em")
+                            .set("padding", "var(--lumo-space-xs) var(--lumo-space-s)");
+                    btnResult.addClickListener(ce -> {
+                        tfLat.setValue(lat);
+                        tfLon.setValue(lon);
+                        if (tfName.getValue().isBlank()) {
+                            String shortName = displayName.contains(",")
+                                    ? displayName.substring(0, displayName.indexOf(",")).trim()
+                                    : displayName;
+                            tfName.setValue(shortName);
+                        }
+                        dlg.close();
+                    });
+                    resultsLayout.add(btnResult);
+                }
+            }
+        });
+
+        tfQuery.addKeyPressListener(Key.ENTER, e -> btnSearch.click());
+
+        HorizontalLayout searchRow = new HorizontalLayout(tfQuery, btnSearch);
+        searchRow.setWidthFull();
+        searchRow.setAlignItems(com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment.END);
+        searchRow.setFlexGrow(1, tfQuery);
+
+        VerticalLayout content = new VerticalLayout(dlgTitle, searchRow, statusMsg, resultsLayout);
+        content.setPadding(true);
+        content.setSpacing(false);
+        content.setWidthFull();
+        content.getStyle().set("gap", "var(--lumo-space-s)");
+        dlg.add(content);
+        dlg.open();
+        tfQuery.focus();
+    }
+
+    private List<String[]> searchNominatim(String query) {
+        List<String[]> results = new ArrayList<>();
+        try {
+            String encoded = URLEncoder.encode(query, StandardCharsets.UTF_8);
+            HttpClient client = HttpClient.newHttpClient();
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("https://nominatim.openstreetmap.org/search?q=" + encoded + "&format=json&limit=5&addressdetails=0"))
+                    .header("User-Agent", "PhotoActApp/1.0 (nickgiant@yahoo.com)")
+                    .header("Accept-Language", "en")
+                    .GET()
+                    .build();
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode arr = mapper.readTree(response.body());
+            for (JsonNode node : arr) {
+                String displayName = node.path("display_name").asText("");
+                String lat = node.path("lat").asText("");
+                String lon = node.path("lon").asText("");
+                if (!lat.isEmpty() && !lon.isEmpty()) {
+                    results.add(new String[]{displayName, lat, lon});
+                }
+            }
+        } catch (Exception ex) {
+            logger.error("Nominatim search failed for query '{}': {}", query, ex.getMessage());
+        }
+        return results;
+    }
+
+    private String getTypePillBg(String type) {
+        return switch (type.toLowerCase()) {
+            case "map"     -> "#e3f2fd";
+            case "photo"   -> "#e8f5e9";
+            case "text"    -> "#f5f5f5";
+            case "tip"     -> "#fff8e1";
+            case "header"  -> "#f3e5f5";
+            case "summary" -> "#e0f7fa";
+            case "footer"  -> "#fce4ec";
+            default        -> "#eeeeee";
+        };
+    }
+
+    private String getTypePillColor(String type) {
+        return switch (type.toLowerCase()) {
+            case "map"     -> "#1565c0";
+            case "photo"   -> "#2e7d32";
+            case "text"    -> "#616161";
+            case "tip"     -> "#e65100";
+            case "header"  -> "#6a1b9a";
+            case "summary" -> "#00695c";
+            case "footer"  -> "#ad1457";
+            default        -> "#424242";
+        };
+    }
 
     private void getUserClientInfo() {
 
@@ -2063,7 +2581,28 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
             }
         }
 
-
+        // Load existing cover photo
+        String strCoverPhotoId = "";
+        String strCoverPhotoFile = "";
+        if (strAlbumId != null && !strAlbumId.isEmpty() && !strAlbumId.equals("0")) {
+            String[] coverCols = {"photo_id1"};
+            List<Record> lstCover = recordService.findAll(
+                    "SELECT photo_id1 FROM photo_stories WHERE id = " + strAlbumId, coverCols);
+            if (!lstCover.isEmpty()) {
+                String rawCoverId = lstCover.get(0).getColumnData("photo_id1");
+                if (rawCoverId != null && !rawCoverId.isEmpty() && !rawCoverId.equalsIgnoreCase("null")) {
+                    strCoverPhotoId = rawCoverId;
+                    String[] metaCols = {"name_new"};
+                    List<Record> lstMeta = recordService.findAll(
+                            "SELECT name_new FROM photo_meta WHERE id = " + strCoverPhotoId, metaCols);
+                    if (!lstMeta.isEmpty()) {
+                        String rawFile = lstMeta.get(0).getColumnData("name_new");
+                        if (rawFile != null && !rawFile.equalsIgnoreCase("null")) strCoverPhotoFile = rawFile;
+                    }
+                }
+            }
+        }
+        final String[] coverIdHolder = {strCoverPhotoId};
 
         VerticalLayout layoutAlbumInfo = new VerticalLayout();
         layoutAlbumInfo.addClassNames(Width.FULL,
@@ -2106,6 +2645,72 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
             }
         }
 
+        // Cover photo section
+        Div thumbDiv = new Div();
+        thumbDiv.getStyle().set("width", "100px").set("height", "80px")
+                .set("background", "var(--lumo-contrast-5pct)")
+                .set("display", "flex").set("align-items", "center").set("justify-content", "center")
+                .set("border-radius", "var(--lumo-border-radius-s)").set("overflow", "hidden");
+        if (!strCoverPhotoFile.isEmpty() && !strCoverPhotoFile.equalsIgnoreCase("null")) {
+            String strPathPhotos = DIR_PHOTOS_SERVER + dirChar + subPathSmall + dirChar;
+            Image imgCover = new Image();
+            imgCover.setAlt("Cover");
+            imgCover.setSrc(DownloadHandler.forFile(new File(strPathPhotos + strCoverPhotoFile)));
+            imgCover.setMaxHeight("80px");
+            imgCover.setWidth("auto");
+            thumbDiv.add(imgCover);
+        } else {
+            thumbDiv.add(new Span("No cover"));
+        }
+
+        Dialog dlgCoverSelection = new Dialog();
+        dlgCoverSelection.setHeightFull();
+        dlgCoverSelection.setMinWidth("1000px");
+        dlgCoverSelection.setCloseOnEsc(true);
+        dlgCoverSelection.setDraggable(true);
+        dlgCoverSelection.setCloseOnOutsideClick(true);
+        dlgCoverSelection.setResizable(true);
+        Button btnCloseCoverDlg = new Button();
+        btnCloseCoverDlg.setIcon(VaadinIcon.CLOSE_BIG.create());
+        btnCloseCoverDlg.addClickListener(ce -> dlgCoverSelection.close());
+        HorizontalLayout coverDlgHeader = new HorizontalLayout(new Span("Select Cover Photo"), btnCloseCoverDlg);
+        coverDlgHeader.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.BETWEEN);
+        String sqlGalleryForCover = sqlMemberGallery + " AND usr.username = '" + strMember + "' ";
+        dlgCoverSelection.add(coverDlgHeader);
+        dlgCoverSelection.add(loadPhotos(sqlGalleryForCover, arrColumnMemberGallery, dlgCoverSelection));
+        dlgCoverSelection.addOpenedChangeListener(ce -> {
+            if (!ce.isOpened() && !strSelectedPhotoId.isEmpty()) {
+                coverIdHolder[0] = strSelectedPhotoId;
+                thumbDiv.removeAll();
+                String[] metaCols2 = {"name_new"};
+                List<Record> lstMeta2 = recordService.findAll(
+                        "SELECT name_new FROM photo_meta WHERE id = " + strSelectedPhotoId, metaCols2);
+                if (!lstMeta2.isEmpty()) {
+                    String newFile = lstMeta2.get(0).getColumnData("name_new");
+                    if (newFile != null && !newFile.isEmpty() && !newFile.equalsIgnoreCase("null")) {
+                        String strPathPhotos2 = DIR_PHOTOS_SERVER + dirChar + subPathSmall + dirChar;
+                        Image imgNew = new Image();
+                        imgNew.setAlt("Cover");
+                        imgNew.setSrc(DownloadHandler.forFile(new File(strPathPhotos2 + newFile)));
+                        imgNew.setMaxHeight("80px");
+                        imgNew.setWidth("auto");
+                        thumbDiv.add(imgNew);
+                    }
+                }
+            }
+        });
+
+        Button btnSelectCoverPhoto = new Button("Select Cover Photo");
+        btnSelectCoverPhoto.setIcon(VaadinIcon.PICTURE.create());
+        btnSelectCoverPhoto.addClickListener(ce -> {
+            strSelectedPhotoId = "";  // clear so only a fresh selection in this dialog counts
+            dlgCoverSelection.open();
+        });
+
+        HorizontalLayout coverSection = new HorizontalLayout(thumbDiv, btnSelectCoverPhoto);
+        coverSection.addClassNames(AlignItems.CENTER);
+        coverSection.setWidthFull();
+
         Button btnOk = new Button("Save");
         btnOk.setIcon(FontAwesome.Regular.CHECK_SQUARE.create());
         final String strAlbumIdFinal = strAlbumId;
@@ -2113,6 +2718,23 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
         {
             if (saveStoryInfo(txtAlbumTitle.getValue(), txtAlbumDescription.getValue(), selAlbumCategory, lstAlbumCategoryTitle, lstAlbumCategoryId,
                     strAlbumIdFinal, strMemberId)) {
+                if (!coverIdHolder[0].isEmpty() && !coverIdHolder[0].equalsIgnoreCase("null")) {
+                    String storyIdToUpdate = strAlbumIdFinal;
+                    if (storyIdToUpdate == null) {
+                        String[] idCols = {"id"};
+                        List<Record> lstLatest = recordService.findAll(
+                                "SELECT id FROM photo_stories WHERE user_id = " + strMemberId + " ORDER BY date_inserted DESC LIMIT 1",
+                                idCols);
+                        if (!lstLatest.isEmpty()) storyIdToUpdate = lstLatest.get(0).getColumnData("id");
+                    }
+                    if (storyIdToUpdate != null && !storyIdToUpdate.isEmpty()) {
+                        Object[] updCoverVals = {coverIdHolder[0], storyIdToUpdate, strMemberId};
+                        String[] updCoverTypes = {"java.lang.Integer", "java.lang.Integer", "java.lang.Integer"};
+                        recordService.insertOneRecordWithQuery(
+                                "UPDATE photo_stories SET photo_id1 = ? WHERE id = ? AND user_id = ?",
+                                updCoverVals, updCoverTypes);
+                    }
+                }
                 dlg.close();
             }
         });
@@ -2128,7 +2750,7 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
         layoutButtons.add(btnOk, btnClose);
 
 
-        layoutAlbumInfo.add(divTitleCaption, txtAlbumTitle, txtAlbumDescription, selAlbumCategory, layoutButtons);
+        layoutAlbumInfo.add(divTitleCaption, txtAlbumTitle, txtAlbumDescription, selAlbumCategory, coverSection, layoutButtons);
         dlg.add(layoutAlbumInfo);
 
         return dlg;
@@ -2185,7 +2807,14 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
         dlg.setCloseOnEsc(false);
         dlg.setCloseOnOutsideClick(false);
 
-        String strInc = "1";
+        String strInc = "10";
+        if (strStoryItemId.isEmpty() && !strSelectedStoryId.isEmpty()) {
+            List<Map<String, Object>> maxRes = photoStoryService.findAll(
+                    "SELECT COALESCE(MAX(inc), 0) AS max_inc FROM photo_stories_photo WHERE story_id = " + strSelectedStoryId);
+            if (!maxRes.isEmpty() && maxRes.get(0).get("max_inc") != null) {
+                strInc = String.valueOf(((Number) maxRes.get(0).get("max_inc")).intValue() + 10);
+            }
+        }
         String strAlbumTitle = "";
         String strAlbumDescription = "";
         String strAlbumCategoryId = "";
@@ -2230,37 +2859,50 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
 
         }
 
-        List<String> lstAlbumCategoryTitle = new ArrayList<String>();
-        String[] arrCategories = {"Header", "Text", "Photo", "Tip", "Summary"};
-        lstAlbumCategoryTitle = Arrays.stream(arrCategories).toList();
+        String[] arrCategories = {"Header", "Text", "Tip", "Summary"};
+        String[] selectedType = {strAlbumCategoryId.isEmpty() ? "Text" : strAlbumCategoryId};
 
-//        List<String> lstAlbumCategoryTitleGr = new ArrayList<String>();
-//        String[] arrCategoriesGr = {"Header", "Text", "Photo", "Tip", "Summary"};
-//        lstAlbumCategoryTitleGr = Arrays.stream(arrCategoriesGr).toList();
+        HorizontalLayout typeRow = new HorizontalLayout();
+        typeRow.setWidthFull();
+        typeRow.getStyle().set("gap", "6px").set("flex-wrap", "wrap").set("padding", "4px 0");
+        typeRow.setPadding(false);
+        typeRow.setSpacing(false);
 
-        VerticalLayout layoutAlbumInfo = new VerticalLayout();
-        layoutAlbumInfo.addClassNames(Width.FULL,
-                AlignItems.CENTER, JustifyContent.CENTER,
-                Margin.NONE, Padding.MEDIUM);
-
-        Div divTitleCaption = new Div("Photo-Story properties");
-        divTitleCaption.setText(strTitle);
-
-        Select<String> selAlbumCategoryGr = new Select<>();
-        selAlbumCategoryGr.setRequiredIndicatorVisible(true);
-        selAlbumCategoryGr.setWidthFull();
-        selAlbumCategoryGr.setLabel("Category");
-        selAlbumCategoryGr.setItems(lstAlbumCategoryTitle);
-
-
-        HorizontalLayout divImage = new HorizontalLayout();
-
-        for (int r = 0; r < lstAlbumCategoryTitle.size(); r++) {
-            if (strAlbumCategoryId.equalsIgnoreCase(lstAlbumCategoryTitle.get(r))) {
-                selAlbumCategoryGr.setValue(lstAlbumCategoryTitle.get(r));
-            }
+        List<Button> typeBtns = new ArrayList<>();
+        for (String cat : arrCategories) {
+            Button btnType = new Button(cat);
+            btnType.getStyle()
+                    .set("border-radius", "20px")
+                    .set("font-size", "12px")
+                    .set("letter-spacing", "0.3px")
+                    .set("cursor", "pointer")
+                    .set("min-width", "unset")
+                    .set("transition", "background 0.15s, color 0.15s, outline 0.15s");
+            typeBtns.add(btnType);
+            typeRow.add(btnType);
         }
 
+        Runnable applyTypeStyles = () -> {
+            for (Button b : typeBtns) {
+                String t = b.getText();
+                if (t.equalsIgnoreCase(selectedType[0])) {
+                    b.getStyle()
+                            .set("background", getTypePillBg(t))
+                            .set("color", getTypePillColor(t))
+                            .set("outline", "2px solid " + getTypePillColor(t))
+                            .set("font-weight", "700");
+                } else {
+                    b.getStyle()
+                            .set("background", "var(--lumo-contrast-5pct)")
+                            .set("color", "var(--lumo-secondary-text-color)")
+                            .set("outline", "1px solid var(--lumo-contrast-20pct)")
+                            .set("font-weight", "500");
+                }
+            }
+        };
+        applyTypeStyles.run();
+
+        HorizontalLayout divImage = new HorizontalLayout();
 
         if (strItemPhotoFile.isEmpty()) {
             divImage.add(new Div("Empty"));
@@ -2321,6 +2963,22 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
             txtAlbumTitle.setValue(strAlbumTitle);
         }
 
+        // Wire click listeners now that both divImage and txtAlbumTitle are defined
+        for (Button btnType : typeBtns) {
+            String cat = btnType.getText();
+            btnType.addClickListener(e -> {
+                selectedType[0] = cat;
+                applyTypeStyles.run();
+                if (cat.equalsIgnoreCase("Photo")) {
+                    divImage.setVisible(true);
+                    txtAlbumTitle.setVisible(false);
+                } else {
+                    divImage.setVisible(false);
+                    txtAlbumTitle.setVisible(true);
+                }
+            });
+        }
+
         TextArea txtAlbumDescription = new TextArea("Description");
         txtAlbumDescription.setRequiredIndicatorVisible(true);
         txtAlbumDescription.setMaxLength(400);
@@ -2330,19 +2988,7 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
             txtAlbumDescription.setValue(strAlbumDescription);
         }
 
-        selAlbumCategoryGr.addValueChangeListener(sel -> {
-            if (sel.getSource().getValue().equalsIgnoreCase("Photo")) {
-                divImage.setVisible(true);
-                txtAlbumTitle.setVisible(false);
-            } else {
-                divImage.setVisible(false);
-                txtAlbumTitle.setVisible(true);
-            }
-        });
-        if (selAlbumCategoryGr.getValue() == null) {
-            selAlbumCategoryGr.setValue("Κείμενο");
-        }
-        if (selAlbumCategoryGr.getValue().equalsIgnoreCase("Photo")) {
+        if (selectedType[0].equalsIgnoreCase("Photo")) {
             divImage.setVisible(true);
             txtAlbumTitle.setVisible(false);
         } else {
@@ -2372,9 +3018,9 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
             }
 
             if (isInsert) {
-                saveStoryItem(strMemberId, strSelectedStoryId, "", selAlbumCategoryGr.getValue(), strItemInc, strItemTitle, strItemDescription);
+                saveStoryItem(strMemberId, strSelectedStoryId, "", selectedType[0], strItemInc, strItemTitle, strItemDescription);
             } else {
-                saveStoryItem(strMemberId, strSelectedStoryId, strStoryItemId, selAlbumCategoryGr.getValue(), strItemInc, strItemTitle, strItemDescription);
+                saveStoryItem(strMemberId, strSelectedStoryId, strStoryItemId, selectedType[0], strItemInc, strItemTitle, strItemDescription);
             }
 
             dlg.close();
@@ -2391,7 +3037,18 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
         layoutButtons.add(btnOk, btnClose);
 
 
-        layoutAlbumInfo.add(divTitleCaption, selAlbumCategoryGr, txtInc, divImage, txtAlbumTitle, txtAlbumDescription, layoutButtons);
+        VerticalLayout layoutAlbumInfo = new VerticalLayout();
+        layoutAlbumInfo.addClassNames(Width.FULL,
+                AlignItems.CENTER, JustifyContent.CENTER,
+                Margin.NONE, Padding.MEDIUM);
+
+        Div divTitleCaption = new Div();
+        divTitleCaption.setText(strTitle);
+
+        // Hide type toggles when the item is a Photo (type toggles are for text-based types only)
+        typeRow.setVisible(!strAlbumCategoryId.equalsIgnoreCase("Photo"));
+
+        layoutAlbumInfo.add(divTitleCaption, typeRow, txtInc, divImage, txtAlbumTitle, txtAlbumDescription, layoutButtons);
         dlg.add(layoutAlbumInfo);
 
         return dlg;

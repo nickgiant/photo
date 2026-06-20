@@ -790,7 +790,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
             String strTitle = nvl(dto.getTitle());
             String strCategory = nvl(dto.getCategoryTitle());
-            String strCatGenre = nvl(dto.getCatGenreTitle());
+//            String strCatGenre = nvl(dto.getCatGenreTitle());
             String strDuration = nvl(dto.getDuration());
             String strDateInserted = dto.getDateInsert() != null
                     ? dto.getDateInsert().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) : "";
@@ -800,11 +800,11 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
             h4Title.addClassNames(FontWeight.BOLD, FontSize.LARGE);
 
             Div divCategory = new Div();
-            if (!strCategory.isEmpty()) {
+//            if (!strCategory.isEmpty()) {
                 divCategory.setText("Category: " + strCategory);
-            } else {
-                divCategory.setText("Genre: " + strCatGenre);
-            }
+//            } else {
+//                divCategory.setText("Genre: " + strCatGenre);
+//            }
             Div divDuration = new Div("Duration: " + strDuration);
             Div divDateInserted = new Div("Inserted: " + strDateInserted);
 

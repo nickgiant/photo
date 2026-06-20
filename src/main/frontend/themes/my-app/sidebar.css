@@ -68,7 +68,7 @@ vaadin-app-layout::part(content) {
     width: 46px;
     height: 46px;
     border-radius: 12px;
-    background: linear-gradient(135deg, #8b1a1a 0%, #c0392b 100%);
+    background: linear-gradient(135deg, #8b1a1a 0%, #bd0852 100%);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -90,8 +90,8 @@ vaadin-app-layout::part(content) {
 /* ---------- Brand text ---------- */
 .brand-text {
     padding: 4px;
-   /* font-family: Times-New-Roman, serif;*/
-    color: darkred;
+    font-family:  "Lucida Console", "Lucida Sans Typewriter", sans-serif;
+    color: #bd0852;
     font-size: 1.25rem;
     font-weight: 900;
     white-space: nowrap;
@@ -320,7 +320,7 @@ vaadin-side-nav-item[current]::part(content) {
 
 /* ---------- Popover content ---------- */
 .menu-popover-content {
-    padding: 10px 14px;
+    padding: 8px 10px;
     opacity: 0.95;
 }
 

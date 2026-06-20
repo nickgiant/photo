@@ -1949,7 +1949,6 @@ public class GenericView {
                 LumoUtility.Padding.MEDIUM,
                 LumoUtility.Gap.MEDIUM,
                 //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                LumoUtility.Background.PRIMARY,
                 LumoUtility.BorderRadius.NONE);
 
         footer.add(cameraLogo, appName, divPhotoActMoto, divLineBottom);

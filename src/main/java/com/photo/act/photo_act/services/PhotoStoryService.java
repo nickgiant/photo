@@ -1,8 +1,12 @@
 package com.photo.act.photo_act.services;
 
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Service;
 
+import java.sql.PreparedStatement;
+import java.sql.Statement;
 import java.util.*;
 
 @Service
@@ -70,5 +74,18 @@ public class PhotoStoryService {
                     SET name=?, email=?
                     WHERE id=?
                 """, row.get("name"), row.get("email"), row.get("id"));
+    }
+
+    public Integer insertAndGetGeneratedId(String sql, Object... args) {
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbc.update(conn -> {
+            PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            for (int i = 0; i < args.length; i++) {
+                ps.setObject(i + 1, args[i]);
+            }
+            return ps;
+        }, keyHolder);
+        Number key = keyHolder.getKey();
+        return key != null ? key.intValue() : null;
     }
 }
