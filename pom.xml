@@ -177,11 +177,11 @@
 			<version>24.0.1</version>
 		</dependency>
 
-        <dependency>
-            <groupId>software.xdev</groupId>
-            <artifactId>vaadin-maps-leaflet-flow</artifactId>
-            <version>4.2.0</version>
-        </dependency>
+		<dependency>
+			<groupId>software.xdev.vaadin.maps-leaflet</groupId>
+			<artifactId>flow</artifactId>
+			<version>6.0.0</version>
+		</dependency>
 
 <!--		<dependency>-->
 <!--			<groupId>org.vaadin.addons.themeselect</groupId>-->

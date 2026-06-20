@@ -849,6 +849,8 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
     }
 
 
+
+
     private void getUserClientInfo() {
 
         sessionid = VaadinSession.getCurrent().getSession().getId();
