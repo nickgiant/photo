@@ -360,7 +360,7 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
 
         HorizontalLayout layoutTitleStory = new HorizontalLayout();
         layoutTitleStory.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.BETWEEN);
-        Span spTitleStory = new Span("Επιλέξτε");
+        Span spTitleStory = new Span("Choose");
 
         Dialog dlgPhotoSelection = new Dialog();
         dlgPhotoSelection.setHeightFull();
@@ -1948,7 +1948,7 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
         tfDesc.getStyle().setFlexGrow("1");
 
         Button btnSearch = new Button(VaadinIcon.SEARCH.create());
-        btnSearch.getStyle().setAlignSelf("flex-end");
+        btnSearch.getStyle().setAlignSelf(Style.AlignSelf.CENTER);
         btnSearch.getElement().setAttribute("title", "Search location");
         btnSearch.addClickListener(e -> openLocationSearch(tfName, tfLat, tfLon));
 
