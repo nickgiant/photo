@@ -1,10 +1,6 @@
 
 
 
-vaadin-app-layout {
-    --vaadin-app-layout-drawer-width: 290px;
-}
-
 /* ── Radio-tile filter widgets (statistics section) ───────────────────────── */
 .radio-inputs {
     width: 100%;

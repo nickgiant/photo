@@ -9,13 +9,13 @@
 /* Register the drawer-width custom property so it can be transitioned */
 @property --vaadin-app-layout-drawer-width {
     syntax: '<length>';
-    initial-value: 280px;
+    initial-value: 290px;
     inherits: false;
 }
 
 /* ---- Drawer width + content shift ---- */
 vaadin-app-layout {
-    --vaadin-app-layout-drawer-width: 280px;
+    --vaadin-app-layout-drawer-width: 290px;
     transition: --vaadin-app-layout-drawer-width 0.4s ease;
 }
 
