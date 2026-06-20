@@ -1046,13 +1046,30 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
             }
         });
 
+        Button btnCreateStory = new Button("Create a Story");
+        btnCreateStory.setIcon(VaadinIcon.PLUS.create());
+        btnCreateStory.addClickListener(e -> {
+            Dialog dlgCreate = loadStoryEditDialog(sqlAlbumCategories, arrAlbumCategoriesColumns, "New Photo-Story",
+                    sqlMemberOfAlbums, arrColumnsMemberAlbums, null, strMemberId);
+            if (dlgCreate != null) dlgCreate.open();
+        });
+
+        Button btnEditStory = new Button("Edit This Story");
+        btnEditStory.setIcon(VaadinIcon.EDIT.create());
+        btnEditStory.setEnabled(!strStoryId.isEmpty() && !strStoryId.equals("0"));
+        btnEditStory.addClickListener(e -> {
+            Dialog dlgEdit = loadStoryEditDialog(sqlAlbumCategories, arrAlbumCategoriesColumns, "Edit a Photo-Story",
+                    sqlMemberOfAlbums, arrColumnsMemberAlbums, strStoryId, strMemberId);
+            if (dlgEdit != null) dlgEdit.open();
+        });
+
         HorizontalLayout layoutControls = new HorizontalLayout();
         layoutControls.addClassNames(
                 AlignItems.CENTER, JustifyContent.EVENLY,
                 Padding.SMALL, Margin.NONE,
                 Gap.MEDIUM
         );
-        layoutControls.add(btnSelectStory, btnRefresh, btnAddText, btnAddPhoto, btnAddMap);
+        layoutControls.add(btnCreateStory, btnEditStory, btnSelectStory, btnRefresh, btnAddText, btnAddPhoto, btnAddMap);
 
 
         layoutItems.add(layoutControls);
@@ -1739,9 +1756,14 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
         Div dlgTitle = new Div(isEdit ? "Edit Map Panel" : "Add Map Panel");
         dlgTitle.addClassNames(FontWeight.BOLD, FontSize.LARGE);
 
-        TextField txtLocationArea = new TextField("Location Area Name");
+        TextField txtLocationArea = new TextField("Title");
         txtLocationArea.setWidthFull();
         txtLocationArea.setPlaceholder("e.g. Athens City Centre");
+
+        TextArea txtMapDescription = new TextArea("Description");
+        txtMapDescription.setWidthFull();
+        txtMapDescription.setPlaceholder("Optional description for this map area");
+        txtMapDescription.setMinRows(2);
 
         VerticalLayout pointsLayout = new VerticalLayout();
         pointsLayout.setWidthFull();
@@ -1775,6 +1797,16 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
                     pointsLayout.add(row);
                 }
             }
+            // Load description from photo_stories_photo
+            String[] itemDescCols = {"descr"};
+            List<Record> lstItemDesc = getRecordsFromDb(
+                    "SELECT descr FROM photo_stories_photo WHERE id = " + strStoryItemId, itemDescCols);
+            if (!lstItemDesc.isEmpty()) {
+                String existingDesc = lstItemDesc.get(0).getColumnData("descr");
+                if (existingDesc != null && !existingDesc.equalsIgnoreCase("null")) {
+                    txtMapDescription.setValue(existingDesc);
+                }
+            }
         }
 
         if (pointRows.isEmpty()) {
@@ -1794,6 +1826,7 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
         btnSave.setIcon(FontAwesome.Regular.CHECK_SQUARE.create());
         btnSave.addClickListener(e -> {
             String locationArea = txtLocationArea.getValue();
+            String mapDescription = txtMapDescription.getValue();
             List<StoryMapPointDto> points = new ArrayList<>();
             for (HorizontalLayout row : pointRows) {
                 TextField tfName = (TextField) row.getComponentAt(0);
@@ -1822,10 +1855,16 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
                 Integer storyItemIdInt;
                 if (isEdit) {
                     storyItemIdInt = Integer.parseInt(strStoryItemId);
+                    // Update title and description in photo_stories_photo
+                    Object[] updVals = {locationArea, mapDescription, storyItemIdInt};
+                    String[] updTypes = {"java.lang.String", "java.lang.String", "java.lang.Integer"};
+                    recordService.insertOneRecordWithQuery(
+                            "UPDATE photo_stories_photo SET item_title = ?, descr = ? WHERE id = ?",
+                            updVals, updTypes);
                 } else {
-                    String sqlInsertItem = "INSERT INTO photo_stories_photo (user_id, story_id, item_type, item_title) VALUES (?, ?, 'Map', ?)";
+                    String sqlInsertItem = "INSERT INTO photo_stories_photo (user_id, story_id, item_type, item_title, descr) VALUES (?, ?, 'Map', ?, ?)";
                     storyItemIdInt = photoStoryService.insertAndGetGeneratedId(sqlInsertItem,
-                            Integer.parseInt(strMemberId), Integer.parseInt(strStoryId), locationArea);
+                            Integer.parseInt(strMemberId), Integer.parseInt(strStoryId), locationArea, mapDescription);
                     if (storyItemIdInt == null) {
                         Notification.show("Failed to create story item.", 3000, Notification.Position.TOP_CENTER);
                         return;
@@ -1845,7 +1884,7 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
 
         HorizontalLayout btnRow = new HorizontalLayout(btnSave, btnCancel);
 
-        layout.add(dlgTitle, txtLocationArea, pointsLayout, btnAddPoint, btnRow);
+        layout.add(dlgTitle, txtLocationArea, txtMapDescription, pointsLayout, btnAddPoint, btnRow);
         dlg.add(layout);
         return dlg;
     }
@@ -2259,7 +2298,28 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
             }
         }
 
-
+        // Load existing cover photo
+        String strCoverPhotoId = "";
+        String strCoverPhotoFile = "";
+        if (strAlbumId != null && !strAlbumId.isEmpty() && !strAlbumId.equals("0")) {
+            String[] coverCols = {"photo_id1"};
+            List<Record> lstCover = recordService.findAll(
+                    "SELECT photo_id1 FROM photo_stories WHERE id = " + strAlbumId, coverCols);
+            if (!lstCover.isEmpty()) {
+                String rawCoverId = lstCover.get(0).getColumnData("photo_id1");
+                if (rawCoverId != null && !rawCoverId.isEmpty() && !rawCoverId.equalsIgnoreCase("null")) {
+                    strCoverPhotoId = rawCoverId;
+                    String[] metaCols = {"name_new"};
+                    List<Record> lstMeta = recordService.findAll(
+                            "SELECT name_new FROM photo_meta WHERE id = " + strCoverPhotoId, metaCols);
+                    if (!lstMeta.isEmpty()) {
+                        String rawFile = lstMeta.get(0).getColumnData("name_new");
+                        if (rawFile != null && !rawFile.equalsIgnoreCase("null")) strCoverPhotoFile = rawFile;
+                    }
+                }
+            }
+        }
+        final String[] coverIdHolder = {strCoverPhotoId};
 
         VerticalLayout layoutAlbumInfo = new VerticalLayout();
         layoutAlbumInfo.addClassNames(Width.FULL,
@@ -2302,6 +2362,69 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
             }
         }
 
+        // Cover photo section
+        Div thumbDiv = new Div();
+        thumbDiv.getStyle().set("width", "100px").set("height", "80px")
+                .set("background", "var(--lumo-contrast-5pct)")
+                .set("display", "flex").set("align-items", "center").set("justify-content", "center")
+                .set("border-radius", "var(--lumo-border-radius-s)").set("overflow", "hidden");
+        if (!strCoverPhotoFile.isEmpty() && !strCoverPhotoFile.equalsIgnoreCase("null")) {
+            String strPathPhotos = DIR_PHOTOS_SERVER + dirChar + subPathSmall + dirChar;
+            Image imgCover = new Image();
+            imgCover.setAlt("Cover");
+            imgCover.setSrc(DownloadHandler.forFile(new File(strPathPhotos + strCoverPhotoFile)));
+            imgCover.setMaxHeight("80px");
+            imgCover.setWidth("auto");
+            thumbDiv.add(imgCover);
+        } else {
+            thumbDiv.add(new Span("No cover"));
+        }
+
+        Dialog dlgCoverSelection = new Dialog();
+        dlgCoverSelection.setHeightFull();
+        dlgCoverSelection.setMinWidth("1000px");
+        dlgCoverSelection.setCloseOnEsc(true);
+        dlgCoverSelection.setDraggable(true);
+        dlgCoverSelection.setCloseOnOutsideClick(true);
+        dlgCoverSelection.setResizable(true);
+        Button btnCloseCoverDlg = new Button();
+        btnCloseCoverDlg.setIcon(VaadinIcon.CLOSE_BIG.create());
+        btnCloseCoverDlg.addClickListener(ce -> dlgCoverSelection.close());
+        HorizontalLayout coverDlgHeader = new HorizontalLayout(new Span("Select Cover Photo"), btnCloseCoverDlg);
+        coverDlgHeader.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.BETWEEN);
+        String sqlGalleryForCover = sqlMemberGallery + " AND usr.username = '" + strMember + "' ";
+        dlgCoverSelection.add(coverDlgHeader);
+        dlgCoverSelection.add(loadPhotos(sqlGalleryForCover, arrColumnMemberGallery));
+        dlgCoverSelection.addOpenedChangeListener(ce -> {
+            if (!ce.isOpened() && !strSelectedPhotoId.isEmpty()) {
+                coverIdHolder[0] = strSelectedPhotoId;
+                thumbDiv.removeAll();
+                String[] metaCols2 = {"name_new"};
+                List<Record> lstMeta2 = recordService.findAll(
+                        "SELECT name_new FROM photo_meta WHERE id = " + strSelectedPhotoId, metaCols2);
+                if (!lstMeta2.isEmpty()) {
+                    String newFile = lstMeta2.get(0).getColumnData("name_new");
+                    if (newFile != null && !newFile.isEmpty() && !newFile.equalsIgnoreCase("null")) {
+                        String strPathPhotos2 = DIR_PHOTOS_SERVER + dirChar + subPathSmall + dirChar;
+                        Image imgNew = new Image();
+                        imgNew.setAlt("Cover");
+                        imgNew.setSrc(DownloadHandler.forFile(new File(strPathPhotos2 + newFile)));
+                        imgNew.setMaxHeight("80px");
+                        imgNew.setWidth("auto");
+                        thumbDiv.add(imgNew);
+                    }
+                }
+            }
+        });
+
+        Button btnSelectCoverPhoto = new Button("Select Cover Photo");
+        btnSelectCoverPhoto.setIcon(VaadinIcon.PICTURE.create());
+        btnSelectCoverPhoto.addClickListener(ce -> dlgCoverSelection.open());
+
+        HorizontalLayout coverSection = new HorizontalLayout(thumbDiv, btnSelectCoverPhoto);
+        coverSection.addClassNames(AlignItems.CENTER);
+        coverSection.setWidthFull();
+
         Button btnOk = new Button("Save");
         btnOk.setIcon(FontAwesome.Regular.CHECK_SQUARE.create());
         final String strAlbumIdFinal = strAlbumId;
@@ -2309,6 +2432,23 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
         {
             if (saveStoryInfo(txtAlbumTitle.getValue(), txtAlbumDescription.getValue(), selAlbumCategory, lstAlbumCategoryTitle, lstAlbumCategoryId,
                     strAlbumIdFinal, strMemberId)) {
+                if (!coverIdHolder[0].isEmpty() && !coverIdHolder[0].equalsIgnoreCase("null")) {
+                    String storyIdToUpdate = strAlbumIdFinal;
+                    if (storyIdToUpdate == null) {
+                        String[] idCols = {"id"};
+                        List<Record> lstLatest = recordService.findAll(
+                                "SELECT id FROM photo_stories WHERE user_id = " + strMemberId + " ORDER BY date_inserted DESC LIMIT 1",
+                                idCols);
+                        if (!lstLatest.isEmpty()) storyIdToUpdate = lstLatest.get(0).getColumnData("id");
+                    }
+                    if (storyIdToUpdate != null && !storyIdToUpdate.isEmpty()) {
+                        Object[] updCoverVals = {coverIdHolder[0], storyIdToUpdate, strMemberId};
+                        String[] updCoverTypes = {"java.lang.Integer", "java.lang.Integer", "java.lang.Integer"};
+                        recordService.insertOneRecordWithQuery(
+                                "UPDATE photo_stories SET photo_id1 = ? WHERE id = ? AND user_id = ?",
+                                updCoverVals, updCoverTypes);
+                    }
+                }
                 dlg.close();
             }
         });
@@ -2324,7 +2464,7 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
         layoutButtons.add(btnOk, btnClose);
 
 
-        layoutAlbumInfo.add(divTitleCaption, txtAlbumTitle, txtAlbumDescription, selAlbumCategory, layoutButtons);
+        layoutAlbumInfo.add(divTitleCaption, txtAlbumTitle, txtAlbumDescription, selAlbumCategory, coverSection, layoutButtons);
         dlg.add(layoutAlbumInfo);
 
         return dlg;

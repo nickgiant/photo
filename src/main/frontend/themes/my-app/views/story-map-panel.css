@@ -11,11 +11,59 @@
     color: var(--lumo-primary-text-color);
 }
 
-/* Applied directly to the MapContainer div – no overflow:hidden so Leaflet tiles render freely */
-.stories-view .story-item-panel.map-item .story-map-container {
-    border-radius: var(--lumo-border-radius-m);
+.stories-view .story-item-panel.map-item .map-area-description {
+    margin: var(--lumo-space-xs) 0 0 0;
+    color: var(--lumo-secondary-text-color);
+    font-size: var(--lumo-font-size-s);
+    text-align: center;
+}
+
+/* Wrapper gives the map a fixed height and acts as positioning context for the placeholder */
+.stories-view .story-item-panel.map-item .story-map-wrapper {
+    position: relative;
     width: 100%;
     height: 400px;
     min-height: 400px;
+    border-radius: var(--lumo-border-radius-m);
+    overflow: hidden;
+}
+
+/* Placeholder visible behind Leaflet while tiles are loading */
+.stories-view .story-item-panel.map-item .map-loading-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--lumo-space-s);
+    background: var(--lumo-contrast-5pct);
+    color: var(--lumo-secondary-text-color);
+    z-index: 0;
+    pointer-events: none;
+}
+
+.stories-view .story-item-panel.map-item .map-loading-placeholder .map-placeholder-icon {
+    font-size: 2.5rem;
+}
+
+.stories-view .story-item-panel.map-item .map-loading-placeholder .map-placeholder-title {
+    font-weight: bold;
+    font-size: var(--lumo-font-size-m);
+}
+
+.stories-view .story-item-panel.map-item .map-loading-placeholder .map-placeholder-label {
+    font-size: var(--lumo-font-size-s);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.7;
+}
+
+/* Map container fills the wrapper absolutely (z-index 1 already set by Leaflet fixZIndex) */
+.stories-view .story-item-panel.map-item .story-map-wrapper .story-map-container {
+    position: absolute;
+    inset: 0;
+    width: 100% !important;
+    height: 100% !important;
     display: block;
 }
