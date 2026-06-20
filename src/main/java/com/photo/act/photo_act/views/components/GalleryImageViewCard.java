@@ -321,7 +321,7 @@ public class GalleryImageViewCard extends Div {
         h3User.addClassNames(Margin.NONE, Padding.XSMALL);
 
         layoutUser.add(VaadinIcon.USER.create(), h3User);
-
+        layoutUser.addClassName("to-hover-popover");
 
         VerticalLayout layoutPhotographer = fetchPhotoCreator(record,false);
 
@@ -329,12 +329,12 @@ public class GalleryImageViewCard extends Div {
         popover.setTarget(layoutUser);
         popover.setOpenOnClick(false);
         popover.setOpenOnHover(true);
-        popover.setHoverDelay(250);
+        popover.setHoverDelay(150);
         popover.setHideDelay(100);
+        popover.addClassName("popover-content-info");
 
         popover.setWidth("300px");
-        popover.addThemeVariants(PopoverVariant.ARROW,
-                PopoverVariant.LUMO_NO_PADDING);
+        popover.addThemeVariants(PopoverVariant.ARROW);
         popover.setPosition(PopoverPosition.TOP);
         popover.setModal(true);
         popover.setAriaLabelledBy("member-popup");
@@ -448,6 +448,18 @@ public class GalleryImageViewCard extends Div {
         Span divDate = new Span(strPhotoDate);
         layoutDateShot.add(FontAwesome.Solid.CAMERA_ALT.create(), divDate);
 
+
+        HorizontalLayout layoutDateTimeNInfo = new HorizontalLayout();
+        layoutDateTimeNInfo.addClassNames(   AlignItems.CENTER, JustifyContent.CENTER,
+                Margin.NONE,
+                Padding.NONE,
+                Gap.XSMALL,
+                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
+                //   Background.CONTRAST_5,
+                BorderRadius.NONE
+        );
+        layoutDateTimeNInfo.addClassName("to-hover-popover");
+
         HorizontalLayout layoutDateTimeUploaded = new HorizontalLayout();
         layoutDateTimeUploaded.addClassNames(
 //                Overflow.HIDDEN, Width.FULL,
@@ -555,26 +567,20 @@ public class GalleryImageViewCard extends Div {
         if(strDateTime == null || strDateTime.isEmpty()){
             layoutTime.setVisible(false);
         }
-//        layoutPhotoMeta.add(, divSSTitle, divMetaSS, divIsoTitle, divMetaIso);
-
-//        detailsPhotoInfo.add(layoutPhotoCameraMeta, layoutPhotoFocalLength, layoutPhotoMeta);
-
-//        HorizontalLayout layoutDetailsAvatarNActions = new HorizontalLayout();
 
 
-//        AvatarItem avatarItemMe = new AvatarItem(strPhotoNameUser + " " + strPhotoSurnameUser, "", imgAvatarSmall);
-//        avatarItemMe.addClassNames(Padding.NONE, Margin.NONE, AlignItems.CENTER);
+
 
 
         Popover popoverPhoto = new Popover();
         popoverPhoto.setOpenOnClick(false);
         popoverPhoto.setOpenOnHover(true);
-        popoverPhoto.setHoverDelay(250);
+        popoverPhoto.setHoverDelay(150);
         popoverPhoto.setHideDelay(100);
+        popoverPhoto.addClassName("popover-content-info");
 
         popoverPhoto.setWidth("400px");
-        popoverPhoto.addThemeVariants(PopoverVariant.ARROW,
-                PopoverVariant.LUMO_NO_PADDING);
+        popoverPhoto.addThemeVariants(PopoverVariant.ARROW);
         popoverPhoto.setPosition(PopoverPosition.TOP);
         popoverPhoto.setModal(true);
         popoverPhoto.setAriaLabelledBy("member-popup");
@@ -586,13 +592,13 @@ public class GalleryImageViewCard extends Div {
         layoutPhotoDetails.add(divMetaCamera, divMetaLens, layoutPhotoFocalLength, layoutAperture, layoutShutterSpeed, layoutIso,layoutTime);
         layoutPhotoDetails.addClassName("info-to-show");
         popoverPhoto.add(layoutPhotoDetails);
-        popoverPhoto.setTarget(layoutDateTimeShot);
+        popoverPhoto.setTarget(layoutDateTimeNInfo);
 
             HorizontalLayout statsRow = buildStatsRow(strPhotoId);
 
         layoutPhotoDetails.getStyle().setOpacity("1");
 
-//        this.add((popover, popoverPhoto);
+
 
 //        divImage.add(layoutPhotoDetails);
 
@@ -625,35 +631,6 @@ public class GalleryImageViewCard extends Div {
         Div divMemberPhotoCount = new Div("111");
         layoutMemberPhotoCount.add(FontAwesome.Regular.IMAGES.create(), divMemberPhotoCount);
 
-/*        HorizontalLayout layoutMemberViewCount = new HorizontalLayout();
-        layoutMemberViewCount.addClassNames(
-//                Overflow.HIDDEN, Width.FULL,
-                AlignItems.CENTER, JustifyContent.CENTER,
-                Margin.NONE,
-                Padding.XSMALL,
-                Gap.XSMALL,
-                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                //   Background.CONTRAST_5,
-                BorderRadius.NONE
-        );
-        Div divMemberViews = new Div("1");
-        layoutMemberViewCount.add(FontAwesome.Regular.EYE.create(), divMemberViews);*/
-
-/*        HorizontalLayout layoutLocationsCount = new HorizontalLayout();
-        layoutLocationsCount.addClassNames(
-//                Overflow.HIDDEN, Width.FULL,
-                AlignItems.CENTER, JustifyContent.CENTER,
-                Margin.NONE,
-                Padding.XSMALL,
-                Gap.XSMALL,
-                //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-                //   Background.CONTRAST_5,
-                BorderRadius.NONE
-        );
-        Div divLocations = new Div(strPhotoUserResident);
-        layoutLocationsCount.add(FontAwesome.Regular.COMPASS.create(), divLocations);*/
-
-
 
         Div subtitle = new Div();
         subtitle.addClassNames(FontSize.SMALL, Width.FULL, AlignItems.CENTER, JustifyContent.CENTER,
@@ -672,10 +649,7 @@ public class GalleryImageViewCard extends Div {
         badgePhotoType.setText(strPhotoType);
 
 
-
         if (!isEditable) {
-
-
 
             if(size==CardSize.COMPACT) {
                 VerticalLayout layoutInfoPanel = new VerticalLayout();
@@ -684,7 +658,8 @@ public class GalleryImageViewCard extends Div {
                         Padding.XSMALL, Margin.NONE,
                         TextColor.TERTIARY,
                         FontSize.SMALL);
-                layoutInfoPanel.add(layoutUser, statsRow, layoutDateTimeShot);
+                layoutDateTimeNInfo.add(layoutDateTimeShot);
+                layoutInfoPanel.add(layoutUser, statsRow, layoutDateTimeNInfo);
                 this.add(divImage, layoutInfoPanel, divPhotoInfo);
             }else {
 
@@ -694,7 +669,8 @@ public class GalleryImageViewCard extends Div {
                         Padding.MEDIUM, Margin.NONE,
                         TextColor.TERTIARY,
                         FontSize.SMALL);
-                layoutInfoPanel.add(layoutUser, statsRow, layoutDateRelUploaded);
+                layoutDateTimeNInfo.add(layoutDateRelUploaded);
+                layoutInfoPanel.add(layoutUser, statsRow, layoutDateTimeNInfo);
                 this.add(divImage, layoutInfoPanel, divPhotoInfo);
             }
 
@@ -712,8 +688,8 @@ public class GalleryImageViewCard extends Div {
                     TextColor.TERTIARY,
                     FontSize.SMALL);
 
-
-            layoutInfoPanel.add(layoutUser, statsRow, layoutDateTimeShot);
+            layoutDateTimeNInfo.add(layoutDateTimeShot);
+            layoutInfoPanel.add(layoutUser, statsRow, layoutDateTimeNInfo);
             // user himself
             this.add(divImage, layoutInfoPanel, divPhotoInfo);
             if (isMobile) {

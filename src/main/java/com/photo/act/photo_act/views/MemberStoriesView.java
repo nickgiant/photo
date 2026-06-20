@@ -32,6 +32,7 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.provider.CallbackDataProvider;
 import com.vaadin.flow.data.provider.SortDirection;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
+import com.vaadin.flow.dom.Style;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
@@ -1871,7 +1872,7 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
         tfDesc.getStyle().setFlexGrow("1");
 
         Button btnRemove = new Button("-");
-        btnRemove.getStyle().setAlignSelf("flex-end");
+        btnRemove.getStyle().setAlignSelf(Style.AlignSelf.CENTER);
 
         HorizontalLayout row = new HorizontalLayout(tfName, tfLat, tfLon, tfDesc, btnRemove);
         row.setAlignItems(com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment.END);

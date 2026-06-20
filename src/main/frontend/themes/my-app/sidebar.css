@@ -320,7 +320,7 @@ vaadin-side-nav-item[current]::part(content) {
 
 /* ---------- Popover content ---------- */
 .menu-popover-content {
-    padding: 10px 14px;
+    padding: 8px 10px;
     opacity: 0.95;
 }
 
