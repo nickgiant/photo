@@ -1019,7 +1019,7 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
         dvStoryTitle.setWidthFull();
         dvStoryTitle.setText(strStoryTitle);
 
-        Button btnSelectStory = new Button("Select a Photo-Story");
+        Button btnSelectStory = new Button("Select a Story");
         btnSelectStory.setIcon(FontAwesome.Solid.PHOTO_FILM.create());
         btnSelectStory.addClickListener(clickEvent -> {
             dlgStorySelection.open();
@@ -1318,7 +1318,7 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
                     if (isMapItem) {
                         dlgItemEditSelection = loadMapEditorDialog(strMemberId, strStoryId, strItemId);
                     } else {
-                        dlgItemEditSelection = loadStoryItemEditDialog("Επεξεργασία", false, sqlMemberOfAlbums, arrColumnsMemberAlbums,
+                        dlgItemEditSelection = loadStoryItemEditDialog("Edit", false, sqlMemberOfAlbums, arrColumnsMemberAlbums,
                                 sqlReadStoryItems, arrColStoryItems,
                                 dlgPhotoSelection,
                                 strMemberId, strItemId);
@@ -1332,7 +1332,7 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
                     });
 
                     Button btnEdit = new Button("");
-                    btnEdit.setTooltipText("Επεξεργασία");
+                    btnEdit.setTooltipText("Edit");
                     btnEdit.setIcon(FontAwesome.Solid.PENCIL.create());
                     btnEdit.addClickListener(event -> {
                         dlgItemEditSelection.open();
@@ -1340,7 +1340,7 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
                     });
 
                     Button btnDelete = new Button("");
-                    btnDelete.setTooltipText("Διαγραφή");
+                    btnDelete.setTooltipText("Delete");
                     SvgIcon iconBin = new SvgIcon(DownloadHandler.forClassResource(getClass(), "/icons/delete-bin-line.svg"));
                     btnDelete.setIcon(iconBin);
                     btnDelete.addClickListener(del -> {

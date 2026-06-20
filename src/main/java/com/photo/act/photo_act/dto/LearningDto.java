@@ -36,7 +36,7 @@ public class LearningDto implements Serializable {
     Long          categoryId;
     String        categoryTitle;
     Long          catGenreId;
-    String        catGenreTitle;
+//    String        catGenreTitle;
     Integer       userIdPost;
     LocalDateTime dateInsert;
 
@@ -44,7 +44,7 @@ public class LearningDto implements Serializable {
                                    String tutorName, String tutorWebsite,
                                    String tutorUrlYt, String tutorUrlInsta,
                                    String tutorUrlWikipedia,
-                                   String categoryTitle, String catGenreTitle,
+                                   String categoryTitle, /*String catGenreTitle,*/
                                    String slug) {
         return LearningDto.builder()
                 .id(e.getId())
@@ -66,8 +66,8 @@ public class LearningDto implements Serializable {
                 .published(e.getPublished())
                 .categoryId(e.getCategoryId())
                 .categoryTitle(categoryTitle)
-                .catGenreId(e.getCatGenreId())
-                .catGenreTitle(catGenreTitle)
+//                .catGenreId(e.getCatGenreId())
+//                .catGenreTitle(catGenreTitle)
                 .userIdPost(e.getUserIdPost())
                 .dateInsert(e.getDateInsert())
                 .build();

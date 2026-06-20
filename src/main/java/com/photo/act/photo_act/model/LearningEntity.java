@@ -39,8 +39,8 @@ public class LearningEntity {
                 foreignKey = @ForeignKey(name = "fk_learning_tutor_id"))
     private TutorEntity tutor;
 
-    @Column(name = "tutor_id_team")
-    private Long tutorIdTeam;
+/*    @Column(name = "tutor_id_team")
+    private Long tutorIdTeam;*/
 
     @Column(name = "artists_ref", length = 512)
     private String artistsRef;
@@ -66,15 +66,15 @@ public class LearningEntity {
                 foreignKey = @ForeignKey(name = "fk_learning_category_id"))
     private LearningCategoryEntity category;
 
-    /** Write-side FK → learnings_categories.id (genre) */
+/*    *//** Write-side FK → learnings_categories.id (genre) *//*
     @Column(name = "cat_genre_id")
-    private Long catGenreId;
+    private Long catGenreId;*/
 
-    /** Read-side reference for genre category. */
+/*    *//** Read-side reference for genre category. *//*
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cat_genre_id", insertable = false, updatable = false,
                 foreignKey = @ForeignKey(name = "fk_learning_cat_genre_id"))
-    private LearningCategoryEntity catGenre;
+    private LearningCategoryEntity catGenre;*/
 
     @Column(name = "user_Id_post")
     private Integer userIdPost;
@@ -102,7 +102,7 @@ public class LearningEntity {
         this.pages       = pages;
         this.published   = published;
         this.categoryId  = categoryId;
-        this.catGenreId  = catGenreId;
+//        this.catGenreId  = catGenreId;
         this.userIdPost  = userIdPost;
     }
 
@@ -118,7 +118,7 @@ public class LearningEntity {
     public String        getUrl()         { return url; }
     public Long          getTutorId()     { return tutorId; }
     public TutorEntity   getTutor()       { return tutor; }
-    public Long          getTutorIdTeam() { return tutorIdTeam; }
+//    public Long          getTutorIdTeam() { return tutorIdTeam; }
     public String        getArtistsRef()  { return artistsRef; }
     public String        getDescription() { return description; }
     public String        getDuration()    { return duration; }
@@ -126,8 +126,8 @@ public class LearningEntity {
     public LocalDate     getPublished()   { return published; }
     public Long          getCategoryId()  { return categoryId; }
     public LearningCategoryEntity getCategory()  { return category; }
-    public Long          getCatGenreId()  { return catGenreId; }
-    public LearningCategoryEntity getCatGenre()  { return catGenre; }
+//    public Long          getCatGenreId()  { return catGenreId; }
+//    public LearningCategoryEntity getCatGenre()  { return catGenre; }
     public Integer       getUserIdPost()  { return userIdPost; }
     public LocalDateTime getDateInsert()  { return dateInsert; }
     public String        getSlug()        { return slug; }
@@ -137,13 +137,13 @@ public class LearningEntity {
     public void setFormat(String format)           { this.format = format; }
     public void setUrl(String url)                 { this.url = url; }
     public void setTutorId(Long tutorId)           { this.tutorId = tutorId; }
-    public void setTutorIdTeam(Long tutorIdTeam)   { this.tutorIdTeam = tutorIdTeam; }
+//    public void setTutorIdTeam(Long tutorIdTeam)   { this.tutorIdTeam = tutorIdTeam; }
     public void setArtistsRef(String artistsRef)   { this.artistsRef = artistsRef; }
     public void setDescription(String description) { this.description = description; }
     public void setDuration(String duration)       { this.duration = duration; }
     public void setPages(String pages)             { this.pages = pages; }
     public void setPublished(LocalDate published)  { this.published = published; }
     public void setCategoryId(Long categoryId)     { this.categoryId = categoryId; }
-    public void setCatGenreId(Long catGenreId)     { this.catGenreId = catGenreId; }
+//    public void setCatGenreId(Long catGenreId)     { this.catGenreId = catGenreId; }
     public void setSlug(String slug)               { this.slug = slug; }
 }

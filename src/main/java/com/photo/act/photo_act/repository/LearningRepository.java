@@ -15,7 +15,7 @@ public interface LearningRepository extends JpaRepository<LearningEntity, Long> 
 
     List<LearningEntity> findByCategoryIdOrderByDateInsertDesc(Long categoryId);
 
-    List<LearningEntity> findByCatGenreIdOrderByDateInsertDesc(Long catGenreId);
+//    List<LearningEntity> findByCatGenreIdOrderByDateInsertDesc(Long catGenreId);
 
     List<LearningEntity> findByTutorIdOrderByDateInsertDesc(Long tutorId);
 

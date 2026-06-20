@@ -110,10 +110,10 @@ public class LearningService {
                 .map(this::toDto).toList();
     }
 
-    public List<LearningDto> getLearningsByGenre(Long catGenreId) {
+/*    public List<LearningDto> getLearningsByGenre(Long catGenreId) {
         return learningRepo.findByCatGenreIdOrderByDateInsertDesc(catGenreId).stream()
                 .map(this::toDto).toList();
-    }
+    }*/
 
     public List<LearningDto> getLearningsByTutor(Long tutorId) {
         return learningRepo.findByTutorIdOrderByDateInsertDesc(tutorId).stream()
@@ -172,7 +172,7 @@ public class LearningService {
             entity.setPages(dto.getPages());
             entity.setPublished(dto.getPublished());
             entity.setCategoryId(dto.getCategoryId());
-            entity.setCatGenreId(dto.getCatGenreId());
+//            entity.setCatGenreId(dto.getCatGenreId());
             entity.setSlug(SlugUtil.toSlug(dto.getTitle()) + "-" + id);
             return toDto(learningRepo.save(entity));
         });
@@ -203,11 +203,11 @@ public class LearningService {
                 ? categoryRepo.findById(e.getCategoryId())
                               .map(LearningCategoryEntity::getCatTitle).orElse(null)
                 : null;
-        String catGenreTitle = e.getCatGenreId() != null
-                ? categoryRepo.findById(e.getCatGenreId())
-                              .map(LearningCategoryEntity::getCatTitle).orElse(null)
-                : null;
+//        String catGenreTitle = e.getCatGenreId() != null
+//                ? categoryRepo.findById(e.getCatGenreId())
+//                              .map(LearningCategoryEntity::getCatTitle).orElse(null)
+//                : null;
         return LearningDto.from(e, tutorName, tutorWebsite, tutorUrlYt, tutorUrlInsta,
-                                tutorUrlWiki, categoryTitle, catGenreTitle, e.getSlug());
+                                tutorUrlWiki, categoryTitle,  e.getSlug());
     }
 }

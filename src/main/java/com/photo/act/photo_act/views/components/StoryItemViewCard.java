@@ -75,7 +75,7 @@ public class StoryItemViewCard extends Div {
                     .set("justify-content", "center")
                     .set("gap", "8px")
                     .set("width", "100%")
-                    .set("height", "400px")
+                    .set("height", "600px")
                     .set("background", "var(--lumo-contrast-5pct)")
                     .set("border-radius", "var(--lumo-border-radius-m)")
                     .set("color", "var(--lumo-secondary-text-color)");
@@ -558,7 +558,7 @@ public class StoryItemViewCard extends Div {
         wrapperDiv.getStyle()
                 .set("position", "relative")
                 .set("width", "100%")
-                .set("height", "400px")
+                .set("height", "650px")
                 .set("border-radius", "var(--lumo-border-radius-m)")
                 .set("overflow", "hidden");
 

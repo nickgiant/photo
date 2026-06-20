@@ -335,10 +335,10 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
             learnings = learningService.getCategoryByTitle(category)
                     .map(cat -> learningService.getLearningsByCategory(cat.getId()))
                     .orElse(List.of());
-        } else if (!genre.isEmpty() && !genre.equalsIgnoreCase(STR_ALL_GENRES)) {
+/*        } else if (!genre.isEmpty() && !genre.equalsIgnoreCase(STR_ALL_GENRES)) {
             learnings = learningService.getCategoryByTitle(genre)
                     .map(cat -> learningService.getLearningsByGenre(cat.getId()))
-                    .orElse(List.of());
+                    .orElse(List.of());*/
         } else if (SORT_MOST_LIKED.equals(sortOption)) {
             learnings = learningService.getLearningsSortedByLikes(sortAscending, 0, pageSize).getContent();
         } else if (SORT_MOST_VIEWED.equals(sortOption)) {
@@ -525,7 +525,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
 
         String strTitle = nvl(dto.getTitle());
         String strCategory = nvl(dto.getCategoryTitle());
-        String strCatGenre = nvl(dto.getCatGenreTitle());
+//        String strCatGenre = nvl(dto.getCatGenreTitle());
         String strFormat = nvl(dto.getFormat());
         String strDuration = nvl(dto.getDuration());
         String strPages = nvl(dto.getPages());
@@ -821,14 +821,14 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
                 //   Background.CONTRAST_5,
                 BorderRadius.NONE
         );
-        H5 spCategory2Small = new H5(strCatGenre);
-        spCategory2Small.addClassNames(AlignItems.CENTER, TextAlignment.CENTER, JustifyContent.CENTER);
-        layoutCategory2Small.add(FontAwesome.Solid.TAG.create(), spCategory2Small);
+//        H5 spCategory2Small = new H5(strCatGenre);
+//        spCategory2Small.addClassNames(AlignItems.CENTER, TextAlignment.CENTER, JustifyContent.CENTER);
+//        layoutCategory2Small.add(FontAwesome.Solid.TAG.create(), spCategory2Small);
 
         layoutCategory2SmallAll.add(layoutCategory2Small);
-        if (strCatGenre == null || strCatGenre.isEmpty() || strCatGenre.equalsIgnoreCase("null")) {
-            layoutCategory2SmallAll.setVisible(false);
-        }
+//        if (strCatGenre == null || strCatGenre.isEmpty() || strCatGenre.equalsIgnoreCase("null")) {
+//            layoutCategory2SmallAll.setVisible(false);
+//        }
 
 //        Image imgAvatarSmall = genericView.getAvatarImage(strAvatarPath, strNameOfUser, "40px", "40px");
 //        AvatarItem avatarItemSmall = new AvatarItem(strNameOfUser, "", imgAvatarSmall);
@@ -1011,12 +1011,12 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         }
 
         HorizontalLayout layoutCategory2Normal = new HorizontalLayout();
-        H5 spCategory2Normal = new H5(strCatGenre);
-        spCategory2Normal.addClassNames(AlignItems.CENTER, TextAlignment.CENTER, JustifyContent.CENTER);
-        layoutCategory2Normal.add(FontAwesome.Solid.TAG.create(), spCategory2Normal);
-        if (strCatGenre == null || strCatGenre.isEmpty() || strCatGenre.equalsIgnoreCase("null")) {
-            layoutCategory2Normal.setVisible(false);
-        }
+//        H5 spCategory2Normal = new H5(strCatGenre);
+//        spCategory2Normal.addClassNames(AlignItems.CENTER, TextAlignment.CENTER, JustifyContent.CENTER);
+//        layoutCategory2Normal.add(FontAwesome.Solid.TAG.create(), spCategory2Normal);
+//        if (strCatGenre == null || strCatGenre.isEmpty() || strCatGenre.equalsIgnoreCase("null")) {
+//            layoutCategory2Normal.setVisible(false);
+//        }
 
         Div dayUpdatedLabelNormal = new Div("Info Created: ");
         dayUpdatedLabelNormal.addClassName(TextColor.SECONDARY);
