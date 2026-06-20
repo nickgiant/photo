@@ -21,6 +21,7 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
+import com.vaadin.flow.component.grid.dnd.GridDropLocation;
 import com.vaadin.flow.component.grid.dnd.GridDropMode;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.SvgIcon;
@@ -34,6 +35,7 @@ import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.provider.CallbackDataProvider;
+import com.vaadin.flow.data.provider.ListDataProvider;
 import com.vaadin.flow.data.provider.SortDirection;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.dom.Style;
@@ -980,26 +982,27 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
 
 
 
-        CallbackDataProvider<Map<String, Object>, Void> dpStoryItems = new CallbackDataProvider<Map<String, Object>, Void>(
-                query -> {
-
-                    int offset = query.getOffset();
-                    int limit = query.getLimit();
-
-                    var sort = query.getSortOrders().stream().findFirst();
-
-                    String sortField = sort.map(s -> s.getSorted())
-                            .orElse("id");
-
-                    boolean asc = sort.map(s -> s.getDirection()
-                                    == SortDirection.ASCENDING)
-                            .orElse(true);
-
-                    return photoStoryService.fetch(sqlAllStoryItems, arrColMemberPhotos, limit, offset, sortField, asc)
-                            .stream();
-                },
-                query -> photoStoryService.count(sqlAllStoryItems)
-        );
+        List<Map<String, Object>> itemsList = new ArrayList<>(photoStoryService.findAll(sqlAllStoryItems));
+        // Ensure every item for this story has an inc; assign 10, 20, 30... and persist if any are missing
+        if (!strStoryId.isEmpty() && !itemsList.isEmpty()) {
+            boolean anyMissing = itemsList.stream()
+                    .anyMatch(r -> r.get("inc") == null
+                            || r.get("inc").toString().isBlank()
+                            || r.get("inc").toString().equals("0"));
+            if (anyMissing) {
+                for (int i = 0; i < itemsList.size(); i++) {
+                    int newInc = (i + 1) * 10;
+                    String itemId = itemsList.get(i).get("story_item_id").toString();
+                    itemsList.get(i).put("inc", newInc);
+                    recordService.insertOneRecordWithQuery(
+                            "UPDATE photo_stories_photo SET inc = ? WHERE id = ?",
+                            new Object[]{newInc, itemId},
+                            new String[]{"java.lang.Integer", "java.lang.String"}
+                    );
+                }
+            }
+        }
+        ListDataProvider<Map<String, Object>> dpStoryItems = new ListDataProvider<>(itemsList);
 
         H4 dvStoryTitle = new H4();
         dvStoryTitle.setWidthFull();
@@ -1025,7 +1028,8 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
                 strMemberId, "");
 
         dlgItemNew.addDialogCloseActionListener(close -> {
-            dpStoryItems.refreshAll();
+            layoutStoryItems.removeAll();
+            layoutStoryItems.add(loadStoryItems(dlgStorySelection, sqlReadStoryItems, arrColStoryItems, dlgPhotoSelection, strSelectedStoryId, strStoryTitle, strMemberId));
         });
 
         Button btnAddText = new Button("Add Text");
@@ -1052,7 +1056,8 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
 
         Dialog dlgAddMap = loadMapEditorDialog(strMemberId, strStoryId, null);
         dlgAddMap.addDialogCloseActionListener(close -> {
-            dpStoryItems.refreshAll();
+            layoutStoryItems.removeAll();
+            layoutStoryItems.add(loadStoryItems(dlgStorySelection, sqlReadStoryItems, arrColStoryItems, dlgPhotoSelection, strSelectedStoryId, strStoryTitle, strMemberId));
         });
 
         Button btnAddMap = new Button("Add Map");
@@ -1131,19 +1136,31 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
                 }
         );
 
-        gridStoryItems.addDropListener(
-                event -> {
-                    Object dropOverItem = event.getDropTargetItem().get();
-               //        if (!dropOverItem.equals(draggedItem)) {
-                    // reorder dragged item the backing gridItems container
-             //            gridStoryItems.remove(draggedItem);
-                    // calculate drop index based on the dropOverItem
-             //         int dropIndex = gridStoryItems.indexOf(dropOverItem) + (event.getDropLocation() == GridDropLocation.BELOW ? 1 : 0);
-             //        gridStoryItems.add(dropIndex, draggedItem);
-                    gridStoryItems.getDataProvider().refreshAll();
-                    //  }
+        gridStoryItems.addDropListener(event -> {
+            event.getDropTargetItem().ifPresent(target -> {
+                if (draggedItem == null || draggedItem.equals(target)) return;
+
+                itemsList.remove(draggedItem);
+                int insertIdx = itemsList.indexOf(target);
+                if (event.getDropLocation() == GridDropLocation.BELOW) {
+                    insertIdx++;
                 }
-        );
+                insertIdx = Math.max(0, Math.min(insertIdx, itemsList.size()));
+                itemsList.add(insertIdx, draggedItem);
+
+                for (int i = 0; i < itemsList.size(); i++) {
+                    int newInc = (i + 1) * 10;
+                    String itemId = itemsList.get(i).get("story_item_id").toString();
+                    itemsList.get(i).put("inc", newInc);
+                    recordService.insertOneRecordWithQuery(
+                            "UPDATE photo_stories_photo SET inc = ? WHERE id = ?",
+                            new Object[]{newInc, itemId},
+                            new String[]{"java.lang.Integer", "java.lang.String"}
+                    );
+                }
+                dpStoryItems.refreshAll();
+            });
+        });
 
 
         // For convenience you could set also click listener to do the selection
