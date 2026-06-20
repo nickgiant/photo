@@ -49,6 +49,7 @@ public class StoryMapService {
             p.setLon(dto.getLon());
             p.setDescription(dto.getDescription());
             p.setPointOrder(i + 1);
+            p.setColor(dto.getColor() != null && !dto.getColor().isBlank() ? dto.getColor() : "#3498db");
             pointRepo.save(p);
         }
     }
@@ -88,6 +89,7 @@ public class StoryMapService {
         dto.setLon(p.getLon());
         dto.setDescription(p.getDescription());
         dto.setPointOrder(p.getPointOrder());
+        dto.setColor(p.getColor());
         return dto;
     }
 }

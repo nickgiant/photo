@@ -1857,8 +1857,8 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
                     txtLocationArea.setValue(area);
                 }
                 String mapId = lstMap.get(0).getColumnData("id");
-                String[] ptCols = {"point_name", "lat", "lon", "description"};
-                String sqlPts = "SELECT point_name, lat, lon, description FROM photo_story_map_point WHERE map_id = " + mapId + " ORDER BY point_order ASC";
+                String[] ptCols = {"point_name", "lat", "lon", "description", "color"};
+                String sqlPts = "SELECT point_name, lat, lon, description, IFNULL(color, '#3498db') AS color FROM photo_story_map_point WHERE map_id = " + mapId + " ORDER BY point_order ASC";
                 List<Record> lstPts = getRecordsFromDb(sqlPts, ptCols);
                 for (Record pt : lstPts) {
                     HorizontalLayout row = buildPointRow(
@@ -1866,6 +1866,7 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
                             pt.getColumnData("lat"),
                             pt.getColumnData("lon"),
                             pt.getColumnData("description"),
+                            pt.getColumnData("color"),
                             pointRows, pointsLayout
                     );
                     pointRows.add(row);
@@ -1885,14 +1886,14 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
         }
 
         if (pointRows.isEmpty()) {
-            HorizontalLayout row = buildPointRow("", "", "", "", pointRows, pointsLayout);
+            HorizontalLayout row = buildPointRow("", "", "", "", "", pointRows, pointsLayout);
             pointRows.add(row);
             pointsLayout.add(row);
         }
 
         Button btnAddPoint = new Button("+ Add Point");
         btnAddPoint.addClickListener(e -> {
-            HorizontalLayout row = buildPointRow("", "", "", "", pointRows, pointsLayout);
+            HorizontalLayout row = buildPointRow("", "", "", "", "", pointRows, pointsLayout);
             pointRows.add(row);
             pointsLayout.add(row);
         });
@@ -1909,6 +1910,9 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
                 TextField tfLat  = (TextField) row.getComponentAt(2);
                 TextField tfLon  = (TextField) row.getComponentAt(3);
                 TextField tfDesc = (TextField) row.getComponentAt(4);
+                // index 5 = swatch picker, index 6 = remove button
+                String rowColor = row.getElement().getAttribute("data-color");
+                if (rowColor == null || rowColor.isBlank()) rowColor = "#3498db";
                 if (!tfLat.getValue().isEmpty() && !tfLon.getValue().isEmpty()) {
                     try {
                         StoryMapPointDto pt = new StoryMapPointDto();
@@ -1916,6 +1920,7 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
                         pt.setLat(Double.parseDouble(tfLat.getValue()));
                         pt.setLon(Double.parseDouble(tfLon.getValue()));
                         pt.setDescription(tfDesc.getValue());
+                        pt.setColor(rowColor);
                         points.add(pt);
                     } catch (NumberFormatException ignored) {
                         Notification.show("Invalid lat/lon in one of the points.", 3000, Notification.Position.TOP_CENTER);
@@ -1971,7 +1976,12 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
         return dlg;
     }
 
-    private HorizontalLayout buildPointRow(String name, String lat, String lon, String desc,
+    private static final String[] MAP_PIN_COLORS = {
+        "#e74c3c","#e67e22","#f1c40f","#2ecc71","#1abc9c",
+        "#3498db","#9b59b6","#e91e63","#795548","#607d8b"
+    };
+
+    private HorizontalLayout buildPointRow(String name, String lat, String lon, String desc, String color,
                                             List<HorizontalLayout> pointRows, VerticalLayout pointsLayout) {
         TextField tfName = new TextField("Name");
         tfName.setPlaceholder("e.g. Acropolis");
@@ -2000,9 +2010,62 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
         Button btnRemove = new Button("-");
         btnRemove.getStyle().setAlignSelf(Style.AlignSelf.CENTER);
 
-        HorizontalLayout row = new HorizontalLayout(tfName, btnSearch, tfLat, tfLon, tfDesc, btnRemove);
+        // Color swatch picker (10 predefined pin colors)
+        String initialColor = (color != null && !color.isBlank() && !color.equalsIgnoreCase("null"))
+                ? color : MAP_PIN_COLORS[5]; // default blue
+
+        Div swatchPicker = new Div();
+        swatchPicker.getStyle()
+                .set("display", "flex")
+                .set("gap", "4px")
+                .set("align-items", "center")
+                .set("padding", "0 4px")
+                .set("align-self", "flex-end")
+                .set("padding-bottom", "6px");
+
+        List<Div> swatchDivs = new ArrayList<>();
+        for (String hex : MAP_PIN_COLORS) {
+            Div swatch = new Div();
+            swatch.getStyle()
+                    .set("width", "18px")
+                    .set("height", "18px")
+                    .set("border-radius", "50%")
+                    .set("background", hex)
+                    .set("cursor", "pointer")
+                    .set("flex-shrink", "0")
+                    .set("box-sizing", "border-box");
+            swatchDivs.add(swatch);
+            swatchPicker.add(swatch);
+        }
+
+        // Build row — swatchPicker at index 5, btnRemove at index 6
+        HorizontalLayout row = new HorizontalLayout(tfName, btnSearch, tfLat, tfLon, tfDesc, swatchPicker, btnRemove);
         row.setAlignItems(com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment.END);
         row.setWidthFull();
+
+        // Store selected color on the row element for easy reading in save handler
+        row.getElement().setAttribute("data-color", initialColor);
+
+        // Helper to refresh swatch borders
+        Runnable updateSwatches = () -> {
+            String current = row.getElement().getAttribute("data-color");
+            for (int i = 0; i < MAP_PIN_COLORS.length; i++) {
+                boolean sel = MAP_PIN_COLORS[i].equalsIgnoreCase(current);
+                swatchDivs.get(i).getStyle()
+                        .set("border", sel ? "3px solid #111" : "2px solid rgba(0,0,0,0.12)")
+                        .set("transform", sel ? "scale(1.25)" : "scale(1)");
+            }
+        };
+        updateSwatches.run();
+
+        // Wire swatch click listeners (row is now defined)
+        for (int i = 0; i < MAP_PIN_COLORS.length; i++) {
+            final String hex = MAP_PIN_COLORS[i];
+            swatchDivs.get(i).addClickListener(e -> {
+                row.getElement().setAttribute("data-color", hex);
+                updateSwatches.run();
+            });
+        }
 
         btnRemove.addClickListener(e -> {
             pointRows.remove(row);
@@ -2981,6 +3044,9 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
 
         Div divTitleCaption = new Div();
         divTitleCaption.setText(strTitle);
+
+        // Hide type toggles when the item is a Photo (type toggles are for text-based types only)
+        typeRow.setVisible(!strAlbumCategoryId.equalsIgnoreCase("Photo"));
 
         layoutAlbumInfo.add(divTitleCaption, typeRow, txtInc, divImage, txtAlbumTitle, txtAlbumDescription, layoutButtons);
         dlg.add(layoutAlbumInfo);

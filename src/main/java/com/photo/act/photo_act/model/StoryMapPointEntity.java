@@ -31,6 +31,9 @@ public class StoryMapPointEntity {
     @Column(name = "point_order")
     private Integer pointOrder;
 
+    @Column(name = "color", length = 20)
+    private String color;
+
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
 
@@ -51,4 +54,7 @@ public class StoryMapPointEntity {
 
     public Integer getPointOrder() { return pointOrder; }
     public void setPointOrder(Integer pointOrder) { this.pointOrder = pointOrder; }
+
+    public String getColor() { return color; }
+    public void setColor(String color) { this.color = color; }
 }

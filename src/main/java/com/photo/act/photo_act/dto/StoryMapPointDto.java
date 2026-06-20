@@ -11,6 +11,7 @@ public class StoryMapPointDto implements Serializable {
     private Double lon;
     private String description;
     private Integer pointOrder;
+    private String color;
 
     public StoryMapPointDto() {}
 
@@ -34,4 +35,7 @@ public class StoryMapPointDto implements Serializable {
 
     public Integer getPointOrder() { return pointOrder; }
     public void setPointOrder(Integer pointOrder) { this.pointOrder = pointOrder; }
+
+    public String getColor() { return color; }
+    public void setColor(String color) { this.color = color; }
 }
