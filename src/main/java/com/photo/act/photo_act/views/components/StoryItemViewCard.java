@@ -4,6 +4,7 @@ import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.utils.ImageUtilsMeta;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.details.Details;
@@ -70,7 +71,14 @@ public class StoryItemViewCard extends Div {
         if (strItemTypeEarly != null && strItemTypeEarly.equalsIgnoreCase("Map")) {
             this.addClassName("map-item");
             final String storyItemIdFinal = record.getColumnData("story_item_id");
-            this.addAttachListener(event -> buildMapPanel(storyItemIdFinal));
+            UI ui = UI.getCurrent();
+            if (ui != null) {
+                // beforeClientResponse runs after the full UI tree is settled, just before the
+                // browser response is sent – this guarantees both DOM and JS are in the same flush
+                ui.beforeClientResponse(this, ctx -> buildMapPanel(storyItemIdFinal));
+            } else {
+                this.addAttachListener(event -> buildMapPanel(storyItemIdFinal));
+            }
             return;
         }
 
@@ -461,22 +469,34 @@ public class StoryItemViewCard extends Div {
 
     private void buildMapPanel(String strStoryItemId) {
         if (strStoryItemId == null || strStoryItemId.isEmpty() || strStoryItemId.equalsIgnoreCase("null")) {
+            logger.warn("buildMapPanel: no story_item_id, skipping");
             return;
         }
 
+        logger.info("buildMapPanel: story_item_id={}", strStoryItemId);
+
         String[] mapCols = {"id", "location_area"};
-        String sqlMap = "SELECT id, location_area FROM photo_story_map WHERE story_item_id = " + strStoryItemId;
-        List<Record> lstMap = recordService.findAll(sqlMap, mapCols);
-        if (lstMap.isEmpty()) return;
+        List<Record> lstMap = recordService.findAll(
+                "SELECT id, location_area FROM photo_story_map WHERE story_item_id = " + strStoryItemId, mapCols);
+        if (lstMap.isEmpty()) {
+            logger.warn("buildMapPanel: no photo_story_map row for story_item_id={}", strStoryItemId);
+            return;
+        }
 
         Record mapRecord = lstMap.get(0);
         String mapId = mapRecord.getColumnData("id");
         String locationArea = mapRecord.getColumnData("location_area");
+        logger.info("buildMapPanel: mapId={} area={}", mapId, locationArea);
 
         String[] pointCols = {"point_name", "lat", "lon", "description"};
-        String sqlPoints = "SELECT point_name, lat, lon, description FROM photo_story_map_point WHERE map_id = " + mapId + " ORDER BY point_order ASC";
-        List<Record> lstPoints = recordService.findAll(sqlPoints, pointCols);
-        if (lstPoints.isEmpty()) return;
+        List<Record> lstPoints = recordService.findAll(
+                "SELECT point_name, lat, lon, description FROM photo_story_map_point WHERE map_id = " + mapId + " ORDER BY point_order ASC",
+                pointCols);
+        if (lstPoints.isEmpty()) {
+            logger.warn("buildMapPanel: no points for mapId={}", mapId);
+            return;
+        }
+        logger.info("buildMapPanel: {} point(s) found", lstPoints.size());
 
         if (locationArea != null && !locationArea.isEmpty() && !locationArea.equalsIgnoreCase("null")) {
             H4 areaTitle = new H4(locationArea);
@@ -484,20 +504,18 @@ public class StoryItemViewCard extends Div {
             this.add(areaTitle);
         }
 
-        // Wrapper gives Leaflet a concrete pixel height to bind to
-        Div wrapper = new Div();
-        wrapper.addClassName("story-map-container");
-        wrapper.setHeight("400px");
-        wrapper.setWidthFull();
-        this.add(wrapper);
-
-        // Registry must be attached before JS can execute; add it to the attached parent
+        // Registry parent is `this` (StoryItemViewCard), which is attached when
+        // beforeClientResponse fires.
         final LComponentManagementRegistry reg = new LDefaultComponentManagementRegistry(this);
 
-        // Add mapContainer to DOM first, then set up the map (mirrors TravelView pattern)
+        // MapContainer gets a fixed pixel height so Leaflet always has a non-zero container.
+        // It is added to `this` (already in the DOM) BEFORE lmap operations so the div
+        // exists client-side when the queued JS runs.
         final MapContainer mapContainer = new MapContainer(reg);
-        mapContainer.setSizeFull();
-        wrapper.add(mapContainer);
+        mapContainer.addClassName("story-map-container");
+        mapContainer.setHeight("400px");
+        mapContainer.setWidthFull();
+        this.add(mapContainer);
 
         final LMap lmap = mapContainer.getlMap();
         lmap.addLayer(LTileLayer.createDefaultForOpenStreetMapTileServer(reg));
@@ -527,11 +545,15 @@ public class StoryItemViewCard extends Div {
                     marker.bindPopup(popup);
                 }
                 marker.addTo(lmap);
-            } catch (NumberFormatException ignored) {}
+            } catch (NumberFormatException e) {
+                logger.warn("buildMapPanel: skipping point with bad lat/lon: {}", e.getMessage());
+            }
         }
 
         if (!first) {
-            lmap.setView(new LLatLng(reg, firstLat, firstLon), lstPoints.size() == 1 ? 13 : 10);
+            int zoom = lstPoints.size() == 1 ? 13 : 10;
+            lmap.setView(new LLatLng(reg, firstLat, firstLon), zoom);
+            logger.info("buildMapPanel: setView [{},{}] zoom={}", firstLat, firstLon, zoom);
         }
     }
 

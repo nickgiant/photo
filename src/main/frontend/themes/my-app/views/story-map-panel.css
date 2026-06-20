@@ -11,9 +11,11 @@
     color: var(--lumo-primary-text-color);
 }
 
+/* Applied directly to the MapContainer div – no overflow:hidden so Leaflet tiles render freely */
 .stories-view .story-item-panel.map-item .story-map-container {
     border-radius: var(--lumo-border-radius-m);
-    overflow: hidden;
-    min-height: 400px;
     width: 100%;
+    height: 400px;
+    min-height: 400px;
+    display: block;
 }
