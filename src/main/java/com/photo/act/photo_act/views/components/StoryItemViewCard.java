@@ -596,11 +596,12 @@ public class StoryItemViewCard extends Div {
             legendDiv.getStyle()
                     .set("position", "absolute")
                     .set("top", "8px")
-                    .set("left", "8px")
-                    .set("right", "8px")
+                    .set("left", "0")
+                    .set("right", "0")
                     .set("z-index", "20")
                     .set("display", "flex")
                     .set("flex-wrap", "wrap")
+                    .set("justify-content", "center")
                     .set("gap", "6px")
                     .set("pointer-events", "none");
             for (String[] item : legendItems) {
