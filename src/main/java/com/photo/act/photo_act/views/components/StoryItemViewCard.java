@@ -475,6 +475,10 @@ public class StoryItemViewCard extends Div {
 
         logger.info("buildMapPanel: story_item_id={}", strStoryItemId);
 
+        // Title and description from photo_stories_photo (via the Record passed to this card)
+        String itemTitle = record.getColumnData("item_title");
+        String itemDescr = record.getColumnData("descr");
+
         String[] mapCols = {"id", "location_area"};
         List<Record> lstMap = recordService.findAll(
                 "SELECT id, location_area FROM photo_story_map WHERE story_item_id = " + strStoryItemId, mapCols);
@@ -488,6 +492,10 @@ public class StoryItemViewCard extends Div {
         String locationArea = mapRecord.getColumnData("location_area");
         logger.info("buildMapPanel: mapId={} area={}", mapId, locationArea);
 
+        // Use item_title as primary display title; fall back to location_area
+        String displayTitle = (itemTitle != null && !itemTitle.isEmpty() && !itemTitle.equalsIgnoreCase("null"))
+                ? itemTitle : locationArea;
+
         String[] pointCols = {"point_name", "lat", "lon", "description"};
         List<Record> lstPoints = recordService.findAll(
                 "SELECT point_name, lat, lon, description FROM photo_story_map_point WHERE map_id = " + mapId + " ORDER BY point_order ASC",
@@ -498,24 +506,47 @@ public class StoryItemViewCard extends Div {
         }
         logger.info("buildMapPanel: {} point(s) found", lstPoints.size());
 
-        if (locationArea != null && !locationArea.isEmpty() && !locationArea.equalsIgnoreCase("null")) {
-            H4 areaTitle = new H4(locationArea);
+        // Title above map
+        if (displayTitle != null && !displayTitle.isEmpty() && !displayTitle.equalsIgnoreCase("null")) {
+            H4 areaTitle = new H4(displayTitle);
             areaTitle.addClassName("map-area-title");
             this.add(areaTitle);
         }
 
-        // Registry parent is `this` (StoryItemViewCard), which is attached when
-        // beforeClientResponse fires.
+        // Wrapper provides fixed height and positioning context for placeholder + map
+        Div wrapperDiv = new Div();
+        wrapperDiv.addClassName("story-map-wrapper");
+
+        // Loading placeholder visible behind Leaflet while tiles load
+        Div placeholder = new Div();
+        placeholder.addClassName("map-loading-placeholder");
+        Span placeholderIcon = new Span("📍");
+        placeholderIcon.addClassName("map-placeholder-icon");
+        Span placeholderTitle = new Span(
+                displayTitle != null && !displayTitle.equalsIgnoreCase("null") ? displayTitle : "");
+        placeholderTitle.addClassName("map-placeholder-title");
+        Span placeholderLabel = new Span("map");
+        placeholderLabel.addClassName("map-placeholder-label");
+        placeholder.add(placeholderIcon, placeholderTitle, placeholderLabel);
+        wrapperDiv.add(placeholder);
+
+        // Registry parent is `this` – attached when beforeClientResponse fires
         final LComponentManagementRegistry reg = new LDefaultComponentManagementRegistry(this);
 
-        // MapContainer gets a fixed pixel height so Leaflet always has a non-zero container.
-        // It is added to `this` (already in the DOM) BEFORE lmap operations so the div
-        // exists client-side when the queued JS runs.
+        // MapContainer fills the wrapper via CSS (position: absolute; inset: 0)
         final MapContainer mapContainer = new MapContainer(reg);
         mapContainer.addClassName("story-map-container");
-        mapContainer.setHeight("400px");
-        mapContainer.setWidthFull();
-        this.add(mapContainer);
+        mapContainer.setSizeFull();
+        wrapperDiv.add(mapContainer);
+
+        this.add(wrapperDiv);
+
+        // Description below the map
+        if (itemDescr != null && !itemDescr.isEmpty() && !itemDescr.equalsIgnoreCase("null")) {
+            Div descrDiv = new Div(itemDescr);
+            descrDiv.addClassName("map-area-description");
+            this.add(descrDiv);
+        }
 
         final LMap lmap = mapContainer.getlMap();
         lmap.addLayer(LTileLayer.createDefaultForOpenStreetMapTileServer(reg));
