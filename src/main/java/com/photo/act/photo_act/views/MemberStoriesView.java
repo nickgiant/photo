@@ -551,6 +551,10 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
     }
 
     private VerticalLayout loadPhotos(String sqlMemberPhotos, String[] arrColMemberPhotos) {
+        return loadPhotos(sqlMemberPhotos, arrColMemberPhotos, null);
+    }
+
+    private VerticalLayout loadPhotos(String sqlMemberPhotos, String[] arrColMemberPhotos, Dialog dlgToClose) {
 
         VerticalLayout layoutMemberPhotos = new VerticalLayout();
         layoutMemberPhotos.addClassNames(Height.FULL,
@@ -788,12 +792,17 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
                 Padding.SMALL, Margin.NONE
         );
 
-        Button btnSelect = new Button("Insert Selected");
-        btnSelect.setIcon(FontAwesome.Regular.CHECK_SQUARE.create());
-        btnSelect.addClickListener(clickEvent -> {
-            saveStoryItemPhoto(strMemberId, strSelectedStoryId, strSelectedPhotoId);
-
-        });
+        Button btnSelect;
+        if (dlgToClose != null) {
+            btnSelect = new Button("Set Cover Photo");
+            btnSelect.setIcon(VaadinIcon.PICTURE.create());
+            btnSelect.addClickListener(clickEvent -> dlgToClose.close());
+        } else {
+            btnSelect = new Button("Insert Selected");
+            btnSelect.setIcon(FontAwesome.Regular.CHECK_SQUARE.create());
+            btnSelect.addClickListener(clickEvent ->
+                saveStoryItemPhoto(strMemberId, strSelectedStoryId, strSelectedPhotoId));
+        }
 
         layoutControls.add(btnSelect);
 
@@ -2393,7 +2402,7 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
         coverDlgHeader.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.BETWEEN);
         String sqlGalleryForCover = sqlMemberGallery + " AND usr.username = '" + strMember + "' ";
         dlgCoverSelection.add(coverDlgHeader);
-        dlgCoverSelection.add(loadPhotos(sqlGalleryForCover, arrColumnMemberGallery));
+        dlgCoverSelection.add(loadPhotos(sqlGalleryForCover, arrColumnMemberGallery, dlgCoverSelection));
         dlgCoverSelection.addOpenedChangeListener(ce -> {
             if (!ce.isOpened() && !strSelectedPhotoId.isEmpty()) {
                 coverIdHolder[0] = strSelectedPhotoId;
@@ -2418,7 +2427,10 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
 
         Button btnSelectCoverPhoto = new Button("Select Cover Photo");
         btnSelectCoverPhoto.setIcon(VaadinIcon.PICTURE.create());
-        btnSelectCoverPhoto.addClickListener(ce -> dlgCoverSelection.open());
+        btnSelectCoverPhoto.addClickListener(ce -> {
+            strSelectedPhotoId = "";  // clear so only a fresh selection in this dialog counts
+            dlgCoverSelection.open();
+        });
 
         HorizontalLayout coverSection = new HorizontalLayout(thumbDiv, btnSelectCoverPhoto);
         coverSection.addClassNames(AlignItems.CENTER);
