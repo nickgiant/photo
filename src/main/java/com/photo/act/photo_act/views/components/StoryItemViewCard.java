@@ -412,8 +412,8 @@ public class StoryItemViewCard extends Div {
 
         if (strItemType.equalsIgnoreCase("Map")) {
             this.addClassName("map-item");
-            String strStoryItemId = record.getColumnData("story_item_id");
-            buildMapPanel(strStoryItemId);
+            final String storyItemIdFinal = record.getColumnData("story_item_id");
+            this.addAttachListener(event -> buildMapPanel(storyItemIdFinal));
             return;
         }
 
