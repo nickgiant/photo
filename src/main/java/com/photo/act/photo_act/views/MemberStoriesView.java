@@ -2795,7 +2795,7 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
 
         }
 
-        String[] arrCategories = {"Header", "Text", "Photo", "Tip", "Summary"};
+        String[] arrCategories = {"Header", "Text", "Tip", "Summary"};
         String[] selectedType = {strAlbumCategoryId.isEmpty() ? "Text" : strAlbumCategoryId};
 
         HorizontalLayout typeRow = new HorizontalLayout();
