@@ -31,6 +31,7 @@ import java.io.FileNotFoundException;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 
 public class StoryItemViewCard extends Div {
@@ -506,29 +507,38 @@ public class StoryItemViewCard extends Div {
         String displayTitle = (itemTitle != null && !itemTitle.isEmpty() && !itemTitle.equalsIgnoreCase("null"))
                 ? itemTitle : locationArea;
 
-        String[] pointCols = {"point_name", "lat", "lon", "description"};
+        String[] pointCols = {"point_name", "lat", "lon", "description", "color"};
         List<Record> lstPoints = recordService.findAll(
-                "SELECT point_name, lat, lon, description FROM photo_story_map_point WHERE map_id = " + mapId + " ORDER BY point_order ASC",
+                "SELECT point_name, lat, lon, description, IFNULL(color, '#3498db') AS color FROM photo_story_map_point WHERE map_id = " + mapId + " ORDER BY point_order ASC",
                 pointCols);
         logger.info("buildMapPanel: {} point(s) found", lstPoints.size());
 
-        // Build markers JSON to pass to JavaScript
+        // Build markers JSON to pass to JavaScript; also collect legend items
         StringBuilder markersJson = new StringBuilder("[");
+        List<String[]> legendItems = new ArrayList<>();
         for (Record pt : lstPoints) {
             try {
                 double lat = Double.parseDouble(pt.getColumnData("lat"));
                 double lon = Double.parseDouble(pt.getColumnData("lon"));
                 String name = pt.getColumnData("point_name");
                 String desc = pt.getColumnData("description");
+                String color = pt.getColumnData("color");
+                if (color == null || color.isBlank() || color.equalsIgnoreCase("null")) color = "#3498db";
 
                 String popup = (name != null && !name.equalsIgnoreCase("null") && !name.isEmpty()) ? name : "";
                 if (desc != null && !desc.equalsIgnoreCase("null") && !desc.isEmpty()) {
                     popup = popup.isEmpty() ? desc : popup + "<br>" + desc;
                 }
 
+                if (name != null && !name.isBlank() && !name.equalsIgnoreCase("null")) {
+                    legendItems.add(new String[]{name, color});
+                }
+
                 if (markersJson.length() > 1) markersJson.append(",");
                 markersJson.append("{\"lat\":").append(lat)
                            .append(",\"lon\":").append(lon)
+                           .append(",\"color\":\"").append(color.replace("\"", "\\\"")).append("\"")
+                           .append(",\"name\":\"").append((name != null ? name : "").replace("\\", "\\\\").replace("\"", "\\\"")).append("\"")
                            .append(",\"popup\":\"").append(popup.replace("\\", "\\\\").replace("\"", "\\\"")).append("\"}");
             } catch (NumberFormatException e) {
                 logger.warn("buildMapPanel: skipping point with bad lat/lon: {}", e.getMessage());
@@ -579,6 +589,36 @@ public class StoryItemViewCard extends Div {
                 .set("inset", "0")
                 .set("z-index", "5");
         wrapperDiv.add(mapDiv);
+
+        // Floating legend with colored pill badges for each named location
+        if (!legendItems.isEmpty()) {
+            Div legendDiv = new Div();
+            legendDiv.getStyle()
+                    .set("position", "absolute")
+                    .set("top", "8px")
+                    .set("left", "8px")
+                    .set("right", "8px")
+                    .set("z-index", "20")
+                    .set("display", "flex")
+                    .set("flex-wrap", "wrap")
+                    .set("gap", "6px")
+                    .set("pointer-events", "none");
+            for (String[] item : legendItems) {
+                Span badge = new Span(item[0]);
+                badge.getStyle()
+                        .set("background", item[1])
+                        .set("color", "#fff")
+                        .set("padding", "2px 8px")
+                        .set("border-radius", "12px")
+                        .set("font-size", "0.75rem")
+                        .set("font-weight", "600")
+                        .set("box-shadow", "0 1px 4px rgba(0,0,0,0.35)")
+                        .set("white-space", "nowrap");
+                legendDiv.add(badge);
+            }
+            wrapperDiv.add(legendDiv);
+        }
+
         this.add(wrapperDiv);
 
         // Description below map
@@ -601,7 +641,14 @@ public class StoryItemViewCard extends Div {
                     var markers = JSON.parse(markersJson);
                     if (markers.length > 0) {
                         markers.forEach(function(m) {
-                            var marker = L.marker([m.lat, m.lon]).addTo(map);
+                            var icon = L.divIcon({
+                                html: '<div style="width:14px;height:14px;border-radius:50%;background:' + (m.color||'#3498db') + ';border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,.5)"></div>',
+                                className: '',
+                                iconSize: [14, 14],
+                                iconAnchor: [7, 7],
+                                popupAnchor: [0, -10]
+                            });
+                            var marker = L.marker([m.lat, m.lon], {icon: icon}).addTo(map);
                             if (m.popup) marker.bindPopup(m.popup);
                         });
                         if (markers.length === 1) {
