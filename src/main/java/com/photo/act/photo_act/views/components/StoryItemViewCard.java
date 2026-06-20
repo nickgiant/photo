@@ -513,30 +513,53 @@ public class StoryItemViewCard extends Div {
             this.add(areaTitle);
         }
 
-        // Wrapper provides fixed height and positioning context for placeholder + map
+        // Wrapper: explicit 400px height, position:relative so placeholder absolute works
         Div wrapperDiv = new Div();
-        wrapperDiv.addClassName("story-map-wrapper");
+        wrapperDiv.getStyle()
+                .set("position", "relative")
+                .set("width", "100%")
+                .set("height", "400px")
+                .set("border-radius", "var(--lumo-border-radius-m)")
+                .set("overflow", "hidden");
 
-        // Loading placeholder visible behind Leaflet while tiles load
+        // Placeholder: fills the wrapper behind the map while tiles load
         Div placeholder = new Div();
-        placeholder.addClassName("map-loading-placeholder");
+        placeholder.getStyle()
+                .set("position", "absolute")
+                .set("inset", "0")
+                .set("z-index", "0")
+                .set("display", "flex")
+                .set("flex-direction", "column")
+                .set("align-items", "center")
+                .set("justify-content", "center")
+                .set("gap", "var(--lumo-space-s)")
+                .set("background", "var(--lumo-contrast-5pct)")
+                .set("color", "var(--lumo-secondary-text-color)")
+                .set("pointer-events", "none");
         Span placeholderIcon = new Span("📍");
-        placeholderIcon.addClassName("map-placeholder-icon");
+        placeholderIcon.getStyle().set("font-size", "2.5rem");
         Span placeholderTitle = new Span(
                 displayTitle != null && !displayTitle.equalsIgnoreCase("null") ? displayTitle : "");
-        placeholderTitle.addClassName("map-placeholder-title");
-        Span placeholderLabel = new Span("map");
-        placeholderLabel.addClassName("map-placeholder-label");
+        placeholderTitle.getStyle().set("font-weight", "bold");
+        Span placeholderLabel = new Span("MAP");
+        placeholderLabel.getStyle().set("font-size", "var(--lumo-font-size-s)").set("opacity", "0.7");
         placeholder.add(placeholderIcon, placeholderTitle, placeholderLabel);
         wrapperDiv.add(placeholder);
 
-        // Registry parent is `this` – attached when beforeClientResponse fires
+        // Registry: parent is `this` (the card), which is attached when beforeClientResponse fires
         final LComponentManagementRegistry reg = new LDefaultComponentManagementRegistry(this);
 
-        // MapContainer fills the wrapper via CSS (position: absolute; inset: 0)
+        // MapContainer: explicit 400px height so Leaflet sees a concrete dimension.
+        // The MapContainer constructor sets width:100%/height:100% via setSizeFull() – we override
+        // height with an explicit value so it isn't relative to an unknown parent.
         final MapContainer mapContainer = new MapContainer(reg);
-        mapContainer.addClassName("story-map-container");
-        mapContainer.setSizeFull();
+        mapContainer.setWidth("100%");
+        mapContainer.setHeight("400px");
+        // Position absolute so it stacks above the placeholder (z-index:1 set by fixZIndex)
+        mapContainer.getElement().getStyle()
+                .set("position", "absolute")
+                .set("top", "0")
+                .set("left", "0");
         wrapperDiv.add(mapContainer);
 
         this.add(wrapperDiv);
