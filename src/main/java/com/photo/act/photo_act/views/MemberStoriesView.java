@@ -2795,37 +2795,50 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
 
         }
 
-        List<String> lstAlbumCategoryTitle = new ArrayList<String>();
         String[] arrCategories = {"Header", "Text", "Photo", "Tip", "Summary"};
-        lstAlbumCategoryTitle = Arrays.stream(arrCategories).toList();
+        String[] selectedType = {strAlbumCategoryId.isEmpty() ? "Text" : strAlbumCategoryId};
 
-//        List<String> lstAlbumCategoryTitleGr = new ArrayList<String>();
-//        String[] arrCategoriesGr = {"Header", "Text", "Photo", "Tip", "Summary"};
-//        lstAlbumCategoryTitleGr = Arrays.stream(arrCategoriesGr).toList();
+        HorizontalLayout typeRow = new HorizontalLayout();
+        typeRow.setWidthFull();
+        typeRow.getStyle().set("gap", "6px").set("flex-wrap", "wrap").set("padding", "4px 0");
+        typeRow.setPadding(false);
+        typeRow.setSpacing(false);
 
-        VerticalLayout layoutAlbumInfo = new VerticalLayout();
-        layoutAlbumInfo.addClassNames(Width.FULL,
-                AlignItems.CENTER, JustifyContent.CENTER,
-                Margin.NONE, Padding.MEDIUM);
-
-        Div divTitleCaption = new Div("Photo-Story properties");
-        divTitleCaption.setText(strTitle);
-
-        Select<String> selAlbumCategoryGr = new Select<>();
-        selAlbumCategoryGr.setRequiredIndicatorVisible(true);
-        selAlbumCategoryGr.setWidthFull();
-        selAlbumCategoryGr.setLabel("Category");
-        selAlbumCategoryGr.setItems(lstAlbumCategoryTitle);
-
-
-        HorizontalLayout divImage = new HorizontalLayout();
-
-        for (int r = 0; r < lstAlbumCategoryTitle.size(); r++) {
-            if (strAlbumCategoryId.equalsIgnoreCase(lstAlbumCategoryTitle.get(r))) {
-                selAlbumCategoryGr.setValue(lstAlbumCategoryTitle.get(r));
-            }
+        List<Button> typeBtns = new ArrayList<>();
+        for (String cat : arrCategories) {
+            Button btnType = new Button(cat);
+            btnType.getStyle()
+                    .set("border-radius", "20px")
+                    .set("font-size", "12px")
+                    .set("letter-spacing", "0.3px")
+                    .set("cursor", "pointer")
+                    .set("min-width", "unset")
+                    .set("transition", "background 0.15s, color 0.15s, outline 0.15s");
+            typeBtns.add(btnType);
+            typeRow.add(btnType);
         }
 
+        Runnable applyTypeStyles = () -> {
+            for (Button b : typeBtns) {
+                String t = b.getText();
+                if (t.equalsIgnoreCase(selectedType[0])) {
+                    b.getStyle()
+                            .set("background", getTypePillBg(t))
+                            .set("color", getTypePillColor(t))
+                            .set("outline", "2px solid " + getTypePillColor(t))
+                            .set("font-weight", "700");
+                } else {
+                    b.getStyle()
+                            .set("background", "var(--lumo-contrast-5pct)")
+                            .set("color", "var(--lumo-secondary-text-color)")
+                            .set("outline", "1px solid var(--lumo-contrast-20pct)")
+                            .set("font-weight", "500");
+                }
+            }
+        };
+        applyTypeStyles.run();
+
+        HorizontalLayout divImage = new HorizontalLayout();
 
         if (strItemPhotoFile.isEmpty()) {
             divImage.add(new Div("Empty"));
@@ -2886,6 +2899,22 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
             txtAlbumTitle.setValue(strAlbumTitle);
         }
 
+        // Wire click listeners now that both divImage and txtAlbumTitle are defined
+        for (Button btnType : typeBtns) {
+            String cat = btnType.getText();
+            btnType.addClickListener(e -> {
+                selectedType[0] = cat;
+                applyTypeStyles.run();
+                if (cat.equalsIgnoreCase("Photo")) {
+                    divImage.setVisible(true);
+                    txtAlbumTitle.setVisible(false);
+                } else {
+                    divImage.setVisible(false);
+                    txtAlbumTitle.setVisible(true);
+                }
+            });
+        }
+
         TextArea txtAlbumDescription = new TextArea("Description");
         txtAlbumDescription.setRequiredIndicatorVisible(true);
         txtAlbumDescription.setMaxLength(400);
@@ -2895,19 +2924,7 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
             txtAlbumDescription.setValue(strAlbumDescription);
         }
 
-        selAlbumCategoryGr.addValueChangeListener(sel -> {
-            if (sel.getSource().getValue().equalsIgnoreCase("Photo")) {
-                divImage.setVisible(true);
-                txtAlbumTitle.setVisible(false);
-            } else {
-                divImage.setVisible(false);
-                txtAlbumTitle.setVisible(true);
-            }
-        });
-        if (selAlbumCategoryGr.getValue() == null) {
-            selAlbumCategoryGr.setValue("Κείμενο");
-        }
-        if (selAlbumCategoryGr.getValue().equalsIgnoreCase("Photo")) {
+        if (selectedType[0].equalsIgnoreCase("Photo")) {
             divImage.setVisible(true);
             txtAlbumTitle.setVisible(false);
         } else {
@@ -2937,9 +2954,9 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
             }
 
             if (isInsert) {
-                saveStoryItem(strMemberId, strSelectedStoryId, "", selAlbumCategoryGr.getValue(), strItemInc, strItemTitle, strItemDescription);
+                saveStoryItem(strMemberId, strSelectedStoryId, "", selectedType[0], strItemInc, strItemTitle, strItemDescription);
             } else {
-                saveStoryItem(strMemberId, strSelectedStoryId, strStoryItemId, selAlbumCategoryGr.getValue(), strItemInc, strItemTitle, strItemDescription);
+                saveStoryItem(strMemberId, strSelectedStoryId, strStoryItemId, selectedType[0], strItemInc, strItemTitle, strItemDescription);
             }
 
             dlg.close();
@@ -2956,7 +2973,15 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
         layoutButtons.add(btnOk, btnClose);
 
 
-        layoutAlbumInfo.add(divTitleCaption, selAlbumCategoryGr, txtInc, divImage, txtAlbumTitle, txtAlbumDescription, layoutButtons);
+        VerticalLayout layoutAlbumInfo = new VerticalLayout();
+        layoutAlbumInfo.addClassNames(Width.FULL,
+                AlignItems.CENTER, JustifyContent.CENTER,
+                Margin.NONE, Padding.MEDIUM);
+
+        Div divTitleCaption = new Div();
+        divTitleCaption.setText(strTitle);
+
+        layoutAlbumInfo.add(divTitleCaption, typeRow, txtInc, divImage, txtAlbumTitle, txtAlbumDescription, layoutButtons);
         dlg.add(layoutAlbumInfo);
 
         return dlg;
