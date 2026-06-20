@@ -65,6 +65,15 @@ public class StoryItemViewCard extends Div {
 
         this.addClassName("story-item-panel");
 
+        // Map items have no photo – bail out before any photo-specific code runs
+        String strItemTypeEarly = record.getColumnData("item_type");
+        if (strItemTypeEarly != null && strItemTypeEarly.equalsIgnoreCase("Map")) {
+            this.addClassName("map-item");
+            final String storyItemIdFinal = record.getColumnData("story_item_id");
+            this.addAttachListener(event -> buildMapPanel(storyItemIdFinal));
+            return;
+        }
+
         genericView = new GenericView(recordService);
 
 
@@ -410,13 +419,6 @@ public class StoryItemViewCard extends Div {
         }
 
 
-        if (strItemType.equalsIgnoreCase("Map")) {
-            this.addClassName("map-item");
-            final String storyItemIdFinal = record.getColumnData("story_item_id");
-            this.addAttachListener(event -> buildMapPanel(storyItemIdFinal));
-            return;
-        }
-
         if (strItemType.contains("Header")) {
             divTextDescription.addClassName("header-item");
         } else if (strItemType.contains("Summary")) {
@@ -482,11 +484,20 @@ public class StoryItemViewCard extends Div {
             this.add(areaTitle);
         }
 
+        // Wrapper gives Leaflet a concrete pixel height to bind to
+        Div wrapper = new Div();
+        wrapper.addClassName("story-map-container");
+        wrapper.setHeight("400px");
+        wrapper.setWidthFull();
+        this.add(wrapper);
+
+        // Registry must be attached before JS can execute; add it to the attached parent
         final LComponentManagementRegistry reg = new LDefaultComponentManagementRegistry(this);
+
+        // Add mapContainer to DOM first, then set up the map (mirrors TravelView pattern)
         final MapContainer mapContainer = new MapContainer(reg);
-        mapContainer.addClassName("story-map-container");
-        mapContainer.setHeight("400px");
-        mapContainer.setWidthFull();
+        mapContainer.setSizeFull();
+        wrapper.add(mapContainer);
 
         final LMap lmap = mapContainer.getlMap();
         lmap.addLayer(LTileLayer.createDefaultForOpenStreetMapTileServer(reg));
@@ -506,7 +517,7 @@ public class StoryItemViewCard extends Div {
                     first = false;
                 }
 
-                String popup = (name != null && !name.equalsIgnoreCase("null")) ? name : "";
+                String popup = (name != null && !name.isEmpty() && !name.equalsIgnoreCase("null")) ? name : "";
                 if (desc != null && !desc.isEmpty() && !desc.equalsIgnoreCase("null")) {
                     popup = popup.isEmpty() ? desc : popup + "<br>" + desc;
                 }
@@ -522,8 +533,6 @@ public class StoryItemViewCard extends Div {
         if (!first) {
             lmap.setView(new LLatLng(reg, firstLat, firstLon), lstPoints.size() == 1 ? 13 : 10);
         }
-
-        this.add(mapContainer);
     }
 
 
