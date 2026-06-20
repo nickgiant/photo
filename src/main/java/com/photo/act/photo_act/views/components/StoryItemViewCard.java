@@ -46,6 +46,7 @@ public class StoryItemViewCard extends Div {
 
     private Record record;
     private String strImagePath;
+    private boolean mapBuilt = false;
 
 
     public StoryItemViewCard(Record record, String strImagePath, boolean isMobile, int userId, String strUserName, long sessionCreation,
@@ -85,6 +86,8 @@ public class StoryItemViewCard extends Div {
             this.add(ph);
 
             this.addAttachListener(event -> {
+                if (mapBuilt) return;
+                mapBuilt = true;
                 this.remove(ph);
                 buildMapPanel(storyItemIdFinal);
             });
@@ -511,16 +514,12 @@ public class StoryItemViewCard extends Div {
 
         // Build markers JSON to pass to JavaScript
         StringBuilder markersJson = new StringBuilder("[");
-        double firstLat = 0, firstLon = 0;
-        boolean first = true;
         for (Record pt : lstPoints) {
             try {
                 double lat = Double.parseDouble(pt.getColumnData("lat"));
                 double lon = Double.parseDouble(pt.getColumnData("lon"));
                 String name = pt.getColumnData("point_name");
                 String desc = pt.getColumnData("description");
-
-                if (first) { firstLat = lat; firstLon = lon; first = false; }
 
                 String popup = (name != null && !name.equalsIgnoreCase("null") && !name.isEmpty()) ? name : "";
                 if (desc != null && !desc.equalsIgnoreCase("null") && !desc.isEmpty()) {
@@ -589,11 +588,9 @@ public class StoryItemViewCard extends Div {
             this.add(descrDiv);
         }
 
-        int zoom = lstPoints.size() == 1 ? 13 : 10;
-
         // Initialize Leaflet from CDN; the overlay hides until the map is ready
         mapDiv.getElement().executeJs("""
-            (function(mapEl, overlayEl, markersJson, centerLat, centerLon, zoom) {
+            (function(mapEl, overlayEl, markersJson) {
                 function initMap() {
                     overlayEl.style.display = 'none';
                     var map = L.map(mapEl);
@@ -607,7 +604,12 @@ public class StoryItemViewCard extends Div {
                             var marker = L.marker([m.lat, m.lon]).addTo(map);
                             if (m.popup) marker.bindPopup(m.popup);
                         });
-                        map.setView([centerLat, centerLon], zoom);
+                        if (markers.length === 1) {
+                            map.setView([markers[0].lat, markers[0].lon], 13);
+                        } else {
+                            var latlngs = markers.map(function(m) { return [m.lat, m.lon]; });
+                            map.fitBounds(latlngs, { padding: [30, 30] });
+                        }
                     }
                     setTimeout(function() { map.invalidateSize(); }, 300);
                 }
@@ -633,15 +635,12 @@ public class StoryItemViewCard extends Div {
                     window._leafletCbs = [];
                 };
                 document.head.appendChild(s);
-            })(this, $0, $1, $2, $3, $4)
+            })(this, $0, $1)
             """,
             loadingOverlay.getElement(),
-            markersJson.toString(),
-            firstLat,
-            firstLon,
-            (double) zoom);
+            markersJson.toString());
 
-        logger.info("buildMapPanel: Leaflet JS queued, center=[{},{}] zoom={}", firstLat, firstLon, zoom);
+        logger.info("buildMapPanel: Leaflet JS queued for {} point(s)", lstPoints.size());
     }
 
 
