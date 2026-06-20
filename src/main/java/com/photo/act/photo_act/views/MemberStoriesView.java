@@ -262,6 +262,7 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
             " WHERE 1=1 AND pc.cat_visible = 1 " +
             " ORDER BY cat_title ASC";
     private String strSelectedStoryId = "";
+    private String strCurrentStoryTitle = "";
 
     private ListBox<String> listBoxAlbums;
 
@@ -398,6 +399,15 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
             initStoryId = lstStoriesInit.get(0).getColumnData("id");
             initStoryTitle = lstStoriesInit.get(0).getColumnData("title");
         }
+        strSelectedStoryId = initStoryId;
+        strCurrentStoryTitle = initStoryTitle;
+
+        dlgPhotoSelection.addOpenedChangeListener(photoEvt -> {
+            if (!photoEvt.isOpened()) {
+                layoutStoryItems.removeAll();
+                layoutStoryItems.add(loadStoryItems(dlgStorySelection, sqlReadStoryItems, arrColStoryItems, dlgPhotoSelection, strSelectedStoryId, strCurrentStoryTitle, strMemberId));
+            }
+        });
 
         layoutStoryItems.add(loadStoryItems(dlgStorySelection, sqlReadStoryItems, arrColStoryItems, dlgPhotoSelection, initStoryId, initStoryTitle, strMemberId));
 
@@ -421,6 +431,7 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
                 if (lstStoriesTitle.get(i).equalsIgnoreCase(listBoxAlbums.getValue())) {
                     strSelectedStoryId = lstStoriesId.get(i);
                     strStoryTitle = lstStoriesTitle.get(i);
+                    strCurrentStoryTitle = strStoryTitle;
                 }
             }
 
@@ -1027,9 +1038,11 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
                 dlgPhotoSelection,
                 strMemberId, "");
 
-        dlgItemNew.addDialogCloseActionListener(close -> {
-            layoutStoryItems.removeAll();
-            layoutStoryItems.add(loadStoryItems(dlgStorySelection, sqlReadStoryItems, arrColStoryItems, dlgPhotoSelection, strSelectedStoryId, strStoryTitle, strMemberId));
+        dlgItemNew.addOpenedChangeListener(e -> {
+            if (!e.isOpened()) {
+                layoutStoryItems.removeAll();
+                layoutStoryItems.add(loadStoryItems(dlgStorySelection, sqlReadStoryItems, arrColStoryItems, dlgPhotoSelection, strSelectedStoryId, strStoryTitle, strMemberId));
+            }
         });
 
         Button btnAddText = new Button("Add Text");
@@ -1055,9 +1068,11 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
         });
 
         Dialog dlgAddMap = loadMapEditorDialog(strMemberId, strStoryId, null);
-        dlgAddMap.addDialogCloseActionListener(close -> {
-            layoutStoryItems.removeAll();
-            layoutStoryItems.add(loadStoryItems(dlgStorySelection, sqlReadStoryItems, arrColStoryItems, dlgPhotoSelection, strSelectedStoryId, strStoryTitle, strMemberId));
+        dlgAddMap.addOpenedChangeListener(e -> {
+            if (!e.isOpened()) {
+                layoutStoryItems.removeAll();
+                layoutStoryItems.add(loadStoryItems(dlgStorySelection, sqlReadStoryItems, arrColStoryItems, dlgPhotoSelection, strSelectedStoryId, strStoryTitle, strMemberId));
+            }
         });
 
         Button btnAddMap = new Button("Add Map");
@@ -1158,7 +1173,8 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
                             new String[]{"java.lang.Integer", "java.lang.String"}
                     );
                 }
-                dpStoryItems.refreshAll();
+                layoutStoryItems.removeAll();
+                layoutStoryItems.add(loadStoryItems(dlgStorySelection, sqlReadStoryItems, arrColStoryItems, dlgPhotoSelection, strSelectedStoryId, strStoryTitle, strMemberId));
             });
         });
 
@@ -1223,18 +1239,30 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
                         })
                 );
 
-        Grid.Column<Map<String, Object>> colDateShoot = gridStoryItems.addColumn(row -> row.get("inc"))
-                .setHeader("inc / Type").setWidth("120px")
+        Grid.Column<Map<String, Object>> colDateShoot = gridStoryItems.addColumn(row -> row.get("item_type"))
+                .setHeader("Type").setWidth("100px")
                 .setRenderer(new ComponentRenderer<>(row -> {
                             VerticalLayout layoutLine = new VerticalLayout();
                             layoutLine.addClassNames(AlignItems.START, JustifyContent.START);
-                            String strTitle = row.get("inc") == null ? "" : row.get("inc").toString();
-                            String strSubtitle = row.get("item_type") == null ? "" : row.get("item_type").toString();
-                            Div divTitle = new Div(strTitle);
-                            Div divSubtitle = new Div(strSubtitle);
-                            divSubtitle.addClassNames("tag");
-                            layoutLine.add(divTitle, divSubtitle);
-
+                            layoutLine.setPadding(false);
+                            layoutLine.setSpacing(false);
+                            layoutLine.getStyle().set("gap", "3px");
+                            String strInc = row.get("inc") == null ? "" : row.get("inc").toString();
+                            String strType = row.get("item_type") == null ? "" : row.get("item_type").toString();
+                            Div divInc = new Div("#" + strInc);
+                            divInc.getStyle().set("font-size", "10px").set("color", "var(--lumo-secondary-text-color)");
+                            Span pillTag = new Span(strType);
+                            pillTag.getStyle()
+                                    .set("display", "inline-block")
+                                    .set("padding", "2px 9px")
+                                    .set("border-radius", "12px")
+                                    .set("font-size", "11px")
+                                    .set("font-weight", "600")
+                                    .set("letter-spacing", "0.4px")
+                                    .set("white-space", "nowrap")
+                                    .set("background", getTypePillBg(strType))
+                                    .set("color", getTypePillColor(strType));
+                            layoutLine.add(divInc, pillTag);
                             return layoutLine;
                         })
                 );
@@ -1470,6 +1498,15 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
 
     private boolean saveStoryItemPhoto(String strMemberId, String strStoryId, String strSelectedPhotoId) {
 
+        int nextInc = 10;
+        if (strStoryId != null && !strStoryId.isEmpty()) {
+            List<Map<String, Object>> maxRes = photoStoryService.findAll(
+                    "SELECT COALESCE(MAX(inc), 0) AS max_inc FROM photo_stories_photo WHERE story_id = " + strStoryId);
+            if (!maxRes.isEmpty() && maxRes.get(0).get("max_inc") != null) {
+                nextInc = ((Number) maxRes.get(0).get("max_inc")).intValue() + 10;
+            }
+        }
+
         StringBuilder strInsert = new StringBuilder("INSERT INTO photo_stories_photo (");
         StringBuilder placeholders = new StringBuilder("(");
         Object[] fieldValue = new Object[3];
@@ -1518,6 +1555,8 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
         }
         strInsert.append("item_type");
         placeholders.append("'Photo'");
+        strInsert.append(", inc");
+        placeholders.append(", " + nextInc);
         first = false;
 /*        if (!first) {
             strInsert.append(", ");
@@ -1899,9 +1938,15 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
                             "UPDATE photo_stories_photo SET item_title = ?, descr = ? WHERE id = ?",
                             updVals, updTypes);
                 } else {
-                    String sqlInsertItem = "INSERT INTO photo_stories_photo (user_id, story_id, item_type, item_title, descr) VALUES (?, ?, 'Map', ?, ?)";
+                    int nextMapInc = 10;
+                    List<Map<String, Object>> maxRes = photoStoryService.findAll(
+                            "SELECT COALESCE(MAX(inc), 0) AS max_inc FROM photo_stories_photo WHERE story_id = " + strStoryId);
+                    if (!maxRes.isEmpty() && maxRes.get(0).get("max_inc") != null) {
+                        nextMapInc = ((Number) maxRes.get(0).get("max_inc")).intValue() + 10;
+                    }
+                    String sqlInsertItem = "INSERT INTO photo_stories_photo (user_id, story_id, item_type, item_title, descr, inc) VALUES (?, ?, 'Map', ?, ?, ?)";
                     storyItemIdInt = photoStoryService.insertAndGetGeneratedId(sqlInsertItem,
-                            Integer.parseInt(strMemberId), Integer.parseInt(strStoryId), locationArea, mapDescription);
+                            Integer.parseInt(strMemberId), Integer.parseInt(strStoryId), locationArea, mapDescription, nextMapInc);
                     if (storyItemIdInt == null) {
                         Notification.show("Failed to create story item.", 3000, Notification.Position.TOP_CENTER);
                         return;
@@ -2072,6 +2117,32 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
             logger.error("Nominatim search failed for query '{}': {}", query, ex.getMessage());
         }
         return results;
+    }
+
+    private String getTypePillBg(String type) {
+        return switch (type.toLowerCase()) {
+            case "map"     -> "#e3f2fd";
+            case "photo"   -> "#e8f5e9";
+            case "text"    -> "#f5f5f5";
+            case "tip"     -> "#fff8e1";
+            case "header"  -> "#f3e5f5";
+            case "summary" -> "#e0f7fa";
+            case "footer"  -> "#fce4ec";
+            default        -> "#eeeeee";
+        };
+    }
+
+    private String getTypePillColor(String type) {
+        return switch (type.toLowerCase()) {
+            case "map"     -> "#1565c0";
+            case "photo"   -> "#2e7d32";
+            case "text"    -> "#616161";
+            case "tip"     -> "#e65100";
+            case "header"  -> "#6a1b9a";
+            case "summary" -> "#00695c";
+            case "footer"  -> "#ad1457";
+            default        -> "#424242";
+        };
     }
 
     private void getUserClientInfo() {
@@ -2673,7 +2744,14 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
         dlg.setCloseOnEsc(false);
         dlg.setCloseOnOutsideClick(false);
 
-        String strInc = "1";
+        String strInc = "10";
+        if (strStoryItemId.isEmpty() && !strSelectedStoryId.isEmpty()) {
+            List<Map<String, Object>> maxRes = photoStoryService.findAll(
+                    "SELECT COALESCE(MAX(inc), 0) AS max_inc FROM photo_stories_photo WHERE story_id = " + strSelectedStoryId);
+            if (!maxRes.isEmpty() && maxRes.get(0).get("max_inc") != null) {
+                strInc = String.valueOf(((Number) maxRes.get(0).get("max_inc")).intValue() + 10);
+            }
+        }
         String strAlbumTitle = "";
         String strAlbumDescription = "";
         String strAlbumCategoryId = "";
