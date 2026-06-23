@@ -10,7 +10,9 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H3;
+import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -207,14 +209,46 @@ public class StoryWeatherPanel extends Div {
 
         if (sunData != null && sunData.getSunrise() != null && sunData.getSunset() != null) {
             DateTimeFormatter fmt = DateTimeFormatter.ofPattern("HH:mm");
-            row.add(new Span("🌅 " + sunData.getSunrise().format(fmt)));
-            row.add(new Span("🌇 " + sunData.getSunset().format(fmt)));
+
+            row.add(buildSunItem("sunrise.png", "Sunrise",
+                    sunData.getSunrise().format(fmt),
+                    "Sunrise – Time when the upper edge of the sun appears on the horizon (local time)"));
+
+            row.add(buildSunItem("sunset.png", "Sunset",
+                    sunData.getSunset().format(fmt),
+                    "Sunset – Time when the upper edge of the sun disappears below the horizon (local time)"));
+
             try {
                 long secs = Long.parseLong(sunData.getDayLength());
-                row.add(new Span("⏱ " + String.format("%dh %02dm", secs / 3600, (secs % 3600) / 60)));
+                String label = String.format("%dh %02dm", secs / 3600, (secs % 3600) / 60);
+                Span daySpan = new Span("⏱ " + label);
+                daySpan.getElement().setAttribute("title",
+                        "Day length – Total duration of daylight, calculated as the interval between sunrise and sunset");
+                daySpan.getStyle().set("cursor", "default");
+                row.add(daySpan);
             } catch (Exception ignored) {}
         }
         return row;
+    }
+
+    private Div buildSunItem(String iconFile, String alt, String timeText, String tooltip) {
+        StreamResource res = new StreamResource(iconFile,
+                () -> getClass().getResourceAsStream("/icons/" + iconFile));
+        Image img = new Image(res, alt);
+        img.setWidth("20px");
+        img.setHeight("20px");
+        img.getStyle().set("vertical-align", "middle").set("flex-shrink", "0");
+
+        Span time = new Span(timeText);
+
+        Div item = new Div(img, time);
+        item.getStyle()
+                .set("display", "inline-flex")
+                .set("align-items", "center")
+                .set("gap", "5px")
+                .set("cursor", "default");
+        item.getElement().setAttribute("title", tooltip);
+        return item;
     }
 
     private void showHourly(LocalDate date) {
