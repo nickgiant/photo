@@ -446,6 +446,43 @@ public class WeatherService {
         }
     }
 
+    /**
+     * Search locations by name using OpenWeatherMap Geocoding API.
+     * Returns list of [displayName, lat, lon] arrays.
+     */
+    public List<String[]> searchLocationsByName(String query) {
+        List<String[]> results = new ArrayList<>();
+        try {
+            String encoded = java.net.URLEncoder.encode(query, java.nio.charset.StandardCharsets.UTF_8);
+            String url = "http://api.openweathermap.org/geo/1.0/direct?q=" + encoded + "&limit=5&appid=" + apiKey;
+
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            com.fasterxml.jackson.databind.JsonNode arr = mapper.readTree(
+                    webClient.get()
+                            .uri(url)
+                            .retrieve()
+                            .bodyToMono(String.class)
+                            .block()
+            );
+            for (com.fasterxml.jackson.databind.JsonNode node : arr) {
+                String name = node.path("name").asText("");
+                String country = node.path("country").asText("");
+                String state = node.path("state").asText("");
+                String lat = node.path("lat").asText("");
+                String lon = node.path("lon").asText("");
+                if (!lat.isEmpty() && !lon.isEmpty()) {
+                    StringBuilder displayName = new StringBuilder(name);
+                    if (!state.isEmpty()) displayName.append(", ").append(state);
+                    if (!country.isEmpty()) displayName.append(", ").append(country);
+                    results.add(new String[]{displayName.toString(), lat, lon});
+                }
+            }
+        } catch (Exception e) {
+            // log but return empty list so caller can show "no weather data" message
+        }
+        return results;
+    }
+
     private LocalDateTime parseUtcDateTime(String isoDateTime, ZoneId targetZone) {
         return ZonedDateTime.parse(isoDateTime, DateTimeFormatter.ISO_DATE_TIME)
                 .withZoneSameInstant(targetZone)

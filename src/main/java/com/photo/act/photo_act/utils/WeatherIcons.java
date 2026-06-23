@@ -142,9 +142,6 @@ public class WeatherIcons {
         }
     }
 
-    // ============================================
-    // COLOR THEMES
-    // ============================================
 
     private static class ThemeColors {
         String sunCenter, sunMid, sunEdge, sunRay;
