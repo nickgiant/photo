@@ -663,24 +663,19 @@ public class StoryItemViewCard extends Div {
             wrapperDiv.add(legendDiv);
         }
 
-        // Source attribution bottom-right of map
+        this.add(wrapperDiv);
+
+        // Source attribution below map
         Anchor mapSourceLink = new Anchor("https://www.openstreetmap.org", "Source: OpenStreetMap");
         mapSourceLink.setTarget("_blank");
         mapSourceLink.getStyle().set("color", "#999").set("text-decoration", "none");
         Div mapSourceDiv = new Div(mapSourceLink);
         mapSourceDiv.getStyle()
-                .set("position", "absolute")
-                .set("bottom", "4px")
-                .set("right", "6px")
-                .set("z-index", "20")
+                .set("text-align", "right")
                 .set("font-size", "11px")
-                .set("background", "rgba(255,255,255,0.75)")
-                .set("padding", "1px 5px")
-                .set("border-radius", "3px")
-                .set("pointer-events", "auto");
-        wrapperDiv.add(mapSourceDiv);
-
-        this.add(wrapperDiv);
+                .set("color", "#999")
+                .set("padding", "2px 4px 0");
+        this.add(mapSourceDiv);
 
         // Description below map
         if (itemDescr != null && !itemDescr.isEmpty() && !itemDescr.equalsIgnoreCase("null")) {
