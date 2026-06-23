@@ -32,6 +32,12 @@
     font-weight: 500;
     transition: background 0.15s, color 0.15s;
     margin-bottom: -2px;
+    padding-left: 16px;
+    padding-right: 16px;
+}
+
+.story-weather-tab-btn:hover {
+    cursor: pointer;
 }
 
 .story-weather-tab-btn.story-weather-tab-active {
@@ -60,7 +66,7 @@
     width: 100%;
     padding: var(--lumo-space-m);
     border-radius: var(--lumo-border-radius-m);
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    /*background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);*/
 }
 
 .story-weather-sun-row {

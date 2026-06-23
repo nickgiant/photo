@@ -83,8 +83,8 @@ public class StoryWeatherPanel extends Div {
         Button btnNow = buildTabButton("Now", null);
         Button btnToday = buildTabButton("Today", today);
         Button btnTomorrow = buildTabButton("Tomorrow", tomorrow);
-        Button btnDay3 = buildTabButton(day3.getDayOfWeek().getDisplayName(TextStyle.SHORT, Locale.ENGLISH), day3);
-        Button btnDay4 = buildTabButton(day4.getDayOfWeek().getDisplayName(TextStyle.SHORT, Locale.ENGLISH), day4);
+        Button btnDay3 = buildTabButton(day3.getDayOfWeek().getDisplayName(TextStyle.FULL, Locale.ENGLISH), day3);
+        Button btnDay4 = buildTabButton(day4.getDayOfWeek().getDisplayName(TextStyle.FULL, Locale.ENGLISH), day4);
 
         tabBar.add(btnNow, btnToday, btnTomorrow, btnDay3, btnDay4);
 

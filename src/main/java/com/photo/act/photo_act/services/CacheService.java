@@ -62,7 +62,7 @@ public class CacheService {
         return lstPhotos;
     }
 
-    @Cacheable(value = "photos", key = "#id")
+    /*@Cacheable(value = "photos", key = "#id")*/
     public Record getPhotoById(String id) {
         logger.info("Fetching photo from in-memory list..." + id);
         for (int r = 0; r < lstPhotos.size(); r++) {

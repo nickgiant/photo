@@ -328,9 +328,12 @@ public class PhotoLightboxView extends VerticalLayout
     private void buildView() {
         removeAll();
 
-        String dirPhotos = getAppProps("dir-photos");
-        strPathLargePhotos = (dirPhotos != null ? dirPhotos : "") + dirChar + subPathLarge;
-        String strPathThumbs = (dirPhotos != null ? dirPhotos : "") + dirChar + subPathThumbs;
+//        String dirPhotos = getAppProps("dir-photos");
+
+        DIR_PHOTOS_SERVER = genericView.getAppProps(PROP_PHOTOS);
+
+        strPathLargePhotos = DIR_PHOTOS_SERVER + dirChar + subPathLarge;
+        String strPathThumbs = DIR_PHOTOS_SERVER + dirChar + subPathThumbs;
 
         // ── Photo frame: orientation-aware viewer with overlay nav/close ──────
         photoFrame = new PhotoFrameComponent();
@@ -680,7 +683,9 @@ public class PhotoLightboxView extends VerticalLayout
 
     private Image getAvatarThumbImage(String strAvatarPath, String altDescr, String width, String height) {
 
-        String strAvatarFullPath = getAppProps(PROP_PHOTOS) + dirChar + SUB_PATH_AVATARS_THUMBS + dirChar + strAvatarPath;
+        DIR_PHOTOS_SERVER = genericView.getAppProps(PROP_PHOTOS);
+
+        String strAvatarFullPath = DIR_PHOTOS_SERVER + dirChar + SUB_PATH_AVATARS_THUMBS + dirChar + strAvatarPath;
         Path path = Paths.get(strAvatarFullPath);
         File file = path.toFile();
 
@@ -925,15 +930,7 @@ public class PhotoLightboxView extends VerticalLayout
 
 
 
-    private String getAppProps(String prop) {
-        for (int r = 0; r < recProps.size(); r++) {
-            String strProp = recProps.get(r).getColumnData("propName");
-            if (prop.equalsIgnoreCase(strProp)) {
-                return recProps.get(r).getColumnData("propValue");
-            }
-        }
-        return null;
-    }
+
 
     private List<Record> getRecordsFromDb(String sql, String[] arrColumnNames) {
 
