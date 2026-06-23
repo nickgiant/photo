@@ -2,7 +2,7 @@
     display: flex;
     flex-direction: column;
     padding: var(--lumo-space-m);
-    gap: var(--lumo-space-s);
+    /*gap: var(--lumo-space-s);*/
 }
 
 .stories-view .story-item-panel.map-item .map-area-title {

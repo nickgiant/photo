@@ -674,7 +674,7 @@ public class StoryItemViewCard extends Div {
                 .set("text-align", "right")
                 .set("font-size", "11px")
                 .set("color", "#999")
-                .set("padding", "2px 4px 0");
+                .set("padding", "0px 4px 0");
         this.add(mapSourceDiv);
 
         // Description below map

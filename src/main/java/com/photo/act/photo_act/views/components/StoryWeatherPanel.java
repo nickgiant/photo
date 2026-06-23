@@ -69,7 +69,7 @@ public class StoryWeatherPanel extends Div {
                 .set("text-align", "right")
                 .set("font-size", "11px")
                 .set("color", "#aaa")
-                .set("padding", "2px 8px 4px");
+                .set("padding", "0px 8px 4px");
 
         add(tabBar, contentArea, weatherSourceDiv);
     }
