@@ -12,7 +12,6 @@
     border-radius: var(--lumo-border-radius-m);
     overflow: hidden;
     background: var(--lumo-base-color);
-    box-shadow: var(--lumo-box-shadow-xs);
 }
 
 .story-weather-tabs {
@@ -37,6 +36,7 @@
 }
 
 .story-weather-tab-btn:hover {
+    background-color: #f8f9fa;
     cursor: pointer;
 }
 
@@ -48,7 +48,6 @@
 }
 
 .story-weather-content {
-    padding: var(--lumo-space-m);
     min-height: 200px;
 }
 
