@@ -2244,7 +2244,9 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
             if (q.isEmpty()) return;
             resultsLayout.removeAll();
             statusMsg.setText("Searching…");
-            List<String[]> hits = weatherService.searchLocationsByName(q);
+            List<String[]> hits = isWeather
+                    ? weatherService.searchLocationsByName(q)
+                    : weatherService.searchMapLocationsByName(q);
             statusMsg.setText("");
             if (hits.isEmpty()) {
                 statusMsg.setText(noResultsMsg);

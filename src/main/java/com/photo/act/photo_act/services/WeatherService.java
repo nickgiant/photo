@@ -447,6 +447,39 @@ public class WeatherService {
     }
 
     /**
+     * Search locations by name using OpenStreetMap Nominatim API.
+     * Returns list of [displayName, lat, lon] arrays.
+     */
+    public List<String[]> searchMapLocationsByName(String query) {
+        List<String[]> results = new ArrayList<>();
+        try {
+            String encoded = java.net.URLEncoder.encode(query, java.nio.charset.StandardCharsets.UTF_8);
+            String url = "https://nominatim.openstreetmap.org/search?q=" + encoded + "&format=json&limit=5&addressdetails=0";
+
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            com.fasterxml.jackson.databind.JsonNode arr = mapper.readTree(
+                    webClient.get()
+                            .uri(url)
+                            .header("User-Agent", "PhotoActApp/1.0")
+                            .retrieve()
+                            .bodyToMono(String.class)
+                            .block()
+            );
+            for (com.fasterxml.jackson.databind.JsonNode node : arr) {
+                String displayName = node.path("display_name").asText("");
+                String lat = node.path("lat").asText("");
+                String lon = node.path("lon").asText("");
+                if (!lat.isEmpty() && !lon.isEmpty() && !displayName.isEmpty()) {
+                    results.add(new String[]{displayName, lat, lon});
+                }
+            }
+        } catch (Exception e) {
+            // return empty list so caller can show "not found" message
+        }
+        return results;
+    }
+
+    /**
      * Search locations by name using OpenWeatherMap Geocoding API.
      * Returns list of [displayName, lat, lon] arrays.
      */
