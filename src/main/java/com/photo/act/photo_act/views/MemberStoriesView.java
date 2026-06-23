@@ -10,8 +10,6 @@ import com.photo.act.photo_act.utils.SlugUtil;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.photo.act.photo_act.views.components.GalleryImageViewCard;
 import com.photo.act.photo_act.views.components.GenericView;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.HasStyle;
 import com.vaadin.flow.component.Key;
@@ -50,13 +48,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.net.InetAddress;
-import java.net.URI;
-import java.net.URLEncoder;
 import java.net.UnknownHostException;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
 import java.util.*;
 
@@ -2246,10 +2238,10 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
             if (q.isEmpty()) return;
             resultsLayout.removeAll();
             statusMsg.setText("Searching…");
-            List<String[]> hits = searchNominatim(q);
+            List<String[]> hits = weatherService.searchLocationsByName(q);
             statusMsg.setText("");
             if (hits.isEmpty()) {
-                statusMsg.setText("No results found.");
+                statusMsg.setText("No weather data, search for a near location.");
             } else {
                 for (String[] hit : hits) {
                     String displayName = hit[0];
@@ -2295,34 +2287,6 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
         dlg.add(content);
         dlg.open();
         tfQuery.focus();
-    }
-
-    private List<String[]> searchNominatim(String query) {
-        List<String[]> results = new ArrayList<>();
-        try {
-            String encoded = URLEncoder.encode(query, StandardCharsets.UTF_8);
-            HttpClient client = HttpClient.newHttpClient();
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create("https://nominatim.openstreetmap.org/search?q=" + encoded + "&format=json&limit=5&addressdetails=0"))
-                    .header("User-Agent", "PhotoActApp/1.0 (nickgiant@yahoo.com)")
-                    .header("Accept-Language", "en")
-                    .GET()
-                    .build();
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode arr = mapper.readTree(response.body());
-            for (JsonNode node : arr) {
-                String displayName = node.path("display_name").asText("");
-                String lat = node.path("lat").asText("");
-                String lon = node.path("lon").asText("");
-                if (!lat.isEmpty() && !lon.isEmpty()) {
-                    results.add(new String[]{displayName, lat, lon});
-                }
-            }
-        } catch (Exception ex) {
-            logger.error("Nominatim search failed for query '{}': {}", query, ex.getMessage());
-        }
-        return results;
     }
 
     private String getTypePillBg(String type) {
