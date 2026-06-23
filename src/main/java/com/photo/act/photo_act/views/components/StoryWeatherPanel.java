@@ -7,6 +7,7 @@ import com.photo.act.photo_act.utils.WeatherIcons;
 import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Span;
@@ -58,7 +59,17 @@ public class StoryWeatherPanel extends Div {
         contentArea.addClassName("story-weather-content");
         contentArea.setWidthFull();
 
-        add(tabBar, contentArea);
+        Anchor weatherSourceLink = new Anchor("https://openweathermap.org", "Source: OpenWeatherMap");
+        weatherSourceLink.setTarget("_blank");
+        weatherSourceLink.getStyle().set("color", "#aaa").set("text-decoration", "none");
+        Div weatherSourceDiv = new Div(weatherSourceLink);
+        weatherSourceDiv.getStyle()
+                .set("text-align", "right")
+                .set("font-size", "11px")
+                .set("color", "#aaa")
+                .set("padding", "2px 8px 4px");
+
+        add(tabBar, contentArea, weatherSourceDiv);
     }
 
     @Override
