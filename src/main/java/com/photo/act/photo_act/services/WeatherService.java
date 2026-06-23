@@ -454,13 +454,15 @@ public class WeatherService {
         List<String[]> results = new ArrayList<>();
         try {
             String encoded = java.net.URLEncoder.encode(query, java.nio.charset.StandardCharsets.UTF_8);
-            String url = "https://nominatim.openstreetmap.org/search?q=" + encoded + "&format=json&limit=5&addressdetails=0";
+            String url = "https://nominatim.openstreetmap.org/search?q=" + encoded
+                    + "&format=json&limit=5&addressdetails=0&accept-language=en";
 
             com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
             com.fasterxml.jackson.databind.JsonNode arr = mapper.readTree(
                     webClient.get()
                             .uri(url)
                             .header("User-Agent", "PhotoActApp/1.0")
+                            .header("Accept-Language", "en")
                             .retrieve()
                             .bodyToMono(String.class)
                             .block()
@@ -498,7 +500,9 @@ public class WeatherService {
                             .block()
             );
             for (com.fasterxml.jackson.databind.JsonNode node : arr) {
-                String name = node.path("name").asText("");
+                // Prefer English name from local_names, fall back to default name
+                String enName = node.path("local_names").path("en").asText("");
+                String name = enName.isEmpty() ? node.path("name").asText("") : enName;
                 String country = node.path("country").asText("");
                 String state = node.path("state").asText("");
                 String lat = node.path("lat").asText("");
