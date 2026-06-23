@@ -11,7 +11,7 @@
 	<groupId>com.photo.act</groupId>
 	<artifactId>photo</artifactId>
 	<version>act</version>
-	<packaging>war</packaging>
+	<packaging>jar</packaging>
 	<name>photo-act</name>
 	<description>photo-act project</description>
 	<url/>
