@@ -212,18 +212,18 @@ public class StoryWeatherPanel extends Div {
 
             row.add(buildSunItem("sunrise.png", "Sunrise",
                     sunData.getSunrise().format(fmt),
-                    "Sunrise – Time when the upper edge of the sun appears on the horizon (local time)"));
+                    "Sunrise"));
 
             row.add(buildSunItem("sunset.png", "Sunset",
                     sunData.getSunset().format(fmt),
-                    "Sunset – Time when the upper edge of the sun disappears below the horizon (local time)"));
+                    "Sunset"));
 
             try {
                 long secs = Long.parseLong(sunData.getDayLength());
                 String label = String.format("%dh %02dm", secs / 3600, (secs % 3600) / 60);
                 Span daySpan = new Span("⏱ " + label);
                 daySpan.getElement().setAttribute("title",
-                        "Day length – Total duration of daylight, calculated as the interval between sunrise and sunset");
+                        "Day length");
                 daySpan.getStyle().set("cursor", "default");
                 row.add(daySpan);
             } catch (Exception ignored) {}

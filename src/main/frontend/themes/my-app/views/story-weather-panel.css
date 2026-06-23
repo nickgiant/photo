@@ -86,7 +86,7 @@
     padding: var(--lumo-space-s) var(--lumo-space-m);
     border-radius: var(--lumo-border-radius-m);
     background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf0 100%);
-    border-left: 3px solid var(--lumo-primary-color-10pct);
+    /*border-left: 3px solid var(--lumo-primary-color-10pct);*/
     font-size: var(--lumo-font-size-s);
 }
 
