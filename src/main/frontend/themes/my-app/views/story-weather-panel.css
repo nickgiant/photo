@@ -1,0 +1,90 @@
+.stories-view .story-item-panel.weather-item {
+    display: flex;
+    flex-direction: column;
+    padding: var(--lumo-space-m);
+    gap: var(--lumo-space-s);
+}
+
+.story-weather-panel {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    border-radius: var(--lumo-border-radius-m);
+    overflow: hidden;
+    background: var(--lumo-base-color);
+    box-shadow: var(--lumo-box-shadow-xs);
+}
+
+.story-weather-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: var(--lumo-space-s) var(--lumo-space-s) 0;
+    border-bottom: 2px solid var(--lumo-contrast-10pct);
+    background: var(--lumo-contrast-5pct);
+}
+
+.story-weather-tab-btn {
+    border-radius: var(--lumo-border-radius-m) var(--lumo-border-radius-m) 0 0 !important;
+    border: 1px solid transparent !important;
+    border-bottom: none !important;
+    color: var(--lumo-secondary-text-color) !important;
+    font-weight: 500;
+    transition: background 0.15s, color 0.15s;
+    margin-bottom: -2px;
+}
+
+.story-weather-tab-btn.story-weather-tab-active {
+    background: var(--lumo-base-color) !important;
+    color: var(--lumo-primary-color) !important;
+    border-color: var(--lumo-contrast-10pct) !important;
+    font-weight: 700;
+}
+
+.story-weather-content {
+    padding: var(--lumo-space-m);
+    min-height: 200px;
+}
+
+.story-weather-location-title {
+    text-align: center;
+    margin: 0 0 var(--lumo-space-s) 0;
+    color: var(--lumo-primary-text-color);
+}
+
+.story-weather-now {
+    align-items: center;
+}
+
+.story-weather-now-card {
+    width: 100%;
+    padding: var(--lumo-space-m);
+    border-radius: var(--lumo-border-radius-m);
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+
+.story-weather-sun-row {
+    font-size: var(--lumo-font-size-s);
+    color: var(--lumo-secondary-text-color);
+    padding: var(--lumo-space-xs) var(--lumo-space-m);
+    background: rgba(255, 200, 100, 0.15);
+    border-radius: var(--lumo-border-radius-s);
+    gap: var(--lumo-space-l) !important;
+    margin-bottom: var(--lumo-space-s);
+}
+
+.story-weather-hourly {
+    gap: var(--lumo-space-xs) !important;
+}
+
+.story-weather-hourly-card {
+    padding: var(--lumo-space-s) var(--lumo-space-m);
+    border-radius: var(--lumo-border-radius-m);
+    background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf0 100%);
+    border-left: 3px solid var(--lumo-primary-color-10pct);
+    font-size: var(--lumo-font-size-s);
+}
+
+.story-weather-hourly-card:hover {
+    background: linear-gradient(135deg, #eef2f7 0%, #dde3ec 100%);
+}
