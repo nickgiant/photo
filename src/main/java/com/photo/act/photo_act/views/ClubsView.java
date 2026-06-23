@@ -45,7 +45,7 @@ import static com.photo.act.photo_act.views.MainLayout.*;
 //@Menu(order = 0, icon = "line-awesome/svg/th-list-solid.svg")
 public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEnterObserver, HasComponents, HasDynamicTitle, HasStyle {
 
-    public static String DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
+    public static String DIR_PHOTOS_SERVER = "/home/laptop/Pictures/lazy-photos"; //"/home/tasos/downloads/docker/photoact-photos";
     private String strColorOfIcons = "#a62f03"; //"#f9943b";//"#a62c5c";//"#7d1e32";
 
     private static final Logger logger = LoggerFactory.getLogger(ClubsView.class);

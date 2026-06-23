@@ -8,6 +8,7 @@ import com.photo.act.photo_act.model.ShareableResource;
 import com.photo.act.photo_act.services.PhotoStoryViewService;
 import com.photo.act.photo_act.services.ShareMetricService;
 import com.photo.act.photo_act.services.ShareService;
+import com.photo.act.photo_act.services.WeatherService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.photo.act.photo_act.views.components.AvatarItem;
@@ -135,6 +136,7 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
     private String strCategory;
     private RecordService recordService;
     private PhotoStoryViewService photoStoryViewService;
+    private WeatherService weatherService;
     @Autowired private ShareService shareService;
     @Autowired private ShareMetricService shareMetricService;
     @Value("${app.base-url}") private String baseUrl;
@@ -181,9 +183,10 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
     private String sessionDateTime;
     private GenericView genericView;
 
-    public StoriesView(RecordService recordService, PhotoStoryViewService photoStoryViewService) {
+    public StoriesView(RecordService recordService, PhotoStoryViewService photoStoryViewService, WeatherService weatherService) {
         this.recordService = recordService;
         this.photoStoryViewService = photoStoryViewService;
+        this.weatherService = weatherService;
         utilsDate = new UtilsDate();
         genericView = new GenericView(recordService);
 
@@ -593,7 +596,7 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
         String strImagePath = strPath + dirChar + strFileName;
 
         StoryItemViewCard storyItemViewCard = new StoryItemViewCard(record, strImagePath, isMobile, userId, strUsername, sessionCreation, hostname, publicIp, isEditable,
-                recordService);
+                recordService, weatherService);
         return storyItemViewCard;
     }
 

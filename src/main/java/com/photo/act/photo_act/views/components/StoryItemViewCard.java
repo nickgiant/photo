@@ -3,6 +3,7 @@ package com.photo.act.photo_act.views.components;
 import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
+import com.photo.act.photo_act.services.WeatherService;
 import com.photo.act.photo_act.utils.ImageUtilsMeta;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.contextmenu.MenuItem;
@@ -38,6 +39,7 @@ public class StoryItemViewCard extends Div {
 
     private static final Logger logger = LoggerFactory.getLogger(StoryItemViewCard.class);
     private RecordService recordService;
+    private WeatherService weatherService;
     private boolean isMobile;
     private GenericView genericView;
     private RouterLink linkUploader;
@@ -48,11 +50,18 @@ public class StoryItemViewCard extends Div {
     private Record record;
     private String strImagePath;
     private boolean mapBuilt = false;
+    private boolean weatherBuilt = false;
 
 
     public StoryItemViewCard(Record record, String strImagePath, boolean isMobile, int userId, String strUserName, long sessionCreation,
-                             String hostname, String publicIp, boolean isEditable, RecordService recordService) { //, String sqlCarousel, String[] arrColumnsCarousel) {
+                             String hostname, String publicIp, boolean isEditable, RecordService recordService) {
+        this(record, strImagePath, isMobile, userId, strUserName, sessionCreation, hostname, publicIp, isEditable, recordService, null);
+    }
+
+    public StoryItemViewCard(Record record, String strImagePath, boolean isMobile, int userId, String strUserName, long sessionCreation,
+                             String hostname, String publicIp, boolean isEditable, RecordService recordService, WeatherService weatherService) {
         this.recordService = recordService;
+        this.weatherService = weatherService;
         this.isMobile = isMobile;
         this.record = record;
         this.strImagePath = strImagePath;
@@ -91,6 +100,39 @@ public class StoryItemViewCard extends Div {
                 mapBuilt = true;
                 this.remove(ph);
                 buildMapPanel(storyItemIdFinal);
+            });
+            return;
+        }
+
+        // Weather items – show placeholder, build panel on attach
+        if (strItemTypeEarly != null && strItemTypeEarly.equalsIgnoreCase("Weather")) {
+            this.addClassName("weather-item");
+            final String storyItemIdFinal = record.getColumnData("story_item_id");
+
+            Div ph = new Div();
+            ph.getStyle()
+                    .set("display", "flex")
+                    .set("flex-direction", "column")
+                    .set("align-items", "center")
+                    .set("justify-content", "center")
+                    .set("gap", "8px")
+                    .set("width", "100%")
+                    .set("min-height", "200px")
+                    .set("background", "var(--lumo-contrast-5pct)")
+                    .set("border-radius", "var(--lumo-border-radius-m)")
+                    .set("color", "var(--lumo-secondary-text-color)");
+            Span phIcon = new Span("⛅");
+            phIcon.getStyle().set("font-size", "3rem");
+            Span phLabel = new Span("Weather");
+            phLabel.getStyle().set("font-size", "var(--lumo-font-size-s)").set("font-weight", "600");
+            ph.add(phIcon, phLabel);
+            this.add(ph);
+
+            this.addAttachListener(event -> {
+                if (weatherBuilt) return;
+                weatherBuilt = true;
+                this.remove(ph);
+                buildWeatherPanel(storyItemIdFinal);
             });
             return;
         }
@@ -689,6 +731,52 @@ public class StoryItemViewCard extends Div {
             markersJson.toString());
 
         logger.info("buildMapPanel: Leaflet JS queued for {} point(s)", lstPoints.size());
+    }
+
+    private void buildWeatherPanel(String strStoryItemId) {
+        if (strStoryItemId == null || strStoryItemId.isEmpty() || strStoryItemId.equalsIgnoreCase("null")) {
+            logger.warn("buildWeatherPanel: no story_item_id, skipping");
+            return;
+        }
+        if (weatherService == null) {
+            logger.warn("buildWeatherPanel: weatherService is null, cannot build panel");
+            Div err = new Div("Weather unavailable");
+            err.getStyle().set("padding", "var(--lumo-space-m)").set("color", "var(--lumo-secondary-text-color)");
+            this.add(err);
+            return;
+        }
+
+        logger.info("buildWeatherPanel: story_item_id={}", strStoryItemId);
+
+        String[] cols = {"id", "location_area", "lat", "lon"};
+        List<Record> lstWeather = recordService.findAll(
+                "SELECT id, location_area, lat, lon FROM photo_story_weather WHERE story_item_id = " + strStoryItemId, cols);
+
+        if (lstWeather.isEmpty()) {
+            logger.warn("buildWeatherPanel: no photo_story_weather row for story_item_id={}", strStoryItemId);
+            Div err = new Div("Weather location not configured.");
+            err.getStyle().set("padding", "var(--lumo-space-m)").set("color", "var(--lumo-secondary-text-color)");
+            this.add(err);
+            return;
+        }
+
+        Record wr = lstWeather.get(0);
+        String locationArea = wr.getColumnData("location_area");
+        String latStr = wr.getColumnData("lat");
+        String lonStr = wr.getColumnData("lon");
+
+        try {
+            double lat = Double.parseDouble(latStr);
+            double lon = Double.parseDouble(lonStr);
+            StoryWeatherPanel panel = new StoryWeatherPanel(weatherService, lat, lon, locationArea);
+            this.add(panel);
+            logger.info("buildWeatherPanel: panel built for location={}", locationArea);
+        } catch (NumberFormatException e) {
+            logger.warn("buildWeatherPanel: invalid lat/lon for story_item_id={}", strStoryItemId);
+            Div err = new Div("Invalid weather location data.");
+            err.getStyle().set("padding", "var(--lumo-space-m)").set("color", "var(--lumo-secondary-text-color)");
+            this.add(err);
+        }
     }
 
 

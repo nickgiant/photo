@@ -116,7 +116,16 @@ public class GenericView {
 
         getUserClientInfo();
 
-        String sqlReadAppConfig = "SELECT app, host, propName, propValue FROM dbinfo WHERE host like '" + hostname + "' ";
+        String sqlReadAppConfig ="";
+
+        if(hostname.equalsIgnoreCase("laptop-LOQ-15ARP9") || hostname.equalsIgnoreCase("piot")){
+            sqlReadAppConfig = "SELECT app, host, propName, propValue FROM dbinfo WHERE host like '" + hostname + "' ";
+        }else {
+            sqlReadAppConfig = "SELECT app, host, propName, propValue FROM dbinfo WHERE host like 'server' ";
+        }
+
+
+
         String[] arrCols = {"propName", "propValue"};
         recProps = recordService.findAll(sqlReadAppConfig, arrCols);
     }
@@ -261,13 +270,18 @@ public class GenericView {
 
     public String getAppProps(String prop) {
 
+
+
         for (int r = 0; r < recProps.size(); r++) {
+
             String strProp = recProps.get(r).getColumnData("propName");
             String strValue = recProps.get(r).getColumnData("propValue");
-            if (prop.equalsIgnoreCase(strProp)) {
+
+            logger.error("check dir '"+hostAddress+"'  "+prop+" "+strProp+" "+strValue);
+            if (prop.equalsIgnoreCase(strProp) ) {
                 return strValue;
             } else {
-                return null;
+                return "/home/tasos/downloads/docker/photoact-photos";
             }
         }
         return null;

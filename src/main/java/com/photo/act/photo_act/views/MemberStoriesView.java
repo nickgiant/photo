@@ -285,8 +285,9 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
 
     private VerticalLayout layoutStoryItems;
     private StoryMapService storyMapService;
+    private com.photo.act.photo_act.services.StoryWeatherService storyWeatherService;
 
-    public MemberStoriesView(PhotoStoryService photoStoryService, RecordService recordService, EmailSendService emailSendService, ShareService shareService, ShareMetricService shareMetricService, WeatherService weatherService, PhotoRatingService photoRatingService, PhotoViewService photoViewService, StoryMapService storyMapService) {
+    public MemberStoriesView(PhotoStoryService photoStoryService, RecordService recordService, EmailSendService emailSendService, ShareService shareService, ShareMetricService shareMetricService, WeatherService weatherService, PhotoRatingService photoRatingService, PhotoViewService photoViewService, StoryMapService storyMapService, com.photo.act.photo_act.services.StoryWeatherService storyWeatherService) {
         this.photoStoryService = photoStoryService;
         this.recordService = recordService;
         this.emailSendService = emailSendService;
@@ -296,6 +297,7 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
         this.photoRatingService = photoRatingService;
         this.photoViewService = photoViewService;
         this.storyMapService = storyMapService;
+        this.storyWeatherService = storyWeatherService;
 
         utilsDate = new UtilsDate();
         genericView = new GenericView(recordService);
@@ -1085,6 +1087,24 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
             }
         });
 
+        Dialog dlgAddWeather = loadWeatherEditorDialog(strMemberId, strStoryId, null);
+        dlgAddWeather.addOpenedChangeListener(e -> {
+            if (!e.isOpened()) {
+                layoutStoryItems.removeAll();
+                layoutStoryItems.add(loadStoryItems(dlgStorySelection, sqlReadStoryItems, arrColStoryItems, dlgPhotoSelection, strSelectedStoryId, strStoryTitle, strMemberId));
+            }
+        });
+
+        Button btnAddWeather = new Button("Add Weather");
+        btnAddWeather.setIcon(VaadinIcon.SUN_O.create());
+        btnAddWeather.addClickListener(clickEvent -> {
+            if (dvStoryTitle.getText().isEmpty()) {
+                Notification.show("Create the Photo-Story first!", 3000, Notification.Position.TOP_CENTER);
+            } else {
+                dlgAddWeather.open();
+            }
+        });
+
         Button btnCreateStory = new Button("Create a Story");
         btnCreateStory.setIcon(VaadinIcon.PLUS.create());
         btnCreateStory.addClickListener(e -> {
@@ -1108,7 +1128,7 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
                 Padding.SMALL, Margin.NONE,
                 Gap.MEDIUM
         );
-        layoutControls.add(btnCreateStory, btnEditStory, btnSelectStory, btnRefresh, btnAddText, btnAddPhoto, btnAddMap);
+        layoutControls.add(btnCreateStory, btnEditStory, btnSelectStory, btnRefresh, btnAddText, btnAddPhoto, btnAddMap, btnAddWeather);
 
 
         layoutItems.add(layoutControls);
@@ -1313,10 +1333,13 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
                     Div divId = new Div(strItemId);
 
                     boolean isMapItem = strRowItemType.equalsIgnoreCase("Map");
+                    boolean isWeatherItem = strRowItemType.equalsIgnoreCase("Weather");
 
                     Dialog dlgItemEditSelection;
                     if (isMapItem) {
                         dlgItemEditSelection = loadMapEditorDialog(strMemberId, strStoryId, strItemId);
+                    } else if (isWeatherItem) {
+                        dlgItemEditSelection = loadWeatherEditorDialog(strMemberId, strStoryId, strItemId);
                     } else {
                         dlgItemEditSelection = loadStoryItemEditDialog("Edit", false, sqlMemberOfAlbums, arrColumnsMemberAlbums,
                                 sqlReadStoryItems, arrColStoryItems,
@@ -1347,6 +1370,11 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
                         if (isMapItem && !strItemId.isEmpty()) {
                             try {
                                 storyMapService.deleteByStoryItemId(Integer.parseInt(strItemId));
+                            } catch (NumberFormatException ignored) {}
+                        }
+                        if (isWeatherItem && !strItemId.isEmpty()) {
+                            try {
+                                storyWeatherService.deleteByStoryItemId(Integer.parseInt(strItemId));
                             } catch (NumberFormatException ignored) {}
                         }
                         deleteStoryItem(strStoryId, strItemId, strMemberId);
@@ -1976,6 +2004,121 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
         return dlg;
     }
 
+    private Dialog loadWeatherEditorDialog(String strMemberId, String strStoryId, String strStoryItemId) {
+        Dialog dlg = new Dialog();
+        dlg.setWidth("520px");
+        dlg.setMaxHeight("90vh");
+        dlg.setResizable(true);
+        dlg.setDraggable(true);
+
+        boolean isEdit = strStoryItemId != null && !strStoryItemId.isEmpty();
+
+        VerticalLayout layout = new VerticalLayout();
+        layout.setWidthFull();
+        layout.setPadding(true);
+        layout.setSpacing(true);
+
+        Div dlgTitle = new Div(isEdit ? "Edit Weather Panel" : "Add Weather Panel");
+        dlgTitle.addClassNames(FontWeight.BOLD, FontSize.LARGE);
+
+        TextField tfLocationArea = new TextField("Location Name");
+        tfLocationArea.setWidthFull();
+        tfLocationArea.setPlaceholder("e.g. Athens, Greece");
+
+        TextField tfLat = new TextField("Latitude");
+        tfLat.setPlaceholder("37.9715");
+        tfLat.setWidth("150px");
+
+        TextField tfLon = new TextField("Longitude");
+        tfLon.setPlaceholder("23.7269");
+        tfLon.setWidth("150px");
+
+        if (isEdit) {
+            String[] cols = {"location_area", "lat", "lon"};
+            List<Record> lst = getRecordsFromDb(
+                    "SELECT location_area, lat, lon FROM photo_story_weather WHERE story_item_id = " + strStoryItemId, cols);
+            if (!lst.isEmpty()) {
+                String area = lst.get(0).getColumnData("location_area");
+                String latVal = lst.get(0).getColumnData("lat");
+                String lonVal = lst.get(0).getColumnData("lon");
+                if (area != null && !area.equalsIgnoreCase("null")) tfLocationArea.setValue(area);
+                if (latVal != null && !latVal.equalsIgnoreCase("null")) tfLat.setValue(latVal);
+                if (lonVal != null && !lonVal.equalsIgnoreCase("null")) tfLon.setValue(lonVal);
+            }
+        }
+
+        Button btnSearch = new Button("Search Location", VaadinIcon.SEARCH.create());
+        btnSearch.addClickListener(e -> openLocationSearch(tfLocationArea, tfLat, tfLon));
+
+        HorizontalLayout coordRow = new HorizontalLayout(tfLat, tfLon);
+        coordRow.setAlignItems(com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment.END);
+
+        Button btnSave = new Button("Save");
+        btnSave.setIcon(FontAwesome.Regular.CHECK_SQUARE.create());
+        btnSave.addClickListener(e -> {
+            String locationArea = tfLocationArea.getValue().trim();
+            String latStr = tfLat.getValue().trim();
+            String lonStr = tfLon.getValue().trim();
+
+            if (locationArea.isEmpty()) {
+                Notification.show("Enter a location name.", 3000, Notification.Position.TOP_CENTER);
+                return;
+            }
+            if (latStr.isEmpty() || lonStr.isEmpty()) {
+                Notification.show("Search a location to fill in coordinates.", 3000, Notification.Position.TOP_CENTER);
+                return;
+            }
+
+            double lat, lon;
+            try {
+                lat = Double.parseDouble(latStr);
+                lon = Double.parseDouble(lonStr);
+            } catch (NumberFormatException ex) {
+                Notification.show("Invalid coordinates.", 3000, Notification.Position.TOP_CENTER);
+                return;
+            }
+
+            try {
+                Integer storyItemIdInt;
+                if (isEdit) {
+                    storyItemIdInt = Integer.parseInt(strStoryItemId);
+                    recordService.insertOneRecordWithQuery(
+                            "UPDATE photo_stories_photo SET item_title = ? WHERE id = ?",
+                            new Object[]{locationArea, storyItemIdInt},
+                            new String[]{"java.lang.String", "java.lang.Integer"});
+                } else {
+                    int nextInc = 10;
+                    List<Map<String, Object>> maxRes = photoStoryService.findAll(
+                            "SELECT COALESCE(MAX(inc), 0) AS max_inc FROM photo_stories_photo WHERE story_id = " + strStoryId);
+                    if (!maxRes.isEmpty() && maxRes.get(0).get("max_inc") != null) {
+                        nextInc = ((Number) maxRes.get(0).get("max_inc")).intValue() + 10;
+                    }
+                    String sqlInsert = "INSERT INTO photo_stories_photo (user_id, story_id, item_type, item_title, inc) VALUES (?, ?, 'Weather', ?, ?)";
+                    storyItemIdInt = photoStoryService.insertAndGetGeneratedId(sqlInsert,
+                            Integer.parseInt(strMemberId), Integer.parseInt(strStoryId), locationArea, nextInc);
+                    if (storyItemIdInt == null) {
+                        Notification.show("Failed to create story item.", 3000, Notification.Position.TOP_CENTER);
+                        return;
+                    }
+                }
+                storyWeatherService.save(storyItemIdInt, Integer.parseInt(strMemberId), Integer.parseInt(strStoryId), locationArea, lat, lon);
+                Notification.show("Weather panel saved!", 3000, Notification.Position.TOP_CENTER);
+                dlg.close();
+            } catch (NumberFormatException ex) {
+                Notification.show("Invalid member or story ID.", 3000, Notification.Position.TOP_CENTER);
+            }
+        });
+
+        Button btnCancel = new Button("Cancel");
+        btnCancel.addClickListener(e -> dlg.close());
+
+        HorizontalLayout btnRow = new HorizontalLayout(btnSave, btnCancel);
+
+        layout.add(dlgTitle, tfLocationArea, btnSearch, coordRow, btnRow);
+        dlg.add(layout);
+        return dlg;
+    }
+
     private static final String[] MAP_PIN_COLORS = {
         "#e74c3c","#e67e22","#f1c40f","#2ecc71","#1abc9c",
         "#3498db","#9b59b6","#e91e63","#795548","#607d8b"
@@ -2185,6 +2328,7 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
     private String getTypePillBg(String type) {
         return switch (type.toLowerCase()) {
             case "map"     -> "#e3f2fd";
+            case "weather" -> "#e8f0fe";
             case "photo"   -> "#e8f5e9";
             case "text"    -> "#f5f5f5";
             case "tip"     -> "#fff8e1";
@@ -2198,6 +2342,7 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
     private String getTypePillColor(String type) {
         return switch (type.toLowerCase()) {
             case "map"     -> "#1565c0";
+            case "weather" -> "#1a56c4";
             case "photo"   -> "#2e7d32";
             case "text"    -> "#616161";
             case "tip"     -> "#e65100";
