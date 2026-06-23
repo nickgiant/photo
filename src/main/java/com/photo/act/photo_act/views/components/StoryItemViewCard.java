@@ -8,6 +8,7 @@ import com.photo.act.photo_act.utils.ImageUtilsMeta;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.details.Details;
+import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H4;
 import com.vaadin.flow.component.html.Image;
@@ -663,6 +664,18 @@ public class StoryItemViewCard extends Div {
         }
 
         this.add(wrapperDiv);
+
+        // Source attribution below map
+        Anchor mapSourceLink = new Anchor("https://www.openstreetmap.org", "Source: OpenStreetMap");
+        mapSourceLink.setTarget("_blank");
+        mapSourceLink.getStyle().set("color", "#999").set("text-decoration", "none");
+        Div mapSourceDiv = new Div(mapSourceLink);
+        mapSourceDiv.getStyle()
+                .set("text-align", "right")
+                .set("font-size", "11px")
+                .set("color", "#999")
+                .set("padding", "2px 4px 0");
+        this.add(mapSourceDiv);
 
         // Description below map
         if (itemDescr != null && !itemDescr.isEmpty() && !itemDescr.equalsIgnoreCase("null")) {

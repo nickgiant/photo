@@ -116,28 +116,28 @@ public class WeatherIcons {
         System.out.println("WeatherIcons DEBUG - Type: '" + weatherType + "' (lowercase: '" + type + "'), isNight: " + isNight);
 
         if (type.contains("clear") || type.contains("sunny") || type.equals("clear sky")) {
-            System.out.println("WeatherIcons DEBUG - Using " + (isNight ? "MOON" : "SUN") + " icon");
+//            System.out.println("WeatherIcons DEBUG - Using " + (isNight ? "MOON" : "SUN") + " icon");
             return isNight ? getMoonIcon(size, currentTheme) : getSunIcon(size, currentTheme);
         } else if (type.contains("cloud") && !type.contains("rain")) {
-            System.out.println("WeatherIcons DEBUG - Using CLOUDY icon");
+//            System.out.println("WeatherIcons DEBUG - Using CLOUDY icon");
             return isNight ? getCloudyNightIcon(size, currentTheme) : getCloudyDayIcon(size, currentTheme);
         } else if (type.contains("rain") || type.contains("drizzle")) {
-            System.out.println("WeatherIcons DEBUG - Using RAIN icon");
+//            System.out.println("WeatherIcons DEBUG - Using RAIN icon");
             return isNight ? getRainNightIcon(size, currentTheme) : getRainDayIcon(size, currentTheme);
         } else if (type.contains("thunder") || type.contains("storm")) {
-            System.out.println("WeatherIcons DEBUG - Using THUNDER icon");
+//            System.out.println("WeatherIcons DEBUG - Using THUNDER icon");
             return getThunderstormIcon(size, currentTheme);
         } else if (type.contains("snow")) {
-            System.out.println("WeatherIcons DEBUG - Using SNOW icon");
+//            System.out.println("WeatherIcons DEBUG - Using SNOW icon");
             return isNight ? getSnowNightIcon(size, currentTheme) : getSnowDayIcon(size, currentTheme);
         } else if (type.contains("mist") || type.contains("fog") || type.contains("haze")) {
-            System.out.println("WeatherIcons DEBUG - Using FOG icon");
+//            System.out.println("WeatherIcons DEBUG - Using FOG icon");
             return getFogIcon(size, currentTheme);
         } else if (type.contains("wind")) {
-            System.out.println("WeatherIcons DEBUG - Using WIND icon");
+//            System.out.println("WeatherIcons DEBUG - Using WIND icon");
             return getWindIcon(size, currentTheme);
         } else {
-            System.out.println("WeatherIcons DEBUG - Using DEFAULT (cloudy) icon for unmatched type");
+//            System.out.println("WeatherIcons DEBUG - Using DEFAULT (cloudy) icon for unmatched type");
             return isNight ? getCloudyNightIcon(size, currentTheme) : getCloudyDayIcon(size, currentTheme);
         }
     }
