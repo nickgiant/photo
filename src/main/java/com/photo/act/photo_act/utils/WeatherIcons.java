@@ -113,7 +113,7 @@ public class WeatherIcons {
         String type = weatherType.toLowerCase().trim();
 
         // Debug logging
-        System.out.println("WeatherIcons DEBUG - Type: '" + weatherType + "' (lowercase: '" + type + "'), isNight: " + isNight);
+//        System.out.println("WeatherIcons DEBUG - Type: '" + weatherType + "' (lowercase: '" + type + "'), isNight: " + isNight);
 
         if (type.contains("clear") || type.contains("sunny") || type.equals("clear sky")) {
 //            System.out.println("WeatherIcons DEBUG - Using " + (isNight ? "MOON" : "SUN") + " icon");

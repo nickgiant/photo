@@ -2040,7 +2040,7 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
         }
 
         Button btnSearch = new Button("Search Location", VaadinIcon.SEARCH.create());
-        btnSearch.addClickListener(e -> openLocationSearch(tfLocationArea, tfLat, tfLon));
+        btnSearch.addClickListener(e -> openLocationSearch(tfLocationArea, tfLat, tfLon, "weather"));
 
         HorizontalLayout coordRow = new HorizontalLayout(tfLat, tfLon);
         coordRow.setAlignItems(com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment.END);
@@ -2140,7 +2140,7 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
         Button btnSearch = new Button(VaadinIcon.SEARCH.create());
         btnSearch.getStyle().setAlignSelf(Style.AlignSelf.CENTER);
         btnSearch.getElement().setAttribute("title", "Search location");
-        btnSearch.addClickListener(e -> openLocationSearch(tfName, tfLat, tfLon));
+        btnSearch.addClickListener(e -> openLocationSearch(tfName, tfLat, tfLon, "map"));
 
         Button btnRemove = new Button("-");
         btnRemove.getStyle().setAlignSelf(Style.AlignSelf.CENTER);
@@ -2210,12 +2210,14 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
         return row;
     }
 
-    private void openLocationSearch(TextField tfName, TextField tfLat, TextField tfLon) {
+    private void openLocationSearch(TextField tfName, TextField tfLat, TextField tfLon, String searchContext) {
+        boolean isWeather = "weather".equalsIgnoreCase(searchContext);
+
         Dialog dlg = new Dialog();
         dlg.setWidth("520px");
         dlg.setMaxHeight("80vh");
 
-        H4 dlgTitle = new H4("Search Location");
+        H4 dlgTitle = new H4(isWeather ? "Search Weather Location" : "Search Map Location");
         dlgTitle.getStyle().set("margin", "0 0 var(--lumo-space-s) 0");
 
         TextField tfQuery = new TextField("Location");
@@ -2231,6 +2233,10 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
         Paragraph statusMsg = new Paragraph();
         statusMsg.getStyle().set("color", "var(--lumo-secondary-text-color)").set("font-size", "var(--lumo-font-size-s)").set("margin", "0");
 
+        String noResultsMsg = isWeather
+                ? "No results found. If not found, try typing a location close to the place (e.g. the nearest city or town)."
+                : "Location not found. Try a nearby city name or a different spelling.";
+
         Button btnSearch = new Button("Search", VaadinIcon.SEARCH.create());
         btnSearch.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         btnSearch.addClickListener(e -> {
@@ -2238,10 +2244,12 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
             if (q.isEmpty()) return;
             resultsLayout.removeAll();
             statusMsg.setText("Searching…");
-            List<String[]> hits = weatherService.searchLocationsByName(q);
+            List<String[]> hits = isWeather
+                    ? weatherService.searchLocationsByName(q)
+                    : weatherService.searchMapLocationsByName(q);
             statusMsg.setText("");
             if (hits.isEmpty()) {
-                statusMsg.setText("No weather data, search for a near location.");
+                statusMsg.setText(noResultsMsg);
             } else {
                 for (String[] hit : hits) {
                     String displayName = hit[0];
