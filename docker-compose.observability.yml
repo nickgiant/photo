@@ -1,18 +1,34 @@
 # ── Observability Stack ────────────────────────────────────────────────────────
 #
-# Runs alongside the main application (which runs on the host, not in Docker).
-# Prometheus scrapes Spring Boot metrics directly on host port 8081 via
-# host.docker.internal, bypassing nginx.
+# Both apps (app3=photoact :8081, app1=cinetopia :8082) run in Docker on the
+# "internal" network defined in the main docker-compose.yml.
+# Prometheus joins that same network so it can reach the containers by their
+# Docker service names (app3, app1) — no host.docker.internal needed.
 #
+# ── ONE-TIME SETUP REQUIRED IN YOUR MAIN docker-compose.yml ──────────────────
+# The "internal" network must have a fixed name so this compose can reference it.
+# Add  name: photoact-internal  under the internal network definition:
+#
+#   networks:
+#     internal:
+#       driver: bridge
+#       name: photoact-internal    ← add this line
+#
+# Then recreate the network:
+#   docker compose down
+#   docker compose up -d
+#
+# ── Start / Stop ──────────────────────────────────────────────────────────────
 # Start:   docker compose -f docker-compose.observability.yml up -d
 # Stop:    docker compose -f docker-compose.observability.yml down
 # Logs:    docker compose -f docker-compose.observability.yml logs -f
 #
-# Access (from the server — SSH-tunnel or add nginx proxy for remote access):
-#   Grafana:    http://localhost:3000   (admin / see GRAFANA_PASSWORD below)
+# ── Access ─────────────────────────────────────────────────────────────────────
+# Ports are bound to 127.0.0.1 — access via SSH tunnel or nginx reverse proxy.
+#   Grafana:    http://localhost:3000   (login: admin / GRAFANA_PASSWORD)
 #   Prometheus: http://localhost:9090
 #
-# Recommended Grafana dashboard IDs to import (Dashboards → Import):
+# ── Recommended Grafana dashboard IDs (Dashboards → Import) ──────────────────
 #   4701  - JVM (Micrometer)                 ← start here
 #   6756  - Spring Boot Statistics
 #  14282  - Spring Boot 3 Observability
@@ -24,6 +40,9 @@
 services:
 
   # ── Prometheus ───────────────────────────────────────────────────────────────
+  # Needs two networks:
+  #   monitoring        → to reach grafana, cadvisor, node-exporter (same compose)
+  #   photoact-internal → to reach app3 (photoact) and app1 (cinetopia) by name
   prometheus:
     image: prom/prometheus:v2.55.1
     container_name: photoact-prometheus
@@ -42,8 +61,9 @@ services:
       - '--web.enable-admin-api'
     ports:
       - "127.0.0.1:9090:9090"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+    networks:
+      - monitoring
+      - photoact-internal
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9090/-/ready"]
       interval: 30s
@@ -68,6 +88,8 @@ services:
       - GF_LOG_LEVEL=warn
     ports:
       - "127.0.0.1:3000:3000"
+    networks:
+      - monitoring
     depends_on:
       prometheus:
         condition: service_healthy
@@ -78,6 +100,9 @@ services:
       retries: 3
 
   # ── cAdvisor — Docker container CPU / memory / network metrics ───────────────
+  # Reads Docker stats via socket + kernel filesystems — no app network needed.
+  # Inner port 8080 is cAdvisor's own built-in web server (unrelated to app ports).
+  # Mapped to host 8090 to avoid collision with anything on 8080.
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:v0.49.1
     container_name: photoact-cadvisor
@@ -93,6 +118,8 @@ services:
       - /dev/kmsg
     ports:
       - "127.0.0.1:8090:8080"
+    networks:
+      - monitoring
     command:
       - '--housekeeping_interval=15s'
       - '--max_housekeeping_interval=30s'
@@ -100,6 +127,7 @@ services:
       - '--store_container_labels=false'
 
   # ── Node Exporter — host CPU / memory / disk / filesystem metrics ─────────────
+  # Reads /proc and /sys from the host — no app network needed.
   node-exporter:
     image: prom/node-exporter:v1.8.2
     container_name: photoact-node-exporter
@@ -125,6 +153,21 @@ services:
       - '--collector.time'
     ports:
       - "127.0.0.1:9100:9100"
+    networks:
+      - monitoring
+
+networks:
+
+  # Internal network for Prometheus ↔ Grafana ↔ cAdvisor ↔ Node Exporter
+  monitoring:
+    driver: bridge
+
+  # Shared with the main docker-compose so Prometheus can reach app3 and app1
+  # by their Docker service names (app3:8081, app1:8082).
+  # Requires  name: photoact-internal  in the main docker-compose.yml (see top).
+  photoact-internal:
+    external: true
+    name: photoact-internal
 
 volumes:
   prometheus_data:
