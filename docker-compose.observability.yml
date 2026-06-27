@@ -44,7 +44,7 @@ services:
   #   monitoring        → to reach grafana, cadvisor, node-exporter (same compose)
   #   photoact-internal → to reach app3 (photoact) and app1 (cinetopia) by name
   prometheus:
-    image: prom/prometheus:v2.55.1
+    image: prom/prometheus:v2.53.4
     container_name: photoact-prometheus
     restart: unless-stopped
     volumes:
@@ -72,7 +72,7 @@ services:
 
   # ── Grafana ──────────────────────────────────────────────────────────────────
   grafana:
-    image: grafana/grafana:11.4.0
+    image: grafana/grafana:12.0.2
     container_name: photoact-grafana
     restart: unless-stopped
     volumes:
@@ -104,7 +104,7 @@ services:
   # Inner port 8080 is cAdvisor's own built-in web server (unrelated to app ports).
   # Mapped to host 8090 to avoid collision with anything on 8080.
   cadvisor:
-    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    image: ghcr.io/google/cadvisor:0.56.1
     container_name: photoact-cadvisor
     restart: unless-stopped
     privileged: true
