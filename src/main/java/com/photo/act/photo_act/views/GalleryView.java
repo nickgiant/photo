@@ -10,6 +10,7 @@ import com.photo.act.photo_act.services.ShareMetricService;
 import com.photo.act.photo_act.services.ShareService;
 import com.photo.act.photo_act.services.WeatherService;
 import com.photo.act.photo_act.utils.NetUtils;
+import com.photo.act.photo_act.utils.PageSeoUtil;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.photo.act.photo_act.views.components.*;
 import com.photo.act.photo_act.views.components.Layout;
@@ -262,7 +263,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
 
     @Override
     public String getPageTitle() {
-        return strHeader;
+        return "PhotoAct.net - Photography Community | Photos";
     }
 
     @Override
@@ -273,6 +274,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         strUploadedMonth = event.getRouteParameters().get("month-uploaded").orElse(STR_ALL_MONTHS);
         strPhotoId = event.getRouteParameters().get("id").orElse("");
 
+        PageSeoUtil.setMetaDescription("View photos uploaded by our members and filter them based on location, date uploaded etc.");
         getUserClientInfo();
 
         UI.getCurrent().getPage().fetchCurrentURL(currentUrl -> {

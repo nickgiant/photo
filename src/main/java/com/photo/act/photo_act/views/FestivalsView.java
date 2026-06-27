@@ -4,6 +4,7 @@ import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.utils.NetUtils;
+import com.photo.act.photo_act.utils.PageSeoUtil;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.photo.act.photo_act.views.components.GenericView;
 import com.vaadin.flow.component.HasComponents;
@@ -43,7 +44,7 @@ import static com.photo.act.photo_act.views.MainLayout.*;
 
 @AnonymousAllowed
 
-@PageTitle("Events · PhotoAct.net")
+@PageTitle("PhotoAct.net - Photography Community | Events")
 @Route(value = "events")
 @RouteAlias(value = "events/country/:country?", layout = MainLayout.class)
 @RouteAlias(value = "events/genre/:genre?", layout = MainLayout.class)
@@ -162,6 +163,7 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
     public void beforeEnter(@OptionalParameter BeforeEnterEvent event) {
         country = event.getRouteParameters().get("country").orElse(STR_ALL_COUNTRIES);
 
+        PageSeoUtil.setMetaDescription("Get informed about recent future events related to photography.");
         getUserClientInfo();
 
         VerticalLayout layoutHeaderParameters;

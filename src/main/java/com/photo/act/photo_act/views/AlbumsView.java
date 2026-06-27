@@ -11,6 +11,7 @@ import com.photo.act.photo_act.services.ShareMetricService;
 import com.photo.act.photo_act.services.ShareService;
 import com.photo.act.photo_act.services.WeatherService;
 import com.photo.act.photo_act.utils.NetUtils;
+import com.photo.act.photo_act.utils.PageSeoUtil;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.photo.act.photo_act.views.components.*;
 import com.vaadin.flow.component.HasComponents;
@@ -246,7 +247,7 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
 
     @Override
     public String getPageTitle() {
-        return strHeader;
+        return "PhotoAct.net - Photography Community | Albums";
     }
 
     @Override
@@ -255,6 +256,7 @@ public class AlbumsView extends Main implements HasUrlParameter<String>, BeforeE
         strAlbumTitle = event.getRouteParameters().get("title").orElse(STR_ALL_ALBUMS);
         strCategory = event.getRouteParameters().get("category").orElse(STR_ALL_CATEGORIES);
 
+        PageSeoUtil.setMetaDescription("Browse photo albums created by our members, organized by theme, location and date.");
         getUserClientInfo();
 
 

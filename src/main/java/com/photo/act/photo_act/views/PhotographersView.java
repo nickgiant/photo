@@ -5,6 +5,7 @@ import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.services.*;
 import com.photo.act.photo_act.utils.NetUtils;
+import com.photo.act.photo_act.utils.PageSeoUtil;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.photo.act.photo_act.utils.UtilsString;
 import com.photo.act.photo_act.views.components.*;
@@ -67,7 +68,7 @@ import static com.photo.act.photo_act.views.MainLayout.*;
 
 //@RolesAllowed("Admin")
 @AnonymousAllowed
-@PageTitle("Photographers · PhotoAct.net")
+@PageTitle("PhotoAct.net - Photography Community | Photographers")
 @Route(value = "photographers") //":section?")
 @RouteAlias(value = "photographer/:member", layout = MainLayout.class)
 //@RouteAlias(value = ":section/:member?", layout = MainLayout.class)
@@ -216,6 +217,7 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
     @Override
     public void beforeEnter(@OptionalParameter BeforeEnterEvent event) {
         strMember = event.getRouteParameters().get("member").orElse(STR_ALL_MEMBERS);
+        PageSeoUtil.setMetaDescription("View profile of other photographers and their most popular photos as well as their latest uploads.");
         getUserClientInfo();
 
         UI.getCurrent().getPage().fetchCurrentURL(currentUrl -> {

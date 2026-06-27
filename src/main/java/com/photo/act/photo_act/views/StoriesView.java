@@ -10,6 +10,7 @@ import com.photo.act.photo_act.services.ShareMetricService;
 import com.photo.act.photo_act.services.ShareService;
 import com.photo.act.photo_act.services.WeatherService;
 import com.photo.act.photo_act.utils.NetUtils;
+import com.photo.act.photo_act.utils.PageSeoUtil;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.photo.act.photo_act.views.components.AvatarItem;
 import com.photo.act.photo_act.views.components.GenericView;
@@ -58,7 +59,7 @@ import static com.photo.act.photo_act.views.MainLayout.*;
 
 @AnonymousAllowed
 
-@PageTitle("Stories · PhotoAct.net")
+@PageTitle("PhotoAct.net - Photography Community | Stories")
 @Route(value = "stories") //":category?")
 @RouteAlias(value = "stories/category/:category?", layout = MainLayout.class)
 @RouteAlias(value = "stories/member/:member?/story/:story?", layout = MainLayout.class)
@@ -207,6 +208,7 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
 
         logger.info("strMember:"+strMember+" story:"+strSlug+" strCategory:"+strCategory);
 
+        PageSeoUtil.setMetaDescription("View rich photo stories from fellow photographers and virtually feel the experience with them");
         getUserClientInfo();
 
         if (strMember.equalsIgnoreCase("visitor-user")) {

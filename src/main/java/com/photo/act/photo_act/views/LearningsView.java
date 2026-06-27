@@ -18,6 +18,7 @@ import com.photo.act.photo_act.services.LearningViewService;
 import com.photo.act.photo_act.services.ShareMetricService;
 import com.photo.act.photo_act.services.ShareService;
 import com.photo.act.photo_act.utils.NetUtils;
+import com.photo.act.photo_act.utils.PageSeoUtil;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.photo.act.photo_act.views.components.AvatarItem;
 import com.photo.act.photo_act.views.components.FilterDestinationTypeCard;
@@ -67,7 +68,7 @@ import static com.photo.act.photo_act.views.MainLayout.*;
 
 @AnonymousAllowed
 
-@PageTitle("News · PhotoAct.net")
+@PageTitle("PhotoAct.net - Photography Community | News")
 @Route(value = "news") //":category?")
 @RouteAlias(value = "news/category/:category?", layout = MainLayout.class)
 @RouteAlias(value = "news/genre/:genre?", layout = MainLayout.class)
@@ -210,6 +211,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         title = event.getRouteParameters().get("title").orElse(STR_ALL_TITLES);
         genre = event.getRouteParameters().get("genre").orElse(STR_ALL_GENRES);
 
+        PageSeoUtil.setMetaDescription("Read latest important photography news posted by fellow photographers and connect with them");
         getUserClientInfo();
 
         userId = 1;

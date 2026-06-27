@@ -42,7 +42,7 @@ public class PhotoActApplication implements AppShellConfigurator {
 //        settings.setPageTitle("YourSiteName — Discover Amazing Content");
         settings.addFavIcon("icon", "camera.png", "512x512");
         settings.setPageTitle(baseMoto);
-        settings.addMetaTag("description", "Community website of photographers, sharing their photos, albums, learning sources and events.");
+        settings.addMetaTag("description", "Community website of photographers, sharing their photos, stories, learning sources and events.");
     }
 
 }

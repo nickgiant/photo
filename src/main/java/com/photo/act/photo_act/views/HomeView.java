@@ -26,6 +26,7 @@ import com.photo.act.photo_act.services.ShareMetricService;
 import com.photo.act.photo_act.services.ShareService;
 import com.photo.act.photo_act.services.WeatherService;
 import com.photo.act.photo_act.utils.NetUtils;
+import com.photo.act.photo_act.utils.PageSeoUtil;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.photo.act.photo_act.views.components.*;
 import com.vaadin.flow.component.HasComponents;
@@ -216,8 +217,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
     @Override
     public String getPageTitle() {
-        strHeader = "photoact.net";
-        return strHeader;
+        return "PhotoAct.net - Photography Community | Share Photos, Stories & Events";
     }
 
     @Override
@@ -225,6 +225,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         category = event.getRouteParameters().get("category").orElse(STR_ALL_CATEGORIES);
 //        tutor = event.getRouteParameters().get("tutor").orElse(STR_ALL_TUTORS);
 
+        PageSeoUtil.setMetaDescription("Community website of photographers, sharing their photos, stories, learning sources and events.");
         getUserClientInfo();
 
         userId = 1;
