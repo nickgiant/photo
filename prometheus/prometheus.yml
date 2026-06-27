@@ -1,0 +1,60 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  scrape_timeout: 10s
+  external_labels:
+    environment: production
+
+scrape_configs:
+
+  # ── photoact.net (app3 · port 8081) ───────────────────────────────────────
+  # Prometheus reaches app3 via Docker DNS on the shared photoact-internal network.
+  # The service name "app3" resolves to the container IP automatically.
+  - job_name: photoact
+    metrics_path: /actuator/prometheus
+    scrape_interval: 15s
+    static_configs:
+      - targets:
+          - app3:8081
+        labels:
+          application: photoact.net
+          service: photoact-app
+
+  # ── cinetopia.net (app1 · port 8082) ──────────────────────────────────────
+  # Same pattern — app1 is on the same internal network.
+  # cinetopia must also have micrometer-registry-prometheus + actuator configured.
+  - job_name: cinetopia
+    metrics_path: /actuator/prometheus
+    scrape_interval: 15s
+    static_configs:
+      - targets:
+          - app1:8082
+        labels:
+          application: cinetopia.net
+          service: cinetopia-app
+
+  # ── cAdvisor — Docker container CPU / mem / net ───────────────────────────
+  # cAdvisor's web server always listens on its internal port 8080.
+  # This is cAdvisor's own port — completely separate from app ports.
+  - job_name: cadvisor
+    scrape_interval: 30s
+    static_configs:
+      - targets:
+          - cadvisor:8080
+        labels:
+          service: docker-containers
+
+  # ── Node Exporter — host OS metrics ───────────────────────────────────────
+  - job_name: node-exporter
+    scrape_interval: 30s
+    static_configs:
+      - targets:
+          - node-exporter:9100
+        labels:
+          service: host-system
+
+  # ── Prometheus self-monitoring ─────────────────────────────────────────────
+  - job_name: prometheus
+    static_configs:
+      - targets:
+          - localhost:9090
