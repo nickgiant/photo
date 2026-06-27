@@ -83,7 +83,7 @@ import static com.photo.act.photo_act.views.MainLayout.*;
 
 
 @AnonymousAllowed
-
+@PageTitle( "PhotoAct.net - Photography Community | Share Photos, Stories & Events")
 @Route(value = "") //":category?")
 //@RouteAlias(value = "home") // empty on homepage
 @RouteAlias(value = "home/:category?", layout = MainLayout.class)
@@ -94,7 +94,7 @@ import static com.photo.act.photo_act.views.MainLayout.*;
 
 //@Menu(order = 0, icon = "line-awesome/svg/th-list-solid.svg")
 //@EnableGoogleAnalytics(value="G-NQH7NZ6JJL", devLogging = EnableGoogleAnalytics.LogLevel.NONE, sendMode = EnableGoogleAnalytics.SendMode.ALWAYS)
-public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnterObserver, HasComponents, HasDynamicTitle, HasStyle {
+public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnterObserver, HasComponents, HasStyle {
 
     private String strColorOfIcons = "#a62f03"; //"#f9943b";//"#a62c5c";//"#7d1e32";
 
@@ -213,12 +213,6 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
     }
 
-
-
-    @Override
-    public String getPageTitle() {
-        return "PhotoAct.net - Photography Community | Share Photos, Stories & Events";
-    }
 
     @Override
     public void beforeEnter(@OptionalParameter BeforeEnterEvent event) {

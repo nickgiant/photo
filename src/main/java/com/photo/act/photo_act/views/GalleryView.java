@@ -63,6 +63,8 @@ import static com.photo.act.photo_act.views.MainLayout.*;
 
 @AnonymousAllowed
 
+@PageTitle("PhotoAct.net - Photography Community | Photos")
+
 @Route(value = "photos") //":category?")
 @RouteAlias(value = "photos/location/:destination?", layout = MainLayout.class)
 @RouteAlias(value = "photos/location-type/:destination-type?", layout = MainLayout.class)
@@ -71,7 +73,7 @@ import static com.photo.act.photo_act.views.MainLayout.*;
 @RouteAlias(value = "photo/:id?", layout = MainLayout.class)
 
 //@Menu(order = 0, icon = "line-awesome/svg/th-list-solid.svg")
-public class GalleryView extends Main implements HasUrlParameter<String>, BeforeEnterObserver, HasComponents, HasDynamicTitle, HasStyle {
+public class GalleryView extends Main implements HasUrlParameter<String>, BeforeEnterObserver, HasComponents, HasStyle {
 
     private String strColorOfIcons = "#a62f03";
 
@@ -259,11 +261,6 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         genericView = new GenericView(recordService);
 
         constructUI();
-    }
-
-    @Override
-    public String getPageTitle() {
-        return "PhotoAct.net - Photography Community | Photos";
     }
 
     @Override
