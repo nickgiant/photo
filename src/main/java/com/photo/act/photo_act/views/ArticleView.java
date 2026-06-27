@@ -4,6 +4,7 @@ package com.photo.act.photo_act.views;
 import com.photo.act.photo_act.model.ContentEntity;
 import com.photo.act.photo_act.model.ContentType;
 import com.photo.act.photo_act.repository.ContentRepository;
+import com.photo.act.photo_act.utils.PageSeoUtil;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
@@ -30,7 +31,7 @@ import com.vaadin.flow.server.auth.AnonymousAllowed;
 
 @AnonymousAllowed
 @Route(value = "article/:slug", layout = MainLayout.class)
-@PageTitle("Article")
+@PageTitle("PhotoAct.net - Photography Community | Article")
 public class ArticleView extends VerticalLayout implements BeforeEnterObserver {
 
     private final ContentRepository contentRepository;
@@ -60,7 +61,10 @@ public class ArticleView extends VerticalLayout implements BeforeEnterObserver {
 
     private void populateView(ContentEntity entity) {
         // Update browser title dynamically
-        UI.getCurrent().getPage().setTitle(entity.getTitle() + " | YourSite");
+        UI.getCurrent().getPage().setTitle(entity.getTitle() + " | PhotoAct.net");
+        if (entity.getDescription() != null && !entity.getDescription().isBlank()) {
+            PageSeoUtil.setMetaDescription(entity.getDescription());
+        }
 
         titleEl.setText(entity.getTitle());
         descEl.setText(entity.getDescription() != null ? entity.getDescription() : "");

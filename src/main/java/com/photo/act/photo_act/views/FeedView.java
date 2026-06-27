@@ -4,6 +4,7 @@ package com.photo.act.photo_act.views;
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.model.Person;
 import com.photo.act.photo_act.utils.NetUtils;
+import com.photo.act.photo_act.utils.PageSeoUtil;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.checkbox.CheckboxGroup;
@@ -40,7 +41,7 @@ import java.util.Locale;
 import static com.photo.act.photo_act.views.MainLayout.*;
 
 @AnonymousAllowed
-@PageTitle("Feed · PhotoAct.net")
+@PageTitle("PhotoAct.net - Photography Community | Feed")
 @Route("feed")
 //@Menu(order = 2, icon = "line-awesome/svg/list-solid.svg")  //, icon = LineAwesomeIconUrl.LIST_SOLID)
 public class FeedView extends Div implements AfterNavigationObserver {
@@ -350,7 +351,7 @@ public class FeedView extends Div implements AfterNavigationObserver {
 
     @Override
     public void afterNavigation(AfterNavigationEvent event) {
-
+        PageSeoUtil.setMetaDescription("Stay updated with the latest photography activity and posts from the PhotoAct community.");
         // Set some data when this view is displayed.
         List<Person> persons = Arrays.asList( //
                 createPerson("https://randomuser.me/api/portraits/men/42.jpg", "John Smith", "May 8",

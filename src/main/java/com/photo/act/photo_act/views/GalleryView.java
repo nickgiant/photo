@@ -10,6 +10,7 @@ import com.photo.act.photo_act.services.ShareMetricService;
 import com.photo.act.photo_act.services.ShareService;
 import com.photo.act.photo_act.services.WeatherService;
 import com.photo.act.photo_act.utils.NetUtils;
+import com.photo.act.photo_act.utils.PageSeoUtil;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.photo.act.photo_act.views.components.*;
 import com.photo.act.photo_act.views.components.Layout;
@@ -62,6 +63,8 @@ import static com.photo.act.photo_act.views.MainLayout.*;
 
 @AnonymousAllowed
 
+@PageTitle("PhotoAct.net - Photography Community | Photos")
+
 @Route(value = "photos") //":category?")
 @RouteAlias(value = "photos/location/:destination?", layout = MainLayout.class)
 @RouteAlias(value = "photos/location-type/:destination-type?", layout = MainLayout.class)
@@ -70,7 +73,7 @@ import static com.photo.act.photo_act.views.MainLayout.*;
 @RouteAlias(value = "photo/:id?", layout = MainLayout.class)
 
 //@Menu(order = 0, icon = "line-awesome/svg/th-list-solid.svg")
-public class GalleryView extends Main implements HasUrlParameter<String>, BeforeEnterObserver, HasComponents, HasDynamicTitle, HasStyle {
+public class GalleryView extends Main implements HasUrlParameter<String>, BeforeEnterObserver, HasComponents, HasStyle {
 
     private String strColorOfIcons = "#a62f03";
 
@@ -261,11 +264,6 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
     }
 
     @Override
-    public String getPageTitle() {
-        return strHeader;
-    }
-
-    @Override
     public void beforeEnter(@OptionalParameter BeforeEnterEvent event) {
         strMember = event.getRouteParameters().get("member").orElse(STR_ALL_MEMBERS);
         strDestination = event.getRouteParameters().get("destination").orElse(STR_ALL_DESTINATIONS);
@@ -273,6 +271,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         strUploadedMonth = event.getRouteParameters().get("month-uploaded").orElse(STR_ALL_MONTHS);
         strPhotoId = event.getRouteParameters().get("id").orElse("");
 
+        PageSeoUtil.setMetaDescription("View photos uploaded by our members and filter them based on location, date uploaded etc.");
         getUserClientInfo();
 
         UI.getCurrent().getPage().fetchCurrentURL(currentUrl -> {
