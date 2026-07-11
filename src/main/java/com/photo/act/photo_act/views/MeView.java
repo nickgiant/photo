@@ -6,6 +6,7 @@ import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.services.CacheService;
 import com.photo.act.photo_act.services.EmailSendService;
 import com.photo.act.photo_act.services.ImageService;
+import com.photo.act.photo_act.services.PasswordResetService;
 import com.photo.act.photo_act.services.PhotoProcessingService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
@@ -213,14 +214,16 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
     private EmailSendService emailSendService;
     private  PhotoProcessingService photoProcessingService;
     private final AuthenticationContext authenticationContext;
+    private final PasswordResetService passwordResetService;
 
 
     public MeView(RecordService recordService, EmailSendService emailSendService, PhotoProcessingService photoProcessingService,
-                  AuthenticationContext authenticationContext) {
+                  AuthenticationContext authenticationContext, PasswordResetService passwordResetService) {
         this.recordService = recordService;
         this.emailSendService = emailSendService;
         this.photoProcessingService = photoProcessingService;
         this.authenticationContext = authenticationContext;
+        this.passwordResetService = passwordResetService;
 
         utilsDate = new UtilsDate();
         utilsString = new UtilsString();
@@ -631,6 +634,46 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
             layoutButtons.add(btnRefreshAMembersPhotosMeta, btnCalcAMembersSums, btnEvictCache, btnEvictCacheLearnings);
         }
 
+        Button btnChangePassword = new Button("Change Password", VaadinIcon.LOCK.create());
+        btnChangePassword.addClassName("member-settings-save-btn");
+        btnChangePassword.addClickListener(event -> {
+
+            String strEmailForReset = record.getColumnData("email");
+
+            if (strEmailForReset == null || strEmailForReset.equalsIgnoreCase("null") || strEmailForReset.isEmpty()) {
+                Notification.show("No email on file. Please add an email in Edit Profile Info first.", 4000, Notification.Position.TOP_CENTER)
+                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                return;
+            }
+
+            String strToken;
+            try {
+                strToken = passwordResetService.createResetToken(strMember);
+            } catch (Exception e) {
+                logger.error("Failed to create password reset token: " + e.getMessage());
+                Notification.show("Could not start password change. Please try again later.", 4000, Notification.Position.TOP_CENTER)
+                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                return;
+            }
+
+            UI.getCurrent().getPage().fetchCurrentURL(currentUrl -> {
+
+                String strResetUrl = currentUrl.getProtocol() + "://" + currentUrl.getAuthority() + "/change-password/" + strToken;
+
+                String strSubject = "Change your PhotoAct password";
+                String strBody = "Hello " + strMember + ",\n\n" +
+                        "We received a request to change the password for your account.\n\n" +
+                        "Click the link below to set a new password:\n" + strResetUrl + "\n\n" +
+                        "This link will expire in 1 hour. If you did not request this, you can safely ignore this email.\n\n" +
+                        "PhotoAct";
+
+                emailSendService.sendSimpleMail(strMailboxSend, strEmailForReset, strSubject, strBody);
+
+                Notification.show("Password change email sent to " + strEmailForReset + "!", 4000, Notification.Position.MIDDLE)
+                        .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+            });
+        });
+
         Button btnLogout = new Button("Logout", VaadinIcon.SIGN_OUT.create());
         btnLogout.addClassName("member-settings-logout-btn");
         btnLogout.addClickListener(event -> authenticationContext.logout());
@@ -638,7 +681,7 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
         H3 titleSecurity = new H3("Security & Tools");
         titleSecurity.addClassName("member-settings-card-title");
 
-        Div cardSecurity = new Div(titleSecurity, layoutButtons, new Hr(), btnLogout);
+        Div cardSecurity = new Div(titleSecurity, layoutButtons, new Hr(), btnChangePassword, btnLogout);
         cardSecurity.addClassName("member-settings-card");
 
         VerticalLayout panelSecurity = new VerticalLayout(cardSecurity);
@@ -1286,10 +1329,12 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
                     Notification notification = new Notification("Avatar Photo Updated!");
                     notification.setPosition(Notification.Position.MIDDLE);
                     notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+                    notification.open();
                 } else {
                     Notification notification = new Notification("Avatar Photo NOT Updated! Error logged to be investigated.");
                     notification.setPosition(Notification.Position.MIDDLE);
                     notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+                    notification.open();
                 }
 
                 divImgAvatar.removeAll();
@@ -1302,6 +1347,7 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
                 Notification notification = new Notification("Avatar Photo NOT Updated! Image processing failed.");
                 notification.setPosition(Notification.Position.MIDDLE);
                 notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+                notification.open();
             }
 
             dlg.close();
