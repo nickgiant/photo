@@ -18,7 +18,6 @@ import java.io.File;
 public class EmailSendService implements EmailService {
 
     private static final Logger logger = LoggerFactory.getLogger(EmailSendService.class);
-
     private final JavaMailSender emailSender;
 
     @Autowired
@@ -26,13 +25,10 @@ public class EmailSendService implements EmailService {
         this.emailSender = emailSender;
     }
 
-
     public String sendSimpleMail(String strFrom, String to, String subject, String text) {
 
 
         try {
-           // emailSender = new JavaMailSenderImpl();
-
 
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(strFrom);//("noreply@baeldung.com");
@@ -46,6 +42,26 @@ public class EmailSendService implements EmailService {
             e.printStackTrace();
             logger.error("Error while sending mail." + e.getMessage());
             return null;
+        }
+    }
+
+    public Exception sendSimpleMailOrException(String strFrom, String to, String subject, String text) {
+
+
+        try {
+
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(strFrom);//("noreply@baeldung.com");
+            message.setTo(to);
+            message.setSubject(subject);
+            message.setText(text);
+            emailSender.send(message);
+            logger.info("Mail sent Successfully");
+            return null;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Error while sending mail." + e.getMessage());
+            return e;
         }
     }
 

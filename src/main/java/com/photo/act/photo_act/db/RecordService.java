@@ -391,8 +391,8 @@ public class RecordService {
         String strCause = "";
         String strMessage = "";
         if (e != null && e.getCause() != null) {
-            strCause = e.getCause().toString().replaceAll("'", "").replaceAll("\"", "").substring(0, Math.min(e.getCause().toString().trim().length(), 480)).trim();
-            strMessage = e.getMessage().replaceAll("'", "").replaceAll("\"", "").substring(0, Math.min(e.getMessage().trim().length(), 480)).trim();
+            strCause = e.getCause().toString().replaceAll("'", "").replaceAll("\"", "").substring(0, Math.min(e.getCause().toString().trim().length()-2, 480)).trim();
+            strMessage = e.getMessage().replaceAll("'", "").replaceAll("\"", "").substring(0, Math.min(e.getMessage().trim().length()-2, 480)).trim();
         }
         String sqlError = "INSERT INTO dberror (errorId, hostname, userId, username, ip, sessionid, javaFunctionOrigin, errorMessage, errorCause, appVersion, info) " +
                 "VALUES (0,  '" + hostname + "' , " + userId + " ,'" + username + "', '" + ip + "', '" + sessionid + "', '" + function + "' "

@@ -26,7 +26,7 @@
     box-sizing: border-box;
     margin: 0;
     padding: 12px 14px;
-    border-radius: 14px;
+    border-radius: 8px;
     background: transparent;
     color: var(--lumo-body-text-color);
     justify-content: flex-start;
@@ -35,6 +35,7 @@
 
 .member-settings-nav vaadin-tab:hover {
     background: var(--lumo-contrast-5pct);
+    cursor: pointer;
 }
 
 .member-settings-nav vaadin-tab[selected] {
@@ -126,7 +127,7 @@
     width: 100%;
     margin-top: 6px;
     color: var(--lumo-error-text-color);
-    font-weight: 600;
+    /*font-weight: 600;*/
 }
 
 /* ---------- Responsive ---------- */

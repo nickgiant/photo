@@ -55,6 +55,7 @@ import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -82,6 +83,10 @@ import static com.photo.act.photo_act.views.MainLayout.*;
 public class MeView extends Main implements HasUrlParameter<String>, BeforeEnterObserver, HasComponents, HasDynamicTitle, HasStyle {
 
     private static final Logger logger = LoggerFactory.getLogger(MeView.class);
+
+
+    @Value("${app.base-url}")
+    String baseUrl ;
 
     public static String DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
     String[] arrColumnsMember = {"userId", "username", "resident", "resident_country", "date_joined", "member_since", "member_for", "avatar_path",
@@ -552,7 +557,6 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
         panelSocialLinks.setVisible(false);
 
         // ==================== Security & Tools panel ====================
-
         VerticalLayout layoutButtons = new VerticalLayout();
         layoutButtons.addClassName("member-settings-tools");
         layoutButtons.setPadding(false);
@@ -656,9 +660,9 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
                 return;
             }
 
-            UI.getCurrent().getPage().fetchCurrentURL(currentUrl -> {
+//            UI.getCurrent().getPage().fetchCurrentURL(currentUrl -> {
 
-                String strResetUrl = currentUrl.getProtocol() + "://" + currentUrl.getAuthority() + "/change-password/" + strToken;
+                String strResetUrl = baseUrl+"/change-password/" + strToken;
 
                 String strSubject = "Change your PhotoAct password";
                 String strBody = "Hello " + strMember + ",\n\n" +
@@ -666,11 +670,10 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
                         "Click the link below to set a new password:\n" + strResetUrl + "\n\n" +
                         "This link will expire in 1 hour. If you did not request this, you can safely ignore this email.\n\n" +
                         "PhotoAct";
+                Exception strMailResult = emailSendService.sendSimpleMailOrException(strMailboxSend, strEmailForReset, strSubject, strBody);
 
-                String strMailResult = emailSendService.sendSimpleMail(strMailboxSend, strEmailForReset, strSubject, strBody);
-
-                if (strMailResult == null) {
-                    recordService.logErrorInDb(null, hostname, "MeView.btnChangePassword",
+                if (strMailResult != null) {
+                    recordService.logErrorInDb(strMailResult, hostname, "MeView.btnChangePassword",
                             Integer.parseInt(strMemberId), strMember, publicIp, sessionid,
                             "Failed to send password reset email to " + strEmailForReset);
 
@@ -680,7 +683,7 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
                     Notification.show("Password change email sent to " + strEmailForReset + "!", 4000, Notification.Position.MIDDLE)
                             .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
                 }
-            });
+//            });
         });
 
         Button btnLogout = new Button("Logout", VaadinIcon.SIGN_OUT.create());
@@ -1258,19 +1261,7 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
             Div divResident = new Div(strResident);
             divResident.addClassNames(FontWeight.BOLD);
 
-            Icon iconPhoto = VaadinIcon.PICTURE.create();
-            Icon iconAlbum = FontAwesome.Solid.PHOTO_FILM.create();
-            Span divPhotos = new Span(strCountPhotos + " Photos");
-            divPhotos.addClassNames(TextColor.SECONDARY);
-            Span divAlbums = new Span(strCountStories + " Albums");
-            divAlbums.addClassNames(TextColor.SECONDARY);
 
-            HorizontalLayout layoutCounts = new HorizontalLayout();
-            layoutCounts.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.EVENLY,
-                    Padding.SMALL, Margin.NONE,
-                    Gap.XLARGE,
-                    BorderRadius.LARGE, Background.CONTRAST_5, BorderColor.CONTRAST_10, Border.ALL);
-            layoutCounts.add(iconPhoto, divPhotos, iconAlbum, divAlbums);
 
             VerticalLayout layoutAvatarInfo = new VerticalLayout(objMember, divMemberSince, layoutMemberLinks);
             layoutAvatarInfo.addClassNames(AlignItems.START, JustifyContent.CENTER, Padding.NONE, Margin.NONE, Gap.XSMALL);
@@ -1284,8 +1275,7 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
             layoutMemberCard.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER);
             layoutMemberCard.setMaxWidth("360px");
             layoutMemberCard.add(layoutAvatarRow, layoutPhotoAvatarSelection,
-                    objName, divBioTitle, divBio, divResidentCaption, divResident,
-                    layoutCounts);
+                    objName, divBioTitle, divBio, divResidentCaption, divResident);
 
             layoutMember.add(layoutMemberCard);
         } else {
