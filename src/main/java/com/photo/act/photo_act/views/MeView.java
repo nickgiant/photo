@@ -667,10 +667,19 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
                         "This link will expire in 1 hour. If you did not request this, you can safely ignore this email.\n\n" +
                         "PhotoAct";
 
-                emailSendService.sendSimpleMail(strMailboxSend, strEmailForReset, strSubject, strBody);
+                String strMailResult = emailSendService.sendSimpleMail(strMailboxSend, strEmailForReset, strSubject, strBody);
 
-                Notification.show("Password change email sent to " + strEmailForReset + "!", 4000, Notification.Position.MIDDLE)
-                        .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+                if (strMailResult == null) {
+                    recordService.logErrorInDb(null, hostname, "MeView.btnChangePassword",
+                            Integer.parseInt(strMemberId), strMember, publicIp, sessionid,
+                            "Failed to send password reset email to " + strEmailForReset);
+
+                    Notification.show("Could not send the password change email. Please try again later.", 4000, Notification.Position.TOP_CENTER)
+                            .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                } else {
+                    Notification.show("Password change email sent to " + strEmailForReset + "!", 4000, Notification.Position.MIDDLE)
+                            .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+                }
             });
         });
 
