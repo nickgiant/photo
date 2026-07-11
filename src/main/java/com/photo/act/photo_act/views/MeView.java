@@ -6,6 +6,7 @@ import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.services.CacheService;
 import com.photo.act.photo_act.services.EmailSendService;
 import com.photo.act.photo_act.services.ImageService;
+import com.photo.act.photo_act.services.PasswordResetService;
 import com.photo.act.photo_act.services.PhotoProcessingService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
@@ -13,10 +14,12 @@ import com.photo.act.photo_act.utils.UtilsString;
 import com.photo.act.photo_act.views.components.DialogMessage;
 import com.photo.act.photo_act.views.components.GenericView;
 import com.photo.act.photo_act.views.components.UploadImageCard;
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.HasStyle;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.*;
@@ -30,23 +33,29 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
-import com.vaadin.flow.component.tabs.TabSheet;
-import com.vaadin.flow.component.tabs.TabSheetVariant;
+import com.vaadin.flow.component.tabs.Tab;
+import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.component.upload.Upload;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.streams.DownloadHandler;
+import com.vaadin.flow.server.streams.UploadHandler;
+import com.vaadin.flow.spring.security.AuthenticationContext;
 import com.vaadin.flow.theme.lumo.LumoUtility.*;
 import jakarta.annotation.security.PermitAll;
+import net.coobird.thumbnailator.Thumbnails;
+import net.coobird.thumbnailator.geometry.Positions;
 import org.apache.commons.io.FileUtils;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -58,6 +67,7 @@ import java.nio.file.FileSystems;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.UUID;
 
 import static com.photo.act.photo_act.views.HomeView.*;
 import static com.photo.act.photo_act.views.MainLayout.*;
@@ -73,6 +83,10 @@ import static com.photo.act.photo_act.views.MainLayout.*;
 public class MeView extends Main implements HasUrlParameter<String>, BeforeEnterObserver, HasComponents, HasDynamicTitle, HasStyle {
 
     private static final Logger logger = LoggerFactory.getLogger(MeView.class);
+
+
+    @Value("${app.base-url}")
+    String baseUrl ;
 
     public static String DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
     String[] arrColumnsMember = {"userId", "username", "resident", "resident_country", "date_joined", "member_since", "member_for", "avatar_path",
@@ -204,12 +218,17 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
     private UtilsString utilsString;
     private EmailSendService emailSendService;
     private  PhotoProcessingService photoProcessingService;
+    private final AuthenticationContext authenticationContext;
+    private final PasswordResetService passwordResetService;
 
 
-    public MeView(RecordService recordService, EmailSendService emailSendService, PhotoProcessingService photoProcessingService) {
+    public MeView(RecordService recordService, EmailSendService emailSendService, PhotoProcessingService photoProcessingService,
+                  AuthenticationContext authenticationContext, PasswordResetService passwordResetService) {
         this.recordService = recordService;
         this.emailSendService = emailSendService;
         this.photoProcessingService = photoProcessingService;
+        this.authenticationContext = authenticationContext;
+        this.passwordResetService = passwordResetService;
 
         utilsDate = new UtilsDate();
         utilsString = new UtilsString();
@@ -369,22 +388,12 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
         String sqlMemberMe = sqlMember + " AND usr.username = '" + strMember + "' ";
 
         VerticalLayout layoutTabsAll = new VerticalLayout();
+        layoutTabsAll.addClassName("member-settings");
         layoutTabsAll.addClassNames(
-                Height.FULL,
+                Width.FULL,
                 Padding.MEDIUM, Margin.NONE,
-                AlignItems.CENTER, JustifyContent.CENTER,
-                Gap.LARGE
+                AlignItems.CENTER, JustifyContent.CENTER
         );
-
-        VerticalLayout memberInfo = new VerticalLayout();
-        memberInfo.addClassNames("member-profile");
-        memberInfo.add(loadMemberInfo(sqlMemberMe, arrColumnsMember, false));
-
-        layoutTabsAll.add(memberInfo);
-
-        TabSheet tabSheet = new TabSheet();
-        tabSheet.addThemeVariants(TabSheetVariant.LUMO_TABS_CENTERED);
-        tabSheet.addClassNames(Width.FULL, Height.FULL, Padding.MEDIUM, Margin.NONE);
 
         String strCalledFrom = "loadMemberInfoTabs";
 
@@ -392,46 +401,54 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
 
         Record record = lstMember.get(0);
 
-        String strWidthOfFields = "330px";
-
-        FormLayout formLayout = new FormLayout();
-        formLayout.addClassNames(Height.FULL, Width.FULL,
-                AlignItems.CENTER, JustifyContent.CENTER,
-                Margin.NONE, Padding.NONE);
-        formLayout.setResponsiveSteps(new FormLayout.ResponsiveStep(strWidthOfFields, 1));
-//        formLayout.setExpandFields(true);
-//        formLayout.setLabelsAside(true);
-
         String txtUserRights = record.getColumnData("user_rights_id");
 
+        // ==================== View Profile panel ====================
+
+        VerticalLayout memberInfo = new VerticalLayout();
+        memberInfo.setPadding(false);
+        memberInfo.add(loadMemberInfo(sqlMemberMe, arrColumnsMember, false));
+
+        Div cardViewProfile = new Div(memberInfo);
+        cardViewProfile.addClassName("member-settings-card");
+
+        VerticalLayout panelViewProfile = new VerticalLayout(cardViewProfile);
+        panelViewProfile.addClassName("member-settings-panel");
+        panelViewProfile.setPadding(false);
+
+        // ==================== Edit Profile Info panel ====================
+
+        FormLayout formLayout = new FormLayout();
+        formLayout.addClassNames(Width.FULL, Margin.NONE, Padding.NONE);
+        formLayout.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 1));
 
         TextField txtUserName = new TextField();
         txtUserName.setValue(record.getColumnData("username"));
         txtUserName.setEnabled(false);
         txtUserName.setRequiredIndicatorVisible(true);
         txtUserName.setRequired(true);
-        txtUserName.setWidth(strWidthOfFields);
+        txtUserName.setWidthFull();
         formLayout.addFormItem(txtUserName, "Username");
 
         TextField txtName = new TextField();
         txtName.setValue(record.getColumnData("name"));
         txtName.setRequiredIndicatorVisible(true);
         txtName.setRequired(true);
-        txtName.setWidth(strWidthOfFields);
+        txtName.setWidthFull();
         formLayout.addFormItem(txtName, "Name");
 
         TextField txtSurname = new TextField();
         txtSurname.setValue(record.getColumnData("surname"));
         txtSurname.setRequiredIndicatorVisible(true);
         txtSurname.setRequired(true);
-        txtSurname.setWidth(strWidthOfFields);
+        txtSurname.setWidthFull();
         formLayout.addFormItem(txtSurname, "Surname");
 
         TextField txtEmail = new TextField();
         txtEmail.setValue(record.getColumnData("email"));
         txtEmail.setRequiredIndicatorVisible(true);
         txtEmail.setRequired(true);
-        txtEmail.setWidth(strWidthOfFields);
+        txtEmail.setWidthFull();
         formLayout.addFormItem(txtEmail, "e-mail");
 
         TextArea txtShortBio = new TextArea(); //"Short Bio", "Write 2 or 3 phrases about yourself");
@@ -440,22 +457,8 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
         txtShortBio.setValue(record.getColumnData("short_bio"));
         txtShortBio.setRequiredIndicatorVisible(false);
         txtShortBio.setRequired(false);
-        txtShortBio.setWidth(strWidthOfFields);
+        txtShortBio.setWidthFull();
         formLayout.addFormItem(txtShortBio, "Short Bio");
-
-//        Select<String> txtResidentCountry = new Select<>();
-//        List<Record> lstDestinationCountries = recordService.findAll(sqlReadDestinationCountries, arrDestinationNames);
-//        List<String> lstCountryNames = new ArrayList<>();
-//        for (int d = 0; d < lstDestinationCountries.size(); d++) {
-//            lstCountryNames.add(lstDestinationCountries.get(d).getColumnData("country"));
-//        }
-//        txtResidentCountry.setItems(lstCountryNames);
-//
-//        txtResidentCountry.setValue(record.getColumnData("resident_country"));
-//        txtResidentCountry.setRequiredIndicatorVisible(false);
-////        txtResidentCountry.setRequired(false);
-//        txtResidentCountry.setWidth(strWidthOfFields);
-//        formLayout.addFormItem(txtResidentCountry, "Country");
 
         String sqlDestination = sqlReadDestination + " " + sqlReadDestinationOrder;
 
@@ -470,121 +473,93 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
         txtResident.setValue(record.getColumnData("resident"));
 
         txtResident.setRequiredIndicatorVisible(false);
-//        txtResident.setRequired(false);
-        txtResident.setWidth(strWidthOfFields);
+        txtResident.setWidthFull();
         formLayout.addFormItem(txtResident, "Resident");
 
         TextField txtResidentCountry = new TextField();
         txtResidentCountry.setVisible(false);
         txtResidentCountry.setValue(record.getColumnData("resident_country"));
         txtResidentCountry.setRequiredIndicatorVisible(false);
-//        txtResidentCountry.setRequired(false);
-        txtResidentCountry.setWidth(strWidthOfFields);
-//        formLayout.addFormItem(txtResidentCountry, "Country");
+        txtResidentCountry.setWidthFull();
 
+        Button btnUpdateProfile = new Button("Update Information");
+        btnUpdateProfile.setIcon(FontAwesome.Solid.SAVE.create());
+        btnUpdateProfile.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        btnUpdateProfile.addClassName("member-settings-save-btn");
+
+        H3 titleEditProfile = new H3("Change User Information");
+        titleEditProfile.addClassName("member-settings-card-title");
+
+        Div cardEditProfile = new Div(titleEditProfile, formLayout, btnUpdateProfile);
+        cardEditProfile.addClassName("member-settings-card");
+
+        VerticalLayout panelEditProfile = new VerticalLayout(cardEditProfile);
+        panelEditProfile.addClassName("member-settings-panel");
+        panelEditProfile.setPadding(false);
+        panelEditProfile.setVisible(false);
+
+        // ==================== Social Links panel ====================
 
         FormLayout formLayoutLinks = new FormLayout();
-        formLayoutLinks.addClassNames(Height.FULL, Width.FULL,
-                AlignItems.CENTER, JustifyContent.CENTER,
-                Margin.NONE, Padding.NONE);
-        formLayoutLinks.setResponsiveSteps(new FormLayout.ResponsiveStep(strWidthOfFields, 1));
-//        formLayout.setExpandFields(true);
-//        formLayout.setLabelsAside(true);
-
+        formLayoutLinks.addClassNames(Width.FULL, Margin.NONE, Padding.NONE);
+        formLayoutLinks.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 1));
 
         TextField txtFacebook = new TextField();
         txtFacebook.setValue(record.getColumnData("url_fb"));
         txtFacebook.setEnabled(true);
         txtFacebook.setRequiredIndicatorVisible(true);
         txtFacebook.setRequired(false);
-        txtFacebook.setWidth(strWidthOfFields);
+        txtFacebook.setWidthFull();
         formLayoutLinks.addFormItem(txtFacebook, "Facebook");
 
         TextField txtInstagram = new TextField();
         txtInstagram.setValue(record.getColumnData("url_insta"));
         txtInstagram.setRequiredIndicatorVisible(true);
         txtInstagram.setRequired(false);
-        txtInstagram.setWidth(strWidthOfFields);
+        txtInstagram.setWidthFull();
         formLayoutLinks.addFormItem(txtInstagram, "Instagram");
 
         TextField txtYT = new TextField();
         txtYT.setValue(record.getColumnData("url_yt"));
         txtYT.setRequiredIndicatorVisible(true);
         txtYT.setRequired(false);
-        txtYT.setWidth(strWidthOfFields);
+        txtYT.setWidthFull();
         formLayoutLinks.addFormItem(txtYT, "YouTube");
 
         TextField txtFlickr = new TextField();
         txtFlickr.setValue(record.getColumnData("url_flickr"));
         txtFlickr.setRequiredIndicatorVisible(true);
         txtFlickr.setRequired(false);
-        txtFlickr.setWidth(strWidthOfFields);
+        txtFlickr.setWidthFull();
         formLayoutLinks.addFormItem(txtFlickr, "Flickr");
 
         TextField txtWebsite = new TextField();
         txtWebsite.setValue(record.getColumnData("url_website"));
         txtWebsite.setRequiredIndicatorVisible(true);
         txtWebsite.setRequired(false);
-        txtWebsite.setWidth(strWidthOfFields);
+        txtWebsite.setWidthFull();
         formLayoutLinks.addFormItem(txtWebsite, "Personal Website");
 
-        VerticalLayout layoutCodes = new VerticalLayout();
-        layoutCodes.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER);
+        Button btnUpdateLinks = new Button("Update Information");
+        btnUpdateLinks.setIcon(FontAwesome.Solid.SAVE.create());
+        btnUpdateLinks.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        btnUpdateLinks.addClassName("member-settings-save-btn");
 
-        TextField txtNewCode = new TextField();
-        txtNewCode.setLabel("Code");
+        H3 titleSocialLinks = new H3("Social Links");
+        titleSocialLinks.addClassName("member-settings-card-title");
 
-        Button btnApply = new Button("Apply");
-        layoutCodes.add(txtNewCode, btnApply);
+        Div cardSocialLinks = new Div(titleSocialLinks, formLayoutLinks, btnUpdateLinks);
+        cardSocialLinks.addClassName("member-settings-card");
 
+        VerticalLayout panelSocialLinks = new VerticalLayout(cardSocialLinks);
+        panelSocialLinks.addClassName("member-settings-panel");
+        panelSocialLinks.setPadding(false);
+        panelSocialLinks.setVisible(false);
+
+        // ==================== Security & Tools panel ====================
         VerticalLayout layoutButtons = new VerticalLayout();
-        layoutButtons.addClassNames(AlignItems.CENTER, JustifyContent.CENTER,
-                Margin.NONE, Padding.LARGE);
-
-        Span tab1Icon = new Span();
-        tab1Icon.add(FontAwesome.Solid.USER.create());
-        Span tab1 = new Span("Profile");
-        tab1.addClassNames(FontWeight.BOLD, Padding.MEDIUM);
-        tab1Icon.add(tab1);
-//        tab1.getStyle().setColor("#466ca8");
-
-        Span tab2Icon = new Span();
-        tab2Icon.add(FontAwesome.Solid.EDIT.create());
-        Span tab2 = new Span("Edit Profile");
-        tab2.addClassNames(FontWeight.BOLD, Padding.MEDIUM);
-        tab2Icon.add(tab2);
-
-        Span tab3Icon = new Span();
-        tab3Icon.add(FontAwesome.Solid.PHOTO_FILM.create());
-        Span tab3 = new Span("Profile Photos");
-        tab3.addClassNames(FontWeight.BOLD, Padding.MEDIUM);
-        tab3Icon.add(tab3);
-
-        Span tab4Icon = new Span();
-        tab4Icon.add(FontAwesome.Solid.LINK.create());
-        Span tab4 = new Span("External Links");
-        tab4.addClassNames(FontWeight.BOLD, Padding.MEDIUM);
-        tab4Icon.add(tab4);
-
-        Span tab5Icon = new Span();
-        tab5Icon.add(FontAwesome.Solid.CODE.create());
-        Span tab5 = new Span("Tools");
-        tab5.addClassNames(FontWeight.BOLD, Padding.MEDIUM);
-        tab5Icon.add(tab5);
-
-        //----------------------
-
-        //tabSheet.add(tab1Icon, loadMemberInfo(sqlMemberMe, arrColumnsMember, false));
-        tabSheet.add(tab2Icon, formLayout);
-        tabSheet.add(tab4Icon, formLayoutLinks);
-        tabSheet.add(tab5Icon, layoutButtons);
-
-
-        //--------------------------
-
-        Button btnOk = new Button("Update");
-        btnOk.setIcon(FontAwesome.Solid.SAVE.create());
-
+        layoutButtons.addClassName("member-settings-tools");
+        layoutButtons.setPadding(false);
 
         Button btnRefreshPhotosMeta = new Button("Refresh My Photos Meta");
         btnRefreshPhotosMeta.addClickListener(btn -> {
@@ -659,109 +634,182 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
             dlg.open();
         });
 
-        VerticalLayout layoutTabs = new VerticalLayout();
-        layoutTabs.addClassNames(Width.FULL, Height.FULL,
-                AlignItems.CENTER, JustifyContent.START);
-        layoutTabs.addClassNames("member-edit-profile");
-        layoutTabs.add(tabSheet, btnOk);
-
-
-        layoutTabsAll.add(layoutTabs);
         if (txtUserRights.equalsIgnoreCase("3")) {
             layoutButtons.add(btnRefreshAMembersPhotosMeta, btnCalcAMembersSums, btnEvictCache, btnEvictCacheLearnings);
         }
 
+        Button btnChangePassword = new Button("Change Password", VaadinIcon.LOCK.create());
+        btnChangePassword.addClassName("member-settings-save-btn");
+        btnChangePassword.addClickListener(event -> {
 
-        btnOk.addClickListener(click -> {
+            String strEmailForReset = record.getColumnData("email");
 
-            if (txtName.getValue().isEmpty()) {
-                String strMessage = "Name should not be empty!";
-                txtName.setErrorMessage(strMessage);
-                Notification.show(strMessage);
+            if (strEmailForReset == null || strEmailForReset.equalsIgnoreCase("null") || strEmailForReset.isEmpty()) {
+                Notification.show("No email on file. Please add an email in Edit Profile Info first.", 4000, Notification.Position.TOP_CENTER)
+                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                return;
             }
 
-            if (txtSurname.getValue().isEmpty()) {
-                String strMessage = "Surname should not be empty!";
-                txtSurname.setErrorMessage(strMessage);
-                Notification.show(strMessage);
+            String strToken;
+            try {
+                strToken = passwordResetService.createResetToken(strMember);
+            } catch (Exception e) {
+                logger.error("Failed to create password reset token: " + e.getMessage());
+                Notification.show("Could not start password change. Please try again later.", 4000, Notification.Position.TOP_CENTER)
+                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                return;
             }
 
-            if (txtUserName.getValue().isEmpty()) {
-                String strMessage = "Username should not be empty!";
-                txtUserName.setErrorMessage(strMessage);
-                Notification.show(strMessage);
-            }
+//            UI.getCurrent().getPage().fetchCurrentURL(currentUrl -> {
 
-            if (txtEmail.getValue().isEmpty()) {
-                String strMessage = "Email should not be empty!";
-                txtEmail.setErrorMessage(strMessage);
-                Notification.show(strMessage);
-            }
+                String strResetUrl = baseUrl+"/change-password/" + strToken;
 
-//            if (txtPassword.getValue().isEmpty()) {
-//                String strMessage = "Password should not be empty!";
-//                txtPassword.setErrorMessage(strMessage);
-//                Notification.show(strMessage);
-//            }
+                String strSubject = "Change your PhotoAct password";
+                String strBody = "Hello " + strMember + ",\n\n" +
+                        "We received a request to change the password for your account.\n\n" +
+                        "Click the link below to set a new password:\n" + strResetUrl + "\n\n" +
+                        "This link will expire in 1 hour. If you did not request this, you can safely ignore this email.\n\n" +
+                        "PhotoAct";
+                Exception strMailResult = emailSendService.sendSimpleMailOrException(strMailboxSend, strEmailForReset, strSubject, strBody);
 
-//            if (txtConfirmPassword.getValue().isEmpty()) {
-//                String strMessage = "Confirm Password should not be empty!";
-//                txtConfirmPassword.setErrorMessage(strMessage);
-//                Notification.show(strMessage);
-//            }
+                if (strMailResult != null) {
+                    recordService.logErrorInDb(strMailResult, hostname, "MeView.btnChangePassword",
+                            Integer.parseInt(strMemberId), strMember, publicIp, sessionid,
+                            "Failed to send password reset email to " + strEmailForReset);
 
-            String strEmail = txtEmail.getValue();
-            String strUsername = txtUserName.getValue();
-
-
-            boolean isEmailSystaxValid = utilsString.isEmailSysntaxValid(strEmail);
-            if (!isEmailSystaxValid) {
-                String strMessage = "Email is not valid!";
-                txtEmail.setErrorMessage(strMessage);
-                Notification.show(strMessage);
-            }
-
-//            if (!txtPassword.getValue().equalsIgnoreCase(txtConfirmPassword.getValue())) {
-//                Notification.show("Password is not the same in both fields. Please retype.");
-//            }
-
-//            boolean doesEmailExist = genericView.checkIfMemerValueExists("email", strEmail);
-//            if (doesEmailExist) {
-//                Notification.show("Email " + strEmail + " already exists! Please type a different one.");
-//                Notification notification = new Notification("Email " + strEmail + " already exists! Please type a different one.");
-//                notification.setPosition(Notification.Position.MIDDLE);
-//                notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
-//            }
-
-//            boolean doesUsernameExist = genericView.checkIfMemerValueExists("username", strUsername);
-//            if (doesUsernameExist) {
-//                Notification.show("Username " + strUsername + " already exists! Please type a different one.");
-//                Notification notification = new Notification("Username " + strUsername + " already exists! Please type a different one.");
-//                notification.setPosition(Notification.Position.MIDDLE);
-//                notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
-//            }
-
-            if (txtUserName.getValue().isEmpty() || txtName.getValue().isEmpty() || txtSurname.getValue().isEmpty() || txtEmail.getValue().isEmpty())
-//                    || !isEmailSystaxValid || txtPassword.getValue().isEmpty() || txtConfirmPassword.getValue().isEmpty()
-//                    || !txtPassword.getValue().equalsIgnoreCase(txtConfirmPassword.getValue())
-//                    || doesEmailExist || doesUsernameExist)
-            {
-
-            } else {
-//                String txt = passwordEncoder().encode(txtPassword.getValue());   //utilsString.encrypt(txtPassword.getValue());
-                updateMember(txtUserName.getValue(),
-                        txtEmail.getValue(), txtName.getValue(), txtSurname.getValue(), txtResidentCountry.getValue(), txtResident.getValue(), txtShortBio.getValue(),
-                        txtFacebook.getValue(), txtInstagram.getValue(), txtYT.getValue(), txtFlickr.getValue(), txtWebsite.getValue(),
-                        section, strCalledFrom);
-
-                memberInfo.removeAll();
-                memberInfo.add(loadMemberInfo(sqlMemberMe, arrColumnsMember, false));
-            }
-
+                    Notification.show("Could not send the password change email. Please try again later.", 4000, Notification.Position.TOP_CENTER)
+                            .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                } else {
+                    Notification.show("Password change email sent to " + strEmailForReset + "!", 4000, Notification.Position.MIDDLE)
+                            .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+                }
+//            });
         });
 
+        Button btnLogout = new Button("Logout", VaadinIcon.SIGN_OUT.create());
+        btnLogout.addClassName("member-settings-logout-btn");
+        btnLogout.addClickListener(event -> authenticationContext.logout());
+
+        H3 titleSecurity = new H3("Security & Tools");
+        titleSecurity.addClassName("member-settings-card-title");
+
+        Div cardSecurity = new Div(titleSecurity, layoutButtons, new Hr(), btnChangePassword, btnLogout);
+        cardSecurity.addClassName("member-settings-card");
+
+        VerticalLayout panelSecurity = new VerticalLayout(cardSecurity);
+        panelSecurity.addClassName("member-settings-panel");
+        panelSecurity.setPadding(false);
+        panelSecurity.setVisible(false);
+
+        // ==================== Left nav ====================
+
+        Tab tabViewProfile = createNavTab(FontAwesome.Solid.USER.create(), "View Profile", "See your public member profile");
+        Tab tabEditProfile = createNavTab(FontAwesome.Solid.EDIT.create(), "Edit Profile Info", "Update your personal details");
+        Tab tabSocialLinks = createNavTab(FontAwesome.Solid.LINK.create(), "Social Links", "Connect your social media accounts");
+        Tab tabSecurity = createNavTab(VaadinIcon.LOCK.create(), "Security & Tools", "Account tools and logout");
+
+        Tabs navTabs = new Tabs(tabViewProfile, tabEditProfile, tabSocialLinks, tabSecurity);
+        navTabs.setOrientation(Tabs.Orientation.VERTICAL);
+        navTabs.addClassName("member-settings-nav");
+
+        Div contentArea = new Div(panelViewProfile, panelEditProfile, panelSocialLinks, panelSecurity);
+        contentArea.addClassName("member-settings-content");
+
+        navTabs.addSelectedChangeListener(event -> {
+            panelViewProfile.setVisible(false);
+            panelEditProfile.setVisible(false);
+            panelSocialLinks.setVisible(false);
+            panelSecurity.setVisible(false);
+
+            Tab selectedTab = event.getSelectedTab();
+            if (selectedTab == tabEditProfile) {
+                panelEditProfile.setVisible(true);
+            } else if (selectedTab == tabSocialLinks) {
+                panelSocialLinks.setVisible(true);
+            } else if (selectedTab == tabSecurity) {
+                panelSecurity.setVisible(true);
+            } else {
+                panelViewProfile.setVisible(true);
+            }
+        });
+
+        HorizontalLayout mainRow = new HorizontalLayout(navTabs, contentArea);
+        mainRow.addClassName("member-settings-row");
+        mainRow.setWidthFull();
+        mainRow.setFlexGrow(1, contentArea);
+
+        layoutTabsAll.add(mainRow);
+
+        Button[] arrSaveButtons = {btnUpdateProfile, btnUpdateLinks};
+        for (Button btnSave : arrSaveButtons) {
+            btnSave.addClickListener(click -> {
+
+                if (txtName.getValue().isEmpty()) {
+                    String strMessage = "Name should not be empty!";
+                    txtName.setErrorMessage(strMessage);
+                    Notification.show(strMessage);
+                }
+
+                if (txtSurname.getValue().isEmpty()) {
+                    String strMessage = "Surname should not be empty!";
+                    txtSurname.setErrorMessage(strMessage);
+                    Notification.show(strMessage);
+                }
+
+                if (txtUserName.getValue().isEmpty()) {
+                    String strMessage = "Username should not be empty!";
+                    txtUserName.setErrorMessage(strMessage);
+                    Notification.show(strMessage);
+                }
+
+                if (txtEmail.getValue().isEmpty()) {
+                    String strMessage = "Email should not be empty!";
+                    txtEmail.setErrorMessage(strMessage);
+                    Notification.show(strMessage);
+                }
+
+                String strEmail = txtEmail.getValue();
+                String strUsername = txtUserName.getValue();
+
+                boolean isEmailSystaxValid = utilsString.isEmailSysntaxValid(strEmail);
+                if (!isEmailSystaxValid) {
+                    String strMessage = "Email is not valid!";
+                    txtEmail.setErrorMessage(strMessage);
+                    Notification.show(strMessage);
+                }
+
+                if (txtUserName.getValue().isEmpty() || txtName.getValue().isEmpty() || txtSurname.getValue().isEmpty() || txtEmail.getValue().isEmpty()) {
+
+                } else {
+                    updateMember(txtUserName.getValue(),
+                            txtEmail.getValue(), txtName.getValue(), txtSurname.getValue(), txtResidentCountry.getValue(), txtResident.getValue(), txtShortBio.getValue(),
+                            txtFacebook.getValue(), txtInstagram.getValue(), txtYT.getValue(), txtFlickr.getValue(), txtWebsite.getValue(),
+                            section, strCalledFrom);
+
+                    memberInfo.removeAll();
+                    memberInfo.add(loadMemberInfo(sqlMemberMe, arrColumnsMember, false));
+                }
+
+            });
+        }
 
         return layoutTabsAll;
+    }
+
+    private Tab createNavTab(Component icon, String title, String subtitle) {
+
+        Span titleSpan = new Span(title);
+        titleSpan.addClassName("member-settings-nav-title");
+
+        Span subtitleSpan = new Span(subtitle);
+        subtitleSpan.addClassName("member-settings-nav-subtitle");
+
+        VerticalLayout textLayout = new VerticalLayout(titleSpan, subtitleSpan);
+        textLayout.addClassName("member-settings-nav-text");
+        textLayout.setPadding(false);
+        textLayout.setSpacing(false);
+
+        return new Tab(icon, textLayout);
     }
 
 
@@ -1152,10 +1200,6 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
 //                linkFlickr.setVisible(true);
             }
 
-            Div divBioTitle = new Div("Short Bio");
-
-            HorizontalLayout layoutPhotoAvatarSelection = new HorizontalLayout();
-            layoutPhotoAvatarSelection.addClassNames(Padding.NONE, Margin.NONE);
             Div divImgAvatar = new Div();
             divImgAvatar.addClassNames(Padding.NONE, Margin.NONE);
 
@@ -1163,43 +1207,8 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
             Image imageAvatar = genericView.getAvatarThumbImage(strAvatarPath, strMember, strAvatarSize, strAvatarSize);
             divImgAvatar.add(imageAvatar);
 
-            Button btnSelectEmptyAvatar = new Button();
-            btnSelectEmptyAvatar.setTooltipText("Set the default Avatar");
-            btnSelectEmptyAvatar.setIcon(FontAwesome.Solid.O.create());
-            btnSelectEmptyAvatar.addClickListener(event -> {
-
-                if (setAvatarPhotoInDb("no-avatar.jpg", genericView.checkIfAuthMemberId())) {
-                    Notification notification = new Notification("Avatar Updated!");
-                    notification.setPosition(Notification.Position.MIDDLE);
-                    notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-
-                    String strNewAvatarPath = genericView.getAuthAvatarPath();
-                    divImgAvatar.removeAll();
-                    Image imgAvatar = genericView.getAvatarThumbImage(strNewAvatarPath, strMember, strAvatarSize, strAvatarSize);
-                    divImgAvatar.add(imgAvatar);
-                } else {
-                    Notification notification = new Notification("Avatar NOT Updated! Error logged to be investigated.");
-                    notification.setPosition(Notification.Position.MIDDLE);
-                    notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
-                }
-
-            });
-
-            Button btnSelectAvatar = new Button();
-            btnSelectAvatar.setTooltipText("Select from already available Avatars");
-            btnSelectAvatar.setIcon(FontAwesome.Solid.PORTRAIT.create());
-            btnSelectAvatar.addClickListener(event -> {
-                Dialog dlg = displayDialogSelectAvatar();
-                dlg.open();
-                dlg.addOpenedChangeListener(close -> {
-                    if (!close.isOpened()) {
-                        divImgAvatar.removeAll();
-                        String strNewAvatarPath = genericView.getAuthAvatarPath();
-                        Image imgAvatar = genericView.getAvatarThumbImage(strNewAvatarPath, strMember, strAvatarSize, strAvatarSize);
-                        divImgAvatar.add(imgAvatar);
-                    }
-                });
-            });
+            HorizontalLayout layoutPhotoAvatarSelection = new HorizontalLayout();
+            layoutPhotoAvatarSelection.addClassNames(Padding.NONE, Margin.NONE);
 
             Button btnSelectPhotoProfile = new Button("Profile Photo");
             btnSelectPhotoProfile.setTooltipText("Select from your Profile Photos");
@@ -1217,27 +1226,29 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
                 });
             });
 
-            layoutPhotoAvatarSelection.add(btnSelectEmptyAvatar, btnSelectAvatar,btnSelectPhotoProfile);
+            Button btnUploadPhoto = new Button("Upload Photo");
+            btnUploadPhoto.setTooltipText("Upload a new photo to use as your Avatar");
+            btnUploadPhoto.setIcon(FontAwesome.Solid.UPLOAD.create());
+            btnUploadPhoto.addClickListener(event -> {
+                Dialog dlg = displayDialogUploadAvatarPhoto(divImgAvatar, strAvatarSize);
+                dlg.open();
+            });
 
-            VerticalLayout layoutMemberLinks = new VerticalLayout();
-            layoutMemberLinks.addClassNames(AlignItems.CENTER, JustifyContent.CENTER, Padding.NONE, Margin.NONE);
-            layoutMemberLinks.setMaxWidth("40px");
+            layoutPhotoAvatarSelection.add(btnSelectPhotoProfile, btnUploadPhoto);
+
+            HorizontalLayout layoutMemberLinks = new HorizontalLayout();
+            layoutMemberLinks.addClassNames(AlignItems.CENTER, JustifyContent.START, Padding.NONE, Margin.NONE);
             layoutMemberLinks.add(linkTutorFacebook, linkTutorYt, linkTutorInsta, linkTutorYt, linkFlickr, linkWebsite);
+
+            Div divBioTitle = new Div("Short Bio");
+            divBioTitle.addClassNames(TextColor.SECONDARY, FontSize.SMALL, Margin.Top.MEDIUM);
 
             Div divBio = new Div();
             divBio.addClassNames(FontWeight.BOLD);
-//            divBio.setVisible(false);
             if (strShortBio != null && !strShortBio.equalsIgnoreCase("null") && !strShortBio.isEmpty()) {
                 divBio.setVisible(true);
                 divBio.setText(strShortBio);
-            } else {
-//                divBio.setVisible(false);
             }
-
-            HorizontalLayout horizontalLayout = new HorizontalLayout();
-
-
-//            Image imgAvatar = getAvatarImage(strAvatarPath, strNameOfUser, "120px", "120px");
 
             H3 objName = new H3(strName + " " + strSurname);
             objName.addClassNames(TextColor.SECONDARY, FontWeight.EXTRABOLD);
@@ -1245,40 +1256,28 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
             objMember.addClassNames(TextColor.SECONDARY, FontWeight.EXTRABOLD);
             Div divMemberSince = new Div("Member since " + strMemberSince);
 
-            Icon iconPhoto = VaadinIcon.PICTURE.create();
-            Icon iconAlbum = FontAwesome.Solid.PHOTO_FILM.create();
-            Span divPhotos = new Span(strCountPhotos + " Photos");
-            divPhotos.addClassNames(TextColor.SECONDARY);
-            Span divAlbums = new Span(strCountStories + " Albums");
-            divAlbums.addClassNames(TextColor.SECONDARY);
-
-            HorizontalLayout layoutCounts = new HorizontalLayout();
-            layoutCounts.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.EVENLY,
-                    Padding.SMALL, Margin.NONE,
-                    Gap.XLARGE,
-                    BorderRadius.LARGE, Background.CONTRAST_5, BorderColor.CONTRAST_10, Border.ALL);
-            layoutCounts.add(iconPhoto, divPhotos, iconAlbum, divAlbums);
-
-            VerticalLayout layoutMemberCard = new VerticalLayout();
-//            layoutMemberCard.getStyle().setMaxWidth("300px");
-//            layoutMemberCard.getStyle().set("border", "lightgrey 1px solid");
-            layoutMemberCard.addClassNames(AlignItems.CENTER, JustifyContent.CENTER);
-            layoutMemberCard.setMinWidth("260px");
-            layoutMemberCard.add(layoutPhotoAvatarSelection, divImgAvatar, objMember, divMemberSince, layoutCounts);
-
             Div divResidentCaption = new Div("Resident");
+            divResidentCaption.addClassNames(TextColor.SECONDARY, FontSize.SMALL, Margin.Top.MEDIUM);
             Div divResident = new Div(strResident);
             divResident.addClassNames(FontWeight.BOLD);
 
-            VerticalLayout layoutAdditional = new VerticalLayout();
-            layoutAdditional.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER);
-            layoutAdditional.setMinWidth("280px");
-            layoutAdditional.add(objName, divBioTitle, divBio, divResidentCaption, divResident);
-
-            horizontalLayout.add(layoutMemberCard, layoutMemberLinks, layoutAdditional);
 
 
-            layoutMember.add(horizontalLayout);
+            VerticalLayout layoutAvatarInfo = new VerticalLayout(objMember, divMemberSince, layoutMemberLinks);
+            layoutAvatarInfo.addClassNames(AlignItems.START, JustifyContent.CENTER, Padding.NONE, Margin.NONE, Gap.XSMALL);
+            layoutAvatarInfo.setPadding(false);
+            layoutAvatarInfo.setSpacing(false);
+
+            HorizontalLayout layoutAvatarRow = new HorizontalLayout(divImgAvatar, layoutAvatarInfo);
+            layoutAvatarRow.addClassNames(AlignItems.CENTER, JustifyContent.CENTER, Padding.NONE, Margin.NONE, Gap.MEDIUM);
+
+            VerticalLayout layoutMemberCard = new VerticalLayout();
+            layoutMemberCard.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER);
+            layoutMemberCard.setMaxWidth("360px");
+            layoutMemberCard.add(layoutAvatarRow, layoutPhotoAvatarSelection,
+                    objName, divBioTitle, divBio, divResidentCaption, divResident);
+
+            layoutMember.add(layoutMemberCard);
         } else {
             logger.warn(" lstRecords is more than one record");
         }
@@ -1286,9 +1285,9 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
         return layoutMember;
     }
 
-    private Dialog displayDialogSelectAvatar() {
+    private Dialog displayDialogUploadAvatarPhoto(Div divImgAvatar, String strAvatarSize) {
 
-        Dialog dlg = new Dialog("Select Avatar");
+        Dialog dlg = new Dialog("Upload Photo");
         dlg.setResizable(true);
         dlg.setDraggable(true);
         dlg.setCloseOnEsc(true);
@@ -1297,100 +1296,75 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
         dlg.setMaxWidth("450px");
         dlg.addClassName("me-view");
 
-        VerticalLayout layoutAlbumsPanel = new VerticalLayout();
-        layoutAlbumsPanel.addClassNames(Width.FULL,
-                Padding.SMALL, Margin.NONE,
-                AlignItems.CENTER, JustifyContent.CENTER,
-                Background.CONTRAST_5, BorderRadius.LARGE);
+        Div divHint = new Div("Upload a photo from your device to use as your Avatar");
+        divHint.addClassNames(Width.FULL, TextColor.SECONDARY, FontSize.SMALL, Margin.Bottom.MEDIUM);
 
+        UploadHandler uploadHandler = UploadHandler.toTempFile((uploadMetadata, file) -> {
 
-        String strPathOfAvailAvatars = DIR_PHOTOS_SERVER + dirChar + SUB_PATH_AVAILABLE_AVATARS + dirChar;
+            String strMemberId = genericView.checkIfAuthMemberId();
+            String strNewFileName = strMemberId + "_" + UUID.randomUUID() + ".jpg";
 
-        String[] arrColumnsAvailableAvatars = {"id", "title", "avatar_type", "description", "path"};
-        String sqlAvailableAvatars = "SELECT id, title, avatar_type, description, path FROM avail_avatars ORDER BY title ";
-        List<Record> lstAvatarRecords = getRecordsFromDb(sqlAvailableAvatars, arrColumnsAvailableAvatars);
+            String strDirAvatarsThumbs = DIR_PHOTOS_SERVER + dirChar + SUB_PATH_AVATARS_THUMBS;
+            String strDirAvatarsSmall = DIR_PHOTOS_SERVER + dirChar + SUB_PATH_AVATARS_SMALL;
+            new File(strDirAvatarsThumbs).mkdirs();
+            new File(strDirAvatarsSmall).mkdirs();
 
+            try {
+                Thumbnails.of(file)
+                        .size(400, 400)
+                        .useExifOrientation(true)
+                        .crop(Positions.CENTER)
+                        .outputQuality(0.85)
+                        .toFile(new File(strDirAvatarsThumbs + dirChar + strNewFileName));
 
-        ListBox<Record> listBoxAvatar = new ListBox<>();
-        listBoxAvatar.setItems(lstAvatarRecords);
-        listBoxAvatar.setRenderer(new ComponentRenderer<>(record -> {
-            HorizontalLayout row = new HorizontalLayout();
-            row.setAlignItems(FlexComponent.Alignment.CENTER);
+                Thumbnails.of(file)
+                        .size(150, 150)
+                        .useExifOrientation(true)
+                        .crop(Positions.CENTER)
+                        .outputQuality(0.85)
+                        .toFile(new File(strDirAvatarsSmall + dirChar + strNewFileName));
 
-            String strAvatarFile = record.getColumnData("path");
-            String imagePath = strPathOfAvailAvatars + strAvatarFile;
-            File imgFile = new File(imagePath);
+                if (setAvatarPhotoInDb(strNewFileName, strMemberId)) {
+                    Notification notification = new Notification("Avatar Photo Updated!");
+                    notification.setPosition(Notification.Position.MIDDLE);
+                    notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+                    notification.open();
+                } else {
+                    Notification notification = new Notification("Avatar Photo NOT Updated! Error logged to be investigated.");
+                    notification.setPosition(Notification.Position.MIDDLE);
+                    notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+                    notification.open();
+                }
 
-            Image image = new Image();
-            image.setSrc(DownloadHandler.forFile(imgFile));
-            image.setAlt(imagePath);
-            image.setHeight("75px");
-            image.setWidth("75px");
-            image.getStyle().setBorderRadius("8px");
+                divImgAvatar.removeAll();
+                String strNewAvatarPath = genericView.getAuthAvatarPath();
+                Image imgAvatar = genericView.getAvatarThumbImage(strNewAvatarPath, strMember, strAvatarSize, strAvatarSize);
+                divImgAvatar.add(imgAvatar);
 
-            Div divAvatar = new Div(image);
-
-
-            Span title = new Span(record.getColumnData("title"));
-            title.getStyle()
-                    .set("color", "var(--lumo-contrast-80pct)")
-                    .set("font-size", "var(--lumo-font-size-m)");
-            Span description = new Span(record.getColumnData("description"));
-            description.getStyle()
-                    .set("color", "var(--lumo-contrast-50pct)")
-                    .set("font-size", "var(--lumo-font-size-s)");
-            Span avatarType = new Span(record.getColumnData("avatar_type"));
-            avatarType.getStyle()
-                    .set("color", "var(--lumo-contrast-40pct)")
-                    .set("font-size", "var(--lumo-font-size-s)")
-                    .set("font-weight", "800");
-
-            VerticalLayout column = new VerticalLayout(title, description, avatarType);
-            column.setPadding(false);
-            column.setSpacing(false);
-
-            row.add(divAvatar, column);
-            row.getStyle().set("line-height", "var(--lumo-line-height-m)");
-            row.setWidthFull();
-            return row;
-        }));
-
-
-        layoutAlbumsPanel.add(listBoxAvatar);
-
-
-        HorizontalLayout layoutControls = new HorizontalLayout();
-        layoutControls.addClassNames(AlignItems.CENTER, JustifyContent.CENTER,
-                Padding.MEDIUM, Margin.NONE);
-
-        Button btnSave = new Button("Set");
-        btnSave.setIcon(FontAwesome.Solid.CHECK.create());
-        btnSave.addClickListener(event -> {
-
-            if (setAvatarPhotoInDb(listBoxAvatar.getValue().getColumnData("path"), genericView.checkIfAuthMemberId())) {
-                Notification notification = new Notification("Avatar Updated!");
-                notification.setPosition(Notification.Position.MIDDLE);
-                notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-
-            } else {
-
-                Notification notification = new Notification("Avatar NOT Updated! Error logged to be investigated.");
+            } catch (IOException e) {
+                logger.error("displayDialogUploadAvatarPhoto: " + e.getMessage());
+                Notification notification = new Notification("Avatar Photo NOT Updated! Image processing failed.");
                 notification.setPosition(Notification.Position.MIDDLE);
                 notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+                notification.open();
             }
-            // savePhotoInAlbums(listBoxAlbums, lstAlbumTitle, lstAlbumId, lstAlbumUserId, strPhotoId);
+
             dlg.close();
         });
 
-        Button btnCancel = new Button("Cancel");
-        btnCancel.setIcon(FontAwesome.Solid.CLOSE.create());
-        btnCancel.addClickListener(event -> {
-            dlg.close();
+        Upload upload = new Upload(uploadHandler);
+        upload.setAcceptedFileTypes("image/jpeg", "image/png");
+        upload.setMaxFiles(1);
+        upload.setMaxFileSize(9 * 1024 * 1024);
+        upload.setWidthFull();
+
+        upload.addFileRejectedListener(event -> {
+            Notification notification = Notification.show(event.getErrorMessage(), 4000, Notification.Position.TOP_CENTER);
+            notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
         });
-        layoutControls.add(btnSave, btnCancel);
-        dlg.add(layoutAlbumsPanel, layoutControls);
+
+        dlg.add(divHint, upload);
         return dlg;
-
     }
 
 
