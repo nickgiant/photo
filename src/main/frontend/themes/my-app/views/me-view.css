@@ -92,11 +92,13 @@
 
 .member-settings-card {
     width: 100%;
+    height: 600px;
     box-sizing: border-box;
     background: #fff;
     border-radius: 16px;
     box-shadow: 1px 1px 6px lightgrey;
     padding: 24px;
+    overflow-y: auto;
 }
 
 .member-settings-card-title {
@@ -128,7 +130,7 @@
 }
 
 /* ---------- Responsive ---------- */
-@media (max-width: 760px) {
+@media (max-width: 600px) {
     .member-settings-row {
         flex-direction: column;
     }

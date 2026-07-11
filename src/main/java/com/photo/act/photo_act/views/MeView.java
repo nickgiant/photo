@@ -412,9 +412,7 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
 
         FormLayout formLayout = new FormLayout();
         formLayout.addClassNames(Width.FULL, Margin.NONE, Padding.NONE);
-        formLayout.setResponsiveSteps(
-                new FormLayout.ResponsiveStep("0", 1),
-                new FormLayout.ResponsiveStep("520px", 2));
+        formLayout.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 1));
 
         TextField txtUserName = new TextField();
         txtUserName.setValue(record.getColumnData("username"));
@@ -496,9 +494,7 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
 
         FormLayout formLayoutLinks = new FormLayout();
         formLayoutLinks.addClassNames(Width.FULL, Margin.NONE, Padding.NONE);
-        formLayoutLinks.setResponsiveSteps(
-                new FormLayout.ResponsiveStep("0", 1),
-                new FormLayout.ResponsiveStep("520px", 2));
+        formLayoutLinks.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 1));
 
         TextField txtFacebook = new TextField();
         txtFacebook.setValue(record.getColumnData("url_fb"));
@@ -1186,7 +1182,7 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
             layoutPhotoAvatarSelection.add(btnSelectPhotoProfile, btnUploadPhoto);
 
             HorizontalLayout layoutMemberLinks = new HorizontalLayout();
-            layoutMemberLinks.addClassNames(AlignItems.CENTER, JustifyContent.CENTER, Padding.NONE, Margin.NONE);
+            layoutMemberLinks.addClassNames(AlignItems.CENTER, JustifyContent.START, Padding.NONE, Margin.NONE);
             layoutMemberLinks.add(linkTutorFacebook, linkTutorYt, linkTutorInsta, linkTutorYt, linkFlickr, linkWebsite);
 
             Div divBioTitle = new Div("Short Bio");
@@ -1224,12 +1220,20 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
                     BorderRadius.LARGE, Background.CONTRAST_5, BorderColor.CONTRAST_10, Border.ALL);
             layoutCounts.add(iconPhoto, divPhotos, iconAlbum, divAlbums);
 
+            VerticalLayout layoutAvatarInfo = new VerticalLayout(objMember, divMemberSince, layoutMemberLinks);
+            layoutAvatarInfo.addClassNames(AlignItems.START, JustifyContent.CENTER, Padding.NONE, Margin.NONE, Gap.XSMALL);
+            layoutAvatarInfo.setPadding(false);
+            layoutAvatarInfo.setSpacing(false);
+
+            HorizontalLayout layoutAvatarRow = new HorizontalLayout(divImgAvatar, layoutAvatarInfo);
+            layoutAvatarRow.addClassNames(AlignItems.CENTER, JustifyContent.CENTER, Padding.NONE, Margin.NONE, Gap.MEDIUM);
+
             VerticalLayout layoutMemberCard = new VerticalLayout();
             layoutMemberCard.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER);
             layoutMemberCard.setMaxWidth("360px");
-            layoutMemberCard.add(divImgAvatar, layoutPhotoAvatarSelection,
+            layoutMemberCard.add(layoutAvatarRow, layoutPhotoAvatarSelection,
                     objName, divBioTitle, divBio, divResidentCaption, divResident,
-                    objMember, divMemberSince, layoutCounts, layoutMemberLinks);
+                    layoutCounts);
 
             layoutMember.add(layoutMemberCard);
         } else {
