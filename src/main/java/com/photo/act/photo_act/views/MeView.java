@@ -13,10 +13,12 @@ import com.photo.act.photo_act.utils.UtilsString;
 import com.photo.act.photo_act.views.components.DialogMessage;
 import com.photo.act.photo_act.views.components.GenericView;
 import com.photo.act.photo_act.views.components.UploadImageCard;
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.HasStyle;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.*;
@@ -30,8 +32,8 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
-import com.vaadin.flow.component.tabs.TabSheet;
-import com.vaadin.flow.component.tabs.TabSheetVariant;
+import com.vaadin.flow.component.tabs.Tab;
+import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
@@ -40,6 +42,7 @@ import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.streams.DownloadHandler;
+import com.vaadin.flow.spring.security.AuthenticationContext;
 import com.vaadin.flow.theme.lumo.LumoUtility.*;
 import jakarta.annotation.security.PermitAll;
 import org.apache.commons.io.FileUtils;
@@ -204,12 +207,15 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
     private UtilsString utilsString;
     private EmailSendService emailSendService;
     private  PhotoProcessingService photoProcessingService;
+    private final AuthenticationContext authenticationContext;
 
 
-    public MeView(RecordService recordService, EmailSendService emailSendService, PhotoProcessingService photoProcessingService) {
+    public MeView(RecordService recordService, EmailSendService emailSendService, PhotoProcessingService photoProcessingService,
+                  AuthenticationContext authenticationContext) {
         this.recordService = recordService;
         this.emailSendService = emailSendService;
         this.photoProcessingService = photoProcessingService;
+        this.authenticationContext = authenticationContext;
 
         utilsDate = new UtilsDate();
         utilsString = new UtilsString();
@@ -369,22 +375,12 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
         String sqlMemberMe = sqlMember + " AND usr.username = '" + strMember + "' ";
 
         VerticalLayout layoutTabsAll = new VerticalLayout();
+        layoutTabsAll.addClassName("member-settings");
         layoutTabsAll.addClassNames(
-                Height.FULL,
+                Width.FULL,
                 Padding.MEDIUM, Margin.NONE,
-                AlignItems.CENTER, JustifyContent.CENTER,
-                Gap.LARGE
+                AlignItems.CENTER, JustifyContent.CENTER
         );
-
-        VerticalLayout memberInfo = new VerticalLayout();
-        memberInfo.addClassNames("member-profile");
-        memberInfo.add(loadMemberInfo(sqlMemberMe, arrColumnsMember, false));
-
-        layoutTabsAll.add(memberInfo);
-
-        TabSheet tabSheet = new TabSheet();
-        tabSheet.addThemeVariants(TabSheetVariant.LUMO_TABS_CENTERED);
-        tabSheet.addClassNames(Width.FULL, Height.FULL, Padding.MEDIUM, Margin.NONE);
 
         String strCalledFrom = "loadMemberInfoTabs";
 
@@ -392,46 +388,57 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
 
         Record record = lstMember.get(0);
 
-        String strWidthOfFields = "330px";
-
-        FormLayout formLayout = new FormLayout();
-        formLayout.addClassNames(Height.FULL, Width.FULL,
-                AlignItems.CENTER, JustifyContent.CENTER,
-                Margin.NONE, Padding.NONE);
-        formLayout.setResponsiveSteps(new FormLayout.ResponsiveStep(strWidthOfFields, 1));
-//        formLayout.setExpandFields(true);
-//        formLayout.setLabelsAside(true);
-
         String txtUserRights = record.getColumnData("user_rights_id");
 
+        // ==================== View Profile panel ====================
+
+        VerticalLayout memberInfo = new VerticalLayout();
+        memberInfo.addClassNames("member-profile");
+        memberInfo.setPadding(false);
+        memberInfo.add(loadMemberInfo(sqlMemberMe, arrColumnsMember, false));
+
+        Div cardViewProfile = new Div(memberInfo);
+        cardViewProfile.addClassName("member-settings-card");
+
+        VerticalLayout panelViewProfile = new VerticalLayout(cardViewProfile);
+        panelViewProfile.addClassName("member-settings-panel");
+        panelViewProfile.setPadding(false);
+
+        // ==================== Edit Profile Info panel ====================
+
+        FormLayout formLayout = new FormLayout();
+        formLayout.addClassNames(Width.FULL, Margin.NONE, Padding.NONE);
+        formLayout.setResponsiveSteps(
+                new FormLayout.ResponsiveStep("0", 1),
+                new FormLayout.ResponsiveStep("520px", 2));
 
         TextField txtUserName = new TextField();
         txtUserName.setValue(record.getColumnData("username"));
         txtUserName.setEnabled(false);
         txtUserName.setRequiredIndicatorVisible(true);
         txtUserName.setRequired(true);
-        txtUserName.setWidth(strWidthOfFields);
+        txtUserName.setWidthFull();
         formLayout.addFormItem(txtUserName, "Username");
 
         TextField txtName = new TextField();
         txtName.setValue(record.getColumnData("name"));
         txtName.setRequiredIndicatorVisible(true);
         txtName.setRequired(true);
-        txtName.setWidth(strWidthOfFields);
+        txtName.setWidthFull();
         formLayout.addFormItem(txtName, "Name");
 
         TextField txtSurname = new TextField();
         txtSurname.setValue(record.getColumnData("surname"));
         txtSurname.setRequiredIndicatorVisible(true);
         txtSurname.setRequired(true);
-        txtSurname.setWidth(strWidthOfFields);
+        txtSurname.setWidthFull();
         formLayout.addFormItem(txtSurname, "Surname");
 
         TextField txtEmail = new TextField();
         txtEmail.setValue(record.getColumnData("email"));
         txtEmail.setRequiredIndicatorVisible(true);
         txtEmail.setRequired(true);
-        txtEmail.setWidth(strWidthOfFields);
+        txtEmail.setWidthFull();
         formLayout.addFormItem(txtEmail, "e-mail");
 
         TextArea txtShortBio = new TextArea(); //"Short Bio", "Write 2 or 3 phrases about yourself");
@@ -440,22 +447,8 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
         txtShortBio.setValue(record.getColumnData("short_bio"));
         txtShortBio.setRequiredIndicatorVisible(false);
         txtShortBio.setRequired(false);
-        txtShortBio.setWidth(strWidthOfFields);
+        txtShortBio.setWidthFull();
         formLayout.addFormItem(txtShortBio, "Short Bio");
-
-//        Select<String> txtResidentCountry = new Select<>();
-//        List<Record> lstDestinationCountries = recordService.findAll(sqlReadDestinationCountries, arrDestinationNames);
-//        List<String> lstCountryNames = new ArrayList<>();
-//        for (int d = 0; d < lstDestinationCountries.size(); d++) {
-//            lstCountryNames.add(lstDestinationCountries.get(d).getColumnData("country"));
-//        }
-//        txtResidentCountry.setItems(lstCountryNames);
-//
-//        txtResidentCountry.setValue(record.getColumnData("resident_country"));
-//        txtResidentCountry.setRequiredIndicatorVisible(false);
-////        txtResidentCountry.setRequired(false);
-//        txtResidentCountry.setWidth(strWidthOfFields);
-//        formLayout.addFormItem(txtResidentCountry, "Country");
 
         String sqlDestination = sqlReadDestination + " " + sqlReadDestinationOrder;
 
@@ -470,121 +463,96 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
         txtResident.setValue(record.getColumnData("resident"));
 
         txtResident.setRequiredIndicatorVisible(false);
-//        txtResident.setRequired(false);
-        txtResident.setWidth(strWidthOfFields);
+        txtResident.setWidthFull();
         formLayout.addFormItem(txtResident, "Resident");
 
         TextField txtResidentCountry = new TextField();
         txtResidentCountry.setVisible(false);
         txtResidentCountry.setValue(record.getColumnData("resident_country"));
         txtResidentCountry.setRequiredIndicatorVisible(false);
-//        txtResidentCountry.setRequired(false);
-        txtResidentCountry.setWidth(strWidthOfFields);
-//        formLayout.addFormItem(txtResidentCountry, "Country");
+        txtResidentCountry.setWidthFull();
 
+        Button btnUpdateProfile = new Button("Update Information");
+        btnUpdateProfile.setIcon(FontAwesome.Solid.SAVE.create());
+        btnUpdateProfile.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        btnUpdateProfile.addClassName("member-settings-save-btn");
+
+        H3 titleEditProfile = new H3("Change User Information");
+        titleEditProfile.addClassName("member-settings-card-title");
+
+        Div cardEditProfile = new Div(titleEditProfile, formLayout, btnUpdateProfile);
+        cardEditProfile.addClassName("member-settings-card");
+
+        VerticalLayout panelEditProfile = new VerticalLayout(cardEditProfile);
+        panelEditProfile.addClassName("member-settings-panel");
+        panelEditProfile.setPadding(false);
+        panelEditProfile.setVisible(false);
+
+        // ==================== Social Links panel ====================
 
         FormLayout formLayoutLinks = new FormLayout();
-        formLayoutLinks.addClassNames(Height.FULL, Width.FULL,
-                AlignItems.CENTER, JustifyContent.CENTER,
-                Margin.NONE, Padding.NONE);
-        formLayoutLinks.setResponsiveSteps(new FormLayout.ResponsiveStep(strWidthOfFields, 1));
-//        formLayout.setExpandFields(true);
-//        formLayout.setLabelsAside(true);
-
+        formLayoutLinks.addClassNames(Width.FULL, Margin.NONE, Padding.NONE);
+        formLayoutLinks.setResponsiveSteps(
+                new FormLayout.ResponsiveStep("0", 1),
+                new FormLayout.ResponsiveStep("520px", 2));
 
         TextField txtFacebook = new TextField();
         txtFacebook.setValue(record.getColumnData("url_fb"));
         txtFacebook.setEnabled(true);
         txtFacebook.setRequiredIndicatorVisible(true);
         txtFacebook.setRequired(false);
-        txtFacebook.setWidth(strWidthOfFields);
+        txtFacebook.setWidthFull();
         formLayoutLinks.addFormItem(txtFacebook, "Facebook");
 
         TextField txtInstagram = new TextField();
         txtInstagram.setValue(record.getColumnData("url_insta"));
         txtInstagram.setRequiredIndicatorVisible(true);
         txtInstagram.setRequired(false);
-        txtInstagram.setWidth(strWidthOfFields);
+        txtInstagram.setWidthFull();
         formLayoutLinks.addFormItem(txtInstagram, "Instagram");
 
         TextField txtYT = new TextField();
         txtYT.setValue(record.getColumnData("url_yt"));
         txtYT.setRequiredIndicatorVisible(true);
         txtYT.setRequired(false);
-        txtYT.setWidth(strWidthOfFields);
+        txtYT.setWidthFull();
         formLayoutLinks.addFormItem(txtYT, "YouTube");
 
         TextField txtFlickr = new TextField();
         txtFlickr.setValue(record.getColumnData("url_flickr"));
         txtFlickr.setRequiredIndicatorVisible(true);
         txtFlickr.setRequired(false);
-        txtFlickr.setWidth(strWidthOfFields);
+        txtFlickr.setWidthFull();
         formLayoutLinks.addFormItem(txtFlickr, "Flickr");
 
         TextField txtWebsite = new TextField();
         txtWebsite.setValue(record.getColumnData("url_website"));
         txtWebsite.setRequiredIndicatorVisible(true);
         txtWebsite.setRequired(false);
-        txtWebsite.setWidth(strWidthOfFields);
+        txtWebsite.setWidthFull();
         formLayoutLinks.addFormItem(txtWebsite, "Personal Website");
 
-        VerticalLayout layoutCodes = new VerticalLayout();
-        layoutCodes.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER);
+        Button btnUpdateLinks = new Button("Update Information");
+        btnUpdateLinks.setIcon(FontAwesome.Solid.SAVE.create());
+        btnUpdateLinks.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        btnUpdateLinks.addClassName("member-settings-save-btn");
 
-        TextField txtNewCode = new TextField();
-        txtNewCode.setLabel("Code");
+        H3 titleSocialLinks = new H3("Social Links");
+        titleSocialLinks.addClassName("member-settings-card-title");
 
-        Button btnApply = new Button("Apply");
-        layoutCodes.add(txtNewCode, btnApply);
+        Div cardSocialLinks = new Div(titleSocialLinks, formLayoutLinks, btnUpdateLinks);
+        cardSocialLinks.addClassName("member-settings-card");
+
+        VerticalLayout panelSocialLinks = new VerticalLayout(cardSocialLinks);
+        panelSocialLinks.addClassName("member-settings-panel");
+        panelSocialLinks.setPadding(false);
+        panelSocialLinks.setVisible(false);
+
+        // ==================== Security & Tools panel ====================
 
         VerticalLayout layoutButtons = new VerticalLayout();
-        layoutButtons.addClassNames(AlignItems.CENTER, JustifyContent.CENTER,
-                Margin.NONE, Padding.LARGE);
-
-        Span tab1Icon = new Span();
-        tab1Icon.add(FontAwesome.Solid.USER.create());
-        Span tab1 = new Span("Profile");
-        tab1.addClassNames(FontWeight.BOLD, Padding.MEDIUM);
-        tab1Icon.add(tab1);
-//        tab1.getStyle().setColor("#466ca8");
-
-        Span tab2Icon = new Span();
-        tab2Icon.add(FontAwesome.Solid.EDIT.create());
-        Span tab2 = new Span("Edit Profile");
-        tab2.addClassNames(FontWeight.BOLD, Padding.MEDIUM);
-        tab2Icon.add(tab2);
-
-        Span tab3Icon = new Span();
-        tab3Icon.add(FontAwesome.Solid.PHOTO_FILM.create());
-        Span tab3 = new Span("Profile Photos");
-        tab3.addClassNames(FontWeight.BOLD, Padding.MEDIUM);
-        tab3Icon.add(tab3);
-
-        Span tab4Icon = new Span();
-        tab4Icon.add(FontAwesome.Solid.LINK.create());
-        Span tab4 = new Span("External Links");
-        tab4.addClassNames(FontWeight.BOLD, Padding.MEDIUM);
-        tab4Icon.add(tab4);
-
-        Span tab5Icon = new Span();
-        tab5Icon.add(FontAwesome.Solid.CODE.create());
-        Span tab5 = new Span("Tools");
-        tab5.addClassNames(FontWeight.BOLD, Padding.MEDIUM);
-        tab5Icon.add(tab5);
-
-        //----------------------
-
-        //tabSheet.add(tab1Icon, loadMemberInfo(sqlMemberMe, arrColumnsMember, false));
-        tabSheet.add(tab2Icon, formLayout);
-        tabSheet.add(tab4Icon, formLayoutLinks);
-        tabSheet.add(tab5Icon, layoutButtons);
-
-
-        //--------------------------
-
-        Button btnOk = new Button("Update");
-        btnOk.setIcon(FontAwesome.Solid.SAVE.create());
-
+        layoutButtons.addClassName("member-settings-tools");
+        layoutButtons.setPadding(false);
 
         Button btnRefreshPhotosMeta = new Button("Refresh My Photos Meta");
         btnRefreshPhotosMeta.addClickListener(btn -> {
@@ -659,109 +627,134 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
             dlg.open();
         });
 
-        VerticalLayout layoutTabs = new VerticalLayout();
-        layoutTabs.addClassNames(Width.FULL, Height.FULL,
-                AlignItems.CENTER, JustifyContent.START);
-        layoutTabs.addClassNames("member-edit-profile");
-        layoutTabs.add(tabSheet, btnOk);
-
-
-        layoutTabsAll.add(layoutTabs);
         if (txtUserRights.equalsIgnoreCase("3")) {
             layoutButtons.add(btnRefreshAMembersPhotosMeta, btnCalcAMembersSums, btnEvictCache, btnEvictCacheLearnings);
         }
 
+        Button btnLogout = new Button("Logout", VaadinIcon.SIGN_OUT.create());
+        btnLogout.addClassName("member-settings-logout-btn");
+        btnLogout.addClickListener(event -> authenticationContext.logout());
 
-        btnOk.addClickListener(click -> {
+        H3 titleSecurity = new H3("Security & Tools");
+        titleSecurity.addClassName("member-settings-card-title");
 
-            if (txtName.getValue().isEmpty()) {
-                String strMessage = "Name should not be empty!";
-                txtName.setErrorMessage(strMessage);
-                Notification.show(strMessage);
-            }
+        Div cardSecurity = new Div(titleSecurity, layoutButtons, new Hr(), btnLogout);
+        cardSecurity.addClassName("member-settings-card");
 
-            if (txtSurname.getValue().isEmpty()) {
-                String strMessage = "Surname should not be empty!";
-                txtSurname.setErrorMessage(strMessage);
-                Notification.show(strMessage);
-            }
+        VerticalLayout panelSecurity = new VerticalLayout(cardSecurity);
+        panelSecurity.addClassName("member-settings-panel");
+        panelSecurity.setPadding(false);
+        panelSecurity.setVisible(false);
 
-            if (txtUserName.getValue().isEmpty()) {
-                String strMessage = "Username should not be empty!";
-                txtUserName.setErrorMessage(strMessage);
-                Notification.show(strMessage);
-            }
+        // ==================== Left nav ====================
 
-            if (txtEmail.getValue().isEmpty()) {
-                String strMessage = "Email should not be empty!";
-                txtEmail.setErrorMessage(strMessage);
-                Notification.show(strMessage);
-            }
+        Tab tabViewProfile = createNavTab(FontAwesome.Solid.USER.create(), "View Profile", "See your public member profile");
+        Tab tabEditProfile = createNavTab(FontAwesome.Solid.EDIT.create(), "Edit Profile Info", "Update your personal details");
+        Tab tabSocialLinks = createNavTab(FontAwesome.Solid.LINK.create(), "Social Links", "Connect your social media accounts");
+        Tab tabSecurity = createNavTab(VaadinIcon.LOCK.create(), "Security & Tools", "Account tools and logout");
 
-//            if (txtPassword.getValue().isEmpty()) {
-//                String strMessage = "Password should not be empty!";
-//                txtPassword.setErrorMessage(strMessage);
-//                Notification.show(strMessage);
-//            }
+        Tabs navTabs = new Tabs(tabViewProfile, tabEditProfile, tabSocialLinks, tabSecurity);
+        navTabs.setOrientation(Tabs.Orientation.VERTICAL);
+        navTabs.addClassName("member-settings-nav");
 
-//            if (txtConfirmPassword.getValue().isEmpty()) {
-//                String strMessage = "Confirm Password should not be empty!";
-//                txtConfirmPassword.setErrorMessage(strMessage);
-//                Notification.show(strMessage);
-//            }
+        Div contentArea = new Div(panelViewProfile, panelEditProfile, panelSocialLinks, panelSecurity);
+        contentArea.addClassName("member-settings-content");
 
-            String strEmail = txtEmail.getValue();
-            String strUsername = txtUserName.getValue();
+        navTabs.addSelectedChangeListener(event -> {
+            panelViewProfile.setVisible(false);
+            panelEditProfile.setVisible(false);
+            panelSocialLinks.setVisible(false);
+            panelSecurity.setVisible(false);
 
-
-            boolean isEmailSystaxValid = utilsString.isEmailSysntaxValid(strEmail);
-            if (!isEmailSystaxValid) {
-                String strMessage = "Email is not valid!";
-                txtEmail.setErrorMessage(strMessage);
-                Notification.show(strMessage);
-            }
-
-//            if (!txtPassword.getValue().equalsIgnoreCase(txtConfirmPassword.getValue())) {
-//                Notification.show("Password is not the same in both fields. Please retype.");
-//            }
-
-//            boolean doesEmailExist = genericView.checkIfMemerValueExists("email", strEmail);
-//            if (doesEmailExist) {
-//                Notification.show("Email " + strEmail + " already exists! Please type a different one.");
-//                Notification notification = new Notification("Email " + strEmail + " already exists! Please type a different one.");
-//                notification.setPosition(Notification.Position.MIDDLE);
-//                notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
-//            }
-
-//            boolean doesUsernameExist = genericView.checkIfMemerValueExists("username", strUsername);
-//            if (doesUsernameExist) {
-//                Notification.show("Username " + strUsername + " already exists! Please type a different one.");
-//                Notification notification = new Notification("Username " + strUsername + " already exists! Please type a different one.");
-//                notification.setPosition(Notification.Position.MIDDLE);
-//                notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
-//            }
-
-            if (txtUserName.getValue().isEmpty() || txtName.getValue().isEmpty() || txtSurname.getValue().isEmpty() || txtEmail.getValue().isEmpty())
-//                    || !isEmailSystaxValid || txtPassword.getValue().isEmpty() || txtConfirmPassword.getValue().isEmpty()
-//                    || !txtPassword.getValue().equalsIgnoreCase(txtConfirmPassword.getValue())
-//                    || doesEmailExist || doesUsernameExist)
-            {
-
+            Tab selectedTab = event.getSelectedTab();
+            if (selectedTab == tabEditProfile) {
+                panelEditProfile.setVisible(true);
+            } else if (selectedTab == tabSocialLinks) {
+                panelSocialLinks.setVisible(true);
+            } else if (selectedTab == tabSecurity) {
+                panelSecurity.setVisible(true);
             } else {
-//                String txt = passwordEncoder().encode(txtPassword.getValue());   //utilsString.encrypt(txtPassword.getValue());
-                updateMember(txtUserName.getValue(),
-                        txtEmail.getValue(), txtName.getValue(), txtSurname.getValue(), txtResidentCountry.getValue(), txtResident.getValue(), txtShortBio.getValue(),
-                        txtFacebook.getValue(), txtInstagram.getValue(), txtYT.getValue(), txtFlickr.getValue(), txtWebsite.getValue(),
-                        section, strCalledFrom);
-
-                memberInfo.removeAll();
-                memberInfo.add(loadMemberInfo(sqlMemberMe, arrColumnsMember, false));
+                panelViewProfile.setVisible(true);
             }
-
         });
 
+        HorizontalLayout mainRow = new HorizontalLayout(navTabs, contentArea);
+        mainRow.addClassName("member-settings-row");
+        mainRow.setWidthFull();
+        mainRow.setFlexGrow(1, contentArea);
+
+        layoutTabsAll.add(mainRow);
+
+        Button[] arrSaveButtons = {btnUpdateProfile, btnUpdateLinks};
+        for (Button btnSave : arrSaveButtons) {
+            btnSave.addClickListener(click -> {
+
+                if (txtName.getValue().isEmpty()) {
+                    String strMessage = "Name should not be empty!";
+                    txtName.setErrorMessage(strMessage);
+                    Notification.show(strMessage);
+                }
+
+                if (txtSurname.getValue().isEmpty()) {
+                    String strMessage = "Surname should not be empty!";
+                    txtSurname.setErrorMessage(strMessage);
+                    Notification.show(strMessage);
+                }
+
+                if (txtUserName.getValue().isEmpty()) {
+                    String strMessage = "Username should not be empty!";
+                    txtUserName.setErrorMessage(strMessage);
+                    Notification.show(strMessage);
+                }
+
+                if (txtEmail.getValue().isEmpty()) {
+                    String strMessage = "Email should not be empty!";
+                    txtEmail.setErrorMessage(strMessage);
+                    Notification.show(strMessage);
+                }
+
+                String strEmail = txtEmail.getValue();
+                String strUsername = txtUserName.getValue();
+
+                boolean isEmailSystaxValid = utilsString.isEmailSysntaxValid(strEmail);
+                if (!isEmailSystaxValid) {
+                    String strMessage = "Email is not valid!";
+                    txtEmail.setErrorMessage(strMessage);
+                    Notification.show(strMessage);
+                }
+
+                if (txtUserName.getValue().isEmpty() || txtName.getValue().isEmpty() || txtSurname.getValue().isEmpty() || txtEmail.getValue().isEmpty()) {
+
+                } else {
+                    updateMember(txtUserName.getValue(),
+                            txtEmail.getValue(), txtName.getValue(), txtSurname.getValue(), txtResidentCountry.getValue(), txtResident.getValue(), txtShortBio.getValue(),
+                            txtFacebook.getValue(), txtInstagram.getValue(), txtYT.getValue(), txtFlickr.getValue(), txtWebsite.getValue(),
+                            section, strCalledFrom);
+
+                    memberInfo.removeAll();
+                    memberInfo.add(loadMemberInfo(sqlMemberMe, arrColumnsMember, false));
+                }
+
+            });
+        }
 
         return layoutTabsAll;
+    }
+
+    private Tab createNavTab(Component icon, String title, String subtitle) {
+
+        Span titleSpan = new Span(title);
+        titleSpan.addClassName("member-settings-nav-title");
+
+        Span subtitleSpan = new Span(subtitle);
+        subtitleSpan.addClassName("member-settings-nav-subtitle");
+
+        VerticalLayout textLayout = new VerticalLayout(titleSpan, subtitleSpan);
+        textLayout.addClassName("member-settings-nav-text");
+        textLayout.setPadding(false);
+        textLayout.setSpacing(false);
+
+        return new Tab(icon, textLayout);
     }
 
 
