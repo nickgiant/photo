@@ -36,15 +36,19 @@ import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.component.upload.Upload;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.streams.DownloadHandler;
+import com.vaadin.flow.server.streams.UploadHandler;
 import com.vaadin.flow.spring.security.AuthenticationContext;
 import com.vaadin.flow.theme.lumo.LumoUtility.*;
 import jakarta.annotation.security.PermitAll;
+import net.coobird.thumbnailator.Thumbnails;
+import net.coobird.thumbnailator.geometry.Positions;
 import org.apache.commons.io.FileUtils;
 
 import org.slf4j.Logger;
@@ -61,6 +65,7 @@ import java.nio.file.FileSystems;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.UUID;
 
 import static com.photo.act.photo_act.views.HomeView.*;
 import static com.photo.act.photo_act.views.MainLayout.*;
@@ -393,7 +398,6 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
         // ==================== View Profile panel ====================
 
         VerticalLayout memberInfo = new VerticalLayout();
-        memberInfo.addClassNames("member-profile");
         memberInfo.setPadding(false);
         memberInfo.add(loadMemberInfo(sqlMemberMe, arrColumnsMember, false));
 
@@ -1145,10 +1149,6 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
 //                linkFlickr.setVisible(true);
             }
 
-            Div divBioTitle = new Div("Short Bio");
-
-            HorizontalLayout layoutPhotoAvatarSelection = new HorizontalLayout();
-            layoutPhotoAvatarSelection.addClassNames(Padding.NONE, Margin.NONE);
             Div divImgAvatar = new Div();
             divImgAvatar.addClassNames(Padding.NONE, Margin.NONE);
 
@@ -1156,43 +1156,8 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
             Image imageAvatar = genericView.getAvatarThumbImage(strAvatarPath, strMember, strAvatarSize, strAvatarSize);
             divImgAvatar.add(imageAvatar);
 
-            Button btnSelectEmptyAvatar = new Button();
-            btnSelectEmptyAvatar.setTooltipText("Set the default Avatar");
-            btnSelectEmptyAvatar.setIcon(FontAwesome.Solid.O.create());
-            btnSelectEmptyAvatar.addClickListener(event -> {
-
-                if (setAvatarPhotoInDb("no-avatar.jpg", genericView.checkIfAuthMemberId())) {
-                    Notification notification = new Notification("Avatar Updated!");
-                    notification.setPosition(Notification.Position.MIDDLE);
-                    notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-
-                    String strNewAvatarPath = genericView.getAuthAvatarPath();
-                    divImgAvatar.removeAll();
-                    Image imgAvatar = genericView.getAvatarThumbImage(strNewAvatarPath, strMember, strAvatarSize, strAvatarSize);
-                    divImgAvatar.add(imgAvatar);
-                } else {
-                    Notification notification = new Notification("Avatar NOT Updated! Error logged to be investigated.");
-                    notification.setPosition(Notification.Position.MIDDLE);
-                    notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
-                }
-
-            });
-
-            Button btnSelectAvatar = new Button();
-            btnSelectAvatar.setTooltipText("Select from already available Avatars");
-            btnSelectAvatar.setIcon(FontAwesome.Solid.PORTRAIT.create());
-            btnSelectAvatar.addClickListener(event -> {
-                Dialog dlg = displayDialogSelectAvatar();
-                dlg.open();
-                dlg.addOpenedChangeListener(close -> {
-                    if (!close.isOpened()) {
-                        divImgAvatar.removeAll();
-                        String strNewAvatarPath = genericView.getAuthAvatarPath();
-                        Image imgAvatar = genericView.getAvatarThumbImage(strNewAvatarPath, strMember, strAvatarSize, strAvatarSize);
-                        divImgAvatar.add(imgAvatar);
-                    }
-                });
-            });
+            HorizontalLayout layoutPhotoAvatarSelection = new HorizontalLayout();
+            layoutPhotoAvatarSelection.addClassNames(Padding.NONE, Margin.NONE);
 
             Button btnSelectPhotoProfile = new Button("Profile Photo");
             btnSelectPhotoProfile.setTooltipText("Select from your Profile Photos");
@@ -1210,33 +1175,40 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
                 });
             });
 
-            layoutPhotoAvatarSelection.add(btnSelectEmptyAvatar, btnSelectAvatar,btnSelectPhotoProfile);
+            Button btnUploadPhoto = new Button("Upload Photo");
+            btnUploadPhoto.setTooltipText("Upload a new photo to use as your Avatar");
+            btnUploadPhoto.setIcon(FontAwesome.Solid.UPLOAD.create());
+            btnUploadPhoto.addClickListener(event -> {
+                Dialog dlg = displayDialogUploadAvatarPhoto(divImgAvatar, strAvatarSize);
+                dlg.open();
+            });
 
-            VerticalLayout layoutMemberLinks = new VerticalLayout();
+            layoutPhotoAvatarSelection.add(btnSelectPhotoProfile, btnUploadPhoto);
+
+            HorizontalLayout layoutMemberLinks = new HorizontalLayout();
             layoutMemberLinks.addClassNames(AlignItems.CENTER, JustifyContent.CENTER, Padding.NONE, Margin.NONE);
-            layoutMemberLinks.setMaxWidth("40px");
             layoutMemberLinks.add(linkTutorFacebook, linkTutorYt, linkTutorInsta, linkTutorYt, linkFlickr, linkWebsite);
+
+            Div divBioTitle = new Div("Short Bio");
+            divBioTitle.addClassNames(TextColor.SECONDARY, FontSize.SMALL, Margin.Top.MEDIUM);
 
             Div divBio = new Div();
             divBio.addClassNames(FontWeight.BOLD);
-//            divBio.setVisible(false);
             if (strShortBio != null && !strShortBio.equalsIgnoreCase("null") && !strShortBio.isEmpty()) {
                 divBio.setVisible(true);
                 divBio.setText(strShortBio);
-            } else {
-//                divBio.setVisible(false);
             }
-
-            HorizontalLayout horizontalLayout = new HorizontalLayout();
-
-
-//            Image imgAvatar = getAvatarImage(strAvatarPath, strNameOfUser, "120px", "120px");
 
             H3 objName = new H3(strName + " " + strSurname);
             objName.addClassNames(TextColor.SECONDARY, FontWeight.EXTRABOLD);
             H4 objMember = new H4(strMember);
             objMember.addClassNames(TextColor.SECONDARY, FontWeight.EXTRABOLD);
             Div divMemberSince = new Div("Member since " + strMemberSince);
+
+            Div divResidentCaption = new Div("Resident");
+            divResidentCaption.addClassNames(TextColor.SECONDARY, FontSize.SMALL, Margin.Top.MEDIUM);
+            Div divResident = new Div(strResident);
+            divResident.addClassNames(FontWeight.BOLD);
 
             Icon iconPhoto = VaadinIcon.PICTURE.create();
             Icon iconAlbum = FontAwesome.Solid.PHOTO_FILM.create();
@@ -1253,25 +1225,13 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
             layoutCounts.add(iconPhoto, divPhotos, iconAlbum, divAlbums);
 
             VerticalLayout layoutMemberCard = new VerticalLayout();
-//            layoutMemberCard.getStyle().setMaxWidth("300px");
-//            layoutMemberCard.getStyle().set("border", "lightgrey 1px solid");
-            layoutMemberCard.addClassNames(AlignItems.CENTER, JustifyContent.CENTER);
-            layoutMemberCard.setMinWidth("260px");
-            layoutMemberCard.add(layoutPhotoAvatarSelection, divImgAvatar, objMember, divMemberSince, layoutCounts);
+            layoutMemberCard.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER);
+            layoutMemberCard.setMaxWidth("360px");
+            layoutMemberCard.add(divImgAvatar, layoutPhotoAvatarSelection,
+                    objName, divBioTitle, divBio, divResidentCaption, divResident,
+                    objMember, divMemberSince, layoutCounts, layoutMemberLinks);
 
-            Div divResidentCaption = new Div("Resident");
-            Div divResident = new Div(strResident);
-            divResident.addClassNames(FontWeight.BOLD);
-
-            VerticalLayout layoutAdditional = new VerticalLayout();
-            layoutAdditional.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER);
-            layoutAdditional.setMinWidth("280px");
-            layoutAdditional.add(objName, divBioTitle, divBio, divResidentCaption, divResident);
-
-            horizontalLayout.add(layoutMemberCard, layoutMemberLinks, layoutAdditional);
-
-
-            layoutMember.add(horizontalLayout);
+            layoutMember.add(layoutMemberCard);
         } else {
             logger.warn(" lstRecords is more than one record");
         }
@@ -1279,9 +1239,9 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
         return layoutMember;
     }
 
-    private Dialog displayDialogSelectAvatar() {
+    private Dialog displayDialogUploadAvatarPhoto(Div divImgAvatar, String strAvatarSize) {
 
-        Dialog dlg = new Dialog("Select Avatar");
+        Dialog dlg = new Dialog("Upload Photo");
         dlg.setResizable(true);
         dlg.setDraggable(true);
         dlg.setCloseOnEsc(true);
@@ -1290,100 +1250,72 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
         dlg.setMaxWidth("450px");
         dlg.addClassName("me-view");
 
-        VerticalLayout layoutAlbumsPanel = new VerticalLayout();
-        layoutAlbumsPanel.addClassNames(Width.FULL,
-                Padding.SMALL, Margin.NONE,
-                AlignItems.CENTER, JustifyContent.CENTER,
-                Background.CONTRAST_5, BorderRadius.LARGE);
+        Div divHint = new Div("Upload a photo from your device to use as your Avatar");
+        divHint.addClassNames(Width.FULL, TextColor.SECONDARY, FontSize.SMALL, Margin.Bottom.MEDIUM);
 
+        UploadHandler uploadHandler = UploadHandler.toTempFile((uploadMetadata, file) -> {
 
-        String strPathOfAvailAvatars = DIR_PHOTOS_SERVER + dirChar + SUB_PATH_AVAILABLE_AVATARS + dirChar;
+            String strMemberId = genericView.checkIfAuthMemberId();
+            String strNewFileName = strMemberId + "_" + UUID.randomUUID() + ".jpg";
 
-        String[] arrColumnsAvailableAvatars = {"id", "title", "avatar_type", "description", "path"};
-        String sqlAvailableAvatars = "SELECT id, title, avatar_type, description, path FROM avail_avatars ORDER BY title ";
-        List<Record> lstAvatarRecords = getRecordsFromDb(sqlAvailableAvatars, arrColumnsAvailableAvatars);
+            String strDirAvatarsThumbs = DIR_PHOTOS_SERVER + dirChar + SUB_PATH_AVATARS_THUMBS;
+            String strDirAvatarsSmall = DIR_PHOTOS_SERVER + dirChar + SUB_PATH_AVATARS_SMALL;
+            new File(strDirAvatarsThumbs).mkdirs();
+            new File(strDirAvatarsSmall).mkdirs();
 
+            try {
+                Thumbnails.of(file)
+                        .size(400, 400)
+                        .useExifOrientation(true)
+                        .crop(Positions.CENTER)
+                        .outputQuality(0.85)
+                        .toFile(new File(strDirAvatarsThumbs + dirChar + strNewFileName));
 
-        ListBox<Record> listBoxAvatar = new ListBox<>();
-        listBoxAvatar.setItems(lstAvatarRecords);
-        listBoxAvatar.setRenderer(new ComponentRenderer<>(record -> {
-            HorizontalLayout row = new HorizontalLayout();
-            row.setAlignItems(FlexComponent.Alignment.CENTER);
+                Thumbnails.of(file)
+                        .size(150, 150)
+                        .useExifOrientation(true)
+                        .crop(Positions.CENTER)
+                        .outputQuality(0.85)
+                        .toFile(new File(strDirAvatarsSmall + dirChar + strNewFileName));
 
-            String strAvatarFile = record.getColumnData("path");
-            String imagePath = strPathOfAvailAvatars + strAvatarFile;
-            File imgFile = new File(imagePath);
+                if (setAvatarPhotoInDb(strNewFileName, strMemberId)) {
+                    Notification notification = new Notification("Avatar Photo Updated!");
+                    notification.setPosition(Notification.Position.MIDDLE);
+                    notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+                } else {
+                    Notification notification = new Notification("Avatar Photo NOT Updated! Error logged to be investigated.");
+                    notification.setPosition(Notification.Position.MIDDLE);
+                    notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+                }
 
-            Image image = new Image();
-            image.setSrc(DownloadHandler.forFile(imgFile));
-            image.setAlt(imagePath);
-            image.setHeight("75px");
-            image.setWidth("75px");
-            image.getStyle().setBorderRadius("8px");
+                divImgAvatar.removeAll();
+                String strNewAvatarPath = genericView.getAuthAvatarPath();
+                Image imgAvatar = genericView.getAvatarThumbImage(strNewAvatarPath, strMember, strAvatarSize, strAvatarSize);
+                divImgAvatar.add(imgAvatar);
 
-            Div divAvatar = new Div(image);
-
-
-            Span title = new Span(record.getColumnData("title"));
-            title.getStyle()
-                    .set("color", "var(--lumo-contrast-80pct)")
-                    .set("font-size", "var(--lumo-font-size-m)");
-            Span description = new Span(record.getColumnData("description"));
-            description.getStyle()
-                    .set("color", "var(--lumo-contrast-50pct)")
-                    .set("font-size", "var(--lumo-font-size-s)");
-            Span avatarType = new Span(record.getColumnData("avatar_type"));
-            avatarType.getStyle()
-                    .set("color", "var(--lumo-contrast-40pct)")
-                    .set("font-size", "var(--lumo-font-size-s)")
-                    .set("font-weight", "800");
-
-            VerticalLayout column = new VerticalLayout(title, description, avatarType);
-            column.setPadding(false);
-            column.setSpacing(false);
-
-            row.add(divAvatar, column);
-            row.getStyle().set("line-height", "var(--lumo-line-height-m)");
-            row.setWidthFull();
-            return row;
-        }));
-
-
-        layoutAlbumsPanel.add(listBoxAvatar);
-
-
-        HorizontalLayout layoutControls = new HorizontalLayout();
-        layoutControls.addClassNames(AlignItems.CENTER, JustifyContent.CENTER,
-                Padding.MEDIUM, Margin.NONE);
-
-        Button btnSave = new Button("Set");
-        btnSave.setIcon(FontAwesome.Solid.CHECK.create());
-        btnSave.addClickListener(event -> {
-
-            if (setAvatarPhotoInDb(listBoxAvatar.getValue().getColumnData("path"), genericView.checkIfAuthMemberId())) {
-                Notification notification = new Notification("Avatar Updated!");
-                notification.setPosition(Notification.Position.MIDDLE);
-                notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-
-            } else {
-
-                Notification notification = new Notification("Avatar NOT Updated! Error logged to be investigated.");
+            } catch (IOException e) {
+                logger.error("displayDialogUploadAvatarPhoto: " + e.getMessage());
+                Notification notification = new Notification("Avatar Photo NOT Updated! Image processing failed.");
                 notification.setPosition(Notification.Position.MIDDLE);
                 notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
             }
-            // savePhotoInAlbums(listBoxAlbums, lstAlbumTitle, lstAlbumId, lstAlbumUserId, strPhotoId);
+
             dlg.close();
         });
 
-        Button btnCancel = new Button("Cancel");
-        btnCancel.setIcon(FontAwesome.Solid.CLOSE.create());
-        btnCancel.addClickListener(event -> {
-            dlg.close();
+        Upload upload = new Upload(uploadHandler);
+        upload.setAcceptedFileTypes("image/jpeg", "image/png");
+        upload.setMaxFiles(1);
+        upload.setMaxFileSize(9 * 1024 * 1024);
+        upload.setWidthFull();
+
+        upload.addFileRejectedListener(event -> {
+            Notification notification = Notification.show(event.getErrorMessage(), 4000, Notification.Position.TOP_CENTER);
+            notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
         });
-        layoutControls.add(btnSave, btnCancel);
-        dlg.add(layoutAlbumsPanel, layoutControls);
+
+        dlg.add(divHint, upload);
         return dlg;
-
     }
 
 
