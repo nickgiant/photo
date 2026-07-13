@@ -662,7 +662,10 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
 
 //            UI.getCurrent().getPage().fetchCurrentURL(currentUrl -> {
 
-                String strResetUrl = baseUrl+"/change-password/" + strToken;
+                String strBaseUrlTrimmed = baseUrl != null ? baseUrl.replaceAll("/+$", "") : "";
+                String strResetUrl = strBaseUrlTrimmed + "/change-password/" + strToken;
+
+                logger.warn("Password reset URL built: " + strResetUrl + " (raw app.base-url=" + baseUrl + ")");
 
                 String strSubject = "Change your PhotoAct password";
                 String strBody = "Hello " + strMember + ",\n\n" +

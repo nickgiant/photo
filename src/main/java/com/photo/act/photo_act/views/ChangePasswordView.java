@@ -83,8 +83,12 @@ public class ChangePasswordView extends Main implements HasUrlParameter<String>,
         card.add(title);
 
         if (strUsername == null) {
-            Paragraph error = new Paragraph("This password change link is invalid or has expired. " +
-                    "Please go back to your account and request a new one from Security & Tools.");
+            String strErrorText = (token == null || token.isEmpty())
+                    ? "No reset link token was provided. Please use the exact link from your email, " +
+                    "or request a new one from Security & Tools."
+                    : "This password change link is invalid or has expired. " +
+                    "Please go back to your account and request a new one from Security & Tools.";
+            Paragraph error = new Paragraph(strErrorText);
             error.addClassNames(TextColor.ERROR);
             card.add(error);
         } else {
