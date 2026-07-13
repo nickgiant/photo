@@ -61,11 +61,13 @@ public class ChangePasswordView extends Main implements HasUrlParameter<String>,
 
         removeAll();
 
+        logger.warn("ChangePasswordView.setParameter reached with token=" + token);
+
         String strUsernameLookup;
         try {
             strUsernameLookup = passwordResetService.getUsernameForToken(token);
         } catch (Exception e) {
-            logger.error("Failed to validate password reset token: " + e.getMessage());
+            logger.error("Failed to validate password reset token (" + e.getClass().getName() + "): " + e.getMessage(), e);
             strUsernameLookup = null;
         }
         final String strUsername = strUsernameLookup;

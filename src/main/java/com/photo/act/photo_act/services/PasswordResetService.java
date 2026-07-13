@@ -23,6 +23,9 @@ public class PasswordResetService {
     public PasswordResetService(RecordService recordService) {
         this.recordService = recordService;
         ensureColumnsExist();
+        logger.warn("PasswordResetService started (build marker: timezone-safe-v2) - "
+                + "app now=" + LocalDateTime.now().format(DATETIME_FORMAT)
+                + " JVM zone=" + java.time.ZoneId.systemDefault());
     }
 
     private void ensureColumnsExist() {
@@ -40,22 +43,29 @@ public class PasswordResetService {
         String token = UUID.randomUUID().toString();
         String strExpiry = LocalDateTime.now().plusHours(TOKEN_VALID_HOURS).format(DATETIME_FORMAT);
 
+        logger.warn("Creating password reset token for user " + username + ": token=" + token + " expiry=" + strExpiry);
+
         String sql = "UPDATE dbuser SET password_reset_token = ?, password_reset_expiry = ? WHERE username = ?";
         Object[] values = {token, strExpiry, username};
         String[] types = {"java.lang.String", "java.lang.String", "java.lang.String"};
-        recordService.insertOneRecordWithQuery(sql, values, types);
+        int updated = recordService.insertOneRecordWithQuery(sql, values, types);
+
+        logger.warn("Password reset token write affected " + updated + " row(s) for user " + username);
 
         return token;
     }
 
     public String getUsernameForToken(String token) {
         if (token == null || token.isEmpty()) {
+            logger.warn("getUsernameForToken called with empty/null token");
             return null;
         }
 
         // Compared against an app-computed timestamp (not the DB's NOW()) so a clock/timezone
         // difference between the app server and the database can never make a fresh token look expired.
         String strNow = LocalDateTime.now().format(DATETIME_FORMAT);
+
+        logger.warn("Validating password reset token=" + token + " app now=" + strNow);
 
         String[] cols = {"username"};
         String sql = "SELECT username FROM dbuser WHERE password_reset_token = ? AND password_reset_expiry > ?";
@@ -64,6 +74,7 @@ public class PasswordResetService {
 
         List<Record> lst = recordService.findAll(sql, cols, values, types);
         if (!lst.isEmpty()) {
+            logger.warn("Password reset token valid for user " + lst.get(0).getColumnData("username"));
             return lst.get(0).getColumnData("username");
         }
 
