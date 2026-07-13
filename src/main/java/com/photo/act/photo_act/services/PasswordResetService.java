@@ -79,12 +79,17 @@ public class PasswordResetService {
             String[] types = {"java.lang.String"};
             List<Record> lst = recordService.findAll(sql, cols, values, types);
 
+            java.time.ZoneId zoneId = java.time.ZoneId.systemDefault();
+            String strJvmZone = " (JVM zone=" + zoneId + ", offset=" + zoneId.getRules().getOffset(java.time.Instant.now()) + ")";
+
             if (lst.isEmpty()) {
-                logger.warn("Password reset token not found in dbuser (app now=" + strNow + ")");
+                logger.warn("Password reset token not found in dbuser (app now=" + strNow + ")" + strJvmZone);
             } else {
                 String strExpiry = lst.get(0).getColumnData("password_reset_expiry");
                 logger.warn("Password reset token found but expired for user " + lst.get(0).getColumnData("username")
-                        + ": stored expiry=" + strExpiry + " app now=" + strNow);
+                        + ": stored expiry=" + strExpiry + " app now=" + strNow + strJvmZone
+                        + ". If stored expiry looks shifted by a fixed number of hours from app now, "
+                        + "compare this JVM zone/offset against the MariaDB server's own time_zone setting (SELECT @@global.time_zone, @@session.time_zone).");
             }
         } catch (Exception e) {
             logger.error("Failed while diagnosing password reset token lookup failure: " + e.getMessage());
