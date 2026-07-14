@@ -1121,11 +1121,11 @@ public class GalleryImageViewCard extends Div {
         txtPersonalNotes.setMaxLength(120);
 
 
-        Checkbox chkIsTypeProfile = new Checkbox("Is for your Profile");
+/*        Checkbox chkIsTypeProfile = new Checkbox("Is for your Profile");
         chkIsTypeProfile.addValueChangeListener(event->{
             isTypeProfile = event.getValue();
 
-        });
+        });*/
 
         String[] arrColumnsMemberAlbums = {"id", "user_id", "title", "description", "album_visible_to", "category_id"
                 , "username", "name", "surname", "resident", "date_joined", "member_since", "avatar_path"
@@ -1166,19 +1166,14 @@ public class GalleryImageViewCard extends Div {
         Set<String> setAlbumsPhotoBelongs = new HashSet<>(lstAlbumSelectedTitles);
 
 
-        MultiSelectComboBox cmbAlbums = new MultiSelectComboBox<>();
+/*        MultiSelectComboBox cmbAlbums = new MultiSelectComboBox<>();
         cmbAlbums.setLabel("Stories");
         cmbAlbums.setItems(lstAlbumTitle);
         cmbAlbums.select(setAlbumsPhotoBelongs);
         cmbAlbums.setWidthFull();
-        cmbAlbums.setAutoExpand(MultiSelectComboBox.AutoExpandMode.BOTH);
+        cmbAlbums.setAutoExpand(MultiSelectComboBox.AutoExpandMode.BOTH);*/
 
-//        Button btnAlbums = new Button("Add Photo to Albums ...");
-//        btnAlbums.setIcon(FontAwesome.Solid.PHOTO_FILM.create());
-//        btnAlbums.setWidthFull();
-//        btnAlbums.addClickListener(click -> {
-//            displayDialogAlbumsOfMember(strAvailableAlbumsMemberId, strPhotoId);
-//        });
+
 
         Button btnSave = new Button("Save");
         btnSave.setIcon(FontAwesome.Regular.SAVE.create());
@@ -1248,16 +1243,16 @@ public class GalleryImageViewCard extends Div {
                     " WHERE id = '" + strPhotoId + "'";
             int ret = recordService.insertOneRecordWithQuery(strUpdateSubj, fieldValue, fieldType);
 
-            savePhotoInAlbums(cmbAlbums, lstAlbumTitle, lstAlbumId, lstAlbumUserId, strPhotoId);
+//            savePhotoInAlbums(cmbAlbums, lstAlbumTitle, lstAlbumId, lstAlbumUserId, strPhotoId);
 
             if (ret == 1) {
                 String message = "Photo Updated ! ";
-                String messageUp = "Belongs in  " + cmbAlbums.getSelectedItems().toArray().length + "  Albums !";
+//                String messageUp = "Belongs in  " + cmbAlbums.getSelectedItems().toArray().length + "  Albums !";
                // Notification notificationUp = Notification.show(messageUp, 3000, Notification.Position.MIDDLE);
                // notificationUp.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-                logger.info(" length: " + cmbAlbums.getSelectedItems().toArray().length);
+//                logger.info(" length: " + cmbAlbums.getSelectedItems().toArray().length);
 
-                Notification notification = Notification.show(message+messageUp, 4000, Notification.Position.MIDDLE);
+                Notification notification = Notification.show(message, 4000, Notification.Position.MIDDLE);
                 notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
             }
         });
@@ -1285,7 +1280,7 @@ public class GalleryImageViewCard extends Div {
 
         layoutUserActions.add(btnSave);//, btnMoreAction, btnComment, btnMoreInfo);
 
-        layoutEdit.add(txtSubtitle, cmbGenre, cmbDestination, cmbSubject, txtPersonalNotes,chkIsTypeProfile, cmbAlbums, layoutUserActions);
+        layoutEdit.add(txtSubtitle, cmbGenre, cmbDestination, cmbSubject, txtPersonalNotes, layoutUserActions);
         return layoutEdit;
     }
 
