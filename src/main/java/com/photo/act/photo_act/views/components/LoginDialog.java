@@ -89,26 +89,7 @@ public class LoginDialog extends Dialog {
 
         // ── Right side: LoginForm ────────────────────────────────
 
-        loginForm = new LoginForm();
-        loginForm.addClassName("login-styled-form");
-        loginForm.setForgotPasswordButtonVisible(false);
-
-        // Customise labels via i18n
-        LoginI18n i18n = LoginI18n.createDefault();
-        LoginI18n.Form formI18n = i18n.getForm();
-        formI18n.setTitle("Sign in");
-        formI18n.setUsername("Username");
-        formI18n.setPassword("Password");
-        formI18n.setSubmit("Log in");
-        formI18n.setForgotPassword("Forgot password?");
-        i18n.setForm(formI18n);
-
-        LoginI18n.ErrorMessage errorMessage = i18n.getErrorMessage();
-        errorMessage.setTitle("Incorrect username or password");
-        errorMessage.setMessage("Please check your credentials and try again.");
-        i18n.setErrorMessage(errorMessage);
-
-        loginForm.setI18n(i18n);
+        loginForm = createStyledLoginForm();
 
         // Wrap LoginForm in a centred layout
         VerticalLayout formSide = new VerticalLayout(loginForm);
@@ -139,5 +120,33 @@ public class LoginDialog extends Dialog {
      */
     public LoginForm getLoginForm() {
         return loginForm;
+    }
+
+    /**
+     * Builds a {@link LoginForm} styled to match this dialog (and the
+     * matching {@link RegistrationDialog}), so other containers — e.g.
+     * {@link AuthDialog} — can reuse the exact same "Sign In" form.
+     */
+    public static LoginForm createStyledLoginForm() {
+        LoginForm form = new LoginForm();
+        form.addClassName("login-styled-form");
+        form.setForgotPasswordButtonVisible(false);
+
+        LoginI18n i18n = LoginI18n.createDefault();
+        LoginI18n.Form formI18n = i18n.getForm();
+        formI18n.setTitle("Sign in");
+        formI18n.setUsername("Username");
+        formI18n.setPassword("Password");
+        formI18n.setSubmit("Log in");
+        formI18n.setForgotPassword("Forgot password?");
+        i18n.setForm(formI18n);
+
+        LoginI18n.ErrorMessage errorMessage = i18n.getErrorMessage();
+        errorMessage.setTitle("Incorrect username or password");
+        errorMessage.setMessage("Please check your credentials and try again.");
+        i18n.setErrorMessage(errorMessage);
+
+        form.setI18n(i18n);
+        return form;
     }
 }
