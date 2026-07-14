@@ -294,13 +294,13 @@ public class MemberPhotosView extends Main implements HasUrlParameter<String>, B
 
         int intMemberId = Integer.parseInt(strMemberId);
 
-        if(intMemberId==44){
-            layoutMemberNAlbums.add(loadLearningsPanel(intMemberId));
+/*        if(intMemberId==44){
+//            layoutMemberNAlbums.add(loadLearningsPanel(intMemberId));
             layoutMemberNAlbums.addClassNames(Height.FULL);
-        }else{
+        }else{*/
             layoutMemberNAlbums.add(loadMemberInfo(sqlMemberMe, arrColumnsMember, false));
 //        layoutMemberNAlbums.add(loadLearningsPanel(sqlMemberOfAlbums, arrColumnsMemberAlbums, strMemberId));
-        }
+//        }
 
         verticalLayout.add(layoutMemberNAlbums);
 

@@ -32,7 +32,7 @@
   background: #f4f2ef;
   border-radius: 16px;
   flex-wrap: wrap;
-  width: 100%;
+  /*width: 100%;*/
   box-sizing: border-box;
 }
 
@@ -50,6 +50,8 @@
   border: none;
   border-radius: 10px;
   padding: 0 16px;
+  margin-left: 8px;
+  margin-right: 8px;
   min-height: 42px;
   min-width: unset;
   box-shadow: none;
@@ -69,8 +71,9 @@
 .hero-slider__filter-bar vaadin-button vaadin-icon,
 .hero-slider__filter-bar vaadin-button svg,
 .hero-slider__filter-bar vaadin-button .hero-filter-svg-icon {
-  width: 16px;
-  height: 16px;
+  width: 25px;
+  height: 25px;
+  margin: 8px;
   fill: currentColor;
   flex-shrink: 0;
 }
