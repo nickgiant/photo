@@ -58,7 +58,8 @@ public class LearningDialog extends Dialog {
     private final TextField   fldArtistsRef  = new TextField("Artists / References");
     private final TextArea    fldDescription = new TextArea("Description");
     private final DatePicker  fldPublished   = new DatePicker("Published Date");
-    private final ComboBox<TutorDto>             fldTutor    = new ComboBox<>("Tutor");
+    private final ComboBox<TutorDto>             fldTutor     = new ComboBox<>("Tutor");
+    private final Button                         btnEditTutor = new Button(VaadinIcon.ELLIPSIS_DOTS_H.create());
     private final ComboBox<LearningCategoryDto>  fldCategory = new ComboBox<>("Category");
     /*private final ComboBox<LearningCategoryDto>  fldGenre    = new ComboBox<>("Genre");*/
 
@@ -109,6 +110,29 @@ public class LearningDialog extends Dialog {
         fldTutor.setItemLabelGenerator(TutorDto::getTutorName);
         fldTutor.setPlaceholder("Select tutor…");
         fldTutor.setClearButtonVisible(true);
+        fldTutor.setWidthFull();
+
+        btnEditTutor.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        btnEditTutor.setTooltipText("Edit selected tutor");
+        btnEditTutor.setEnabled(fldTutor.getValue() != null);
+        fldTutor.addValueChangeListener(e -> btnEditTutor.setEnabled(e.getValue() != null));
+        btnEditTutor.addClickListener(e -> {
+            TutorDto selected = fldTutor.getValue();
+            if (selected == null) return;
+            new TutorDialog(selected, tutorService, currentUserId, saved -> {
+                List<TutorDto> refreshed = tutorService.getAllTutors();
+                fldTutor.setItems(refreshed);
+                refreshed.stream()
+                        .filter(t -> t.getId().equals(saved.getId()))
+                        .findFirst().ifPresent(fldTutor::setValue);
+            }).open();
+        });
+
+        HorizontalLayout tutorRow = new HorizontalLayout(fldTutor, btnEditTutor);
+        tutorRow.setWidthFull();
+        tutorRow.setAlignItems(FlexComponent.Alignment.END);
+        tutorRow.setFlexGrow(1, fldTutor);
+        tutorRow.addClassNames(Padding.NONE, Margin.NONE, Gap.XSMALL);
 
         // ── Category combos ──
         List<LearningCategoryDto> categories = learningService.getAllCategories();
@@ -138,7 +162,7 @@ public class LearningDialog extends Dialog {
                 new FormLayout.ResponsiveStep("480px", 2));
 
         form.add(fldTitle, fldFormat,
-                 fldTutor, fldCategory,
+                 tutorRow, fldCategory,
                   fldPublished,
                  fldUrl, fldPicture,
                  fldDuration, fldPages,

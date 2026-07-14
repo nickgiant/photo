@@ -17,12 +17,14 @@ import com.photo.act.photo_act.services.LearningService;
 import com.photo.act.photo_act.services.LearningViewService;
 import com.photo.act.photo_act.services.ShareMetricService;
 import com.photo.act.photo_act.services.ShareService;
+import com.photo.act.photo_act.services.TutorService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.PageSeoUtil;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.photo.act.photo_act.views.components.AvatarItem;
 import com.photo.act.photo_act.views.components.FilterDestinationTypeCard;
 import com.photo.act.photo_act.views.components.GenericView;
+import com.photo.act.photo_act.views.components.LearningDialog;
 import com.photo.act.photo_act.views.components.LikeButton;
 import com.photo.act.photo_act.views.components.ShareBottomBar;
 import com.vaadin.flow.component.*;
@@ -184,16 +186,20 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
     private final LearningViewService learningViewService;
     private final ShareService shareService;
     private final ShareMetricService shareMetricService;
+    private final TutorService tutorService;
     private LocalDateTime sessionDateTimeLDT;
+    private boolean isLoggedIn;
 
     public LearningsView(RecordService recordService, LearningService learningService,
                          LearningViewService learningViewService,
-                         ShareService shareService, ShareMetricService shareMetricService) {
+                         ShareService shareService, ShareMetricService shareMetricService,
+                         TutorService tutorService) {
         this.recordService = recordService;
         this.learningService = learningService;
         this.learningViewService = learningViewService;
         this.shareService = shareService;
         this.shareMetricService = shareMetricService;
+        this.tutorService = tutorService;
         utilsDate = new UtilsDate();
         genericView = new GenericView(recordService);
         constructUI();
@@ -216,6 +222,8 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
 
         userId = 1;
         strUsername = "visitor-user";
+
+        isLoggedIn = genericView.checkIfAuthUserName() != null;
 
         VerticalLayout layoutHeaderParameters;
         verticalLayout.removeAll();
@@ -381,6 +389,16 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         verticalLayout.add(loadResults(25));
     }
 
+    private void openCreateLearningDialog() {
+        String strMemberId = genericView.checkIfAuthMemberId();
+        Integer currentUserId = strMemberId != null ? Integer.parseInt(strMemberId) : null;
+        new LearningDialog(learningService, tutorService, currentUserId, saved -> reloadResults()).open();
+    }
+
+    private void openEditLearningDialog(LearningDto dto) {
+        new LearningDialog(dto, learningService, tutorService, dto.getUserIdPost(), saved -> reloadResults()).open();
+    }
+
     private VerticalLayout loadHeader(String strHeader, String strSubHeader, String strSectionCaption, String strSection) {
 
         this.strHeader = strHeader;
@@ -404,6 +422,20 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         headerContainer.addClassName("header-layout");
 
         H1 header = new H1(strHeader);
+
+        HorizontalLayout titleRow = new HorizontalLayout();
+        titleRow.setWidthFull();
+        titleRow.setAlignItems(FlexComponent.Alignment.CENTER);
+        titleRow.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
+        titleRow.addClassName("news-title-row");
+        titleRow.add(header);
+
+        if (isLoggedIn) {
+            Button btnCreateNews = new Button("Create News", VaadinIcon.PLUS.create());
+            btnCreateNews.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+            btnCreateNews.addClickListener(e -> openCreateLearningDialog());
+            titleRow.add(btnCreateNews);
+        }
 
         Div subheader = new Div(strSubHeader);
         subheader.addClassNames(
@@ -446,7 +478,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         Div divLineB = new Div();
         divLineB.addClassNames(Border.BOTTOM, Width.FULL);
 
-        headerContainer.add(header, subheader, divLine);
+        headerContainer.add(titleRow, subheader, divLine);
         headerContainer.add(filtersContainer);
         headerContainer.add(headerSection, headerSectionCaption, divLineB);
 
@@ -1185,7 +1217,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
             listBar.addShareItemMenu();
 
             layoutLearningInfo.add(layoutPostTitle, layoutDataSmall, layoutSourceReviewSmall,
-                    buildActionBar(listBar));
+                    buildActionBar(listBar, dto));
 
         } else {
             // ── Detail mode: record Full view and build detail ButtonBar ──────
@@ -1243,13 +1275,18 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
             detailBar.addShareItemMenu();
 
             layoutLearningInfo.add(layoutPostTitle, layoutDataNormal, layoutSourceCardNormal, layoutReviewNormal,
-                    divRelated, spUserPoster, buildActionBar(detailBar));
+                    divRelated, spUserPoster, buildActionBar(detailBar, dto));
         }
 
         return layoutLearningInfo;
     }
 
-    private HorizontalLayout buildActionBar(ShareBottomBar bar) {
+    private HorizontalLayout buildActionBar(ShareBottomBar bar, LearningDto dto) {
+        if (isLoggedIn) {
+            bar.addButton("Edit", VaadinIcon.PENCIL.create(),
+                    () -> openEditLearningDialog(dto), "btn-bar-edit");
+        }
+
         HorizontalLayout wrapper = new HorizontalLayout();
         wrapper.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER,
                 Padding.XSMALL, Margin.NONE);
