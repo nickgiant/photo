@@ -90,7 +90,7 @@ public class LearningDialog extends Dialog {
     private VerticalLayout buildLayout() {
         boolean isEdit = editing != null;
 
-        H3 title = new H3(isEdit ? "Edit Learning" : "New Learning");
+        H3 title = new H3(isEdit ? "Edit Learning" : "Create News");
         title.addClassNames(Margin.NONE);
 
         Button btnClose = new Button(VaadinIcon.CLOSE.create());
@@ -146,7 +146,7 @@ public class LearningDialog extends Dialog {
         form.setColspan(fldDescription, 2);
         form.add(fldDescription);
 
-        Button btnSave = new Button(isEdit ? "Save Changes" : "Create Learning");
+        Button btnSave = new Button(isEdit ? "Save Changes" : "Create News");
         btnSave.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         btnSave.addClickListener(e -> save());
 
@@ -212,7 +212,7 @@ public class LearningDialog extends Dialog {
             }
             close();
             if (onSaved != null) onSaved.accept(saved);
-            Notification.show(editing != null ? "Learning updated." : "Learning created.",
+            Notification.show(editing != null ? "Learning updated." : "News created.",
                     3000, Notification.Position.BOTTOM_END)
                     .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
         } catch (Exception ex) {
