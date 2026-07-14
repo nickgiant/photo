@@ -35,6 +35,8 @@ import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -431,12 +433,17 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         titleRow.addClassName("news-title-row");
         titleRow.add(header);
 
-        if (isLoggedIn) {
-            Button btnCreateNews = new Button("Create News", VaadinIcon.PLUS.create());
-            btnCreateNews.addClassName("nv-btn-create");
-            btnCreateNews.addClickListener(e -> openCreateLearningDialog());
-            titleRow.add(btnCreateNews);
-        }
+        Button btnCreateNews = new Button("Create News", VaadinIcon.PLUS.create());
+        btnCreateNews.addClassName("nv-btn-create");
+        btnCreateNews.addClickListener(e -> {
+            if (!isLoggedIn) {
+                Notification.show("Please log in to create news.", 2500, Notification.Position.MIDDLE)
+                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                return;
+            }
+            openCreateLearningDialog();
+        });
+        titleRow.add(btnCreateNews);
 
         Div subheader = new Div(strSubHeader);
         subheader.addClassNames(
@@ -1283,10 +1290,14 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
     }
 
     private HorizontalLayout buildActionBar(ShareBottomBar bar, LearningDto dto) {
-        if (isLoggedIn) {
-            bar.addButton("Edit", VaadinIcon.PENCIL.create(),
-                    () -> openEditLearningDialog(dto), "btn-bar-edit");
-        }
+        bar.addButton("Edit", VaadinIcon.PENCIL.create(), () -> {
+            if (!isLoggedIn) {
+                Notification.show("Please log in to edit news.", 2500, Notification.Position.MIDDLE)
+                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                return;
+            }
+            openEditLearningDialog(dto);
+        }, "btn-bar-edit");
 
         HorizontalLayout wrapper = new HorizontalLayout();
         wrapper.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER,
