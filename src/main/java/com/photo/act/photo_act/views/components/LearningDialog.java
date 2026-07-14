@@ -58,7 +58,9 @@ public class LearningDialog extends Dialog {
     private final TextField   fldArtistsRef  = new TextField("Artists / References");
     private final TextArea    fldDescription = new TextArea("Description");
     private final DatePicker  fldPublished   = new DatePicker("Published Date");
-    private final ComboBox<TutorDto>             fldTutor    = new ComboBox<>("Tutor");
+    private final ComboBox<TutorDto>             fldTutor       = new ComboBox<>("Tutor");
+    private final Button                         btnEditTutor   = new Button(VaadinIcon.ELLIPSIS_DOTS_H.create());
+    private final Button                         btnCreateTutor = new Button(VaadinIcon.PLUS.create());
     private final ComboBox<LearningCategoryDto>  fldCategory = new ComboBox<>("Category");
     /*private final ComboBox<LearningCategoryDto>  fldGenre    = new ComboBox<>("Genre");*/
 
@@ -90,7 +92,7 @@ public class LearningDialog extends Dialog {
     private VerticalLayout buildLayout() {
         boolean isEdit = editing != null;
 
-        H3 title = new H3(isEdit ? "Edit Learning" : "New Learning");
+        H3 title = new H3(isEdit ? "Edit Learning" : "Create News");
         title.addClassNames(Margin.NONE);
 
         Button btnClose = new Button(VaadinIcon.CLOSE.create());
@@ -109,6 +111,41 @@ public class LearningDialog extends Dialog {
         fldTutor.setItemLabelGenerator(TutorDto::getTutorName);
         fldTutor.setPlaceholder("Select tutor…");
         fldTutor.setClearButtonVisible(true);
+        fldTutor.setWidthFull();
+
+        btnEditTutor.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        btnEditTutor.setTooltipText("Edit selected tutor");
+        btnEditTutor.setEnabled(fldTutor.getValue() != null);
+        fldTutor.addValueChangeListener(e -> btnEditTutor.setEnabled(e.getValue() != null));
+        btnEditTutor.addClickListener(e -> {
+            TutorDto selected = fldTutor.getValue();
+            if (selected == null) return;
+            new TutorDialog(selected, tutorService, currentUserId, saved -> {
+                List<TutorDto> refreshed = tutorService.getAllTutors();
+                fldTutor.setItems(refreshed);
+                refreshed.stream()
+                        .filter(t -> t.getId().equals(saved.getId()))
+                        .findFirst().ifPresent(fldTutor::setValue);
+            }).open();
+        });
+
+        btnCreateTutor.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        btnCreateTutor.setTooltipText("Create new tutor");
+        btnCreateTutor.addClickListener(e -> {
+            new TutorDialog(tutorService, currentUserId, saved -> {
+                List<TutorDto> refreshed = tutorService.getAllTutors();
+                fldTutor.setItems(refreshed);
+                refreshed.stream()
+                        .filter(t -> t.getId().equals(saved.getId()))
+                        .findFirst().ifPresent(fldTutor::setValue);
+            }).open();
+        });
+
+        HorizontalLayout tutorRow = new HorizontalLayout(fldTutor, btnEditTutor, btnCreateTutor);
+        tutorRow.setWidthFull();
+        tutorRow.setAlignItems(FlexComponent.Alignment.END);
+        tutorRow.setFlexGrow(1, fldTutor);
+        tutorRow.addClassNames(Padding.NONE, Margin.NONE, Gap.XSMALL);
 
         // ── Category combos ──
         List<LearningCategoryDto> categories = learningService.getAllCategories();
@@ -138,7 +175,7 @@ public class LearningDialog extends Dialog {
                 new FormLayout.ResponsiveStep("480px", 2));
 
         form.add(fldTitle, fldFormat,
-                 fldTutor, fldCategory,
+                 tutorRow, fldCategory,
                   fldPublished,
                  fldUrl, fldPicture,
                  fldDuration, fldPages,
@@ -146,7 +183,7 @@ public class LearningDialog extends Dialog {
         form.setColspan(fldDescription, 2);
         form.add(fldDescription);
 
-        Button btnSave = new Button(isEdit ? "Save Changes" : "Create Learning");
+        Button btnSave = new Button(isEdit ? "Save Changes" : "Create News");
         btnSave.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         btnSave.addClickListener(e -> save());
 
@@ -212,7 +249,7 @@ public class LearningDialog extends Dialog {
             }
             close();
             if (onSaved != null) onSaved.accept(saved);
-            Notification.show(editing != null ? "Learning updated." : "Learning created.",
+            Notification.show(editing != null ? "Learning updated." : "News created.",
                     3000, Notification.Position.BOTTOM_END)
                     .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
         } catch (Exception ex) {

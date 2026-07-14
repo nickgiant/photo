@@ -45,6 +45,7 @@ public class TutorService {
     public TutorDto createTutor(TutorDto dto) {
         TutorEntity entity = new TutorEntity(
                 dto.getTutorName(), dto.getWebsite(),
+                dto.getWebsiteGallery(), dto.getWebsiteGallery2(),
                 dto.getUrlFb(), dto.getUrlYt(), dto.getUrlInsta(),
                 dto.getUrlFlickr(), dto.getUrlWikipedia(),
                 dto.getUrlRef1(), dto.getUrlRef2(), dto.getUrlRef3(),
@@ -58,6 +59,8 @@ public class TutorService {
         return tutorRepo.findById(id).map(entity -> {
             entity.setTutorName(dto.getTutorName());
             entity.setWebsite(dto.getWebsite());
+            entity.setWebsiteGallery(dto.getWebsiteGallery());
+            entity.setWebsiteGallery2(dto.getWebsiteGallery2());
             entity.setUrlFb(dto.getUrlFb());
             entity.setUrlYt(dto.getUrlYt());
             entity.setUrlInsta(dto.getUrlInsta());

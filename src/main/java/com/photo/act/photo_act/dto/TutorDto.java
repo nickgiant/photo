@@ -18,6 +18,8 @@ public class TutorDto implements Serializable {
     Long          id;
     String        tutorName;
     String        website;
+    String        websiteGallery;
+    String        websiteGallery2;
     String        urlFb;
     String        urlYt;
     String        urlInsta;
@@ -38,6 +40,8 @@ public class TutorDto implements Serializable {
                 .id(e.getId())
                 .tutorName(e.getTutorName())
                 .website(e.getWebsite())
+                .websiteGallery(e.getWebsiteGallery())
+                .websiteGallery2(e.getWebsiteGallery2())
                 .urlFb(e.getUrlFb())
                 .urlYt(e.getUrlYt())
                 .urlInsta(e.getUrlInsta())

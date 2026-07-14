@@ -406,6 +406,7 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
         layoutStoryItems.add(loadStoryItems(dlgStorySelection, sqlReadStoryItems, arrColStoryItems, dlgPhotoSelection, initStoryId, initStoryTitle, strMemberId));
 
         HorizontalLayout layoutControls = new HorizontalLayout();
+        layoutControls.setWrap(true);
         layoutControls.addClassNames(AlignItems.CENTER, JustifyContent.CENTER);
         Button btnSelectStory = new Button("Select");
         btnSelectStory.setIcon(FontAwesome.Regular.CHECK_SQUARE.create());

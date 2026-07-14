@@ -1,0 +1,123 @@
+/* ============================================================
+   AUTH DIALOG — combined Sign In / Sign Up
+   Design: full-width tab strip on top; below it, the same 900px
+   split panel as the standalone LoginDialog / RegistrationDialog —
+   illustration on the left, form on the right. Reuses reg-* /
+   login-* classes from home-view.css so both forms and the
+   illustration look identical to their standalone dialogs.
+   Only the illustration's icon/text crossfade and the visible
+   form swap; both columns keep the same width/min-height so
+   switching tabs never resizes the dialog.
+   ============================================================ */
+
+vaadin-dialog-overlay.auth-dialog::part(overlay) {
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+    overflow: hidden;
+    border: none;
+}
+
+vaadin-dialog-overlay.auth-dialog::part(content) {
+    padding: 0;
+}
+
+.auth-root {
+    width: 100%;
+}
+
+/* ── Full-width Sign In / Sign Up tabs ───────────────────────── */
+
+.auth-tabs {
+    width: 100%;
+    padding: 6px;
+    box-sizing: border-box;
+    background: #f4f2ef;
+    border-radius: 16px 16px 0 0;
+    gap: 4px;
+}
+
+.auth-tab {
+    justify-content: center;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    font-size: .9rem;
+    color: #888 !important;
+    background: transparent !important;
+    border-radius: 10px !important;
+    transition: .2s ease !important;
+    height: 42px !important;
+    box-shadow: none !important;
+}
+
+.auth-tab--active {
+    background: #fff !important;
+    color: #6c63ff !important;
+    box-shadow: 0 2px 8px rgba(108, 99, 255, .18) !important;
+}
+
+/* ── Split panel row — same min-height the standalone dialogs
+   already use, so it fits either form without resizing ──────── */
+
+.auth-columns.reg-dialog-content {
+    min-height: 580px;
+}
+
+/* ── Illustration side — fixed column, only its content crossfades ── */
+
+.auth-illustration-side {
+    position: relative;
+    overflow: hidden;
+}
+
+.auth-illustration-panel {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 32px;
+    box-sizing: border-box;
+    transition: opacity .35s ease, transform .35s ease;
+}
+
+.auth-illustration-panel--login {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.auth-illustration-panel--register {
+    opacity: 0;
+    transform: translateY(16px);
+    pointer-events: none;
+}
+
+.auth-illustration-side--mode-register .auth-illustration-panel--login {
+    opacity: 0;
+    transform: translateY(-16px);
+    pointer-events: none;
+}
+
+.auth-illustration-side--mode-register .auth-illustration-panel--register {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+/* ── Responsive: stack vertically on small dialogs ───────────── */
+
+@media (max-width: 700px) {
+    .auth-columns.reg-dialog-content {
+        flex-direction: column !important;
+        min-height: 0;
+    }
+
+    .auth-illustration-side,
+    .auth-columns .reg-form-side {
+        width: 100% !important;
+    }
+
+    .auth-illustration-side {
+        min-height: 200px;
+    }
+}

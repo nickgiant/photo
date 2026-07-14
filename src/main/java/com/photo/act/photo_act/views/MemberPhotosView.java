@@ -772,17 +772,25 @@ public class MemberPhotosView extends Main implements HasUrlParameter<String>, B
                 AlignItems.CENTER, JustifyContent.CENTER,
                 Padding.NONE, Margin.NONE);
 
-        Button btnNew = new Button("New Learning");
+        Button btnNew = new Button("Create News");
+        Button btnNewTutor = new Button("Create Tutor");
+
+        HorizontalLayout layoutLearningActions = new HorizontalLayout(btnNew, btnNewTutor);
+        layoutLearningActions.addClassNames(AlignItems.CENTER, JustifyContent.CENTER);
 
         String strPath = DIR_PHOTOS_SERVER + dirChar + subPathThumbs;
         MemberLearningsGrid learningsGrid = new MemberLearningsGrid(intMemberId, learningService,tutorService,strPath);
         learningsGrid.setMinHeight("600px");
         learningsGrid.setWidthFull();
         learningsGrid.setHeightFull();
-        layoutLearnings.add(btnNew,learningsGrid);
+        layoutLearnings.add(layoutLearningActions,learningsGrid);
 
         btnNew.addClickListener( e-> {
             new LearningDialog(learningService, tutorService, intMemberId, saved -> learningsGrid.refresh(intMemberId)).open();
+        });
+
+        btnNewTutor.addClickListener( e-> {
+            new TutorDialog(tutorService, intMemberId, saved -> { }).open();
         });
        return  layoutLearnings;
     }
