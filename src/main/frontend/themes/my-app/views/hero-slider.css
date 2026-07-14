@@ -19,69 +19,73 @@
   user-select: none;
 }
 
-/* ── Filter bar ─────────────────────────────────────────────── */
+/* ── Filter bar — segmented tab strip, same look & feel as the
+   Sign In / Sign Up tabs in AuthDialog (.auth-tabs / .auth-tab) ─── */
 
 .hero-slider__filter-bar {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 8px;
-  padding: 13px 20px 12px;
-  background: transparent;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  gap: 4px;
+  padding: 6px;
+  margin: 0 0 14px;
+  background: #f4f2ef;
+  border-radius: 16px;
   flex-wrap: wrap;
-  width: 100%;
+  /*width: 100%;*/
   box-sizing: border-box;
 }
 
-/* Vaadin button — filter pill */
+/* Vaadin button — filter tab */
 .hero-slider__filter-bar vaadin-button {
-  color:  rgba(0, 0, 0, 0.6);
+  flex: 1 1 auto;
+  justify-content: center;
+  color: #888;
   background: transparent;
-  font-size: 0.90rem;
-  font-weight: 900;
-  letter-spacing: 0.07em;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  font-size: 0.86rem;
+  letter-spacing: normal;
   text-transform: none;
-  border: 1px solid rgba(0, 0, 0, 0.18);
-  border-radius: 20px;
-  padding: 0 18px;
-  min-height: 30px;
+  border: none;
+  border-radius: 10px;
+  padding: 0 16px;
+  margin-left: 8px;
+  margin-right: 8px;
+  min-height: 42px;
   min-width: unset;
-  transition: background 0.22s ease, border-color 0.22s ease, color 0.22s ease;
+  box-shadow: none;
+  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 
   &:hover {
     cursor: pointer;
-    color:  rgba(0, 0, 0, 0.8);
-    background: rgba(255, 255, 255, 0.9);
-    border-color: rgba(0, 0, 0, 0.35);
+    color: #555;
+    background: rgba(0, 0, 0, 0.045);
   }
   &:active{
     scale: 0.95;
   }
 }
 
-/* Icons inside filter buttons */
+/* Icons inside filter buttons — kept, tinted to track the tab's text color */
 .hero-slider__filter-bar vaadin-button vaadin-icon,
 .hero-slider__filter-bar vaadin-button svg,
 .hero-slider__filter-bar vaadin-button .hero-filter-svg-icon {
-  width: 1.85em;
-  height: 1.85em;
+  width: 25px;
+  height: 25px;
+  margin: 8px;
+  fill: currentColor;
   flex-shrink: 0;
 }
-/*
-.hero-filter-btn--recent {
-  margin-left: auto;
-}*/
 
 .hero-slider__filter-bar .hero-filter-btn--active {
-  color: #fff;
-  background:  rgba(0, 0, 0, 0.25);
-  border-color: transparent;
+  color: #6c63ff;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(108, 99, 255, .18);
 
   &:hover {
-    background:  rgba(255, 255, 255, 0.06);
+    color: #6c63ff;
+    background: #fff;
   }
 }
 
@@ -473,10 +477,22 @@ vaadin-dialog-overlay.hero-meta-dialog::part(overlay) {
     display: none;
   }
 
+  .hero-slider__filter-bar {
+    padding: 4px;
+    gap: 3px;
+  }
+
   .hero-slider__filter-bar vaadin-button {
-    font-size: 0.68rem;
-    padding: 0 12px;
-    min-height: 26px;
+    font-size: 0.74rem;
+    padding: 0 10px;
+    min-height: 36px;
+  }
+
+  .hero-slider__filter-bar vaadin-button vaadin-icon,
+  .hero-slider__filter-bar vaadin-button svg,
+  .hero-slider__filter-bar vaadin-button .hero-filter-svg-icon {
+    width: 14px;
+    height: 14px;
   }
 
   .hero-dot {
