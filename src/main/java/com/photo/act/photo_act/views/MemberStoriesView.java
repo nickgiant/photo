@@ -807,6 +807,7 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
 //                    return layoutLine;
 //                }));
         HorizontalLayout layoutControls = new HorizontalLayout();
+        layoutControls.setWrap(true);
         layoutControls.addClassNames(AlignItems.CENTER, JustifyContent.CENTER,
                 Padding.SMALL, Margin.NONE
         );
@@ -1116,6 +1117,7 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
         });
 
         HorizontalLayout layoutControls = new HorizontalLayout();
+        layoutControls.setWrap(true);
         layoutControls.addClassNames(
                 AlignItems.CENTER, JustifyContent.EVENLY,
                 Padding.SMALL, Margin.NONE,
