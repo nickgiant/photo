@@ -293,6 +293,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
                 AlignItems.CENTER, JustifyContent.CENTER
         );
         this.addClassName("background");
+        this.addClassName("news-view");
 
         InetAddress inetAddress = null;
         try {
@@ -432,7 +433,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
 
         if (isLoggedIn) {
             Button btnCreateNews = new Button("Create News", VaadinIcon.PLUS.create());
-            btnCreateNews.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+            btnCreateNews.addClassName("nv-btn-create");
             btnCreateNews.addClickListener(e -> openCreateLearningDialog());
             titleRow.add(btnCreateNews);
         }

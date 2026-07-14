@@ -58,8 +58,9 @@ public class LearningDialog extends Dialog {
     private final TextField   fldArtistsRef  = new TextField("Artists / References");
     private final TextArea    fldDescription = new TextArea("Description");
     private final DatePicker  fldPublished   = new DatePicker("Published Date");
-    private final ComboBox<TutorDto>             fldTutor     = new ComboBox<>("Tutor");
-    private final Button                         btnEditTutor = new Button(VaadinIcon.ELLIPSIS_DOTS_H.create());
+    private final ComboBox<TutorDto>             fldTutor       = new ComboBox<>("Tutor");
+    private final Button                         btnEditTutor   = new Button(VaadinIcon.ELLIPSIS_DOTS_H.create());
+    private final Button                         btnCreateTutor = new Button(VaadinIcon.PLUS.create());
     private final ComboBox<LearningCategoryDto>  fldCategory = new ComboBox<>("Category");
     /*private final ComboBox<LearningCategoryDto>  fldGenre    = new ComboBox<>("Genre");*/
 
@@ -128,7 +129,19 @@ public class LearningDialog extends Dialog {
             }).open();
         });
 
-        HorizontalLayout tutorRow = new HorizontalLayout(fldTutor, btnEditTutor);
+        btnCreateTutor.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        btnCreateTutor.setTooltipText("Create new tutor");
+        btnCreateTutor.addClickListener(e -> {
+            new TutorDialog(tutorService, currentUserId, saved -> {
+                List<TutorDto> refreshed = tutorService.getAllTutors();
+                fldTutor.setItems(refreshed);
+                refreshed.stream()
+                        .filter(t -> t.getId().equals(saved.getId()))
+                        .findFirst().ifPresent(fldTutor::setValue);
+            }).open();
+        });
+
+        HorizontalLayout tutorRow = new HorizontalLayout(fldTutor, btnEditTutor, btnCreateTutor);
         tutorRow.setWidthFull();
         tutorRow.setAlignItems(FlexComponent.Alignment.END);
         tutorRow.setFlexGrow(1, fldTutor);
