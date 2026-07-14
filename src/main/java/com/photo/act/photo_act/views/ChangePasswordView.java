@@ -15,10 +15,9 @@ import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.PasswordField;
-import com.vaadin.flow.router.BeforeEvent;
+import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.HasDynamicTitle;
-import com.vaadin.flow.router.HasUrlParameter;
-import com.vaadin.flow.router.OptionalParameter;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
@@ -29,7 +28,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 @AnonymousAllowed
 @Route(value = "change-password/:token?")
-public class ChangePasswordView extends Main implements HasUrlParameter<String>, HasComponents, HasDynamicTitle, HasStyle {
+public class ChangePasswordView extends Main implements BeforeEnterObserver, HasComponents, HasDynamicTitle, HasStyle {
 
     private static final Logger logger = LoggerFactory.getLogger(ChangePasswordView.class);
 
@@ -53,7 +52,9 @@ public class ChangePasswordView extends Main implements HasUrlParameter<String>,
     }
 
     @Override
-    public void setParameter(BeforeEvent event, @OptionalParameter String token) {
+    public void beforeEnter(BeforeEnterEvent event) {
+
+        String token = event.getRouteParameters().get("token").orElse(null);
 
         isMobile = VaadinSession.getCurrent().getBrowser().isAndroid()
                 || VaadinSession.getCurrent().getBrowser().isIPhone()
@@ -61,11 +62,13 @@ public class ChangePasswordView extends Main implements HasUrlParameter<String>,
 
         removeAll();
 
+        logger.warn("ChangePasswordView.beforeEnter reached with token=" + token);
+
         String strUsernameLookup;
         try {
             strUsernameLookup = passwordResetService.getUsernameForToken(token);
         } catch (Exception e) {
-            logger.error("Failed to validate password reset token: " + e.getMessage());
+            logger.error("Failed to validate password reset token (" + e.getClass().getName() + "): " + e.getMessage(), e);
             strUsernameLookup = null;
         }
         final String strUsername = strUsernameLookup;
@@ -81,8 +84,12 @@ public class ChangePasswordView extends Main implements HasUrlParameter<String>,
         card.add(title);
 
         if (strUsername == null) {
-            Paragraph error = new Paragraph("This password change link is invalid or has expired. " +
-                    "Please go back to your account and request a new one from Security & Tools.");
+            String strErrorText = (token == null || token.isEmpty())
+                    ? "No reset link token was provided. Please use the exact link from your email, " +
+                    "or request a new one from Security & Tools."
+                    : "This password change link is invalid or has expired. " +
+                    "Please go back to your account and request a new one from Security & Tools.";
+            Paragraph error = new Paragraph(strErrorText);
             error.addClassNames(TextColor.ERROR);
             card.add(error);
         } else {

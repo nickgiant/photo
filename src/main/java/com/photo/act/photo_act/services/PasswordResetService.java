@@ -6,6 +6,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
 
@@ -14,12 +16,16 @@ public class PasswordResetService {
 
     private static final Logger logger = LoggerFactory.getLogger(PasswordResetService.class);
     private static final int TOKEN_VALID_HOURS = 1;
+    private static final DateTimeFormatter DATETIME_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private final RecordService recordService;
 
     public PasswordResetService(RecordService recordService) {
         this.recordService = recordService;
         ensureColumnsExist();
+        logger.warn("PasswordResetService started (build marker: timezone-safe-v2) - "
+                + "app now=" + LocalDateTime.now().format(DATETIME_FORMAT)
+                + " JVM zone=" + java.time.ZoneId.systemDefault());
     }
 
     private void ensureColumnsExist() {
@@ -35,32 +41,70 @@ public class PasswordResetService {
 
     public String createResetToken(String username) {
         String token = UUID.randomUUID().toString();
+        String strExpiry = LocalDateTime.now().plusHours(TOKEN_VALID_HOURS).format(DATETIME_FORMAT);
 
-        String sql = "UPDATE dbuser SET password_reset_token = ?, " +
-                "password_reset_expiry = DATE_ADD(NOW(), INTERVAL " + TOKEN_VALID_HOURS + " HOUR) " +
-                "WHERE username = ?";
-        Object[] values = {token, username};
-        String[] types = {"java.lang.String", "java.lang.String"};
-        recordService.insertOneRecordWithQuery(sql, values, types);
+        logger.warn("Creating password reset token for user " + username + ": token=" + token + " expiry=" + strExpiry);
+
+        String sql = "UPDATE dbuser SET password_reset_token = ?, password_reset_expiry = ? WHERE username = ?";
+        Object[] values = {token, strExpiry, username};
+        String[] types = {"java.lang.String", "java.lang.String", "java.lang.String"};
+        int updated = recordService.insertOneRecordWithQuery(sql, values, types);
+
+        logger.warn("Password reset token write affected " + updated + " row(s) for user " + username);
 
         return token;
     }
 
     public String getUsernameForToken(String token) {
         if (token == null || token.isEmpty()) {
+            logger.warn("getUsernameForToken called with empty/null token");
             return null;
         }
+
+        // Compared against an app-computed timestamp (not the DB's NOW()) so a clock/timezone
+        // difference between the app server and the database can never make a fresh token look expired.
+        String strNow = LocalDateTime.now().format(DATETIME_FORMAT);
+
+        logger.warn("Validating password reset token=" + token + " app now=" + strNow);
 
         String[] cols = {"username"};
-        String sql = "SELECT username FROM dbuser WHERE password_reset_token = ? AND password_reset_expiry > NOW()";
-        Object[] values = {token};
-        String[] types = {"java.lang.String"};
+        String sql = "SELECT username FROM dbuser WHERE password_reset_token = ? AND password_reset_expiry > ?";
+        Object[] values = {token, strNow};
+        String[] types = {"java.lang.String", "java.lang.String"};
 
         List<Record> lst = recordService.findAll(sql, cols, values, types);
-        if (lst.isEmpty()) {
-            return null;
+        if (!lst.isEmpty()) {
+            logger.warn("Password reset token valid for user " + lst.get(0).getColumnData("username"));
+            return lst.get(0).getColumnData("username");
         }
-        return lst.get(0).getColumnData("username");
+
+        logTokenLookupFailure(token, strNow);
+        return null;
+    }
+
+    private void logTokenLookupFailure(String token, String strNow) {
+        try {
+            String[] cols = {"username", "password_reset_expiry"};
+            String sql = "SELECT username, password_reset_expiry FROM dbuser WHERE password_reset_token = ?";
+            Object[] values = {token};
+            String[] types = {"java.lang.String"};
+            List<Record> lst = recordService.findAll(sql, cols, values, types);
+
+            java.time.ZoneId zoneId = java.time.ZoneId.systemDefault();
+            String strJvmZone = " (JVM zone=" + zoneId + ", offset=" + zoneId.getRules().getOffset(java.time.Instant.now()) + ")";
+
+            if (lst.isEmpty()) {
+                logger.warn("Password reset token not found in dbuser (app now=" + strNow + ")" + strJvmZone);
+            } else {
+                String strExpiry = lst.get(0).getColumnData("password_reset_expiry");
+                logger.warn("Password reset token found but expired for user " + lst.get(0).getColumnData("username")
+                        + ": stored expiry=" + strExpiry + " app now=" + strNow + strJvmZone
+                        + ". If stored expiry looks shifted by a fixed number of hours from app now, "
+                        + "compare this JVM zone/offset against the MariaDB server's own time_zone setting (SELECT @@global.time_zone, @@session.time_zone).");
+            }
+        } catch (Exception e) {
+            logger.error("Failed while diagnosing password reset token lookup failure: " + e.getMessage());
+        }
     }
 
     public void invalidateToken(String username) {

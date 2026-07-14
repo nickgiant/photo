@@ -26,7 +26,7 @@ import java.util.Set;
 public class OgBotInterceptor implements HandlerInterceptor {
 
     private static final Set<String> CONTENT_TYPES = Set.of(
-            "photographer", "stories", "photo", "news"
+            "photographer", "stories", "photo", "news", "events"
     );
 
     private final BotDetectionService botDetectionService;
