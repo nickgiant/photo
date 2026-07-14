@@ -13,6 +13,7 @@ import com.photo.act.photo_act.dto.LearningCategoryDto;
 import com.photo.act.photo_act.dto.LearningDto;
 import com.photo.act.photo_act.model.ShareType;
 import com.photo.act.photo_act.model.ShareableResource;
+import com.photo.act.photo_act.services.EmailSendService;
 import com.photo.act.photo_act.services.LearningService;
 import com.photo.act.photo_act.services.LearningViewService;
 import com.photo.act.photo_act.services.ShareMetricService;
@@ -21,6 +22,7 @@ import com.photo.act.photo_act.services.TutorService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.PageSeoUtil;
 import com.photo.act.photo_act.utils.UtilsDate;
+import com.photo.act.photo_act.views.components.AuthDialog;
 import com.photo.act.photo_act.views.components.AvatarItem;
 import com.photo.act.photo_act.views.components.FilterDestinationTypeCard;
 import com.photo.act.photo_act.views.components.GenericView;
@@ -35,8 +37,6 @@ import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.notification.Notification;
-import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -189,19 +189,21 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
     private final ShareService shareService;
     private final ShareMetricService shareMetricService;
     private final TutorService tutorService;
+    private final EmailSendService emailSendService;
     private LocalDateTime sessionDateTimeLDT;
     private boolean isLoggedIn;
 
     public LearningsView(RecordService recordService, LearningService learningService,
                          LearningViewService learningViewService,
                          ShareService shareService, ShareMetricService shareMetricService,
-                         TutorService tutorService) {
+                         TutorService tutorService, EmailSendService emailSendService) {
         this.recordService = recordService;
         this.learningService = learningService;
         this.learningViewService = learningViewService;
         this.shareService = shareService;
         this.shareMetricService = shareMetricService;
         this.tutorService = tutorService;
+        this.emailSendService = emailSendService;
         utilsDate = new UtilsDate();
         genericView = new GenericView(recordService);
         constructUI();
@@ -402,6 +404,10 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         new LearningDialog(dto, learningService, tutorService, dto.getUserIdPost(), saved -> reloadResults()).open();
     }
 
+    private void openAuthDialog() {
+        new AuthDialog("", publicIp, recordService, section, "auth-from-news-view", emailSendService).open();
+    }
+
     private VerticalLayout loadHeader(String strHeader, String strSubHeader, String strSectionCaption, String strSection) {
 
         this.strHeader = strHeader;
@@ -437,8 +443,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         btnCreateNews.addClassName("nv-btn-create");
         btnCreateNews.addClickListener(e -> {
             if (!isLoggedIn) {
-                Notification.show("Please log in to create news.", 2500, Notification.Position.MIDDLE)
-                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                openAuthDialog();
                 return;
             }
             openCreateLearningDialog();
@@ -1292,8 +1297,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
     private HorizontalLayout buildActionBar(ShareBottomBar bar, LearningDto dto) {
         bar.addButton("Edit", VaadinIcon.PENCIL.create(), () -> {
             if (!isLoggedIn) {
-                Notification.show("Please log in to edit news.", 2500, Notification.Position.MIDDLE)
-                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                openAuthDialog();
                 return;
             }
             openEditLearningDialog(dto);
