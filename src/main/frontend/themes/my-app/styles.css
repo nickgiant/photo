@@ -1,12 +1,10 @@
 
 
-@import url('./views/like-button.css');
+
 @import url('./views/feed-view.css');
 /*@import url('./views/clubs-view.css');*/
 @import url('./views/upload-view.css');
-/*@import url('./views/festivals-view.css');*/
-/*@import url('./views/header-filter-tabs.css');*/
-
+@import url('./views/like-button.css');
 @import url('./views/photo-frame.css');
 @import url('./views/photo-lightbox.css');
 @import url("./views/button-bar.css");

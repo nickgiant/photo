@@ -542,6 +542,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
 
         HorizontalLayout filterRow = new HorizontalLayout();
         filterRow.setWidthFull();
+        filterRow.setWrap(true);
         filterRow.setAlignItems(FlexComponent.Alignment.CENTER);
         filterRow.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
         filterRow.setPadding(false);

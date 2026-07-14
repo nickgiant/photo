@@ -50,7 +50,7 @@
 .like-count {
     font-size:   0.78rem;
     line-height: 1;
-    color:       var(--lumo-secondary-text-color);
+    color:         currentColor;
     min-width:   1ch;
 }
 
