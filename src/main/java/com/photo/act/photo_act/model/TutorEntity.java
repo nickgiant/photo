@@ -20,6 +20,12 @@ public class TutorEntity {
     @Column(name = "website", length = 512)
     private String website;
 
+    @Column(name = "website_gallery", length = 512)
+    private String websiteGallery;
+
+    @Column(name = "website_gallery_2", length = 512)
+    private String websiteGallery2;
+
     @Column(name = "url_fb", length = 512)
     private String urlFb;
 
@@ -61,25 +67,28 @@ public class TutorEntity {
 
     protected TutorEntity() {}
 
-    public TutorEntity(String tutorName, String website, String urlFb, String urlYt,
+    public TutorEntity(String tutorName, String website, String websiteGallery, String websiteGallery2,
+                       String urlFb, String urlYt,
                        String urlInsta, String urlFlickr, String urlWikipedia,
                        String urlRef1, String urlRef2, String urlRef3,
                        String cityBase, String countryBase,
                        Integer userIdInsert, String username) {
-        this.tutorName    = tutorName;
-        this.website      = website;
-        this.urlFb        = urlFb;
-        this.urlYt        = urlYt;
-        this.urlInsta     = urlInsta;
-        this.urlFlickr    = urlFlickr;
-        this.urlWikipedia = urlWikipedia;
-        this.urlRef1      = urlRef1;
-        this.urlRef2      = urlRef2;
-        this.urlRef3      = urlRef3;
-        this.cityBase     = cityBase;
-        this.countryBase  = countryBase;
-        this.userIdInsert = userIdInsert;
-        this.username     = username;
+        this.tutorName       = tutorName;
+        this.website         = website;
+        this.websiteGallery  = websiteGallery;
+        this.websiteGallery2 = websiteGallery2;
+        this.urlFb           = urlFb;
+        this.urlYt           = urlYt;
+        this.urlInsta        = urlInsta;
+        this.urlFlickr       = urlFlickr;
+        this.urlWikipedia    = urlWikipedia;
+        this.urlRef1         = urlRef1;
+        this.urlRef2         = urlRef2;
+        this.urlRef3         = urlRef3;
+        this.cityBase        = cityBase;
+        this.countryBase     = countryBase;
+        this.userIdInsert    = userIdInsert;
+        this.username        = username;
     }
 
     @PrePersist
@@ -90,6 +99,8 @@ public class TutorEntity {
     public Long          getId()           { return id; }
     public String        getTutorName()    { return tutorName; }
     public String        getWebsite()      { return website; }
+    public String        getWebsiteGallery()  { return websiteGallery; }
+    public String        getWebsiteGallery2() { return websiteGallery2; }
     public String        getUrlFb()        { return urlFb; }
     public String        getUrlYt()        { return urlYt; }
     public String        getUrlInsta()     { return urlInsta; }
@@ -106,6 +117,8 @@ public class TutorEntity {
 
     public void setTutorName(String tutorName)       { this.tutorName = tutorName; }
     public void setWebsite(String website)           { this.website = website; }
+    public void setWebsiteGallery(String websiteGallery)   { this.websiteGallery = websiteGallery; }
+    public void setWebsiteGallery2(String websiteGallery2) { this.websiteGallery2 = websiteGallery2; }
     public void setUrlFb(String urlFb)               { this.urlFb = urlFb; }
     public void setUrlYt(String urlYt)               { this.urlYt = urlYt; }
     public void setUrlInsta(String urlInsta)         { this.urlInsta = urlInsta; }

@@ -25,8 +25,8 @@ import java.util.function.Consumer;
  * Dialog for creating and editing a tutor.
  *
  * Usage:
- *   new TutorDialog(tutorService, saved -> refreshGrid()).open();
- *   new TutorDialog(existingDto, tutorService, saved -> refreshGrid()).open();
+ *   new TutorDialog(tutorService, currentUserId, saved -> refreshGrid()).open();
+ *   new TutorDialog(existingDto, tutorService, currentUserId, saved -> refreshGrid()).open();
  */
 public class TutorDialog extends Dialog {
 
@@ -34,10 +34,13 @@ public class TutorDialog extends Dialog {
 
     private final TutorService        tutorService;
     private final TutorDto            editing;
+    private final Integer             currentUserId;
     private final Consumer<TutorDto>  onSaved;
 
-    private final TextField fldTutorName    = new TextField("Tutor Name");
-    private final TextField fldWebsite      = new TextField("Website");
+    private final TextField fldTutorName       = new TextField("Tutor Name");
+    private final TextField fldWebsite         = new TextField("Website");
+    private final TextField fldWebsiteGallery  = new TextField("Website Gallery");
+    private final TextField fldWebsiteGallery2 = new TextField("Website Gallery 2");
     private final TextField fldUrlYt        = new TextField("YouTube URL");
     private final TextField fldUrlFb        = new TextField("Facebook URL");
     private final TextField fldUrlInsta     = new TextField("Instagram URL");
@@ -50,15 +53,16 @@ public class TutorDialog extends Dialog {
     private final TextField fldCountryBase  = new TextField("Country");
 
     /** Create mode. */
-    public TutorDialog(TutorService tutorService, Consumer<TutorDto> onSaved) {
-        this(null, tutorService, onSaved);
+    public TutorDialog(TutorService tutorService, Integer currentUserId, Consumer<TutorDto> onSaved) {
+        this(null, tutorService, currentUserId, onSaved);
     }
 
     /** Edit mode — pre-fills form from existing dto. */
-    public TutorDialog(TutorDto editing, TutorService tutorService, Consumer<TutorDto> onSaved) {
-        this.editing      = editing;
-        this.tutorService = tutorService;
-        this.onSaved      = onSaved;
+    public TutorDialog(TutorDto editing, TutorService tutorService, Integer currentUserId, Consumer<TutorDto> onSaved) {
+        this.editing       = editing;
+        this.tutorService  = tutorService;
+        this.currentUserId = currentUserId;
+        this.onSaved       = onSaved;
 
         setDraggable(true);
         setCloseOnEsc(true);
@@ -95,6 +99,7 @@ public class TutorDialog extends Dialog {
         fldTutorName.setWidthFull();
 
         form.add(fldTutorName, fldWebsite,
+                 fldWebsiteGallery, fldWebsiteGallery2,
                  fldUrlYt, fldUrlFb,
                  fldUrlInsta, fldUrlFlickr,
                  fldUrlWikipedia, fldUrlRef1,
@@ -124,6 +129,8 @@ public class TutorDialog extends Dialog {
     private void populateForm(TutorDto dto) {
         fldTutorName.setValue(nvl(dto.getTutorName()));
         fldWebsite.setValue(nvl(dto.getWebsite()));
+        fldWebsiteGallery.setValue(nvl(dto.getWebsiteGallery()));
+        fldWebsiteGallery2.setValue(nvl(dto.getWebsiteGallery2()));
         fldUrlYt.setValue(nvl(dto.getUrlYt()));
         fldUrlFb.setValue(nvl(dto.getUrlFb()));
         fldUrlInsta.setValue(nvl(dto.getUrlInsta()));
@@ -169,9 +176,13 @@ public class TutorDialog extends Dialog {
                 .userIdInsert(editing.getUserIdInsert())
                 .username(editing.getUsername())
                 .build()
-                : TutorDto.builder().build();
+                : TutorDto.builder()
+                .userIdInsert(currentUserId)
+                .build();
         dto.setTutorName(fldTutorName.getValue().trim());
         dto.setWebsite(emptyToNull(fldWebsite.getValue()));
+        dto.setWebsiteGallery(emptyToNull(fldWebsiteGallery.getValue()));
+        dto.setWebsiteGallery2(emptyToNull(fldWebsiteGallery2.getValue()));
         dto.setUrlYt(emptyToNull(fldUrlYt.getValue()));
         dto.setUrlFb(emptyToNull(fldUrlFb.getValue()));
         dto.setUrlInsta(emptyToNull(fldUrlInsta.getValue()));

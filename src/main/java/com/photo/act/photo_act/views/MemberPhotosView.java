@@ -790,7 +790,7 @@ public class MemberPhotosView extends Main implements HasUrlParameter<String>, B
         });
 
         btnNewTutor.addClickListener( e-> {
-            new TutorDialog(tutorService, saved -> { }).open();
+            new TutorDialog(tutorService, intMemberId, saved -> { }).open();
         });
        return  layoutLearnings;
     }
