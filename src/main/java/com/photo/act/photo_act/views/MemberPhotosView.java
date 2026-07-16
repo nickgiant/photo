@@ -778,8 +778,7 @@ public class MemberPhotosView extends Main implements HasUrlParameter<String>, B
         HorizontalLayout layoutLearningActions = new HorizontalLayout(btnNew, btnNewTutor);
         layoutLearningActions.addClassNames(AlignItems.CENTER, JustifyContent.CENTER);
 
-        String strPath = DIR_PHOTOS_SERVER + dirChar + subPathThumbs;
-        MemberLearningsGrid learningsGrid = new MemberLearningsGrid(intMemberId, learningService,tutorService,strPath);
+        MemberLearningsGrid learningsGrid = new MemberLearningsGrid(intMemberId, learningService, tutorService);
         learningsGrid.setMinHeight("600px");
         learningsGrid.setWidthFull();
         learningsGrid.setHeightFull();
