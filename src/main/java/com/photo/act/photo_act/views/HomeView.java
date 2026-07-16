@@ -397,12 +397,12 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
 
 
-        VerticalLayout layoutLastLearnings = new VerticalLayout();
-        layoutLastLearnings.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER, Padding.MEDIUM);
-        H2 titleLastLearnings = new H2("Last Posted Learnings");
-        Div divLastLearnings = loadLastLearnings();
-        layoutLastLearnings.add(titleLastLearnings, divLastLearnings);
-        verticalLayout.add(layoutLastLearnings);
+        VerticalLayout layoutLastNewsSection = new VerticalLayout();
+        layoutLastNewsSection.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER, Padding.MEDIUM);
+        H2 titleLastNews = new H2("Last Posted News");
+        VerticalLayout layoutLastNews = loadLastNews();
+        layoutLastNewsSection.add(titleLastNews, layoutLastNews);
+        verticalLayout.add(layoutLastNewsSection);
 
         String finalSqlGalleryAll = sqlGalleryAll;
 
@@ -767,57 +767,18 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
     }
 
 
-    private Div loadLastLearnings() {
-        Div layoutLastLearnings = new Div();
-        layoutLastLearnings.addClassNames(AlignItems.CENTER, JustifyContent.CENTER,
+    private VerticalLayout loadLastNews() {
+        VerticalLayout layoutLastNews = new VerticalLayout();
+        layoutLastNews.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER,
                 Margin.XSMALL,
                 Padding.LARGE,
                 Gap.XLARGE);
 
-        List<LearningDto> learnings = learningService.getLatestLearnings(0, 3).getContent();
-        for (LearningDto dto : learnings) {
-            VerticalLayout layoutLearning = new VerticalLayout();
-            layoutLearning.addClassNames(AlignItems.CENTER, JustifyContent.CENTER,
-                    Padding.LARGE, Margin.LARGE,
-                    TextColor.TERTIARY
-            );
-            layoutLearning.addClassName("last-learning-item");
-
-            String strTitle = nvl(dto.getTitle());
-            String strCategory = nvl(dto.getCategoryTitle());
-//            String strCatGenre = nvl(dto.getCatGenreTitle());
-            String strDuration = nvl(dto.getDuration());
-            String strDateInserted = dto.getDateInsert() != null
-                    ? dto.getDateInsert().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) : "";
-            String strTutorName = nvl(dto.getTutorName());
-
-            H4 h4Title = new H4(strTitle);
-            h4Title.addClassNames(FontWeight.BOLD, FontSize.LARGE);
-
-            Div divCategory = new Div();
-//            if (!strCategory.isEmpty()) {
-                divCategory.setText("Category: " + strCategory);
-//            } else {
-//                divCategory.setText("Genre: " + strCatGenre);
-//            }
-            Div divDuration = new Div("Duration: " + strDuration);
-            Div divDateInserted = new Div("Inserted: " + strDateInserted);
-
-            H4 divTutor = new H4(strTutorName);
-            divTutor.addClassNames(FontWeight.BOLD, FontSize.LARGE);
-
-            HorizontalLayout layoutHor1 = new HorizontalLayout();
-            layoutHor1.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.BETWEEN);
-            layoutHor1.add(divDuration, divDateInserted);
-
-            HorizontalLayout layoutHor2 = new HorizontalLayout();
-            layoutHor2.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.BETWEEN);
-            layoutHor2.add(divTutor, divCategory);
-
-            layoutLearning.add(h4Title, layoutHor1, layoutHor2);
-            layoutLastLearnings.add(layoutLearning);
+        List<LearningDto> news = learningService.getLatestLearnings(0, 3).getContent();
+        for (LearningDto dto : news) {
+            layoutLastNews.add(new LearningHorizontalPanel(dto, DIR_PHOTOS_SERVER));
         }
-        return layoutLastLearnings;
+        return layoutLastNews;
     }
 
     private HorizontalLayout[] loadUploadedPhotos(String sqlRead, String[] arrColumnNames, boolean isEditable, boolean isThumbnails) {
