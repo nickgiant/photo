@@ -1288,6 +1288,47 @@ nav ul:hover li:hover ~ li:before {
     transition: 0.2s;
 }
 
+.learnings-horizontal-panel{
+    max-width: 1100px;
+    a {
+        /*color: #666666; /* #466ca8; /* #6c9494;*/
+        /* min-height: 180px;*/
+        background-color: #ffffff; /* #e3ebf7; /* #ffffff;/*#d9e5f7;*/
+        border-radius: 14px;
+        border: 1px solid #c7d8f1;
+        padding: 18px 10px 12px;
+        margin: 12px;
+        text-decoration: none;
+        overflow: hidden;
+        /*    display: block;
+            position: relative;*/
+        box-shadow: 1px 1px 6px lightgrey;
+        transition: all 0.3s ease;
+
+        &:hover {
+            color: #466ca8; /* #6c9494;*/
+            background-color: #e3ebf7; /* #eaeff7; /*#ffffff;/*#d9e5f7;*/
+            border: 1px solid #466ca8;
+            /*border: #466ca8 1px solid; /* #6c9494;*/
+            box-shadow: 2px 2px 10px lightgrey;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            /* scale: 1.09;*/
+
+            h6 {
+                transition: all 0.3s ease;
+                letter-spacing: 4px;
+            }
+
+            h3 {
+                transition: all 0.3s ease;
+                letter-spacing: 3px;
+            }
+        }
+    }
+
+}
+
 footer {
     background-color: #b0b0b0;
     color:  #777777;

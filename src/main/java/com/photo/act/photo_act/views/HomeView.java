@@ -773,6 +773,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
                 Margin.XSMALL,
                 Padding.LARGE,
                 Gap.XLARGE);
+        layoutLastNews.addClassName("learnings-horizontal-panel");
 
         List<LearningDto> news = learningService.getLatestLearnings(0, 3).getContent();
         for (LearningDto dto : news) {

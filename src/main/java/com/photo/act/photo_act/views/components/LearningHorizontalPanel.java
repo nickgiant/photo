@@ -46,11 +46,10 @@ public class LearningHorizontalPanel extends RouterLink {
                 AlignItems.CENTER,
                 Padding.SMALL,
                 Gap.MEDIUM,
-                Border.ALL, BorderColor.CONTRAST_10, BorderRadius.LARGE,
-                Background.CONTRAST_5
+                Border.ALL, BorderRadius.LARGE
         );
-        addClassName("learning-horizontal-panel");
-        getStyle().set("text-decoration", "none").set("color", "inherit");
+
+//        getStyle().set("text-decoration", "none").set("color", "inherit");
 
         VerticalLayout info = buildInfo(dto);
         info.getStyle().set("flex-grow", "1");
