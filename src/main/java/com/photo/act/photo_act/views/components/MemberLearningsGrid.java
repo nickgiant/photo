@@ -23,7 +23,7 @@ import java.util.List;
  * Usage:
  * <pre>
  *   MemberLearningsGrid grid = new MemberLearningsGrid(
- *       memberId, learningService, tutorService, photoBasePath);
+ *       memberId, learningService, tutorService);
  *   parentLayout.add(grid);
  *
  *   // To reload after an external create/delete:
@@ -36,16 +36,13 @@ public class MemberLearningsGrid extends VerticalLayout {
     private final Div               emptyState      = new Div();
     private final LearningService   learningService;
     private final TutorService      tutorService;
-    private final String            photoBasePath;
     private Integer                 currentMemberId;
 
     public MemberLearningsGrid(Integer memberId,
                                 LearningService learningService,
-                                TutorService tutorService,
-                                String photoBasePath) {
+                                TutorService tutorService) {
         this.learningService  = learningService;
         this.tutorService     = tutorService;
-        this.photoBasePath    = photoBasePath;
         this.currentMemberId  = memberId;
 
         setPadding(false);
@@ -65,7 +62,7 @@ public class MemberLearningsGrid extends VerticalLayout {
     private void configureGrid() {
         // ── Main content column — full-width horizontal panel ────────────────
         grid.addColumn(new ComponentRenderer<>(
-                dto -> new LearningHorizontalPanel(dto, photoBasePath)))
+                dto -> new LearningHorizontalPanel(dto)))
             .setAutoWidth(true)
             .setFlexGrow(1);
 

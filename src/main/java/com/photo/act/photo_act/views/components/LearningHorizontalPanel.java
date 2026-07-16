@@ -2,38 +2,46 @@ package com.photo.act.photo_act.views.components;
 
 import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.dto.LearningDto;
-import com.vaadin.flow.component.Html;
+import com.photo.act.photo_act.views.LearningsView;
 import com.vaadin.flow.component.html.*;
-import com.vaadin.flow.component.orderedlayout.FlexComponent;
+import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.server.StreamResource;
+import com.vaadin.flow.router.RouteParam;
+import com.vaadin.flow.router.RouteParameters;
+import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.theme.lumo.LumoUtility.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 
 /**
- * Compact horizontal summary card for a learning.
+ * Compact horizontal summary card for a learning/news post.
  *
- * Layout:  [thumbnail | title, tutor, category, format, description excerpt]
+ * Layout: [newspaper icon | title, tutor, category, format, description excerpt]
+ * Shows a "posted N days ago" tag in the top-right corner while the post is
+ * less than {@value #RECENT_DAYS_THRESHOLD} days old.
  *
- * Reuses the visual conventions from LearningsView.getLearningItem().
- * Drop anywhere in the app — it is a self-contained HorizontalLayout.
+ * The whole card links to the post's page on LearningsView (same URL scheme
+ * used by the share buttons there: /news/title/{title}).
+ *
+ * Drop anywhere in the app — it is a self-contained RouterLink.
  *
  * Example:
- *   LearningHorizontalPanel panel = new LearningHorizontalPanel(dto, "/home/pi/lazy-photos/");
+ *   LearningHorizontalPanel panel = new LearningHorizontalPanel(dto);
  *   parentLayout.add(panel);
  */
-public class LearningHorizontalPanel extends HorizontalLayout {
+public class LearningHorizontalPanel extends RouterLink {
 
-    private static final Logger log = LoggerFactory.getLogger(LearningHorizontalPanel.class);
+    private static final int RECENT_DAYS_THRESHOLD = 30;
 
-    public LearningHorizontalPanel(LearningDto dto, String photoBasePath) {
+    public LearningHorizontalPanel(LearningDto dto) {
+        super(LearningsView.class, new RouteParameters(new RouteParam("title", nvl(dto.getTitle()))));
+
         addClassNames(
+                Display.FLEX,
+                FlexDirection.ROW,
+                Position.RELATIVE,
                 Width.FULL,
                 AlignItems.CENTER,
                 Padding.SMALL,
@@ -42,58 +50,55 @@ public class LearningHorizontalPanel extends HorizontalLayout {
                 Background.CONTRAST_5
         );
         addClassName("learning-horizontal-panel");
+        getStyle().set("text-decoration", "none").set("color", "inherit");
 
-        add(buildMedia(dto, photoBasePath), buildInfo(dto));
-        setFlexGrow(1, getComponentAt(1));
+        VerticalLayout info = buildInfo(dto);
+        info.getStyle().set("flex-grow", "1");
+        add(buildMediaIcon(), info);
+
+        Span daysAgoTag = buildDaysAgoTag(dto);
+        if (daysAgoTag != null) {
+            add(daysAgoTag);
+        }
     }
 
-    private Div buildMedia(LearningDto dto, String photoBasePath) {
-        Div mediaBox = new Div();
-        mediaBox.addClassNames(BorderRadius.MEDIUM, Overflow.HIDDEN);
+    private Div buildMediaIcon() {
+        Icon icon = FontAwesome.Solid.NEWSPAPER.create();
+        icon.setSize("2em");
+
+        Div mediaBox = new Div(icon);
+        mediaBox.addClassNames(
+                Display.FLEX, AlignItems.CENTER, JustifyContent.CENTER,
+                BorderRadius.MEDIUM, Overflow.HIDDEN, TextColor.SECONDARY
+        );
+        mediaBox.setWidth("120px");
+        mediaBox.setHeight("90px");
         mediaBox.getStyle().set("flex-shrink", "0");
-
-        String picture = dto.getPicture();
-        String url     = dto.getUrl();
-        boolean isYouTube = "YouTube".equalsIgnoreCase(dto.getFormat())
-                && url != null && !url.isBlank();
-
-        if (isYouTube) {
-            String videoId = url.replace("https://www.youtube.com/watch?v=", "");
-            String embed   = "<div><iframe class='video-iframe' style='width:160px;height:90px;' " +
-                    "src='https://www.youtube.com/embed/" + videoId + "' " +
-                    "title='" + escapeHtml(dto.getTitle()) + "' " +
-                    "allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture' " +
-                    "allowfullscreen></iframe></div>";
-            Html video = new Html(embed);
-            mediaBox.add(video);
-        } else if (picture != null && !picture.isBlank()) {
-            String fullPath = photoBasePath + picture;
-            try {
-                StreamResource res = new StreamResource("cover",
-                        () -> {
-                            try { return new FileInputStream(new File(fullPath)); }
-                            catch (FileNotFoundException e) { return null; }
-                        });
-                Image img = new Image(res, dto.getTitle());
-                img.setWidth("120px");
-                img.setHeight("90px");
-                img.getStyle().set("object-fit", "cover");
-                img.addClassNames(BorderRadius.MEDIUM);
-                mediaBox.add(img);
-            } catch (Exception ex) {
-                log.debug("Cover not found: {}", fullPath);
-                mediaBox.add(buildBookIcon());
-            }
-        } else {
-            mediaBox.add(buildBookIcon());
-        }
         return mediaBox;
     }
 
-    private Div buildBookIcon() {
-        Div icon = new Div(FontAwesome.Solid.BOOK.create());
-        icon.addClassNames(Padding.MEDIUM, TextColor.SECONDARY);
-        return icon;
+    private Span buildDaysAgoTag(LearningDto dto) {
+        if (dto.getDateInsert() == null) {
+            return null;
+        }
+        long daysSincePosted = ChronoUnit.DAYS.between(dto.getDateInsert().toLocalDate(), LocalDate.now());
+        if (daysSincePosted < 0 || daysSincePosted >= RECENT_DAYS_THRESHOLD) {
+            return null;
+        }
+
+        String label = daysSincePosted == 0 ? "Today"
+                : daysSincePosted == 1 ? "1 day ago"
+                : daysSincePosted + " days ago";
+
+        Span tag = new Span(label);
+        tag.addClassNames(Position.ABSOLUTE, Position.Top.XSMALL, Position.End.XSMALL,
+                BorderRadius.MEDIUM, FontSize.XSMALL, FontWeight.BOLD, ZIndex.MEDIUM);
+        tag.getStyle()
+                .set("background-color", "darkred")
+                .set("color", "white")
+                .set("padding", "0.15em 0.6em")
+                .set("white-space", "nowrap");
+        return tag;
     }
 
     private VerticalLayout buildInfo(LearningDto dto) {
@@ -156,9 +161,7 @@ public class LearningHorizontalPanel extends HorizontalLayout {
         return text.length() <= max ? text : text.substring(0, max).stripTrailing() + "…";
     }
 
-    private static String escapeHtml(String s) {
-        if (s == null) return "";
-        return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-                .replace("\"", "&quot;").replace("'", "&#39;");
+    private static String nvl(String s) {
+        return s == null ? "" : s;
     }
 }

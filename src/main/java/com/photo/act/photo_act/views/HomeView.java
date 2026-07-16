@@ -776,7 +776,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
         List<LearningDto> news = learningService.getLatestLearnings(0, 3).getContent();
         for (LearningDto dto : news) {
-            layoutLastNews.add(new LearningHorizontalPanel(dto, DIR_PHOTOS_SERVER));
+            layoutLastNews.add(new LearningHorizontalPanel(dto));
         }
         return layoutLastNews;
     }
