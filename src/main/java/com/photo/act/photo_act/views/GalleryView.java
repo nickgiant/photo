@@ -310,7 +310,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
             //   layoutHeaderParameters.add(loadFiltersHeader(sqlReadDestinationCat + sqlReadDestinationCatGroupby, arrDestinationCatNames, "Locations"));
             // String sqlOrderBy = " ORDER BY pm.date_inserted DESC, pm.title ASC, meta_date DESC ";
             filter(divGallery, "", VIEW_ONE_PHOTO);
-        } else if (!strUploadedMonth.isEmpty() && (strDestination.isEmpty() || strDestination.equalsIgnoreCase(STR_ALL_DESTINATIONS) && (strDestinationType.isEmpty() || strDestinationType.equalsIgnoreCase(STR_ALL_DESTINATION_TYPES)))) {
+        } else if (strMember.equalsIgnoreCase(STR_ALL_MEMBERS) && !strUploadedMonth.isEmpty() && (strDestination.isEmpty() || strDestination.equalsIgnoreCase(STR_ALL_DESTINATIONS) && (strDestinationType.isEmpty() || strDestinationType.equalsIgnoreCase(STR_ALL_DESTINATION_TYPES)))) {
             layoutHeaderParameters = loadHeader("Photos", "Uploaded by our members", "Month Uploaded", strUploadedMonth);
 
             filtersContainer.removeAll();
