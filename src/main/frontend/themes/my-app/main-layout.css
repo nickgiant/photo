@@ -672,7 +672,7 @@
     color: var(--lumo-primary-text-color);
     font-size: 50pt;
     height: 100%;
-    width: 140px;
+    /*width: 140px;*/
     text-decoration: none;
     cursor: pointer;
     padding: 4px;
