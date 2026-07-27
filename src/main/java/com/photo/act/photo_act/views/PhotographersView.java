@@ -1342,27 +1342,27 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
 
                 layoutAll.add(layoutMemberCard, layoutMemberLinks, divBio);
 
-                VerticalLayout layoutStories = new VerticalLayout();
+/*                VerticalLayout layoutStories = new VerticalLayout();
                 layoutStories.addClassNames(AlignItems.CENTER, JustifyContent.CENTER);
                 layoutStories.addClassName("member-photos-count");
                 Icon iconAlbum = FontAwesome.Solid.PHOTO_FILM.create();
                 Div spAlbums = new Div("Stories");
                 H2 divAlbums = new H2(strCountStories);
-                layoutStories.add(divAlbums, spAlbums);
+                layoutStories.add(divAlbums, spAlbums);*/
 
-                VerticalLayout layoutPhotos = new VerticalLayout();
+/*                VerticalLayout layoutPhotos = new VerticalLayout();
                 layoutPhotos.addClassNames(AlignItems.CENTER, JustifyContent.CENTER);
                 layoutPhotos.addClassName("member-photos-count");
                 Icon iconPhotos = VaadinIcon.PICTURE.create();
                 Div spPhotos = new Div("Photos");
                 H2 divPhotos = new H2(strCountPhotos);
-                layoutPhotos.add(divPhotos, spPhotos);
+                layoutPhotos.add(divPhotos, spPhotos);*/
 
                 HorizontalLayout layoutCounts = new HorizontalLayout();
                 layoutCounts.addClassNames(AlignItems.STRETCH, JustifyContent.AROUND,
                         Padding.LARGE, LumoUtility.Margin.NONE,
                         Gap.XLARGE);
-                layoutCounts.add(layoutProfileBtn, layoutStoriesBtn, layoutPhotosBtn, layoutStories, layoutPhotos);
+                layoutCounts.add(layoutProfileBtn, layoutStoriesBtn, layoutPhotosBtn);
                 layoutCounts.addClassName("member-count-panel");
 
                 Div divResident = new Div("Lives at " + strResident);
@@ -1571,7 +1571,7 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
             H2 divPhotos = new H2(strCountPhotos);
             layoutPhotos.add(divPhotos, spPhotos);
 
-            HorizontalLayout layoutCounts = new HorizontalLayout();
+           HorizontalLayout layoutCounts = new HorizontalLayout();
             layoutCounts.addClassNames(LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.EVENLY,
                     Padding.MEDIUM, LumoUtility.Margin.NONE,
                     Gap.LARGE);

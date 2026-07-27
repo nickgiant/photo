@@ -628,7 +628,7 @@
     border-bottom: solid 6px #e9e9e7;
     padding: 16px;
     margin: 14px;
-    max-width: 790px;
+    max-width: 850px;
     min-width: 350px;
     align-items: start;
     color: var(--lumo-shade-60pct);
@@ -670,11 +670,13 @@
     border-radius: 11px;
     border: 2px solid transparent;
     color: var(--lumo-primary-text-color);
-    font-size: 44pt;
+    font-size: 50pt;
     height: 100%;
     width: 140px;
     text-decoration: none;
     cursor: pointer;
+    padding: 4px;
+    gap: 10px;
 }
 
 .member-profile .member-count-panel vaadin-button:hover,
@@ -685,7 +687,7 @@
 }
 
 .member-profile .member-count-panel .member-action-count{
-    font-size: 16pt;
+    font-size: 36pt;
     font-weight: 1000;
 }
 
