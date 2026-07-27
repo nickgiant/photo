@@ -27,19 +27,38 @@ public class SortOrderBar extends HorizontalLayout {
         "(SELECT COALESCE(AVG(pr.rating), 0) FROM photo_rating pr WHERE pr.photo_id = pm.id)"
     };
 
+    public static final String[] STORY_SORT_LABELS = {
+        "Time Created", "Most Likes", "Most Views"
+    };
+
+    public static final String[] STORY_SORT_SQL_FIELDS = {
+        "s.date_inserted",
+        "(SELECT COUNT(*) FROM photo_stories_view sv WHERE sv.story_id = s.id AND sv.view_type = 'Like')",
+        "(SELECT COUNT(*) FROM photo_stories_view sv WHERE sv.story_id = s.id AND sv.view_type = 'Full')"
+    };
+
+    private final String[] sortLabels;
+    private final String[] sortSqlFields;
+
     private boolean ascending = false;
     private int selectedIndex = 0;
     private final Runnable onChange;
     private Button directionBtn;
 
     public SortOrderBar(Runnable onChange) {
+        this(SORT_LABELS, SORT_SQL_FIELDS, onChange);
+    }
+
+    public SortOrderBar(String[] sortLabels, String[] sortSqlFields, Runnable onChange) {
+        this.sortLabels = sortLabels;
+        this.sortSqlFields = sortSqlFields;
         this.onChange = onChange;
         buildUI();
     }
 
     /** Returns the complete SQL ORDER BY clause based on current selection and direction. */
     public String getSqlOrderBy() {
-        return " ORDER BY " + SORT_SQL_FIELDS[selectedIndex] + (ascending ? " ASC" : " DESC");
+        return " ORDER BY " + sortSqlFields[selectedIndex] + (ascending ? " ASC" : " DESC");
     }
 
     private void buildUI() {
@@ -49,11 +68,11 @@ public class SortOrderBar extends HorizontalLayout {
         Select<String> sortSelect = new Select<>();
         sortSelect.setLabel("Sort by");
         sortSelect.addClassName("sort-select");
-        sortSelect.setItems(SORT_LABELS);
-        sortSelect.setValue(SORT_LABELS[selectedIndex]);
+        sortSelect.setItems(sortLabels);
+        sortSelect.setValue(sortLabels[selectedIndex]);
         sortSelect.addValueChangeListener(e -> {
-            for (int i = 0; i < SORT_LABELS.length; i++) {
-                if (SORT_LABELS[i].equals(e.getValue())) {
+            for (int i = 0; i < sortLabels.length; i++) {
+                if (sortLabels[i].equals(e.getValue())) {
                     selectedIndex = i;
                     break;
                 }

@@ -69,6 +69,7 @@ import static com.photo.act.photo_act.views.MainLayout.*;
 @RouteAlias(value = "photos/location/:destination?", layout = MainLayout.class)
 @RouteAlias(value = "photos/location-type/:destination-type?", layout = MainLayout.class)
 @RouteAlias(value = "photos/month-uploaded/:month-uploaded?", layout = MainLayout.class)
+@RouteAlias(value = "photos/member/:member?", layout = MainLayout.class)
 @RouteAlias(value = "photos/member/:member?/location/:destination?", layout = MainLayout.class)
 @RouteAlias(value = "photo/:id?", layout = MainLayout.class)
 
@@ -180,6 +181,14 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
             , "username", "surname", "name", "resident", "resident_country", "date_joined", "member_since", "avatar_path", "short_bio"
             , "count_photos", "count_stories"
     };
+
+    private String[] arrColumnsMemberPhotos = {"username", "name", "surname", "resident", "date_joined", "member_since", "avatar_path", "short_bio", "count_photos"};
+    private String sqlMemberOfPhotos = "SELECT usr.username, usr.name, usr.surname, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined " +
+            " , DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since " +
+            " , usr.avatar_path, usr.short_bio, ux.count_photos " +
+            " FROM dbuser usr, dbuser_extra ux " +
+            " WHERE usr.userId = ux.user_id ";
+    private String sqlMemberOfPhotosGroupBy = "";
 
     private int intPage = 1;
     private int intRecsOnPage = 20;
@@ -301,7 +310,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
             //   layoutHeaderParameters.add(loadFiltersHeader(sqlReadDestinationCat + sqlReadDestinationCatGroupby, arrDestinationCatNames, "Locations"));
             // String sqlOrderBy = " ORDER BY pm.date_inserted DESC, pm.title ASC, meta_date DESC ";
             filter(divGallery, "", VIEW_ONE_PHOTO);
-        } else if (!strUploadedMonth.isEmpty() && (strDestination.isEmpty() || strDestination.equalsIgnoreCase(STR_ALL_DESTINATIONS) && (strDestinationType.isEmpty() || strDestinationType.equalsIgnoreCase(STR_ALL_DESTINATION_TYPES)))) {
+        } else if (strMember.equalsIgnoreCase(STR_ALL_MEMBERS) && !strUploadedMonth.isEmpty() && (strDestination.isEmpty() || strDestination.equalsIgnoreCase(STR_ALL_DESTINATIONS) && (strDestinationType.isEmpty() || strDestinationType.equalsIgnoreCase(STR_ALL_DESTINATION_TYPES)))) {
             layoutHeaderParameters = loadHeader("Photos", "Uploaded by our members", "Month Uploaded", strUploadedMonth);
 
             filtersContainer.removeAll();
@@ -361,26 +370,11 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
         } else if (!strMember.equalsIgnoreCase(STR_ALL_MEMBERS)) {
             layoutHeaderParameters = loadHeader("Photos", "Uploaded by our members", "", "");
 
-            String sqlWhere = " AND city_name LIKE "+strDestination+" ";
-            String strForMap = "";
-            String strForWeather = "";
-            String strCountry = "";
-            List<Record> lstLocationRecs = getRecordsFromDb(sqlReadDestination+sqlWhere, arrDestinationNames);
-            if(lstLocationRecs!= null && !lstLocationRecs.isEmpty())
-            {
-                strForMap = lstLocationRecs.get(0).getColumnData("name_for_map");
-                strForWeather = lstLocationRecs.get(0).getColumnData("name_for_weather");
-                strCountry = lstLocationRecs.get(0).getColumnData("country");
-            }
-            HorizontalLayout layoutWeatherMap = new HorizontalLayout();
-            layoutWeatherMap.setAlignItems(FlexComponent.Alignment.CENTER);
-            layoutWeatherMap.setJustifyContentMode(FlexComponent.JustifyContentMode.AROUND);
-            layoutWeatherMap.setWrap(true);
-            layoutWeatherMap.add(
-                    loadWeatherSmall(strDestination, strForWeather, strCountry),
-                    loadMapSmall(strDestination, strForMap, strCountry));
-            layoutHeaderParameters.add(layoutWeatherMap);
             filtersContainer.removeAll();
+
+            String sqlMemberProfile = sqlMemberOfPhotos + " AND usr.username = '" + strMember + "' " + sqlMemberOfPhotosGroupBy;
+            loadMemberOfPhotosFromDb(sqlMemberProfile, arrColumnsMemberPhotos);
+
             filter(divGallery, "", VIEW_PHOTO_GRID);
         } else {
             layoutHeaderParameters = loadHeader("Photos", "Uploaded by our members", "", "");
@@ -614,6 +608,53 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
 //        }
 //        return loadImagesFromDb(sqlReadPage, arrColumnNamesGallery);
     //   }
+
+    private void loadMemberOfPhotosFromDb(String sqlRead, String[] arrColumnNames) {
+
+        HorizontalLayout horizontalLayout = new HorizontalLayout();
+        horizontalLayout.addClassNames(Width.FULL,
+                AlignItems.CENTER, JustifyContent.CENTER,
+                TextAlignment.CENTER
+        );
+        horizontalLayout.addClassName("member-profile");
+
+        List<Record> lstRecords = getRecordsFromDb(sqlRead, arrColumnNames);
+
+        if (lstRecords != null && lstRecords.size() == 1) {
+            Record rec = lstRecords.get(0);
+            String strNameOfUser = rec.getColumnData("username");
+            String strName = rec.getColumnData("name");
+            String strSurname = rec.getColumnData("surname");
+            String strCountOfPhotos = rec.getColumnData("count_photos");
+            String strMemberSince = rec.getColumnData("member_since");
+            String strAvatarPath = rec.getColumnData("avatar_path");
+            String strShortBio = rec.getColumnData("short_bio");
+
+            Div divBio = new Div(strShortBio);
+            divBio.addClassNames(Width.FULL,
+                    AlignItems.CENTER, JustifyContent.CENTER,
+                    Padding.LARGE
+            );
+
+            Image imgAvatar = genericView.getAvatarThumbImage(strAvatarPath, strNameOfUser, "120px", "120px");
+
+            VerticalLayout layoutMember = new VerticalLayout();
+            layoutMember.addClassNames(Width.FULL,
+                    AlignItems.CENTER, JustifyContent.CENTER,
+                    TextAlignment.CENTER
+            );
+
+            H3 objMember = new H3(strName + " " + strSurname);
+            Div divUserName = new Div(strNameOfUser);
+            Div divMemberSince = new Div("Member since " + strMemberSince);
+            Div divPhotosCount = new Div("Has " + strCountOfPhotos + " photos");
+            layoutMember.add(imgAvatar, objMember, divUserName, divMemberSince, divPhotosCount);
+
+            horizontalLayout.add(layoutMember, divBio);
+        }
+
+        verticalLayout.add(horizontalLayout);
+    }
 
     private VerticalLayout loadDestinationCards(String sqlRead, String[] arrColumnNames, String columnName) {
 

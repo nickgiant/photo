@@ -1224,14 +1224,46 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
                 // linkTutorWikipedia.getStyle().setColor(strColorExternalweb);
                 //   linkTutorWikipedia.setClassName("lazy-result-line-button");
 //            linkTutorFacebook.setVisible(false);
-                Button btnProfile = new Button(FontAwesome.Solid.USER_ALT.create());
-                btnProfile.setTooltipText("View Profile");
+                Anchor linkProfile = new Anchor("photographer/" + strUsername, FontAwesome.Solid.USER_ALT.create());
+                linkProfile.addClassName("member-action-link");
+                linkProfile.getElement().setAttribute("title", "View Profile");
 
-                RouteParam routeTitle = new RouteParam("member", strUsername);
-                btnProfile.addClickListener(click -> {
-                    btnProfile.getUI().ifPresent(ui ->
-                            ui.navigate(PhotographersView.class, new RouteParameters(routeTitle)));
-                });
+                Span spanStoriesCount = new Span(strCountStories);
+                spanStoriesCount.addClassName("member-action-count");
+
+                Anchor linkStories = new Anchor("stories/member/" + strUsername, FontAwesome.Solid.PHOTO_FILM.create());
+                linkStories.add(spanStoriesCount);
+                linkStories.addClassName("member-action-link");
+                linkStories.getElement().setAttribute("title", "View Stories");
+
+                Span spanPhotosCount = new Span(strCountPhotos);
+                spanPhotosCount.addClassName("member-action-count");
+
+                Anchor linkPhotos = new Anchor("photos/member/" + strUsername, FontAwesome.Solid.IMAGE.create());
+                linkPhotos.add(spanPhotosCount);
+                linkPhotos.addClassName("member-action-link");
+                linkPhotos.getElement().setAttribute("title", "View Photos");
+
+                Span spanProfileCaption = new Span("profile");
+                spanProfileCaption.addClassNames(TextColor.SECONDARY, FontSize.XSMALL);
+
+                Span spanStoriesCaption = new Span("stories");
+                spanStoriesCaption.addClassNames(TextColor.SECONDARY, FontSize.XSMALL);
+
+                Span spanPhotosCaption = new Span("photos");
+                spanPhotosCaption.addClassNames(TextColor.SECONDARY, FontSize.XSMALL);
+
+                VerticalLayout layoutProfileBtn = new VerticalLayout();
+                layoutProfileBtn.addClassNames(AlignItems.CENTER, JustifyContent.CENTER, Padding.NONE, Margin.NONE);
+                layoutProfileBtn.add(linkProfile, spanProfileCaption);
+
+                VerticalLayout layoutStoriesBtn = new VerticalLayout();
+                layoutStoriesBtn.addClassNames(AlignItems.CENTER, JustifyContent.CENTER, Padding.NONE, Margin.NONE);
+                layoutStoriesBtn.add(linkStories, spanStoriesCaption);
+
+                VerticalLayout layoutPhotosBtn = new VerticalLayout();
+                layoutPhotosBtn.addClassNames(AlignItems.CENTER, JustifyContent.CENTER, Padding.NONE, Margin.NONE);
+                layoutPhotosBtn.add(linkPhotos, spanPhotosCaption);
 
 
 
@@ -1310,27 +1342,27 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
 
                 layoutAll.add(layoutMemberCard, layoutMemberLinks, divBio);
 
-                VerticalLayout layoutStories = new VerticalLayout();
+/*                VerticalLayout layoutStories = new VerticalLayout();
                 layoutStories.addClassNames(AlignItems.CENTER, JustifyContent.CENTER);
                 layoutStories.addClassName("member-photos-count");
                 Icon iconAlbum = FontAwesome.Solid.PHOTO_FILM.create();
                 Div spAlbums = new Div("Stories");
                 H2 divAlbums = new H2(strCountStories);
-                layoutStories.add(divAlbums, spAlbums);
+                layoutStories.add(divAlbums, spAlbums);*/
 
-                VerticalLayout layoutPhotos = new VerticalLayout();
+/*                VerticalLayout layoutPhotos = new VerticalLayout();
                 layoutPhotos.addClassNames(AlignItems.CENTER, JustifyContent.CENTER);
                 layoutPhotos.addClassName("member-photos-count");
                 Icon iconPhotos = VaadinIcon.PICTURE.create();
                 Div spPhotos = new Div("Photos");
                 H2 divPhotos = new H2(strCountPhotos);
-                layoutPhotos.add(divPhotos, spPhotos);
+                layoutPhotos.add(divPhotos, spPhotos);*/
 
                 HorizontalLayout layoutCounts = new HorizontalLayout();
                 layoutCounts.addClassNames(AlignItems.STRETCH, JustifyContent.AROUND,
                         Padding.LARGE, LumoUtility.Margin.NONE,
                         Gap.XLARGE);
-                layoutCounts.add(btnProfile,layoutStories, layoutPhotos);
+                layoutCounts.add(layoutProfileBtn, layoutStoriesBtn, layoutPhotosBtn);
                 layoutCounts.addClassName("member-count-panel");
 
                 Div divResident = new Div("Lives at " + strResident);
@@ -1539,7 +1571,7 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
             H2 divPhotos = new H2(strCountPhotos);
             layoutPhotos.add(divPhotos, spPhotos);
 
-            HorizontalLayout layoutCounts = new HorizontalLayout();
+           HorizontalLayout layoutCounts = new HorizontalLayout();
             layoutCounts.addClassNames(LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.EVENLY,
                     Padding.MEDIUM, LumoUtility.Margin.NONE,
                     Gap.LARGE);
