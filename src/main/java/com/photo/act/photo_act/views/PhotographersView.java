@@ -1228,14 +1228,42 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
                 linkProfile.addClassName("member-action-link");
                 linkProfile.getElement().setAttribute("title", "View Profile");
 
+                Span spanStoriesCount = new Span(strCountStories);
+                spanStoriesCount.addClassName("member-action-count");
+
                 Anchor linkStories = new Anchor("stories/member/" + strUsername, FontAwesome.Solid.PHOTO_FILM.create());
+                linkStories.add(spanStoriesCount);
                 linkStories.addClassName("member-action-link");
                 linkStories.getElement().setAttribute("title", "View Stories");
 
+                Span spanPhotosCount = new Span(strCountPhotos);
+                spanPhotosCount.addClassName("member-action-count");
 
                 Anchor linkPhotos = new Anchor("photos/member/" + strUsername, FontAwesome.Solid.IMAGE.create());
+                linkPhotos.add(spanPhotosCount);
                 linkPhotos.addClassName("member-action-link");
                 linkPhotos.getElement().setAttribute("title", "View Photos");
+
+                Span spanProfileCaption = new Span("profile");
+                spanProfileCaption.addClassNames(TextColor.SECONDARY, FontSize.XSMALL);
+
+                Span spanStoriesCaption = new Span("stories");
+                spanStoriesCaption.addClassNames(TextColor.SECONDARY, FontSize.XSMALL);
+
+                Span spanPhotosCaption = new Span("photos");
+                spanPhotosCaption.addClassNames(TextColor.SECONDARY, FontSize.XSMALL);
+
+                VerticalLayout layoutProfileBtn = new VerticalLayout();
+                layoutProfileBtn.addClassNames(AlignItems.CENTER, JustifyContent.CENTER, Padding.NONE, Margin.NONE);
+                layoutProfileBtn.add(linkProfile, spanProfileCaption);
+
+                VerticalLayout layoutStoriesBtn = new VerticalLayout();
+                layoutStoriesBtn.addClassNames(AlignItems.CENTER, JustifyContent.CENTER, Padding.NONE, Margin.NONE);
+                layoutStoriesBtn.add(linkStories, spanStoriesCaption);
+
+                VerticalLayout layoutPhotosBtn = new VerticalLayout();
+                layoutPhotosBtn.addClassNames(AlignItems.CENTER, JustifyContent.CENTER, Padding.NONE, Margin.NONE);
+                layoutPhotosBtn.add(linkPhotos, spanPhotosCaption);
 
 
 
@@ -1334,7 +1362,7 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
                 layoutCounts.addClassNames(AlignItems.STRETCH, JustifyContent.AROUND,
                         Padding.LARGE, LumoUtility.Margin.NONE,
                         Gap.XLARGE);
-                layoutCounts.add(linkProfile, linkStories, linkPhotos, layoutStories, layoutPhotos);
+                layoutCounts.add(layoutProfileBtn, layoutStoriesBtn, layoutPhotosBtn, layoutStories, layoutPhotos);
                 layoutCounts.addClassName("member-count-panel");
 
                 Div divResident = new Div("Lives at " + strResident);

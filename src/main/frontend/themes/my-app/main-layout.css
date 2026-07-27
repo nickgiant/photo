@@ -684,6 +684,11 @@
     background: transparent;
 }
 
+.member-profile .member-count-panel .member-action-count{
+    font-size: 16pt;
+    font-weight: 1000;
+}
+
 .member-photos-count{
 
     padding: 8px;
