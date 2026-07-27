@@ -16,6 +16,7 @@ import com.photo.act.photo_act.views.components.AvatarItem;
 import com.photo.act.photo_act.views.components.GenericView;
 import com.photo.act.photo_act.views.components.LikeButton;
 import com.photo.act.photo_act.views.components.ShareBottomBar;
+import com.photo.act.photo_act.views.components.SortOrderBar;
 import com.photo.act.photo_act.views.components.StoryItemViewCard;
 import com.photo.act.photo_act.views.components.StoryViewCard;
 import com.vaadin.flow.component.HasComponents;
@@ -28,6 +29,7 @@ import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.*;
@@ -184,6 +186,7 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
     private UtilsDate utilsDate;
     private String sessionDateTime;
     private GenericView genericView;
+    private SortOrderBar memberStoriesSortOrderBar;
 
     public StoriesView(RecordService recordService, PhotoStoryViewService photoStoryViewService, WeatherService weatherService) {
         this.recordService = recordService;
@@ -229,8 +232,8 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
             }else{
                 String sqlMember = sqlMemberOfStories + " AND usr.username = '" + strMember + "' " + sqlMemberOfStoriesGroupBy;
                 loadMemberOfStoriesFromDb(sqlMember, arrColumnsMemberStories, false);
-                String sqlAlbums = sqlStoriesAll + " AND usr.username = '" + strMember + "' " + sqlStoriesGroupBy;
-                loadStoriesFromDb(sqlAlbums, arrColumnsStories, false);
+                String sqlAlbumsBase = sqlStoriesAll + " AND usr.username = '" + strMember + "' ";
+                loadMemberStoriesWithSort(sqlAlbumsBase, arrColumnsStories);
             }
         } else if (!strSlug.equalsIgnoreCase(STR_ALL_TITLES) && (strMember != null || !strMember.isEmpty() || !strMember.equalsIgnoreCase(STR_ALL_MEMBERS))) {
              logger.info("A strMember:"+strMember+" story:"+strSlug+" strCategory:"+strCategory);
@@ -453,6 +456,36 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
             divGallery.add(getStoriesFromDb(rec, isEditable));
         }
         verticalLayout.add(divGallery);
+    }
+
+    private void loadMemberStoriesWithSort(String sqlBase, String[] arrColumnNames) {
+        strPath = DIR_PHOTOS_SERVER + dirChar;
+
+        Div divGallery = new Div();
+        divGallery.addClassName("gallery");
+
+        SortOrderBar sortOrderBar = new SortOrderBar(SortOrderBar.STORY_SORT_LABELS, SortOrderBar.STORY_SORT_SQL_FIELDS,
+                () -> {
+                    divGallery.removeAll();
+                    populateMemberStories(divGallery, sqlBase, arrColumnNames, memberStoriesSortOrderBar.getSqlOrderBy());
+                });
+        memberStoriesSortOrderBar = sortOrderBar;
+
+        HorizontalLayout sortRow = new HorizontalLayout(sortOrderBar);
+        sortRow.setWidthFull();
+        sortRow.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
+        verticalLayout.add(sortRow);
+
+        populateMemberStories(divGallery, sqlBase, arrColumnNames, sortOrderBar.getSqlOrderBy());
+        verticalLayout.add(divGallery);
+    }
+
+    private void populateMemberStories(Div divGallery, String sqlBase, String[] arrColumnNames, String sqlOrderBy) {
+        String sqlRead = sqlBase + " GROUP BY sp.story_id " + sqlOrderBy;
+        List<Record> lstRecords = getRecordsFromDb(sqlRead, arrColumnNames);
+        for (int r = 0; r < lstRecords.size(); r++) {
+            divGallery.add(getStoriesFromDb(lstRecords.get(r), false));
+        }
     }
 
     private StoryViewCard getStoriesFromDb(Record record, boolean isEditable) {

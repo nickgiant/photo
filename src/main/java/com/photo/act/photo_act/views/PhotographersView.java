@@ -1232,7 +1232,7 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
                 linkStories.addClassName("member-action-link");
                 linkStories.getElement().setAttribute("title", "View Stories");
 
-                Anchor linkPhotos = new Anchor("photos/member/" + strUsername, VaadinIcon.PICTURE.create());
+                Anchor linkPhotos = new Anchor("photos/member/" + strUsername, FontAwesome.Solid.IMAGE.create());
                 linkPhotos.addClassName("member-action-link");
                 linkPhotos.getElement().setAttribute("title", "View Photos");
 
