@@ -1224,14 +1224,17 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
                 // linkTutorWikipedia.getStyle().setColor(strColorExternalweb);
                 //   linkTutorWikipedia.setClassName("lazy-result-line-button");
 //            linkTutorFacebook.setVisible(false);
-                Button btnProfile = new Button(FontAwesome.Solid.USER_ALT.create());
-                btnProfile.setTooltipText("View Profile");
+                Anchor linkProfile = new Anchor("photographer/" + strUsername, FontAwesome.Solid.USER_ALT.create());
+                linkProfile.addClassName("member-action-link");
+                linkProfile.getElement().setAttribute("title", "View Profile");
 
-                RouteParam routeTitle = new RouteParam("member", strUsername);
-                btnProfile.addClickListener(click -> {
-                    btnProfile.getUI().ifPresent(ui ->
-                            ui.navigate(PhotographersView.class, new RouteParameters(routeTitle)));
-                });
+                Anchor linkStories = new Anchor("stories/member/" + strUsername, FontAwesome.Solid.PHOTO_FILM.create());
+                linkStories.addClassName("member-action-link");
+                linkStories.getElement().setAttribute("title", "View Stories");
+
+                Anchor linkPhotos = new Anchor("photos/member/" + strUsername, VaadinIcon.PICTURE.create());
+                linkPhotos.addClassName("member-action-link");
+                linkPhotos.getElement().setAttribute("title", "View Photos");
 
 
 
@@ -1330,7 +1333,7 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
                 layoutCounts.addClassNames(AlignItems.STRETCH, JustifyContent.AROUND,
                         Padding.LARGE, LumoUtility.Margin.NONE,
                         Gap.XLARGE);
-                layoutCounts.add(btnProfile,layoutStories, layoutPhotos);
+                layoutCounts.add(linkProfile, linkStories, linkPhotos, layoutStories, layoutPhotos);
                 layoutCounts.addClassName("member-count-panel");
 
                 Div divResident = new Div("Lives at " + strResident);

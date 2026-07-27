@@ -62,6 +62,7 @@ import static com.photo.act.photo_act.views.MainLayout.*;
 @PageTitle("PhotoAct.net - Photography Community | Stories")
 @Route(value = "stories") //":category?")
 @RouteAlias(value = "stories/category/:category?", layout = MainLayout.class)
+@RouteAlias(value = "stories/member/:member?", layout = MainLayout.class)
 @RouteAlias(value = "stories/member/:member?/story/:story?", layout = MainLayout.class)
 
 

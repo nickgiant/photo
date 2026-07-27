@@ -69,6 +69,7 @@ import static com.photo.act.photo_act.views.MainLayout.*;
 @RouteAlias(value = "photos/location/:destination?", layout = MainLayout.class)
 @RouteAlias(value = "photos/location-type/:destination-type?", layout = MainLayout.class)
 @RouteAlias(value = "photos/month-uploaded/:month-uploaded?", layout = MainLayout.class)
+@RouteAlias(value = "photos/member/:member?", layout = MainLayout.class)
 @RouteAlias(value = "photos/member/:member?/location/:destination?", layout = MainLayout.class)
 @RouteAlias(value = "photo/:id?", layout = MainLayout.class)
 
