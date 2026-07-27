@@ -2504,6 +2504,8 @@ public class MemberStoriesView extends Main implements HasUrlParameter<String>, 
 
                     first = false;
 
+                    strInsert.append(", story_visible_to");
+                    placeholders.append(", 'ALL'");
 
                     if (strAlbumTitle != null) {
                         if (!first) {
