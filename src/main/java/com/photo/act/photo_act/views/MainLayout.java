@@ -110,8 +110,6 @@ public class MainLayout extends AppLayout{
     private int userId;
     private String strUsername;
 
-//    private VerticalLayout sidebarLayout;
-
     public MainLayout() {
 
         GoogleAnalytics analytics = new GoogleAnalytics("G-NQH7NZ6JJL"); // Your measurement ID
@@ -738,6 +736,9 @@ public class MainLayout extends AppLayout{
         appName.addClassName("brand-text");
 //        appName.getStyle().set("font-stretch", "semi-expanded");
         VerticalLayout sidebarLayout = new VerticalLayout();
+        sidebarLayout.setSizeFull();
+        sidebarLayout.setPadding(false);
+        sidebarLayout.setSpacing(false);
         sidebarLayout.addClassName("sidebar");
 
         Div divLogo = new Div();
@@ -759,43 +760,34 @@ public class MainLayout extends AppLayout{
                 getElement().getStyle().set("--vaadin-app-layout-drawer-width", "290px");
             }
         });
-/*
-        sidebarLayout = new VerticalLayout();
-        sidebarLayout.setSizeFull();
-        sidebarLayout.setPadding(false);
-        sidebarLayout.setSpacing(false);
-        sidebarLayout.addClassName("sidebar");*/
 
         logoLayout.add(divLogo, appName, toggleBtn);
 
-//        layoutMenu.add(createSideMenu());
+        layoutMenu.add(createSideMenu());
         Scroller scroller = new Scroller(layoutMenu);
         scroller.addClassNames(AlignItems.CENTER, JustifyContent.CENTER,
                 Padding.NONE, Margin.NONE);
 
-        VerticalLayout sideBar = createSideMenu();
+        // "Members" is pinned below the scrollable "Sections" list, fixed at the bottom of the sidebar.
         VerticalLayout sidebarFooter = createSidebarFooter();
 
-        sidebarLayout.add(logoLayout, sideBar, sidebarFooter);
+        sidebarLayout.add(logoLayout, scroller, sidebarFooter);
         sidebarLayout.expand(scroller);
 
         addToDrawer(sidebarLayout);
 
     }
 
+    /**
+     * "Members" navigation — pinned to the bottom of the sidebar, outside the
+     * scrollable "Sections" area, so it stays visible regardless of scroll position.
+     */
     private VerticalLayout createSidebarFooter() {
-/*        Div sidebarFooter = new Div();
-        sidebarFooter.addClassName("sidebar-footer");
-        sidebarFooter.addClassName("nav-wrapper");*/
-
-
         VerticalLayout leftLayout = new VerticalLayout();
-        leftLayout.setSizeFull();
         leftLayout.setPadding(false);
         leftLayout.setSpacing(false);
         leftLayout.addClassName("nav-wrapper");
         leftLayout.addClassName("sidebar-footer");
-
 
         SideNav navUser = new SideNav();
         navUser.setWidthFull();
@@ -809,13 +801,10 @@ public class MainLayout extends AppLayout{
         navUser.addItem(createSideNavItem("My Photos", divMemberPhotos, "Manage my photos",
                 MemberPhotosView.class));
 
-
         Div divMembers = new Div(FontAwesome.Solid.UPLOAD.create());
-
-                SideNavItem navItem = createSideNavItem("Upload Photos", divMembers, "Upload photos",
+        SideNavItem navItem = createSideNavItem("Upload Photos", divMembers, "Upload photos",
                 UploadView.class);
         navItem.addClassName("sidebar-cta-btn");
-
         navUser.addItem(navItem);
 
         Div divMe = new Div(FontAwesome.Solid.USER.create());
@@ -823,28 +812,6 @@ public class MainLayout extends AppLayout{
                 MeView.class));
 
         navUser.setLabel("Members");
-
-//        leftLayout.add( navUser);
-
-
-
-/*        RouterLink linkUpload = new RouterLink();
-        linkUpload.setRoute(UploadView.class);
-        linkUpload.addClassName("sidebar-cta-btn");
-        linkUpload.setText("+ Upload a Photo");
-
-        Div avatarDot = new Div();
-        avatarDot.addClassName("sidebar-user-avatar");
-
-        Span signInLabel = new Span("Sign in");
-
-        Div signInRow = new Div(avatarDot, signInLabel);
-        signInRow.addClassName("sidebar-user-row");
-        signInRow.addClickListener(e -> {
-            LoginDialog loginDialog = new LoginDialog();
-            loginDialog.getLoginForm().setAction("login");
-            loginDialog.open();
-        });*/
 
         leftLayout.add(navUser);
         return leftLayout;
@@ -922,28 +889,7 @@ public class MainLayout extends AppLayout{
         nav.addItem(createSideNavItem("Photographers", divImagePhotographers, "Photographer Information",
                 PhotographersView.class));
 
-        SideNav navUser = new SideNav();
-        navUser.setWidthFull();
-        navUser.addClassName("label-text");
-
-        Div divMemberStories = new Div(FontAwesome.Solid.PHOTO_FILM.create());
-        navUser.addItem(createSideNavItem("My Photo-Stories", divMemberStories, "Manage my photo-stories",
-                MemberStoriesView.class));
-
-        Div divMemberPhotos = new Div(FontAwesome.Solid.CAMERA_ALT.create());
-        navUser.addItem(createSideNavItem("My Photos", divMemberPhotos, "Manage my photos",
-                MemberPhotosView.class));
-
-        Div divMembers = new Div(FontAwesome.Solid.UPLOAD.create());
-        navUser.addItem(createSideNavItem("Upload My Photos", divMembers, "Upload photos",
-                UploadView.class));
-
-        Div divMe = new Div(FontAwesome.Solid.USER.create());
-        navUser.addItem(createSideNavItem("Me", divMe, "Manage my account",
-                MeView.class));
-
         nav.setLabel("Sections");
-//        navUser.setLabel("Members");
 
         leftLayout.add(nav);
 
