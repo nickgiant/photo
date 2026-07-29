@@ -488,27 +488,39 @@
 
 .location-caption {
     display: flex;
-    align-items: center;
-    flex-wrap: wrap;
+    flex-direction: column;
     gap: 6px;
     padding: 9px 2px;
     font-family: var(--font-body, "Inter", sans-serif);
-    font-size: 12px;
     color: var(--brand-ink, #1c2430);
 }
 
+.location-name-row {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+}
+
 .location-city {
-    font-weight: 600;
+    font-size: 18px;
+    font-weight: 700;
 }
 
 .location-country {
+    font-size: 14px;
     font-weight: 400;
     color: var(--brand-muted, #8a8578);
 }
 
-.location-views-badge {
+.location-stats-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.location-stat-badge {
     font-family: var(--font-mono, "JetBrains Mono", monospace);
-    font-size: 11px;
+    font-size: 11.5px;
     font-weight: 500;
     color: var(--brand-orange, #e8823c);
     background: var(--brand-cream, #faf8f4);

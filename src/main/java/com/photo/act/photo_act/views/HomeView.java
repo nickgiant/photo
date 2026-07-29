@@ -840,9 +840,12 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         Div grid = new Div();
         grid.addClassName("locations-grid");
 
-        String[] arrColumnsLocations = {"city_name", "country", "total_views", "name_new"};
+        String[] arrColumnsLocations = {"city_name", "country", "total_views", "total_likes", "total_ratings", "name_new"};
         String sqlMostViewedLocations =
-                "SELECT d.city_name, d.country, SUM(COALESCE(pv.view_count, 0)) AS total_views, " +
+                "SELECT d.city_name, d.country, " +
+                " SUM(COALESCE(pv.view_count, 0)) AS total_views, " +
+                " SUM(COALESCE(pl.like_count, 0)) AS total_likes, " +
+                " SUM(COALESCE(pr.rating_count, 0)) AS total_ratings, " +
                 " (SELECT pm2.name_new FROM photo_meta pm2 " +
                 "    LEFT JOIN (SELECT photo_id, COUNT(*) AS vc FROM photo_view WHERE view_type IN ('List', 'Full') GROUP BY photo_id) pv2 " +
                 "      ON pm2.id = pv2.photo_id " +
@@ -852,6 +855,10 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
                 " JOIN photo_meta pm ON pm.destination_Id = d.id AND pm.visible_to = 'ALL' " +
                 " LEFT JOIN (SELECT photo_id, COUNT(*) AS view_count FROM photo_view WHERE view_type IN ('List', 'Full') GROUP BY photo_id) pv " +
                 "   ON pm.id = pv.photo_id " +
+                " LEFT JOIN (SELECT photo_id, COUNT(DISTINCT ip_address) AS like_count FROM photo_view WHERE view_type = 'Like' GROUP BY photo_id) pl " +
+                "   ON pm.id = pl.photo_id " +
+                " LEFT JOIN (SELECT photo_id, COUNT(*) AS rating_count FROM photo_rating GROUP BY photo_id) pr " +
+                "   ON pm.id = pr.photo_id " +
                 " GROUP BY d.id, d.city_name, d.country " +
                 " ORDER BY total_views DESC " +
                 " LIMIT 4";
@@ -862,25 +869,31 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
             String strCity = nvl(record.getColumnData("city_name"));
             String strCountry = nvl(record.getColumnData("country"));
             String strViews = nvl(record.getColumnData("total_views"));
+            String strLikes = nvl(record.getColumnData("total_likes"));
+            String strRatings = nvl(record.getColumnData("total_ratings"));
 
             Image image = getImageThumbFromDb(record, strPathThumb);
             image.addClassName("location-photo");
 
-            Div caption = new Div();
-            caption.addClassName("location-caption");
+            Div nameRow = new Div();
+            nameRow.addClassName("location-name-row");
             Span citySpan = new Span(strCity);
             citySpan.addClassName("location-city");
-            caption.add(citySpan);
+            nameRow.add(citySpan);
             if (!strCountry.isEmpty()) {
                 Span countrySpan = new Span(" · " + strCountry);
                 countrySpan.addClassName("location-country");
-                caption.add(countrySpan);
+                nameRow.add(countrySpan);
             }
-            if (!strViews.isEmpty() && !strViews.equals("0")) {
-                Span viewsBadge = new Span(strViews + (strViews.equals("1") ? " view" : " views"));
-                viewsBadge.addClassName("location-views-badge");
-                caption.add(viewsBadge);
-            }
+
+            Div statsRow = new Div();
+            statsRow.addClassName("location-stats-row");
+            addLocationBadge(statsRow, strViews, "view", "views");
+            addLocationBadge(statsRow, strLikes, "like", "likes");
+            addLocationBadge(statsRow, strRatings, "rating", "ratings");
+
+            Div caption = new Div(nameRow, statsRow);
+            caption.addClassName("location-caption");
 
             RouterLink link = new RouterLink();
             link.setRoute(GalleryView.class, new RouteParameters(new RouteParam("destination", strCity)));
@@ -898,6 +911,15 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
         section.add(headerRow, grid);
         return section;
+    }
+
+    private void addLocationBadge(Div statsRow, String strCount, String singular, String plural) {
+        if (strCount.isEmpty() || strCount.equals("0")) {
+            return;
+        }
+        Span badge = new Span(strCount + " " + (strCount.equals("1") ? singular : plural));
+        badge.addClassName("location-stat-badge");
+        statsRow.add(badge);
     }
 
     private Div createCtaBanner(String usrName) {
