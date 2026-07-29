@@ -1871,7 +1871,6 @@ public class GenericView {
     public Footer loadFooter(boolean isMobile) {
 
         Footer footer = new Footer();
-        footer.addClassNames(LumoUtility.Width.FULL);
 
         Div divLineBottom = new Div();
         divLineBottom.addClassNames(

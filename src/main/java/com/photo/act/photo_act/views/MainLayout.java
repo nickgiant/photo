@@ -105,7 +105,7 @@ public class MainLayout extends AppLayout{
 
     private boolean drawerMinimized = false;
 
-    VerticalLayout layoutMenu;
+//    VerticalLayout layoutMenu;
 
     private int userId;
     private String strUsername;
@@ -132,7 +132,7 @@ public class MainLayout extends AppLayout{
 
         isMobile = VaadinSession.getCurrent().getBrowser().isAndroid() || VaadinSession.getCurrent().getBrowser().isIPhone() || VaadinSession.getCurrent().getBrowser().isWindowsPhone();
 
-        layoutMenu = new VerticalLayout();
+//        layoutMenu = new VerticalLayout();
 
 //        userId = 1;
 //        strUsername = "visitor-user";
@@ -509,11 +509,7 @@ public class MainLayout extends AppLayout{
 //        return nav;
 //    }
 
-    private Footer createFooter() {
-        Footer layout = new Footer();
 
-        return layout;
-    }
 
     @Override
     protected void afterNavigation() {
@@ -763,15 +759,19 @@ public class MainLayout extends AppLayout{
 
         logoLayout.add(divLogo, appName, toggleBtn);
 
-        layoutMenu.add(createSideMenu());
-        Scroller scroller = new Scroller(layoutMenu);
+//        layoutMenu.add(createSideMenu());
+        Scroller scroller = new Scroller(createSideMenu());
         scroller.addClassNames(AlignItems.CENTER, JustifyContent.CENTER,
                 Padding.NONE, Margin.NONE);
 
         // "Members" is pinned below the scrollable "Sections" list, fixed at the bottom of the sidebar.
         VerticalLayout sidebarFooter = createSidebarFooter();
 
-        sidebarLayout.add(logoLayout, scroller, sidebarFooter);
+        Scroller scrollerFooter = new Scroller(sidebarFooter);
+        scrollerFooter.addClassNames(AlignItems.CENTER, JustifyContent.CENTER,
+                Padding.NONE, Margin.NONE);
+
+        sidebarLayout.add(logoLayout, scroller, scrollerFooter);
         sidebarLayout.expand(scroller);
 
         addToDrawer(sidebarLayout);

@@ -1303,13 +1303,13 @@ nav ul:hover li:hover ~ li:before {
 
 
 footer {
+    width: 100%;
     background-color: #efece5;
     color:  var(--brand-navy, #1b3a5c);
     text-align: center;
     padding: 30px 0 26px;
-    height: 200px;
     box-sizing: border-box;
-    overflow-y: auto;
+    /*overflow-y: auto;*/
 }
 
 footer h1 {
@@ -1322,7 +1322,7 @@ footer h1 {
     line-height: 1.1;
     padding: 12px 0 10px;
     font-family: var(--font-display, 'Fraunces', serif);
-    text-shadow: none;
+    text-shadow: 1px 2px 6px var(--shadow-strong);
 }
 
 footer span {
@@ -1338,14 +1338,15 @@ footer span {
 
 /* ── Footer row: Explore (2 cols) | brand (title + moto) | Connect ── */
 .footer-row {
+    width: 100%;
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
     flex-wrap: wrap;
     gap: 40px;
-    max-width: 1200px;
-    margin: 20px auto 10px;
-    padding: 20px 24px 0;
+/*    max-width: 1200px;
+    margin: 20px auto 10px;*/
+    padding: 20px 34px 0;
     border-top: 1px solid rgba(27, 58, 92, 0.12);
     text-align: left;
 }
@@ -1392,14 +1393,13 @@ footer span {
 
 .footer-links a {
     font-family: var(--font-body, 'Inter', sans-serif);
-    font-size: 13.5px;
-    color: rgba(27, 58, 92, 0.75);
+    font-size: 14px;
     text-decoration: none;
 }
 
 .footer-links a:hover {
-    color: var(--brand-navy, #1b3a5c);
-    text-decoration: underline;
+    color: var(--brand-orange, #e8823c);
+    /*text-decoration: underline;*/
 }
 
 .footer-email-link {
@@ -1407,14 +1407,15 @@ footer span {
     align-items: center;
     gap: 8px;
     font-family: var(--font-body, 'Inter', sans-serif);
-    font-size: 13.5px;
-    font-weight: 600;
-    color: var(--brand-navy, #1b3a5c);
+    font-size: 14px;
+    /*font-weight: 600;*/
+    /*color: var(--brand-navy, #1b3a5c);*/
     text-decoration: none;
 }
 
 .footer-email-link:hover {
     color: var(--brand-orange, #e8823c);
+    text-decoration: none;
 }
 
 .footer-email-link vaadin-icon {

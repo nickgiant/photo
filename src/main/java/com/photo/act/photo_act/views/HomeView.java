@@ -413,9 +413,13 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         layoutCities.add(layoutResultsA, layoutResultsB);
         verticalLayout.add( layoutWeather,layoutCities);
 
+        Div divBanner = new Div();
+        divBanner.addClassNames(Padding.LARGE, Margin.NONE);
+        divBanner.add(createCtaBanner(usrName));
+
         this.removeAll();
         this.add(verticalLayout);
-        this.add(createCtaBanner(usrName));
+        this.add(divBanner);
         this.add(genericView.loadFooter(isMobile));
 
         logVisitorToDb();
@@ -596,7 +600,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
                 + "with photographers who take the craft seriously.");
         heroSubtitle.addClassName("hero-subtitle");
 
-        Button btnUpload = new Button("Upload a Photo");
+        Button btnUpload = new Button("Upload Photos");
         btnUpload.addClassName("btn-hero-primary");
         btnUpload.addClickListener(click -> {
             if (usrName == null) {
@@ -740,7 +744,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         grid.add(
                 createFeatureCard("Showcase your work",
                         "Build a portfolio your whole community can discover and follow.",
-                        MemberPhotosView.class, "feature-icon-circle"),
+                        GalleryView.class, "feature-icon-circle"),
                 createFeatureCard("Get real feedback",
                         "Trade critiques with photographers who take the craft seriously.",
                         StoriesView.class, "feature-icon-square"),
@@ -937,7 +941,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         sub.addClassName("cta-banner-sub");
         textBlock.add(heading, sub);
 
-        Button btn = new Button("Upload a Photo");
+        Button btn = new Button("Upload Photos");
         btn.addClassName("btn-hero-cta");
         btn.addClickListener(click -> {
             if (usrName == null) {
