@@ -796,22 +796,33 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
             String strName = nvl(record.getColumnData("name"));
             String strSurname = nvl(record.getColumnData("surname"));
-            String strPhotoType = nvl(record.getColumnData("photo_type"));
+            String strUsername = nvl(record.getColumnData("username"));
             String strAvatarPath = nvl(record.getColumnData("avatar_path"));
+            String strUploadedAgo = nvl(record.getColumnData("date_inserted"));
             String strFullName = (strName + " " + strSurname).trim();
+            if (strFullName.isEmpty()) {
+                strFullName = !strUsername.isEmpty() ? "@" + strUsername : "Member";
+            }
 
-            Image avatar = genericView.getAvatarThumbImage(strAvatarPath, strFullName, "22px", "22px");
+            Image avatar = genericView.getAvatarThumbImage(strAvatarPath, strFullName, "40px", "40px");
             avatar.addClassName("community-avatar");
 
-            Div caption = new Div();
-            caption.addClassName("community-caption");
             Span nameSpan = new Span(strFullName);
-            Span typeSpan = new Span(" · " + (strPhotoType.isEmpty() ? "Photo" : strPhotoType));
-            typeSpan.addClassName("community-caption-type");
-            caption.add(avatar, nameSpan, typeSpan);
+            nameSpan.addClassName("community-name");
 
-            Div card = new Div(image, caption);
+            Div nameGroup = new Div(avatar, nameSpan);
+            nameGroup.addClassName("community-name-group");
+
+            Span timeAgoSpan = new Span(strUploadedAgo);
+            timeAgoSpan.addClassName("community-time-ago");
+
+            Div caption = new Div(nameGroup, timeAgoSpan);
+            caption.addClassName("community-caption");
+
+            RouterLink card = new RouterLink();
+            card.setRoute(GalleryView.class, new RouteParameters(new RouteParam("member", strUsername)));
             card.addClassName("community-card");
+            card.add(image, caption);
             grid.add(card);
         }
 

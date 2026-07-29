@@ -384,6 +384,16 @@
     padding: 24px;
     box-shadow: 1px 1px 8px rgba(27, 58, 92, 0.06);
     gap: 16px;
+
+    text-decoration: none;
+    color: inherit;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.community-card:hover {
+    cursor: pointer;
+    box-shadow: 1px 1px 10px rgba(27, 58, 92, 0.14);
+    border-color: var(--brand-navy, #1b3a5c);
 }
 
 /* Real member photos — sized to a common height, full image, never cropped */
@@ -399,25 +409,42 @@
 .community-caption {
     display: flex;
     align-items: center;
-    gap: 6px;
+    justify-content: space-between;
+    gap: 10px;
     padding: 9px 2px;
     font-family: var(--font-body, "Inter", sans-serif);
-    font-size: 12px;
-    font-weight: 600;
     color: var(--brand-ink, #1c2430);
 }
 
+.community-name-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
 .community-avatar {
-    width: 22px;
-    height: 22px;
-    min-width: 22px;
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
     border-radius: 50%;
     object-fit: cover;
 }
 
-.community-caption-type {
+.community-name {
+    font-size: 16px;
+    font-weight: 700;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.community-time-ago {
+    flex-shrink: 0;
+    font-size: 12px;
     font-weight: 400;
     color: var(--brand-muted, #8a8578);
+    white-space: nowrap;
 }
 
 /* ---------- Most viewed locations ---------- */
