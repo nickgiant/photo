@@ -383,6 +383,9 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
 
 
+        // ── Most viewed locations ─────────────────────────────────────
+        verticalLayout.add(createLocationsSection());
+
         H2 titleWeather = new H2("Current Weather");
 
         Div layoutWeather = new Div();
@@ -810,6 +813,81 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
             Div card = new Div(image, caption);
             card.addClassName("community-card");
             grid.add(card);
+        }
+
+        section.add(headerRow, grid);
+        return section;
+    }
+
+    private Div createLocationsSection() {
+        Div section = new Div();
+        section.addClassName("locations-section");
+
+        Div headerRow = new Div();
+        headerRow.addClassName("section-header-row");
+        H2 title = new H2("Most Viewed Locations");
+        RouterLink viewAll = new RouterLink("View all →", GalleryView.class,
+                new RouteParameters(new RouteParam("destination", STR_ALL_DESTINATIONS)));
+        viewAll.addClassName("section-link");
+        headerRow.add(title, viewAll);
+
+        Div grid = new Div();
+        grid.addClassName("locations-grid");
+
+        String[] arrColumnsLocations = {"city_name", "country", "total_views", "name_new"};
+        String sqlMostViewedLocations =
+                "SELECT d.city_name, d.country, SUM(COALESCE(pv.view_count, 0)) AS total_views, " +
+                " (SELECT pm2.name_new FROM photo_meta pm2 " +
+                "    LEFT JOIN (SELECT photo_id, COUNT(*) AS vc FROM photo_view WHERE view_type IN ('List', 'Full') GROUP BY photo_id) pv2 " +
+                "      ON pm2.id = pv2.photo_id " +
+                "    WHERE pm2.destination_Id = d.id AND pm2.visible_to = 'ALL' " +
+                "    ORDER BY COALESCE(pv2.vc, 0) DESC, pm2.date_inserted DESC LIMIT 1) AS name_new " +
+                " FROM destination d " +
+                " JOIN photo_meta pm ON pm.destination_Id = d.id AND pm.visible_to = 'ALL' " +
+                " LEFT JOIN (SELECT photo_id, COUNT(*) AS view_count FROM photo_view WHERE view_type IN ('List', 'Full') GROUP BY photo_id) pv " +
+                "   ON pm.id = pv.photo_id " +
+                " GROUP BY d.id, d.city_name, d.country " +
+                " ORDER BY total_views DESC " +
+                " LIMIT 4";
+
+        List<Record> lstLocations = getRecordsFromDb(sqlMostViewedLocations, arrColumnsLocations);
+        String strPathThumb = DIR_PHOTOS_SERVER + dirChar + subPathSmall;
+        for (Record record : lstLocations) {
+            String strCity = nvl(record.getColumnData("city_name"));
+            String strCountry = nvl(record.getColumnData("country"));
+            String strViews = nvl(record.getColumnData("total_views"));
+
+            Image image = getImageThumbFromDb(record, strPathThumb);
+            image.addClassName("location-photo");
+
+            Div caption = new Div();
+            caption.addClassName("location-caption");
+            Span citySpan = new Span(strCity);
+            citySpan.addClassName("location-city");
+            caption.add(citySpan);
+            if (!strCountry.isEmpty()) {
+                Span countrySpan = new Span(" · " + strCountry);
+                countrySpan.addClassName("location-country");
+                caption.add(countrySpan);
+            }
+            if (!strViews.isEmpty() && !strViews.equals("0")) {
+                Span viewsBadge = new Span(strViews + (strViews.equals("1") ? " view" : " views"));
+                viewsBadge.addClassName("location-views-badge");
+                caption.add(viewsBadge);
+            }
+
+            RouterLink link = new RouterLink();
+            link.setRoute(GalleryView.class, new RouteParameters(new RouteParam("destination", strCity)));
+            link.addClassName("location-card");
+            link.add(image, caption);
+
+            grid.add(link);
+        }
+
+        if (lstLocations.isEmpty()) {
+            Div empty = new Div("No location data yet.");
+            empty.addClassName("story-preview-empty");
+            grid.add(empty);
         }
 
         section.add(headerRow, grid);
