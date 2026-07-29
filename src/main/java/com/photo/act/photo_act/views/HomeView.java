@@ -20,7 +20,6 @@ import com.photo.act.photo_act.services.LearningService;
 import com.photo.act.photo_act.services.PhotoFlickrService;
 import com.photo.act.photo_act.services.PhotoRatingService;
 import com.photo.act.photo_act.services.PhotoStatisticsService;
-import com.photo.act.photo_act.services.PhotoStoryViewService;
 import com.photo.act.photo_act.services.PhotoViewService;
 import com.photo.act.photo_act.services.ShareMetricService;
 import com.photo.act.photo_act.services.ShareService;
@@ -55,7 +54,6 @@ import com.vaadin.flow.theme.lumo.LumoUtility;
 import com.vaadin.flow.theme.lumo.LumoUtility.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.vaadin.addons.taefi.component.ToggleButtonGroup;
 
 
@@ -192,16 +190,12 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
     private PhotoViewService photoViewService;
     private PhotoStatisticsService photoStatisticsService;
     private LearningService learningService;
-    private PhotoStoryViewService photoStoryViewService;
-
-    @Value("${app.base-url}")
-    private String baseUrl;
 
     public HomeView(RecordService recordService, LearningService learningService,
                     EmailSendService emailSendService, WeatherService weatherService,
                     ShareService shareService, ShareMetricService shareMetricService,
                     PhotoRatingService photoRatingService, PhotoViewService photoViewService,
-                    PhotoStatisticsService photoStatisticsService, PhotoStoryViewService photoStoryViewService) {
+                    PhotoStatisticsService photoStatisticsService) {
         this.recordService = recordService;
         this.learningService = learningService;
         this.emailSendService = emailSendService;
@@ -211,7 +205,6 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         this.photoRatingService = photoRatingService;
         this.photoViewService = photoViewService;
         this.photoStatisticsService = photoStatisticsService;
-        this.photoStoryViewService = photoStoryViewService;
         utilsDate = new UtilsDate();
         genericView = new GenericView(recordService);
 
@@ -630,52 +623,101 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
                 + "shoot, a trip, or the story behind one shot.");
         intro.addClassName("section-intro");
 
-        Div storiesScope = new Div();
-        storiesScope.addClassName("stories-view");
+        Div card = new Div();
+        card.addClassName("composer-card");
 
-        Div grid = new Div();
-        grid.addClassNames("story-preview-grid", "gallery");
-        storiesScope.add(grid);
-
-        String[] arrColumnsStories = {"title", "slug", "description", "story_visible_to", "user_id", "date_inserted",
-                "story_photo_count", "story_photo_size", "name_new", "photo_1", "photo_2", "datetime_story_created",
-                "cat_title", "username", "surname", "name", "resident", "date_joined", "avatar_path", "story_id"
+        String[] arrColumnsLastStory = {"title", "slug", "description", "user_id", "date_inserted",
+                "datetime_story_created", "username", "name", "surname", "avatar_path", "story_id"
         };
-        // Latest story per distinct member (one row per author) — most recent 2 authors.
-        String sqlLatestStoriesPerMember = "SELECT s.title, s.slug, s.`description`, s.story_visible_to, s.user_id, s.date_inserted " +
-                " , count(sp.story_id) AS story_photo_count, SUM(pm.space_size) AS story_photo_size " +
-                " , pm.name_new, s.photo_id1, pm.name_new " +
+        String sqlLastStory = "SELECT s.title, s.slug, s.`description`, s.user_id, s.date_inserted " +
                 " , getDateDiffFromNow(s.date_inserted) AS datetime_story_created " +
-                " , sc.cat_title " +
-                " , usr.username, usr.name, usr.surname, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined, usr.avatar_path " +
+                " , usr.username, usr.name, usr.surname, usr.avatar_path " +
                 " , s.id AS story_id " +
-                " FROM photo_stories_photo sp, photo_meta pm, photo_stories_categories sc, dbuser usr, photo_stories s " +
-                " WHERE s.id = sp.story_id AND s.user_id = usr.userId AND sp.user_id = usr.userId AND s.photo_id1 = pm.id " +
-                " AND s.story_visible_to = 'ALL' AND pm.visible_to = 'ALL' AND sc.id = s.category_id " +
-                " AND s.id = (SELECT s2.id FROM photo_stories s2 WHERE s2.user_id = s.user_id AND s2.story_visible_to = 'ALL' ORDER BY s2.date_inserted DESC LIMIT 1) " +
-                " GROUP BY sp.story_id " +
-                " ORDER BY s.date_inserted DESC " +
-                " LIMIT 2";
+                " FROM photo_stories s, dbuser usr " +
+                " WHERE s.user_id = usr.userId AND s.story_visible_to = 'ALL' " +
+                " ORDER BY s.date_inserted DESC LIMIT 1";
 
-        List<Record> lstStories = getRecordsFromDb(sqlLatestStoriesPerMember, arrColumnsStories);
-        String strStoryImagePath = DIR_PHOTOS_SERVER + dirChar + subPathMedium;
-        for (Record record : lstStories) {
-            StoryViewCard storyCard = new StoryViewCard(record, strStoryImagePath, isMobile, userId, strUsername, sessionCreation,
-                    hostname, publicIp, false, recordService, photoStoryViewService, publicIp,
-                    VaadinSession.getCurrent().getSession().getId(),
-                    utilsDate.calcDateTimeFromLongInLDT(sessionCreation, "UTC"),
-                    shareService, shareMetricService, baseUrl);
-            storyCard.addClassName("story-preview-card");
-            grid.add(storyCard);
-        }
+        List<Record> lstLastStory = getRecordsFromDb(sqlLastStory, arrColumnsLastStory);
 
-        if (lstStories.isEmpty()) {
+        if (lstLastStory.isEmpty()) {
             Div empty = new Div("No stories published yet — be the first to tell yours.");
             empty.addClassName("story-preview-empty");
-            grid.add(empty);
+            card.add(empty);
+        } else {
+            Record story = lstLastStory.get(0);
+            String strStoryId = story.getColumnData("story_id");
+            String strTitle = story.getColumnData("title");
+            String strSlug = story.getColumnData("slug");
+            String strDescription = story.getColumnData("description");
+            String strMemberUsername = story.getColumnData("username");
+            String strName = story.getColumnData("name");
+            String strSurname = story.getColumnData("surname");
+            String strAvatarPath = story.getColumnData("avatar_path");
+            String strDateCreated = story.getColumnData("datetime_story_created");
+            String strFullName = (strName + " " + strSurname).trim();
+            String strStoryTitle = (strTitle == null || strTitle.isBlank() || strTitle.equalsIgnoreCase("null"))
+                    ? "Untitled story" : strTitle;
+
+            Div cardHeader = new Div();
+            cardHeader.addClassName("composer-card-header");
+
+            Image avatar = genericView.getAvatarThumbImage(strAvatarPath, strFullName, "28px", "28px");
+            avatar.addClassName("composer-avatar");
+            Span storyName = new Span(strStoryTitle + " — " + strFullName);
+            storyName.addClassName("composer-story-name");
+            Div nameRow = new Div(avatar, storyName);
+            nameRow.addClassName("composer-name-row");
+
+            Span dateBadge = new Span(strDateCreated);
+            dateBadge.addClassName("composer-draft-badge");
+            cardHeader.add(nameRow, dateBadge);
+
+            Div photoGrid = new Div();
+            photoGrid.addClassName("composer-photo-grid");
+
+            int intStoryId = 0;
+            try {
+                intStoryId = Integer.parseInt(strStoryId);
+            } catch (NumberFormatException ignored) {
+            }
+
+            String[] arrColumnsStoryPhotos = {"name_new"};
+            String sqlStoryPhotos = "SELECT pm.name_new FROM photo_stories_photo sp, photo_meta pm " +
+                    " WHERE sp.story_id = " + intStoryId + " AND sp.photo_id = pm.id AND pm.visible_to = 'ALL' " +
+                    " ORDER BY sp.inc ASC LIMIT 4";
+            List<Record> lstStoryPhotos = getRecordsFromDb(sqlStoryPhotos, arrColumnsStoryPhotos);
+            String strStoryImagePath = DIR_PHOTOS_SERVER + dirChar + subPathMedium;
+            for (Record photoRecord : lstStoryPhotos) {
+                Image photo = getImageThumbFromDb(photoRecord, strStoryImagePath);
+                photo.addClassName("composer-photo");
+                photoGrid.add(photo);
+            }
+
+            Div quote = new Div();
+            quote.addClassName("composer-quote");
+            if (strDescription != null && !strDescription.isBlank() && !strDescription.equalsIgnoreCase("null")) {
+                quote.setText("\"" + strDescription + "\"");
+            } else {
+                quote.setVisible(false);
+            }
+
+            Div footerRow = new Div();
+            footerRow.addClassName("composer-footer-row");
+            String strPhotoCountLabel = lstStoryPhotos.size() + (lstStoryPhotos.size() == 1 ? " photo" : " photos");
+            Span meta = new Span(strPhotoCountLabel + " · " + strDateCreated);
+            meta.addClassName("composer-meta");
+
+            RouteParam routeMember = new RouteParam("member", strMemberUsername);
+            RouteParam routeStory = new RouteParam("story", strSlug);
+            RouterLink btnView = new RouterLink("View Story", StoriesView.class, new RouteParameters(routeMember, routeStory));
+            btnView.addClassName("btn-hero-cta");
+
+            footerRow.add(meta, btnView);
+
+            card.add(cardHeader, photoGrid, quote, footerRow);
         }
 
-        section.add(headerRow, intro, storiesScope);
+        section.add(headerRow, intro, card);
         return section;
     }
 
