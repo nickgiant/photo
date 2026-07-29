@@ -99,7 +99,7 @@
 /* ---------- Section header row (title + link) ---------- */
 .home-view .section-header-row {
     width: 100%;
-    max-width: 1080px;
+    max-width: 1200px;
     display: flex;
     align-items: baseline;
     justify-content: space-between;
@@ -149,7 +149,7 @@
 /* ---------- Tell it as a Photo Story — composer card, real last-story data ---------- */
 .home-view .story-section {
     width: 100%;
-    max-width: 1080px;
+    max-width: 1200px;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -270,7 +270,7 @@
 /* ---------- Feature grid ---------- */
 .home-view .feature-grid {
     width: 100%;
-    max-width: 1080px;
+    max-width: 1200px;
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
     gap: 28px;
@@ -354,7 +354,7 @@
 /* ---------- Fresh from the community grid ---------- */
 .home-view .community-section {
     width: 100%;
-    max-width: 1080px;
+    max-width: 1200px;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -416,14 +416,13 @@
     color: var(--brand-ink, #1c2430);
 }
 
-.community-name-group {
-    display: flex;
-    align-items: center;
+/* AvatarItem — reused from the rest of the app for avatar + name */
+.community-avatar-item {
     gap: 10px;
     min-width: 0;
 }
 
-.community-avatar {
+.community-avatar-item img {
     width: 40px;
     height: 40px;
     min-width: 40px;
@@ -431,12 +430,17 @@
     object-fit: cover;
 }
 
-.community-name {
+.community-avatar-item vaadin-vertical-layout div:first-child {
     font-size: 16px;
     font-weight: 700;
+    color: var(--brand-ink, #1c2430);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.community-avatar-item vaadin-vertical-layout div:last-child {
+    display: none;
 }
 
 .community-time-ago {
@@ -450,7 +454,7 @@
 /* ---------- Most viewed locations ---------- */
 .home-view .locations-section {
     width: 100%;
-    max-width: 1080px;
+    max-width: 1200px;
     display: flex;
     flex-direction: column;
     align-items: flex-start;

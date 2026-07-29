@@ -804,19 +804,14 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
                 strFullName = !strUsername.isEmpty() ? "@" + strUsername : "Member";
             }
 
-            Image avatar = genericView.getAvatarThumbImage(strAvatarPath, strFullName, "40px", "40px");
-            avatar.addClassName("community-avatar");
-
-            Span nameSpan = new Span(strFullName);
-            nameSpan.addClassName("community-name");
-
-            Div nameGroup = new Div(avatar, nameSpan);
-            nameGroup.addClassName("community-name-group");
+            Image avatarImg = genericView.getAvatarThumbImage(strAvatarPath, strFullName, "40px", "40px");
+            AvatarItem avatarItem = new AvatarItem(strFullName, "", avatarImg);
+            avatarItem.addClassName("community-avatar-item");
 
             Span timeAgoSpan = new Span(strUploadedAgo);
             timeAgoSpan.addClassName("community-time-ago");
 
-            Div caption = new Div(nameGroup, timeAgoSpan);
+            Div caption = new Div(avatarItem, timeAgoSpan);
             caption.addClassName("community-caption");
 
             RouterLink card = new RouterLink();
