@@ -1339,6 +1339,7 @@ footer span {
 /* ── Footer row: Explore (2 cols) | brand (title + moto) | Connect ── */
 .footer-row {
     width: 100%;
+    box-sizing: border-box;
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
