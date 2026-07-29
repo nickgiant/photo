@@ -281,11 +281,10 @@
 }
 
 .background{
-   background-color: #f8f8f8;
+   background-color: var(--brand-cream-alt, #efece5);
 
         width: 100%;
         min-height: 100vh;
-/*        background: #f0f2f5;*/
 }
 
 .header-layout-panel{
@@ -1344,34 +1343,33 @@ nav ul:hover li:hover ~ li:before {
 }
 
 footer {
-    background-color: #b0b0b0;
-    color:  #777777;
+    background-color: var(--brand-navy, #1b3a5c);
+    color: rgba(255, 255, 255, 0.65);
     text-align: center;
-    padding: 30px 0 20px;
-    div{
-       background-color:  #bd0852;
-    }
+    padding: 30px 0 26px;
 }
 
 footer h1 {
-    color: #bd0852;
+    color: #fff;
     text-align: center;
-    text-transform: lowercase;
-    font-size: 38px;
+    text-transform: none;
+    font-size: 26px;
     font-weight: 600;
-    letter-spacing: 2px;
-    line-height: 0.8;
-    padding: 32px 0 20px;
-    font-family:  "Lucida Console", "Lucida Sans Typewriter", sans-serif;
-    text-shadow: 1px 2px 6px var(--shadow-strong);
+    letter-spacing: 0;
+    line-height: 1.1;
+    padding: 12px 0 10px;
+    font-family: var(--font-display, 'Fraunces', serif);
+    text-shadow: none;
 }
 
 footer span {
-    text-transform: uppercase;
-    letter-spacing: 5px;
-    /*font-size: 19px;*/
-    padding: 5px 0 27px;
-    line-height: 1;
+    text-transform: none;
+    letter-spacing: 0;
+    font-style: italic;
+    font-family: var(--font-display, 'Fraunces', serif);
+    padding: 5px 0 20px;
+    line-height: 1.4;
+    color: rgba(255, 255, 255, 0.55);
 }
 
 

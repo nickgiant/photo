@@ -1,5 +1,6 @@
 
 
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap');
 
 @import url('./views/feed-view.css');
 
@@ -25,8 +26,26 @@
 
 
 
+:root {
+    /* PhotoAct brand palette — option 2a (sidebar layout + photo-story composer) */
+    --brand-navy: #1b3a5c;
+    --brand-navy-light: #254b73;
+    --brand-orange: #e8823c;
+    --brand-orange-light: #f0a066;
+    --brand-cream: #f7f5f0;
+    --brand-cream-alt: #efece5;
+    --brand-ink: #1c2430;
+    --brand-body: #4a5568;
+    --brand-border: #e4e0d6;
+    --brand-border-strong: #d7d2c4;
+    --brand-muted: #8a8578;
+    --font-display: 'Fraunces', Georgia, serif;
+    --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+}
+
 html {
-    --lumo-font-family: Consolas, "Andale Mono WT", "Andale Mono", "Lucida Console", "Lucida Sans Typewriter", "DejaVu Sans Mono", "Bitstream Vera Sans Mono", "Liberation Mono", "Nimbus Mono L", Monaco, "Courier New", Courier, monospace;
+    --lumo-font-family: var(--font-body);
     --lumo-font-size: 1rem;
     --lumo-font-size-xxxl: 1.75rem;
     --lumo-font-size-xxl: 1.375rem;
@@ -70,10 +89,10 @@ html {
     --lumo-shade-70pct: rgba(44, 38, 22, 0.7);
     --lumo-shade-80pct: rgba(44, 38, 22, 0.8);
     --lumo-shade-90pct: rgba(44, 38, 22, 0.9);
-    --lumo-primary-text-color: #3c4875; /* #a3205d; /* #b5242e; /*rgb(216, 171, 65);*/
-    --lumo-primary-alt-text-color: rgb(216, 171, 65);
-    --lumo-primary-color-50pct: rgba(216, 171, 65, 0.5);
-    --lumo-primary-color-10pct: rgba(216, 171, 65, 0.1);
+    --lumo-primary-text-color: var(--brand-navy);
+    --lumo-primary-alt-text-color: var(--brand-orange);
+    --lumo-primary-color-50pct: rgba(27, 58, 92, 0.5);
+    --lumo-primary-color-10pct: rgba(27, 58, 92, 0.1);
     --lumo-error-text-color: rgb(237, 127, 151);
     --lumo-error-color-50pct: rgba(237, 127, 151, 0.5);
     --lumo-error-color-10pct: rgba(237, 127, 151, 0.1);
@@ -82,10 +101,10 @@ html {
     --lumo-success-color-10pct: rgba(84, 222, 110, 0.1);
     --lumo-tint: #f4eee1;
     --lumo-shade: hsl(42, 33%, 13%);
-    --lumo-primary-color: #3c4875; /* #b33127; /*#a3205d; /*#bd0852; /*#d8ab41;*/
+    --lumo-primary-color: var(--brand-navy);
     --lumo-error-color: #ED7F97;
     --lumo-success-color: #54DE6E;
-    --lumo-header-text-color: #3c4875; /* #b33127; /*#a3205d;/* #b5242e; /*#b7830b;*/
+    --lumo-header-text-color: var(--brand-navy);
 
     --shadow-soft: rgba(31, 78, 133, 0.18);
     --shadow-medium: rgba(31, 78, 133, 0.28);

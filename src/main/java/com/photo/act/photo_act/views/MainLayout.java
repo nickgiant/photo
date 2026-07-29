@@ -2,6 +2,7 @@ package com.photo.act.photo_act.views;
 
 import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.views.components.GoogleAnalytics;
+import com.photo.act.photo_act.views.components.LoginDialog;
 import com.vaadin.flow.component.*;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
@@ -768,12 +769,41 @@ public class MainLayout extends AppLayout{
         layoutMenu.add(createSideMenu());
         Scroller scroller = new Scroller(layoutMenu);
         scroller.addClassNames(AlignItems.CENTER, JustifyContent.CENTER,
-                Padding.NONE, Margin.NONE,Height.FULL);
+                Padding.NONE, Margin.NONE);
 
-        sidebarLayout.add(logoLayout, scroller);
+        Div sidebarFooter = createSidebarFooter();
+
+        sidebarLayout.add(logoLayout, scroller, sidebarFooter);
+        sidebarLayout.expand(scroller);
 
         addToDrawer(sidebarLayout);
 
+    }
+
+    private Div createSidebarFooter() {
+        Div sidebarFooter = new Div();
+        sidebarFooter.addClassName("sidebar-footer");
+
+        RouterLink linkUpload = new RouterLink();
+        linkUpload.setRoute(UploadView.class);
+        linkUpload.addClassName("sidebar-cta-btn");
+        linkUpload.setText("+ Upload a Photo");
+
+        Div avatarDot = new Div();
+        avatarDot.addClassName("sidebar-user-avatar");
+
+        Span signInLabel = new Span("Sign in");
+
+        Div signInRow = new Div(avatarDot, signInLabel);
+        signInRow.addClassName("sidebar-user-row");
+        signInRow.addClickListener(e -> {
+            LoginDialog loginDialog = new LoginDialog();
+            loginDialog.getLoginForm().setAction("login");
+            loginDialog.open();
+        });
+
+        sidebarFooter.add(linkUpload, signInRow);
+        return sidebarFooter;
     }
 
     private VerticalLayout createSideMenu() {

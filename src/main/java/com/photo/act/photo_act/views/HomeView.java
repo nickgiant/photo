@@ -29,6 +29,7 @@ import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.PageSeoUtil;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.photo.act.photo_act.views.components.*;
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.HasStyle;
 import com.vaadin.flow.component.UI;
@@ -50,7 +51,6 @@ import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
-import com.vaadin.flow.server.streams.DownloadHandler;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import com.vaadin.flow.theme.lumo.LumoUtility.*;
 import org.slf4j.Logger;
@@ -251,71 +251,18 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         String sqlGroupByWeekly = " GROUP BY DATE_FORMAT(pm.date_inserted, '%V-%Y') ";
         String sqlUploadsGroupedOrderBy = " ORDER BY DATE_FORMAT(pm.date_inserted, '%Y-%m-%V') DESC LIMIT 10";
 
-        H1 titlePage = new H1(APP_NAME);
-        Span subTitle = new Span("[ Through Photography, We Connect and Act ]");
-
-        Header siteHeader = new Header(titlePage, subTitle);
-        siteHeader.addClassNames(Width.FULL);
-
-        verticalLayout.add(siteHeader);
-
-        Div divMainImage = new Div();
-        divMainImage.setWidthFull();
-        divMainImage.setHeight("auto");
-        divMainImage.setMaxWidth("44rem");
-        divMainImage.setMaxHeight("30rem");
-        Image mainImage = new Image();
-        String strMainImagePath = DIR_PHOTOS_SERVER + dirChar + "photographer.png";
-
-
-        Path path = Paths.get(strMainImagePath);
-        File file = path.toFile();
-
-        mainImage.setSrc(DownloadHandler.forFile(file));
-        mainImage.setAlt("sketch image of a photographer");
-        mainImage.setSizeFull();
-//        mainImage.setHeight("24rem");
-//        mainImage.setWidth("auto");
-        mainImage.getStyle().setBorderRadius("20px");
-        mainImage.getStyle().setPadding("10px");
-
-        divMainImage.add(mainImage);
-
-        Div div1 = new Div("We are a community site, with members exchanging info and links in order to improve our skills in photography!");
-        Div div2 = new Div("Currently, we share info about events and learnings. Of course, we also have space for our photos and albums.");
-
-        Button btnLogin = new Button("Login");
-        btnLogin.addClassName("btn-register");
-        btnLogin.addClickListener(click ->{
-            displayLoginDialog();
-        });
-
-
-        Button btnRegister = new Button("Register");
-        btnRegister.addClassName("btn-register");
-//        btnSuggestEvent.setIcon(svgComments);
-        btnRegister.addClickListener(click -> {
-            displayRegisterDialog();
-        });
-
-
-        HorizontalLayout layoutUserBtns = new HorizontalLayout();
-        layoutUserBtns.setAlignItems(FlexComponent.Alignment.CENTER);
-        layoutUserBtns.setJustifyContentMode(FlexComponent.JustifyContentMode.AROUND);
-        layoutUserBtns.setWrap(true);
         String usrName = genericView.checkIfAuthUserName();
-        if (usrName == null) {
-            mainImage.setVisible(true);
-            layoutUserBtns.add(btnLogin,btnRegister);
-        } else {
 
-            mainImage.setVisible(false);
-            layoutUserBtns.add(genericView.getAuthUserPanel(usrName));
+        // ── Hero — option 2a: kicker + headline + CTAs ──────────────
+        verticalLayout.add(createHeroSection(usrName));
+
+        if (usrName != null) {
+            Div authPanel = new Div(genericView.getAuthUserPanel(usrName));
+            authPanel.addClassName("hero-auth-panel");
+            verticalLayout.add(authPanel);
         }
 
-        verticalLayout.add(divMainImage, div1, div2);
-
-        // ── Hero slider — top of page ──────────────────────────────
+        // ── Hero slider — real community photos ─────────────────────
         HeroSliderComponent heroSlider = new HeroSliderComponent(
                 recordService, photoStatisticsService,
                 photoViewService, photoRatingService,
@@ -323,6 +270,15 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
                 DIR_PHOTOS_SERVER, isMobile, userId, publicIp);
         verticalLayout.add(heroSlider);
         // ──────────────────────────────────────────────────────────
+
+        // ── Tell it as a Photo Story — composer promo ───────────────
+        verticalLayout.add(createStoryComposerSection());
+
+        // ── Showcase / Feedback / Learn feature grid ────────────────
+        verticalLayout.add(createFeatureGrid());
+
+        // ── Fresh from the community ─────────────────────────────────
+        verticalLayout.add(createCommunityGrid(sqlGalleryAll, arrColumnNamesGallery));
 
         Div divLearningTopics = loadLearningTopics();
         VerticalLayout layoutLearningTopics = new VerticalLayout();
@@ -463,6 +419,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
         this.removeAll();
         this.add(verticalLayout);
+        this.add(createCtaBanner(usrName));
         this.add(genericView.loadFooter(isMobile));
 
         logVisitorToDb();
@@ -623,6 +580,224 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
         this.setWidthFull();
 
+    }
+
+    // ================================================================
+    // Option 2a — "Sidebar layout + photo-story composer" home sections
+    // ================================================================
+
+    private Div createHeroSection(String usrName) {
+        Div hero = new Div();
+        hero.addClassName("hero-2a");
+
+        Span kicker = new Span("Photography Community");
+        kicker.addClassName("hero-kicker");
+
+        H1 heroTitle = new H1("Upload and share in our community.");
+        heroTitle.addClassName("hero-title");
+
+        Paragraph heroSubtitle = new Paragraph("Post your best shots, tell them as a story, and trade feedback "
+                + "with photographers who take the craft seriously.");
+        heroSubtitle.addClassName("hero-subtitle");
+
+        Button btnUpload = new Button("Upload a Photo");
+        btnUpload.addClassName("btn-hero-primary");
+        btnUpload.addClickListener(click -> {
+            if (usrName == null) {
+                displayRegisterDialog();
+            } else {
+                btnUpload.getUI().ifPresent(ui -> ui.navigate(UploadView.class));
+            }
+        });
+
+        Button btnExplore = new Button("Explore Community");
+        btnExplore.addClassName("btn-hero-outline");
+        btnExplore.addClickListener(click ->
+                btnExplore.getUI().ifPresent(ui -> ui.navigate(PhotographersView.class)));
+
+        HorizontalLayout heroActions = new HorizontalLayout(btnUpload, btnExplore);
+        heroActions.addClassName("hero-actions");
+        heroActions.setWrap(true);
+
+        hero.add(kicker, heroTitle, heroSubtitle, heroActions);
+        return hero;
+    }
+
+    private Div createStoryComposerSection() {
+        Div section = new Div();
+        section.addClassName("story-section");
+
+        Div headerRow = new Div();
+        headerRow.addClassName("section-header-row");
+        H2 title = new H2("Tell it as a Photo Story");
+        RouterLink seeAll = new RouterLink("See all stories →", StoriesView.class);
+        seeAll.addClassName("section-link");
+        headerRow.add(title, seeAll);
+
+        Paragraph intro = new Paragraph("Sequence multiple photos with your own narration — a walkthrough of a "
+                + "shoot, a trip, or the story behind one shot.");
+        intro.addClassName("section-intro");
+
+        Div card = new Div();
+        card.addClassName("composer-card");
+
+        Div cardHeader = new Div();
+        cardHeader.addClassName("composer-card-header");
+        Div avatarDot = new Div();
+        avatarDot.addClassName("composer-avatar-dot");
+        Span storyName = new Span("New story — \"A morning on the coast\"");
+        storyName.addClassName("composer-story-name");
+        Div nameRow = new Div(avatarDot, storyName);
+        nameRow.addClassName("composer-name-row");
+        Span draftBadge = new Span("Draft");
+        draftBadge.addClassName("composer-draft-badge");
+        cardHeader.add(nameRow, draftBadge);
+
+        Div photoGrid = new Div();
+        photoGrid.addClassName("composer-photo-grid");
+        for (int i = 1; i <= 3; i++) {
+            Div thumb = new Div(new Span("photo " + i));
+            thumb.addClassNames("composer-photo-thumb", "thumb-" + i);
+            photoGrid.add(thumb);
+        }
+        Div addThumb = new Div(new Span("+ Add"));
+        addThumb.addClassName("composer-photo-add");
+        photoGrid.add(addThumb);
+
+        Div quote = new Div("\"We got there before sunrise. The fog hadn't lifted yet, and for twenty minutes "
+                + "the whole coast was just us and the gulls…\"");
+        quote.addClassName("composer-quote");
+
+        Div footerRow = new Div();
+        footerRow.addClassName("composer-footer-row");
+        Span meta = new Span("3 photos · 1 caption · auto-saved");
+        meta.addClassName("composer-meta");
+
+        Button btnPreview = new Button("Preview");
+        btnPreview.addClassName("btn-hero-outline");
+        btnPreview.addClickListener(e -> btnPreview.getUI().ifPresent(ui -> ui.navigate(MemberStoriesView.class)));
+
+        Button btnPublish = new Button("Publish Story");
+        btnPublish.addClassName("btn-hero-cta");
+        btnPublish.addClickListener(e -> btnPublish.getUI().ifPresent(ui -> ui.navigate(MemberStoriesView.class)));
+
+        HorizontalLayout footerActions = new HorizontalLayout(btnPreview, btnPublish);
+        footerActions.addClassName("composer-footer-actions");
+
+        footerRow.add(meta, footerActions);
+
+        card.add(cardHeader, photoGrid, quote, footerRow);
+
+        section.add(headerRow, intro, card);
+        return section;
+    }
+
+    private Div createFeatureGrid() {
+        Div grid = new Div();
+        grid.addClassName("feature-grid");
+
+        grid.add(
+                createFeatureCard("Showcase your work",
+                        "Build a portfolio your whole community can discover and follow.",
+                        MemberPhotosView.class, "feature-icon-circle"),
+                createFeatureCard("Get real feedback",
+                        "Trade critiques with photographers who take the craft seriously.",
+                        StoriesView.class, "feature-icon-square"),
+                createFeatureCard("Learn & attend events",
+                        "Workshops, meetups and guides from members further down the road.",
+                        FestivalsView.class, "feature-icon-dot")
+        );
+        return grid;
+    }
+
+    private Div createFeatureCard(String title, String description, Class<? extends Component> route, String iconClass) {
+        Div card = new Div();
+        card.addClassName("feature-card");
+
+        Div iconBox = new Div();
+        iconBox.addClassName("feature-icon-box");
+        Div iconShape = new Div();
+        iconShape.addClassName(iconClass);
+        iconBox.add(iconShape);
+
+        H3 titleEl = new H3(title);
+        titleEl.addClassName("feature-title");
+        Div descEl = new Div(description);
+        descEl.addClassName("feature-description");
+
+        RouterLink link = new RouterLink();
+        link.setRoute(route);
+        link.addClassName("feature-card-link");
+        link.add(iconBox, titleEl, descEl);
+
+        card.add(link);
+        return card;
+    }
+
+    private Div createCommunityGrid(String sqlRead, String[] arrColumnNames) {
+        Div section = new Div();
+        section.addClassName("community-section");
+
+        Div headerRow = new Div();
+        headerRow.addClassName("section-header-row");
+        H2 title = new H2("Fresh from the community");
+        RouterLink viewAll = new RouterLink("View all →", GalleryView.class);
+        viewAll.addClassName("section-link");
+        headerRow.add(title, viewAll);
+
+        Div grid = new Div();
+        grid.addClassName("community-grid");
+
+        String strPathThumb = DIR_PHOTOS_SERVER + dirChar + subPathSmall;
+        List<Record> lstRecords = getRecordsFromDb(sqlRead + " LIMIT 4", arrColumnNames);
+        for (Record record : lstRecords) {
+            Image image = getImageThumbFromDb(record, strPathThumb);
+            image.addClassName("community-photo");
+
+            String strName = nvl(record.getColumnData("name"));
+            String strSurname = nvl(record.getColumnData("surname"));
+            String strPhotoType = nvl(record.getColumnData("photo_type"));
+
+            Div caption = new Div();
+            caption.addClassName("community-caption");
+            Span nameSpan = new Span((strName + " " + strSurname).trim());
+            Span typeSpan = new Span(" · " + (strPhotoType.isEmpty() ? "Photo" : strPhotoType));
+            typeSpan.addClassName("community-caption-type");
+            caption.add(nameSpan, typeSpan);
+
+            Div card = new Div(image, caption);
+            card.addClassName("community-card");
+            grid.add(card);
+        }
+
+        section.add(headerRow, grid);
+        return section;
+    }
+
+    private Div createCtaBanner(String usrName) {
+        Div banner = new Div();
+        banner.addClassName("cta-banner");
+
+        Div textBlock = new Div();
+        textBlock.addClassName("cta-banner-text");
+        Div heading = new Div("Every photo has a story.");
+        heading.addClassName("cta-banner-heading");
+        Div sub = new Div("Upload and share in our community today.");
+        sub.addClassName("cta-banner-sub");
+        textBlock.add(heading, sub);
+
+        Button btn = new Button("Upload a Photo");
+        btn.addClassName("btn-hero-cta");
+        btn.addClickListener(click -> {
+            if (usrName == null) {
+                displayRegisterDialog();
+            } else {
+                btn.getUI().ifPresent(ui -> ui.navigate(UploadView.class));
+            }
+        });
+
+        banner.add(textBlock, btn);
+        return banner;
     }
 
     private VerticalLayout loadWeather(String city, String country) {
