@@ -27,11 +27,21 @@
     align-items: center;
     justify-content: center;
     color: #868686;
-    border-radius: 8px;
+/*    border-radius: 8px;
     border-bottom-left-radius: 16px;
-    border-bottom-right-radius: 16px;
+    border-bottom-right-radius: 16px;*/
     position: relative;
-    background: transparent;
+    /*background: transparent;*/
+
+
+    background: #fff;
+    border: 1px solid var(--brand-border, #e4e0d6);
+    border-radius: 10px;
+    /*padding: 24px;*/
+    /*box-shadow: 1px 1px 8px rgba(27, 58, 92, 0.06);*/
+    gap: 16px;
+
+
     /*max-width: 640px;*/
     padding: 15px;
     margin: 0;

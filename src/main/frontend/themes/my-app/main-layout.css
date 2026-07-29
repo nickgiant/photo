@@ -1301,56 +1301,16 @@ nav ul:hover li:hover ~ li:before {
     transition: 0.2s;
 }
 
-.learnings-horizontal-panel{
-    max-width: 1100px;
-    a {
-        /*color: #666666; /* #466ca8; /* #6c9494;*/
-        /* min-height: 180px;*/
-        background-color: #ffffff; /* #e3ebf7; /* #ffffff;/*#d9e5f7;*/
-        border-radius: 14px;
-        border: 1px solid #c7d8f1;
-        padding: 18px 10px 12px;
-        margin: 12px;
-        text-decoration: none;
-        overflow: hidden;
-        /*    display: block;
-            position: relative;*/
-        box-shadow: 1px 1px 6px lightgrey;
-        transition: all 0.3s ease;
-
-        &:hover {
-            color: #466ca8; /* #6c9494;*/
-            background-color: #e3ebf7; /* #eaeff7; /*#ffffff;/*#d9e5f7;*/
-            border: 1px solid #466ca8;
-            /*border: #466ca8 1px solid; /* #6c9494;*/
-            box-shadow: 2px 2px 10px lightgrey;
-            transition: all 0.3s ease;
-            cursor: pointer;
-            /* scale: 1.09;*/
-
-            h6 {
-                transition: all 0.3s ease;
-                letter-spacing: 4px;
-            }
-
-            h3 {
-                transition: all 0.3s ease;
-                letter-spacing: 3px;
-            }
-        }
-    }
-
-}
 
 footer {
-    background-color: var(--brand-navy, #1b3a5c);
-    color: rgba(255, 255, 255, 0.65);
+    background-color: #efece5;
+    color:  var(--brand-navy, #1b3a5c);
     text-align: center;
     padding: 30px 0 26px;
 }
 
 footer h1 {
-    color: #fff;
+    color: #1b3a5c;
     text-align: center;
     text-transform: none;
     font-size: 26px;
@@ -1367,9 +1327,10 @@ footer span {
     letter-spacing: 0;
     font-style: italic;
     font-family: var(--font-display, 'Fraunces', serif);
+    color: #1b3a5c;
     padding: 5px 0 20px;
     line-height: 1.4;
-    color: rgba(255, 255, 255, 0.55);
+
 }
 
 

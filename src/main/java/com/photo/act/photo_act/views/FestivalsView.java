@@ -92,11 +92,12 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
     String sqlFestivalsRead = "SELECT  f.nameShort, f.periodOfYear, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert " +
             ", e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description, DATE_FORMAT(f.dateInsert , '%D %M %Y') AS formatedDateUpdated " +
             ", e.title_of_place, e.address_of_place, e.url_planned, e.url_fb, e.url_insta " +
-            ", d.city_name, d.country " +
+            ", f.country " +
             " FROM  festivals f LEFT JOIN festivals_edition e ON f.id = e.festival_id " +
+            " WHERE 1 = 1 ";
 //            " LEFT JOIN destination d ON  d.id = e.destination_id " +
-            " , destination d " +
-            " WHERE d.id = e.destination_id ";
+//            " , destination d " +
+//            " WHERE d.id = e.destination_id ";
 
     private String strColorExternalweb = "#9fafd5";
 
@@ -110,13 +111,13 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
     private String sqlShowClubsOrder = " ORDER BY o.city ASC, o.org_name ASC";
 
 
-    private String[] arrColumnNamesGallery = {"name_new", "title", "subtitle", "photo_type", "uploader", "city_name", "meta_date"
+    private String[] arrColumnNamesGallery = {"name_new", "title", "subtitle", "photo_type", "uploader", "meta_date"
             , "space_size", "space_size_medium", "space_size_thumb", "meta_camera_make", "meta_camera_model", "meta_lens_make", "meta_lens_model"
             , "meta_focal_length", "meta_focal_length_ff", "meta_iso"
             , "location_by_user", "location_area", "location_country_code", "location_lat", "location_lon"
             , "date_inserted"};
 
-    private String sqlReadGallery = "SELECT pm.name_new, pm.title, pm.subtitle, pm.photo_type, pm.uploader, d.city_name, DATE_FORMAT(pm.meta_date, '%W %D %M %Y %H:%i %p') AS meta_date, " +
+    private String sqlReadGallery = "SELECT pm.name_new, pm.title, pm.subtitle, pm.photo_type, pm.uploader, DATE_FORMAT(pm.meta_date, '%W %D %M %Y %H:%i %p') AS meta_date, " +
             " pm.space_size, pm.space_size_medium, pm.space_size_thumb, pm.meta_camera_make, pm.meta_camera_model, pm.meta_lens_make, pm.meta_lens_model, " +
             " pm.meta_focal_length, pm.meta_focal_length_ff, pm.meta_iso, " +
             "  pm.location_by_user, pm.location_area, pm.location_country_code, pm.location_lat, pm.location_lon " +
@@ -170,7 +171,7 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
             filtersColumn.setMaxWidth("290px");
             verticalLayout.setMaxWidth("1040px");
 
-            filtersColumn.add(loadFiltersColumn());
+//            filtersColumn.add(loadFiltersColumn());
 
             layoutMobileContent.add(filtersColumn, verticalLayout);
             this.add(layoutMobileContent);
@@ -185,7 +186,7 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
             filtersColumn.setMaxWidth("290px");
             verticalLayout.setMaxWidth("980px");
 
-            filtersColumn.add(loadFiltersColumn());
+//            filtersColumn.add(loadFiltersColumn());
 
             layoutContent.add(filtersColumn, verticalLayout);
             this.add(layoutContent);
@@ -547,7 +548,7 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
         HorizontalLayout layoutWithMap = new HorizontalLayout();
         layoutWithMap.addClassNames(Width.FULL);
 
-        layoutWithMap.add(getDestinationMap(strAddressOfPlace, strTitleOfPlace, strCityName, strCountry));
+        layoutWithMap.add(getDestinationMap(strAddressOfPlace, strTitleOfPlace, strCityName,strCountry));
 
         layoutFestivalInfo.add(layoutPostTitle, getFestivalItem(record), getActions());
 
@@ -950,14 +951,14 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
 //        StreamResource iconComments = new StreamResource("comments.svg",
 //                () -> getClass().getResourceAsStream("/icons/comments.svg"));
 //        SvgIcon svgComments = new SvgIcon(iconComments);
-        Button btnSuggestEvent = new Button("Suggest an Event");
+/*        Button btnSuggestEvent = new Button("Suggest an Event");
         btnSuggestEvent.addClassName("btn-suggest");
 //        btnSuggestEvent.setIcon(svgComments);
         btnSuggestEvent.addClickListener(click -> {
 
-        });
+        });*/
 
-        filtersColumn.add(btnSuggestEvent);
+//        filtersColumn.add(btnSuggestEvent);
 
         return filtersColumn;
     }

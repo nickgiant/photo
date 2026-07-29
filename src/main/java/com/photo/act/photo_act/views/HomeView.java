@@ -305,7 +305,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 //        verticalLayout.add(titleCarousel, getCarousel(lstImage));
 
 
-        VerticalLayout layoutPhotoUploads = new VerticalLayout();
+ /*       VerticalLayout layoutPhotoUploads = new VerticalLayout();
         layoutPhotoUploads.addClassNames(AlignItems.CENTER, JustifyContent.CENTER,
         Padding.SMALL, Margin.NONE);
         layoutPhotoUploads.addClassName("page-section");
@@ -318,9 +318,9 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
                 Padding.NONE, Margin.NONE);
         layoutGraph.add(loadGraphUploads(sqlUploadsGrouped + sqlGroupByMonthly + sqlUploadsGroupedOrderBy, arrColsUploadsGrouped, "month"));
         layoutPhotoUploads.add(titleGraphLastPhotos, layoutFilterUploadsPeriod, layoutGraph);
-        verticalLayout.add(layoutPhotoUploads);
+        verticalLayout.add(layoutPhotoUploads);*/
 
-        HorizontalLayout layoutTabSelectPeriod = new HorizontalLayout();
+/*        HorizontalLayout layoutTabSelectPeriod = new HorizontalLayout();
         layoutTabSelectPeriod.addClassName("tab-select");
         RadioButtonGroup<String> btnGroupSelectPeriod = new RadioButtonGroup<>();
         btnGroupSelectPeriod.setItems("Last 10 Months", "Last 10 Weeks");
@@ -334,15 +334,14 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         });
         btnGroupSelectPeriod.setValue("Last 10 Months");
 
-        layoutFilterUploadsPeriod.add(btnGroupSelectPeriod);
+        layoutFilterUploadsPeriod.add(btnGroupSelectPeriod);*/
 
 
 
-        VerticalLayout layoutLastNewsSection = new VerticalLayout();
-        layoutLastNewsSection.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER, Padding.MEDIUM);
-        H2 titleLastNews = new H2("Last Posted News");
+        Div layoutLastNewsSection = new Div();
+
         VerticalLayout layoutLastNews = loadLastNews();
-        layoutLastNewsSection.add(titleLastNews, layoutLastNews);
+        layoutLastNewsSection.add( layoutLastNews);
         verticalLayout.add(layoutLastNewsSection);
 
         String finalSqlGalleryAll = sqlGalleryAll;
@@ -368,7 +367,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         });
         btnGroupShowPhotos.setValue("Last 5 Photos");
         layoutTabViewPhotos.add(btnGroupShowPhotos);*/
-
+/*
         HorizontalLayout layoutMorePhotosActions = new HorizontalLayout();
         layoutMorePhotosActions.addClassName("view-more");
         Button btnMorePhotos = new Button("More Photos");
@@ -378,29 +377,38 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
                     ui.navigate(GalleryView.class)
             );
         });
-        layoutMorePhotosActions.add(btnMorePhotos);
+        layoutMorePhotosActions.add(btnMorePhotos);*/
 
 
-        H2 titleWeather = new H2("Current Weather at:");
+
+
+
+        H2 titleWeather = new H2("Current Weather");
 
         Div layoutWeather = new Div();
-        layoutWeather.addClassNames(Width.FULL);
-        layoutWeather.addClassName("container-weather");
+        layoutWeather.addClassName("learnings-horizontal-panel");
+        layoutWeather.addClassName("section-header-row");
 
-        H4 titleA = new H4("Athens");
+        layoutWeather.add(titleWeather);
+
+        HorizontalLayout layoutCities = new HorizontalLayout();
+        layoutCities.addClassName("container-weather");
+        layoutCities.setWrap(true);
+
+//        H4 titleA = new H4("Athens");
         VerticalLayout layoutResultsA = loadWeather("Athens", "Greece");
-        VerticalLayout layoutAllA = new VerticalLayout();
+/*        VerticalLayout layoutAllA = new VerticalLayout();
         layoutAllA.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER);
-        layoutAllA.add(titleA, layoutResultsA);
+        layoutAllA.add(titleA, layoutResultsA);*/
 
-        H4 titleB = new H4("Thessaloniki");
+//        H4 titleB = new H4("Thessaloniki");
         VerticalLayout layoutResultsB = loadWeather("Thessaloniki", "Greece");
-        VerticalLayout layoutAllB = new VerticalLayout();
+        /*VerticalLayout layoutAllB = new VerticalLayout();
         layoutAllB.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER);
-        layoutAllB.add(titleB, layoutResultsB);
+        layoutAllB.add(titleB, layoutResultsB);*/
 
-        layoutWeather.add(layoutAllA, layoutAllB);
-        verticalLayout.add(titleWeather, layoutWeather);
+        layoutCities.add(layoutResultsA, layoutResultsB);
+        verticalLayout.add( layoutWeather,layoutCities);
 
         this.removeAll();
         this.add(verticalLayout);
@@ -865,7 +873,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
 
         Button btnNow = new Button("Weather @ "+city);
-        btnNow.setIcon(VaadinIcon.REFRESH.create());
+        /*btnNow.setIcon(VaadinIcon.SUN_RISE.create());*/
         btnNow.addClickListener(event -> {
 
            Dialog dialog = getWeatherCurrent(city, country);
@@ -978,12 +986,12 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
     private VerticalLayout loadLastNews() {
         VerticalLayout layoutLastNews = new VerticalLayout();
-        layoutLastNews.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER,
-                Margin.XSMALL,
-                Padding.LARGE,
-                Gap.XLARGE);
         layoutLastNews.addClassName("learnings-horizontal-panel");
+        layoutLastNews.addClassName("section-header-row");
 
+
+        H2 titleLastNews = new H2("Last Posted News");
+        layoutLastNews.add(titleLastNews);
         List<LearningDto> news = learningService.getLatestLearnings(0, 3).getContent();
         for (LearningDto dto : news) {
             layoutLastNews.add(new LearningHorizontalPanel(dto));
