@@ -627,7 +627,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         headerRow.addClassName("section-header-row");
         H2 title = new H2("Tell it as a Photo Story");
         RouterLink seeAll = new RouterLink("See all stories →", StoriesView.class);
-        seeAll.addClassName("section-link");
+        seeAll.addClassName("btn-hero-outline");
         headerRow.add(title, seeAll);
 
         Paragraph intro = new Paragraph("Sequence multiple photos with your own narration — a walkthrough of a "
@@ -782,7 +782,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         headerRow.addClassName("section-header-row");
         H2 title = new H2("Fresh from the community");
         RouterLink viewAll = new RouterLink("View all →", GalleryView.class);
-        viewAll.addClassName("section-link");
+        viewAll.addClassName("btn-hero-outline");
         headerRow.add(title, viewAll);
 
         Div grid = new Div();
@@ -834,7 +834,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         H2 title = new H2("Most Viewed Locations");
         RouterLink viewAll = new RouterLink("View all →", GalleryView.class,
                 new RouteParameters(new RouteParam("destination", STR_ALL_DESTINATIONS)));
-        viewAll.addClassName("section-link");
+        viewAll.addClassName("btn-hero-outline");
         headerRow.add(title, viewAll);
 
         Div grid = new Div();
