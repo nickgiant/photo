@@ -1307,6 +1307,9 @@ footer {
     color:  var(--brand-navy, #1b3a5c);
     text-align: center;
     padding: 30px 0 26px;
+    height: 200px;
+    box-sizing: border-box;
+    overflow-y: auto;
 }
 
 footer h1 {
@@ -1333,8 +1336,8 @@ footer span {
 
 }
 
-/* ── Footer columns: Explore (left) / Connect (right) ─────────── */
-.footer-columns {
+/* ── Footer row: Explore (2 cols) | brand (title + moto) | Connect ── */
+.footer-row {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
@@ -1368,10 +1371,23 @@ footer span {
     letter-spacing: 0.06em;
 }
 
+.footer-explore-columns {
+    display: flex;
+    gap: 32px;
+}
+
 .footer-links {
     display: flex;
     flex-direction: column;
     gap: 8px;
+}
+
+.footer-brand-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1 1 auto;
+    text-align: center;
 }
 
 .footer-links a {
@@ -1407,13 +1423,17 @@ footer span {
 }
 
 @media (max-width: 640px) {
-    .footer-columns {
+    .footer-row {
         justify-content: flex-start;
     }
 
     .footer-column:last-child {
         text-align: left;
         align-items: flex-start;
+    }
+
+    .footer-explore-columns {
+        gap: 20px;
     }
 }
 

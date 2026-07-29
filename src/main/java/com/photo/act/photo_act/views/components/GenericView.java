@@ -1873,96 +1873,6 @@ public class GenericView {
         Footer footer = new Footer();
         footer.addClassNames(LumoUtility.Width.FULL);
 
-//        Div logoLayout = new Div();
-//        logoLayout.addClassNames(LumoUtility.Display.FLEX, LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER,
-//                LumoUtility.Width.FULL,
-//                LumoUtility.Gap.XSMALL,
-//                LumoUtility.Margin.NONE,
-//                LumoUtility.Padding.MEDIUM
-//        );
-
-        H1 appName = new H1(APP_NAME);
-        //appName.addClassNames(Margin.Vertical.MEDIUM, AlignItems.CENTER, Margin.End.AUTO, FontSize.LARGE, FontWeight.BOLD, TextColor.TERTIARY);
-//        appName.addClassNames(LumoUtility.FontSize.LARGE, LumoUtility.FontWeight.SEMIBOLD, LumoUtility.TextColor.TERTIARY,
-//                LumoUtility.Padding.NONE, LumoUtility.Margin.NONE);
-//        appName.getStyle().set("font-family", "Times-New-Roman, serif");
-//        appName.getStyle().set("font-stretch", "semi-expanded");
-//        appName.getStyle().setColor("#514c3f");
-//        appName.getStyle().setColor("#eaeae8");//"#f9943b");//""#bd3450");
-
-        Span cameraLogo = new Span();
-        cameraLogo.add(VaadinIcon.CAMERA.create());
-        // divLogo.addClassNames(Margin.Vertical.MEDIUM, AlignItems.CENTER, Margin.End.LARGE, FontSize.LARGE, FontWeight.BOLD,TextColor.TERTIARY);
-//        divLogo.addClassNames(LumoUtility.FontSize.MEDIUM, LumoUtility.FontWeight.BOLD, LumoUtility.TextColor.TERTIARY,
-//                LumoUtility.Padding.NONE, LumoUtility.Margin.NONE);
-//        divLogo.getStyle().setColor("#514c3f");
-
-        //divLogo.getStyle().setColor("rgba(231, 24, 24, 0.5)");
-        //divLogo.getStyle().setColor("#d64f00");
-
-
-        Span divPhotoActMoto = new Span("[ Through Photography, We Connect and Act ]");
-//        divPhotoActMoto.addClassNames(LumoUtility.FontSize.MEDIUM, LumoUtility.FontWeight.SEMIBOLD,
-//                LumoUtility.Padding.NONE, LumoUtility.Margin.MEDIUM);
-
-//        HorizontalLayout layoutLine = new HorizontalLayout();
-//        if(isMobile) {
-//            layoutLine.addClassNames(
-//                    Overflow.HIDDEN, Width.FULL,
-//                    AlignItems.CENTER, JustifyContent.AROUND,
-//                    Margin.NONE,
-//                    Padding.NONE,
-//                    Gap.XSMALL,
-//                    //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-//                    Background.CONTRAST_10,
-//                    Border.BOTTOM, Border.RIGHT,
-////                    BorderColor.CONTRAST_20,
-//                    BorderRadius.NONE);
-//        }else{
-//            layoutLine.addClassNames(
-//                    Overflow.HIDDEN, Width.FULL,
-//                    AlignItems.CENTER, JustifyContent.AROUND,
-//                    Margin.NONE,
-//                    Padding.NONE,
-//                    Gap.MEDIUM,
-//                    //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-//                    Background.CONTRAST_10,
-//                    Border.BOTTOM, Border.RIGHT,
-////                    BorderColor.CONTRAST_20,
-//                    BorderRadius.NONE);
-//        }
-//
-//        layoutLine.add(divTitle);
-
-
-//        VerticalLayout layoutFooter = new VerticalLayout();
-//        layoutFooter.setMinHeight("250px");
-//        layoutFooter.getStyle().setBackgroundColor("#8d8d8d"); //"#78868f");
-//        layoutFooter.getStyle().setColor("#eaeae8");
-////        layoutFooter.addClassName("bottom-radius-shadow");
-//
-//        if (isMobile) {
-//            layoutFooter.addClassNames(
-//                    LumoUtility.Overflow.HIDDEN, LumoUtility.Width.FULL,
-//                    LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.EVENLY,
-//                    LumoUtility.Margin.NONE,
-//                    LumoUtility.Padding.NONE,
-//                    LumoUtility.Gap.MEDIUM,
-//                    //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-////                    Background.CONTRAST_5,
-//                    LumoUtility.BorderRadius.NONE);
-//        } else {
-//            layoutFooter.addClassNames(
-//                    LumoUtility.Overflow.HIDDEN, LumoUtility.Width.FULL,
-//                    LumoUtility.AlignItems.CENTER, LumoUtility.JustifyContent.CENTER,
-//                    LumoUtility.Margin.NONE,
-//                    LumoUtility.Padding.MEDIUM,
-//                    LumoUtility.Gap.MEDIUM,
-//                    //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
-////                    Background.CONTRAST_5,
-//                    LumoUtility.BorderRadius.NONE);
-//        }
-//        layoutFooter.addClassName("footer");
         Div divLineBottom = new Div();
         divLineBottom.addClassNames(
                 LumoUtility.Width.FULL,
@@ -1973,23 +1883,22 @@ public class GenericView {
                 //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
                 LumoUtility.BorderRadius.NONE);
 
-        footer.add(cameraLogo, appName, divPhotoActMoto, buildFooterColumns(), divLineBottom);
+        footer.add(buildFooterRow(), divLineBottom);
         return footer;
     }
 
-    /** "Explore" (Sections menu links) on the left, "Connect" (email) on the right. */
-    private Div buildFooterColumns() {
-        Div columns = new Div();
-        columns.addClassName("footer-columns");
+    /** Single row: Explore (2 columns of Sections links) | brand (logo/title/moto) | Connect (email). */
+    private Div buildFooterRow() {
+        Div row = new Div();
+        row.addClassName("footer-row");
 
+        // ── Explore — same links as the sidebar's "Sections" menu, split into 2 columns ──
         Div exploreCol = new Div();
         exploreCol.addClassName("footer-column");
         Div exploreTitle = new Div("Explore");
         exploreTitle.addClassName("footer-column-title");
 
-        Div exploreLinks = new Div();
-        exploreLinks.addClassName("footer-links");
-        exploreLinks.add(
+        RouterLink[] exploreLinks = {
                 new RouterLink("Home", HomeView.class),
                 new RouterLink("News", LearningsView.class),
                 new RouterLink("Photo-Stories", StoriesView.class),
@@ -1999,9 +1908,38 @@ public class GenericView {
                         new RouteParameters("destination-type", "Cities")),
                 new RouterLink("Events", FestivalsView.class),
                 new RouterLink("Photographers", PhotographersView.class)
-        );
-        exploreCol.add(exploreTitle, exploreLinks);
+        };
 
+        Div exploreLinksColA = new Div();
+        exploreLinksColA.addClassName("footer-links");
+        Div exploreLinksColB = new Div();
+        exploreLinksColB.addClassName("footer-links");
+
+        int half = (exploreLinks.length + 1) / 2;
+        for (int i = 0; i < exploreLinks.length; i++) {
+            (i < half ? exploreLinksColA : exploreLinksColB).add(exploreLinks[i]);
+        }
+
+        Div exploreColumns = new Div();
+        exploreColumns.addClassName("footer-explore-columns");
+        exploreColumns.add(exploreLinksColA, exploreLinksColB);
+
+        exploreCol.add(exploreTitle, exploreColumns);
+
+        // ── Brand — logo, app name, moto ─────────────────────────────────
+        Div brandCol = new Div();
+        brandCol.addClassName("footer-brand-column");
+
+        Span cameraLogo = new Span();
+        cameraLogo.add(VaadinIcon.CAMERA.create());
+
+        H1 appName = new H1(APP_NAME);
+
+        Span divPhotoActMoto = new Span("[ Through Photography, We Connect and Act ]");
+
+        brandCol.add(cameraLogo, appName, divPhotoActMoto);
+
+        // ── Connect — email ───────────────────────────────────────────────
         Div connectCol = new Div();
         connectCol.addClassName("footer-column");
         Div connectTitle = new Div("Connect");
@@ -2009,11 +1947,11 @@ public class GenericView {
 
         Anchor emailLink = new Anchor("mailto:info@photoact.net");
         emailLink.addClassName("footer-email-link");
-        emailLink.add(VaadinIcon.ENVELOPE.create(), new Span("info@photoact.net"));
+        emailLink.add(VaadinIcon.ENVELOPE.create(), new Text("info@photoact.net"));
         connectCol.add(connectTitle, emailLink);
 
-        columns.add(exploreCol, connectCol);
-        return columns;
+        row.add(exploreCol, brandCol, connectCol);
+        return row;
     }
 
 
