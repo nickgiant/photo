@@ -143,7 +143,7 @@
     margin: 0 0 18px;
 }
 
-/* ---------- Photo-story composer card ---------- */
+/* ---------- Tell it as a Photo Story — real story previews ---------- */
 .home-view .story-section {
     width: 100%;
     max-width: 1080px;
@@ -153,134 +153,18 @@
     padding: 28px 4px;
 }
 
-.composer-card {
-    width: 100%;
-    max-width: 760px;
-    background: #fff;
-    border: 1px solid var(--brand-border, #e4e0d6);
-    border-radius: 10px;
-    padding: 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    box-shadow: 1px 1px 8px rgba(27, 58, 92, 0.06);
+.story-preview-grid.gallery {
+    max-width: 1080px;
+    padding: 4px 0 0;
+    margin: 0;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
 }
 
-.composer-card-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-}
-
-.composer-name-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.composer-avatar-dot {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    background: var(--brand-navy, #1b3a5c);
-    flex-shrink: 0;
-}
-
-.composer-story-name {
+.story-preview-empty {
     font-family: var(--font-body, "Inter", sans-serif);
-    font-size: 13.5px;
-    font-weight: 700;
-    color: var(--brand-ink, #1c2430);
-}
-
-.composer-draft-badge {
-    font-family: var(--font-body, "Inter", sans-serif);
-    font-size: 12.5px;
-    font-weight: 600;
-    color: var(--brand-muted, #8a8578);
-}
-
-.composer-photo-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
-    width: 100%;
-}
-
-.composer-photo-thumb,
-.composer-photo-add {
-    border-radius: 6px;
-    height: 100px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: var(--font-mono, "JetBrains Mono", monospace);
-    font-size: 9.5px;
-    font-weight: 500;
-    text-align: center;
-    text-transform: none;
-    letter-spacing: 0;
-}
-
-.composer-photo-thumb.thumb-1 {
-    background: repeating-linear-gradient(45deg, #1b3a5c, #1b3a5c 10px, #254b73 10px, #254b73 20px);
-    color: #cdd8e3;
-}
-
-.composer-photo-thumb.thumb-2 {
-    background: repeating-linear-gradient(45deg, #e8823c, #e8823c 10px, #f0a066 10px, #f0a066 20px);
-    color: #5c3413;
-}
-
-.composer-photo-thumb.thumb-3 {
-    background: repeating-linear-gradient(45deg, #d7d2c4, #d7d2c4 10px, #e4e0d6 10px, #e4e0d6 20px);
-    color: #6b6455;
-}
-
-.composer-photo-add {
-    border: 1.5px dashed var(--brand-border-strong, #d7d2c4);
-    color: var(--brand-muted, #8a8578);
-    font-family: var(--font-body, "Inter", sans-serif);
-    font-size: 12px;
-    font-weight: 600;
-}
-
-.composer-quote {
-    background: var(--brand-cream, #faf8f4);
-    border-radius: 6px;
-    padding: 14px 16px;
-    font-family: var(--font-display, "Fraunces", serif);
     font-size: 14px;
-    font-style: italic;
-    line-height: 1.6;
-    color: var(--brand-body, #4a5568);
-    text-shadow: none;
-}
-
-.composer-footer-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 10px;
-    width: 100%;
-}
-
-.composer-meta {
-    font-family: var(--font-body, "Inter", sans-serif);
-    font-size: 12.5px;
     color: var(--brand-muted, #8a8578);
-}
-
-.composer-footer-actions {
-    gap: 10px;
-}
-
-.composer-footer-actions .btn-hero-outline,
-.composer-footer-actions .btn-hero-cta {
-    padding: 9px 16px;
-    font-size: 13px;
+    padding: 12px 4px;
 }
 
 /* ---------- Feature grid ---------- */
@@ -380,11 +264,22 @@
 }
 
 .community-caption {
+    display: flex;
+    align-items: center;
+    gap: 6px;
     padding: 9px 2px;
     font-family: var(--font-body, "Inter", sans-serif);
     font-size: 12px;
     font-weight: 600;
     color: var(--brand-ink, #1c2430);
+}
+
+.community-avatar {
+    width: 22px;
+    height: 22px;
+    min-width: 22px;
+    border-radius: 50%;
+    object-fit: cover;
 }
 
 .community-caption-type {

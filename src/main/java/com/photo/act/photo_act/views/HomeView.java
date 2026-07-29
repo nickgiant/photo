@@ -14,13 +14,13 @@ import com.github.appreciated.apexcharts.config.legend.HorizontalAlign;
 import com.github.appreciated.apexcharts.helper.Series;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
-import com.photo.act.photo_act.dto.LearningCategoryDto;
 import com.photo.act.photo_act.dto.LearningDto;
 import com.photo.act.photo_act.services.EmailSendService;
 import com.photo.act.photo_act.services.LearningService;
 import com.photo.act.photo_act.services.PhotoFlickrService;
 import com.photo.act.photo_act.services.PhotoRatingService;
 import com.photo.act.photo_act.services.PhotoStatisticsService;
+import com.photo.act.photo_act.services.PhotoStoryViewService;
 import com.photo.act.photo_act.services.PhotoViewService;
 import com.photo.act.photo_act.services.ShareMetricService;
 import com.photo.act.photo_act.services.ShareService;
@@ -55,6 +55,7 @@ import com.vaadin.flow.theme.lumo.LumoUtility;
 import com.vaadin.flow.theme.lumo.LumoUtility.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.vaadin.addons.taefi.component.ToggleButtonGroup;
 
 
@@ -191,12 +192,16 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
     private PhotoViewService photoViewService;
     private PhotoStatisticsService photoStatisticsService;
     private LearningService learningService;
+    private PhotoStoryViewService photoStoryViewService;
+
+    @Value("${app.base-url}")
+    private String baseUrl;
 
     public HomeView(RecordService recordService, LearningService learningService,
                     EmailSendService emailSendService, WeatherService weatherService,
                     ShareService shareService, ShareMetricService shareMetricService,
                     PhotoRatingService photoRatingService, PhotoViewService photoViewService,
-                    PhotoStatisticsService photoStatisticsService) {
+                    PhotoStatisticsService photoStatisticsService, PhotoStoryViewService photoStoryViewService) {
         this.recordService = recordService;
         this.learningService = learningService;
         this.emailSendService = emailSendService;
@@ -206,6 +211,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         this.photoRatingService = photoRatingService;
         this.photoViewService = photoViewService;
         this.photoStatisticsService = photoStatisticsService;
+        this.photoStoryViewService = photoStoryViewService;
         utilsDate = new UtilsDate();
         genericView = new GenericView(recordService);
 
@@ -241,6 +247,12 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         String sqlGalleryAll = sqlReadGallery + " WHERE pm.visible_to = 'ALL' " +
                 " AND usr.userId = pm.uploaderId";
         sqlGalleryAll = sqlGalleryAll + " ORDER BY pm.date_inserted DESC, pm.title ASC, pm.meta_date DESC, pm.name_new ASC ";
+
+        // Latest uploaded photo per distinct member — one card per uploader, most recent first.
+        String sqlGalleryLatestPerMember = sqlReadGallery + " WHERE pm.visible_to = 'ALL' " +
+                " AND usr.userId = pm.uploaderId " +
+                " AND pm.id = (SELECT pm2.id FROM photo_meta pm2 WHERE pm2.uploaderId = pm.uploaderId AND pm2.visible_to = 'ALL' ORDER BY pm2.date_inserted DESC LIMIT 1) " +
+                " ORDER BY pm.date_inserted DESC ";
 
         String[] arrColsUploadsGrouped = {"Month", "Photos"};
 
@@ -278,27 +290,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         verticalLayout.add(createFeatureGrid());
 
         // ── Fresh from the community ─────────────────────────────────
-        verticalLayout.add(createCommunityGrid(sqlGalleryAll, arrColumnNamesGallery));
-
-        Div divLearningTopics = loadLearningTopics();
-        VerticalLayout layoutLearningTopics = new VerticalLayout();
-        H2 titleLearnTopics = new H2("Learning Categories");
-
-        HorizontalLayout layoutLearningsActions = new HorizontalLayout();
-        layoutLearningsActions.addClassName("view-more");
-        Button btnMoreLearnings = new Button("View All Learnings");
-        btnMoreLearnings.addClassName("view-more");
-        btnMoreLearnings.addClickListener(click -> {
-            btnMoreLearnings.getUI().ifPresent(ui ->
-                    ui.navigate(LearningsView.class)
-            );
-        });
-        layoutLearningsActions.add(btnMoreLearnings);
-        layoutLearningTopics.add(titleLearnTopics, divLearningTopics, layoutLearningsActions);
-
-        layoutLearningTopics.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER, Padding.MEDIUM);
-        verticalLayout.add(layoutLearningTopics);
-
+        verticalLayout.add(createCommunityGrid(sqlGalleryLatestPerMember, arrColumnNamesGallery));
 
         //Div layoutLearningGenres = loadLearningsAboutGenres(sqlLearningGenres, arrColLearningGenres);
 
@@ -638,57 +630,52 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
                 + "shoot, a trip, or the story behind one shot.");
         intro.addClassName("section-intro");
 
-        Div card = new Div();
-        card.addClassName("composer-card");
+        Div storiesScope = new Div();
+        storiesScope.addClassName("stories-view");
 
-        Div cardHeader = new Div();
-        cardHeader.addClassName("composer-card-header");
-        Div avatarDot = new Div();
-        avatarDot.addClassName("composer-avatar-dot");
-        Span storyName = new Span("New story — \"A morning on the coast\"");
-        storyName.addClassName("composer-story-name");
-        Div nameRow = new Div(avatarDot, storyName);
-        nameRow.addClassName("composer-name-row");
-        Span draftBadge = new Span("Draft");
-        draftBadge.addClassName("composer-draft-badge");
-        cardHeader.add(nameRow, draftBadge);
+        Div grid = new Div();
+        grid.addClassNames("story-preview-grid", "gallery");
+        storiesScope.add(grid);
 
-        Div photoGrid = new Div();
-        photoGrid.addClassName("composer-photo-grid");
-        for (int i = 1; i <= 3; i++) {
-            Div thumb = new Div(new Span("photo " + i));
-            thumb.addClassNames("composer-photo-thumb", "thumb-" + i);
-            photoGrid.add(thumb);
+        String[] arrColumnsStories = {"title", "slug", "description", "story_visible_to", "user_id", "date_inserted",
+                "story_photo_count", "story_photo_size", "name_new", "photo_1", "photo_2", "datetime_story_created",
+                "cat_title", "username", "surname", "name", "resident", "date_joined", "avatar_path", "story_id"
+        };
+        // Latest story per distinct member (one row per author) — most recent 2 authors.
+        String sqlLatestStoriesPerMember = "SELECT s.title, s.slug, s.`description`, s.story_visible_to, s.user_id, s.date_inserted " +
+                " , count(sp.story_id) AS story_photo_count, SUM(pm.space_size) AS story_photo_size " +
+                " , pm.name_new, s.photo_id1, pm.name_new " +
+                " , getDateDiffFromNow(s.date_inserted) AS datetime_story_created " +
+                " , sc.cat_title " +
+                " , usr.username, usr.name, usr.surname, usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined, usr.avatar_path " +
+                " , s.id AS story_id " +
+                " FROM photo_stories_photo sp, photo_meta pm, photo_stories_categories sc, dbuser usr, photo_stories s " +
+                " WHERE s.id = sp.story_id AND s.user_id = usr.userId AND sp.user_id = usr.userId AND s.photo_id1 = pm.id " +
+                " AND s.story_visible_to = 'ALL' AND pm.visible_to = 'ALL' AND sc.id = s.category_id " +
+                " AND s.id = (SELECT s2.id FROM photo_stories s2 WHERE s2.user_id = s.user_id AND s2.story_visible_to = 'ALL' ORDER BY s2.date_inserted DESC LIMIT 1) " +
+                " GROUP BY sp.story_id " +
+                " ORDER BY s.date_inserted DESC " +
+                " LIMIT 2";
+
+        List<Record> lstStories = getRecordsFromDb(sqlLatestStoriesPerMember, arrColumnsStories);
+        String strStoryImagePath = DIR_PHOTOS_SERVER + dirChar + subPathMedium;
+        for (Record record : lstStories) {
+            StoryViewCard storyCard = new StoryViewCard(record, strStoryImagePath, isMobile, userId, strUsername, sessionCreation,
+                    hostname, publicIp, false, recordService, photoStoryViewService, publicIp,
+                    VaadinSession.getCurrent().getSession().getId(),
+                    utilsDate.calcDateTimeFromLongInLDT(sessionCreation, "UTC"),
+                    shareService, shareMetricService, baseUrl);
+            storyCard.addClassName("story-preview-card");
+            grid.add(storyCard);
         }
-        Div addThumb = new Div(new Span("+ Add"));
-        addThumb.addClassName("composer-photo-add");
-        photoGrid.add(addThumb);
 
-        Div quote = new Div("\"We got there before sunrise. The fog hadn't lifted yet, and for twenty minutes "
-                + "the whole coast was just us and the gulls…\"");
-        quote.addClassName("composer-quote");
+        if (lstStories.isEmpty()) {
+            Div empty = new Div("No stories published yet — be the first to tell yours.");
+            empty.addClassName("story-preview-empty");
+            grid.add(empty);
+        }
 
-        Div footerRow = new Div();
-        footerRow.addClassName("composer-footer-row");
-        Span meta = new Span("3 photos · 1 caption · auto-saved");
-        meta.addClassName("composer-meta");
-
-        Button btnPreview = new Button("Preview");
-        btnPreview.addClassName("btn-hero-outline");
-        btnPreview.addClickListener(e -> btnPreview.getUI().ifPresent(ui -> ui.navigate(MemberStoriesView.class)));
-
-        Button btnPublish = new Button("Publish Story");
-        btnPublish.addClassName("btn-hero-cta");
-        btnPublish.addClickListener(e -> btnPublish.getUI().ifPresent(ui -> ui.navigate(MemberStoriesView.class)));
-
-        HorizontalLayout footerActions = new HorizontalLayout(btnPreview, btnPublish);
-        footerActions.addClassName("composer-footer-actions");
-
-        footerRow.add(meta, footerActions);
-
-        card.add(cardHeader, photoGrid, quote, footerRow);
-
-        section.add(headerRow, intro, card);
+        section.add(headerRow, intro, storiesScope);
         return section;
     }
 
@@ -757,13 +744,18 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
             String strName = nvl(record.getColumnData("name"));
             String strSurname = nvl(record.getColumnData("surname"));
             String strPhotoType = nvl(record.getColumnData("photo_type"));
+            String strAvatarPath = nvl(record.getColumnData("avatar_path"));
+            String strFullName = (strName + " " + strSurname).trim();
+
+            Image avatar = genericView.getAvatarThumbImage(strAvatarPath, strFullName, "22px", "22px");
+            avatar.addClassName("community-avatar");
 
             Div caption = new Div();
             caption.addClassName("community-caption");
-            Span nameSpan = new Span((strName + " " + strSurname).trim());
+            Span nameSpan = new Span(strFullName);
             Span typeSpan = new Span(" · " + (strPhotoType.isEmpty() ? "Photo" : strPhotoType));
             typeSpan.addClassName("community-caption-type");
-            caption.add(nameSpan, typeSpan);
+            caption.add(avatar, nameSpan, typeSpan);
 
             Div card = new Div(image, caption);
             card.addClassName("community-card");
@@ -1509,54 +1501,6 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 //        }
 //        return layoutLearnings;
 //    }
-    private Div loadLearningTopics() {
-        Div panelOfTopics = new Div();
-        if (isMobile) {
-            panelOfTopics.addClassNames(
-                    Overflow.HIDDEN, Width.FULL,
-                    AlignItems.CENTER, JustifyContent.CENTER,
-                    Margin.NONE, Padding.MEDIUM, Gap.SMALL,
-                    BorderRadius.NONE);
-        } else {
-            panelOfTopics.addClassNames(
-                    Overflow.HIDDEN, Width.FULL,
-                    AlignItems.CENTER, JustifyContent.CENTER,
-                    Margin.NONE, Padding.XLARGE, Gap.SMALL,
-                    BorderRadius.LARGE);
-        }
-        panelOfTopics.addClassName("learning-photo-genres");
-
-        List<LearningCategoryDto> categories = learningService.getAllCategories().stream()
-                .filter(c -> c.getCatType() != null
-                        && !c.getCatType().toLowerCase().contains("genre")
-                        && !"not show".equalsIgnoreCase(c.getCatType()))
-                .limit(6)
-                .toList();
-
-        for (LearningCategoryDto cat : categories) {
-            String captionCategory = cat.getCatTitle();
-            H3 categoryTitle = new H3(captionCategory);
-
-            String catDescr = cat.getCatDescriptionMin() != null ? cat.getCatDescriptionMin() : "";
-            Div categoryDescription = new Div(catDescr);
-            if (catDescr.isEmpty() || catDescr.equalsIgnoreCase("null")) {
-                categoryDescription.setVisible(false);
-            }
-
-            long count = cat.getLearningCount();
-            String strCount = count + (count == 1 ? " Learning" : " Learnings");
-            H6 divCount = new H6(strCount);
-
-            RouteParam routeCategory = new RouteParam("category", captionCategory);
-            RouterLink linkPhotoCategory = new RouterLink(LearningsView.class, new RouteParameters(routeCategory));
-            linkPhotoCategory.addClassNames(AlignItems.CENTER, JustifyContent.BETWEEN);
-            linkPhotoCategory.add(categoryTitle, categoryDescription, divCount);
-            panelOfTopics.add(linkPhotoCategory);
-        }
-        return panelOfTopics;
-    }
-
-
     private HorizontalLayout getActions() {
 
         StreamResource iconLike = new StreamResource("star-empty-icon.svg",
