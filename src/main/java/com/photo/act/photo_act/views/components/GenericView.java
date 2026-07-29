@@ -11,6 +11,12 @@ import com.photo.act.photo_act.services.WeatherImageService;
 import com.photo.act.photo_act.services.WeatherService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
+import com.photo.act.photo_act.views.FestivalsView;
+import com.photo.act.photo_act.views.GalleryView;
+import com.photo.act.photo_act.views.HomeView;
+import com.photo.act.photo_act.views.LearningsView;
+import com.photo.act.photo_act.views.PhotographersView;
+import com.photo.act.photo_act.views.StoriesView;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.UI;
@@ -31,6 +37,8 @@ import com.vaadin.flow.component.radiobutton.RadioGroupVariant;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.dom.Style;
+import com.vaadin.flow.router.RouteParameters;
+import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
@@ -1965,8 +1973,47 @@ public class GenericView {
                 //  Padding.Horizontal.MEDIUM, Padding.Vertical.XSMALL, //Display.FLEX,
                 LumoUtility.BorderRadius.NONE);
 
-        footer.add(cameraLogo, appName, divPhotoActMoto, divLineBottom);
+        footer.add(cameraLogo, appName, divPhotoActMoto, buildFooterColumns(), divLineBottom);
         return footer;
+    }
+
+    /** "Explore" (Sections menu links) on the left, "Connect" (email) on the right. */
+    private Div buildFooterColumns() {
+        Div columns = new Div();
+        columns.addClassName("footer-columns");
+
+        Div exploreCol = new Div();
+        exploreCol.addClassName("footer-column");
+        Div exploreTitle = new Div("Explore");
+        exploreTitle.addClassName("footer-column-title");
+
+        Div exploreLinks = new Div();
+        exploreLinks.addClassName("footer-links");
+        exploreLinks.add(
+                new RouterLink("Home", HomeView.class),
+                new RouterLink("News", LearningsView.class),
+                new RouterLink("Photo-Stories", StoriesView.class),
+                new RouterLink("Photos", GalleryView.class,
+                        new RouteParameters("month-uploaded", STR_ALL_MONTHS)),
+                new RouterLink("In Location", GalleryView.class,
+                        new RouteParameters("destination-type", "Cities")),
+                new RouterLink("Events", FestivalsView.class),
+                new RouterLink("Photographers", PhotographersView.class)
+        );
+        exploreCol.add(exploreTitle, exploreLinks);
+
+        Div connectCol = new Div();
+        connectCol.addClassName("footer-column");
+        Div connectTitle = new Div("Connect");
+        connectTitle.addClassName("footer-column-title");
+
+        Anchor emailLink = new Anchor("mailto:info@photoact.net");
+        emailLink.addClassName("footer-email-link");
+        emailLink.add(VaadinIcon.ENVELOPE.create(), new Span("info@photoact.net"));
+        connectCol.add(connectTitle, emailLink);
+
+        columns.add(exploreCol, connectCol);
+        return columns;
     }
 
 
