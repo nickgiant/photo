@@ -27,8 +27,8 @@ vaadin-app-layout::part(drawer) {
     overflow: hidden;
     z-index: 100;
     transition: width 0.4s ease, transform 0.3s ease;
-    background: #fff;
-    border-right: 1px solid #e6e5e5;
+    background: var(--brand-navy, #1b3a5c);
+    border-right: none;
 }
 
 vaadin-app-layout::part(content) {
@@ -37,17 +37,20 @@ vaadin-app-layout::part(content) {
 
 /* =============  SIDEBAR CONTAINER  ============= */
 .sidebar {
-    padding: 11px;
+    padding: 20px;
     position: relative;
-    z-index: 100;
+    justify-content: space-between;
+    align-items: center;
+    /*z-index: 100;*/
     width: 100%;
     height: 100vh;
-    background: #fff;
-    display: flex;
-    flex-direction: column;
+    background: var(--brand-navy, #1b3a5c);
+    color: #fff;
+/*    display: flex;
+    flex-direction: column;*/
     transition: width 0.4s ease;
     overflow: hidden;
-    font-family: "Poppins", "Segoe UI", Roboto, system-ui, sans-serif;
+    font-family: var(--font-body, "Inter", system-ui, sans-serif);
 }
 
 /* ---------- Header ---------- */
@@ -56,25 +59,36 @@ vaadin-app-layout::part(content) {
     display: flex;
     align-items: center;
     justify-content: flex-start;
-    padding: 12px;
-    padding-left: 18px;
+
     gap: 5px;
     flex-shrink: 0;
 }
 
+.sidebar-footer {
+    flex-grow: 0;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+
+    height: 220px;
+    min-height: 220px;
+    max-height: 250px;
+    overflow-y: auto;
+}
+
 /* ---------- Logo ---------- */
 .logo-icon {
-    min-width: 46px;
-    width: 46px;
-    height: 46px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, #8b1a1a 0%, #bd0852 100%);
+    min-width: 40px;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: var(--brand-orange, #e8823c);
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
     transition: box-shadow 0.3s ease, transform 0.15s ease;
-    box-shadow: 1px 1px 4px rgba(0,0,0,0.3);
+    box-shadow: none;
 }
 
 .logo-icon:active {
@@ -82,24 +96,24 @@ vaadin-app-layout::part(content) {
 }
 
 .logo-icon vaadin-icon {
-    color: #fff;
-    width: 22px !important;
-    height: 22px !important;
+    color: var(--brand-navy, #1b3a5c);
+    width: 20px !important;
+    height: 20px !important;
 }
 
 /* ---------- Brand text ---------- */
 .brand-text {
-    padding: 4px;
-    font-family:  "Lucida Console", "Lucida Sans Typewriter", sans-serif;
-    color: #bd0852;
-    font-size: 1.25rem;
-    font-weight: 900;
+    padding: 12px;
+    font-family: var(--font-display, "Fraunces", serif);
+    color: #fff;
+    font-size: 1.2rem;
+    font-weight: 600;
     white-space: nowrap;
     overflow: hidden;
     margin: 0;
-    letter-spacing: 0.2rem;
-    opacity: 0.8;
-    text-shadow: 1px 1px 4px rgba(0,0,0,0.3);
+    letter-spacing: 0;
+    opacity: 1;
+    text-shadow: none;
     transition: opacity 0.3s ease;
 }
 
@@ -113,8 +127,8 @@ vaadin-app-layout::part(content) {
     height: 35px;
     width: 35px;
     min-width: 35px;
-    color: #151a2d;
-    background: #dde4fb;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.1);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -125,7 +139,7 @@ vaadin-app-layout::part(content) {
 }
 
 .sidebar-toggle-btn:hover {
-    background: #c7d3f8;
+    background: rgba(255, 255, 255, 0.18);
 }
 
 .sidebar.collapsed .sidebar-header {
@@ -140,12 +154,12 @@ vaadin-app-layout::part(content) {
 }
 
 .sidebar.collapsed .sidebar-toggle-btn {
-    background: #fff;
-    border: 1px solid #e6e5e5;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.18);
 }
 
 .sidebar.collapsed .sidebar-toggle-btn:hover {
-    background: #dde4fb;
+    background: rgba(255, 255, 255, 0.18);
 }
 
 .sidebar-toggle-btn svg,
@@ -170,10 +184,16 @@ vaadin-app-layout::part(content) {
     overflow-y: auto;
     overflow-x: hidden;
     padding: 0;
+    color: rgba(255, 255, 255, 0.5);
     /*padding: 8px 12px 16px 12px;*/
     scrollbar-width: none;
     gap: 4px;
+    span{
+        color: #314d6c;
+        margin-top: 10px;
+    }
 }
+
 
 .sidebar.collapsed .nav-wrapper {
     padding-top: 6px;
@@ -197,18 +217,19 @@ vaadin-side-nav::part(label) {
     display: flex;
     align-items: center;
     padding: 1px;
-    color: #8a8a96;
+    color: rgba(255, 255, 255, 0.5);
     font-size: 0.7rem;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 1.5px;
+    letter-spacing: 2px;
     white-space: nowrap;
     opacity: 0.8;
     transition: opacity 0.3s ease;
 
-    border-top: 1px solid rgba(0, 0, 0, 0.05);
-    margin-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    margin-top: 4px;
 }
+
 
 .sidebar.collapsed vaadin-side-nav::part(label) {
     opacity: 0;
@@ -223,12 +244,13 @@ vaadin-side-nav-item {
     overflow: visible;
     text-transform: none;
     font-size: 0.84rem;
-    font-weight: 800;
-    letter-spacing: 1px;
+    font-weight: 500;
+    letter-spacing: 0;
     white-space: nowrap;
-    color: #34406F; /* #151a2d;*/
+    color: #c8d5e2;
     background: transparent;
     transition: background 0.3s ease, color 0.3s ease;
+    text-shadow: 1px 2px 6px var(--shadow-medium);
 }
 
 vaadin-side-nav-item::part(item) {
@@ -241,31 +263,33 @@ vaadin-side-nav-item::part(link) {
     width: 100%;
     gap: 10px;
     padding: 11px; /*not change. when shrinked keeps icons in center*/
-    color: inherit;
+    color: #c8d5e2;
 }
 
 vaadin-side-nav-item:hover {
-    color: #151a2d;
-    background: whitesmoke 50%;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.08);
 }
 
 vaadin-side-nav-item:hover::part(item) {
-    background: #151a2d;
+    background: rgba(255, 255, 255, 0.08);
     color: #fff;
 }
 
 vaadin-side-nav-item[active] {
-    background: #151a2d;
+    background: rgba(255, 255, 255, 0.12);
     color: #fff;
+    font-weight: 700;
 }
 
 vaadin-side-nav-item[active]::part(item) {
-    background: #151a2d;
+    background: rgba(255, 255, 255, 0.12);
     color: #fff;
 }
 
 vaadin-side-nav-item:active {
     scale: 0.98;
+    color: #fff;
 }
 
 /* Icon sizing inside nav items */
@@ -313,9 +337,8 @@ vaadin-side-nav-item[has-children] vaadin-side-nav-item {
 }
 
 vaadin-side-nav-item[current]::part(content) {
-    background-color: whitesmoke;
-    /*color: #151a2d;*/
-    text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.27);
+    background-color: rgba(255, 255, 255, 0.12);
+    text-shadow: none;
 }
 
 /* ---------- Popover content ---------- */
@@ -326,13 +349,67 @@ vaadin-side-nav-item[current]::part(content) {
 
 .menu-popover-content h4 {
     margin: 0 0 4px 0;
-    color: #151a2d;
+    color: var(--brand-navy, #1b3a5c);
     font-weight: 700;
+    font-family: var(--font-display, 'Fraunces', serif);
 }
 
 .menu-popover-content > div {
     color: #5a5a6e;
     font-size: 0.85rem;
+}
+
+/* ---------- Bottom CTA + sign-in block (2a) ---------- */
+
+
+.sidebar-cta-btn {
+    display: block;
+/*    text-align: center;*/
+    background: var(--brand-orange, #e8823c);
+    color: var(--brand-ink, #1c2430) !important;
+    font-size: 0.86rem;
+    font-weight: 700;
+    padding: 0;
+    margin: 0;
+    border-radius: 6px;
+    text-decoration: none;
+    white-space: nowrap;
+    overflow: hidden;
+    transition: background 0.2s ease;
+}
+
+.sidebar-cta-btn:hover {
+    background: var(--brand-orange-light, #f0a066);
+}
+
+.sidebar.collapsed .sidebar-cta-btn {
+    font-size: 1.1rem;
+    padding: 0;
+    /*padding: 12px 0;*/
+}
+
+.sidebar-user-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    cursor: pointer;
+    color: #e6ecf2;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.sidebar-user-avatar {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    border-radius: 50%;
+    background: var(--brand-orange, #e8823c);
+}
+
+.sidebar.collapsed .sidebar-user-row span {
+    display: none;
 }
 
 /* =============  RESPONSIVE  ============= */

@@ -837,7 +837,7 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
         List<Record> lstRecords = getRecordsFromDb(sqlRead, arrColumnNames);
         Div layoutPhotoUploaded = new Div(); //[lstRecords.size()];
         if(isThumbnails) {
-            layoutPhotoUploaded.addClassName("photographer-profile-thumb-photo-container");
+//            layoutPhotoUploaded.addClassName("photographer-profile-thumb-photo-container");
         }else{
             layoutPhotoUploaded.addClassName("photographer-profile-photo-container");
         }
@@ -1379,6 +1379,7 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
                 );
 
 
+/*
                 HorizontalLayout layoutTabViewPhotos = new HorizontalLayout();
                 layoutTabViewPhotos.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER);
                 layoutTabViewPhotos.addClassName("tab-select");
@@ -1401,6 +1402,7 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
                 layoutTabViewPhotos.add(btnGroupShowPhotos);
 
                 layoutMember.add(layoutTabViewPhotos,layoutLastPhotos);
+*/
 
                 layoutMembersAll.add(layoutMember);
             }
