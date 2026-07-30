@@ -1,6 +1,8 @@
 package com.photo.act.photo_act.utils;
 
 
+import org.springframework.web.util.UriUtils;
+
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
@@ -10,6 +12,7 @@ import javax.crypto.spec.SecretKeySpec;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.security.spec.KeySpec;
 import java.util.*;
@@ -163,6 +166,14 @@ public class UtilsString {
 
 
     //Use this when you expect human-readable place names like "Thessaloniki, Greece".
+
+    // Vaadin route parameters are handed over as raw, percent-encoded path segments
+    // (e.g. "Mountains%20&%20Villages" for "Mountains & Villages"), so callers must
+    // decode them before using them in comparisons, SQL LIKE clauses, or lookups.
+    public static String decodeRouteParam(String value) {
+        if (value == null) return null;
+        return UriUtils.decode(value, StandardCharsets.UTF_8);
+    }
 
     public static String sanitizeLocation(String input) {
         if (input == null) return null;

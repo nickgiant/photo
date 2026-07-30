@@ -4,6 +4,7 @@ import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
+import com.photo.act.photo_act.utils.UtilsString;
 import com.photo.act.photo_act.views.components.GenericView;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.HasStyle;
@@ -132,7 +133,7 @@ public class ClubsView extends Main implements HasUrlParameter<String>, BeforeEn
     @Override
     public void beforeEnter(@OptionalParameter BeforeEnterEvent event) {
 //        section = event.getRouteParameters().get("section").orElse(SECTION_HOME);
-        forMemberName = event.getRouteParameters().get("forMemberName").orElse("all-members");
+        forMemberName = event.getRouteParameters().get("forMemberName").map(UtilsString::decodeRouteParam).orElse("all-members");
 
         getUserClientInfo();
 

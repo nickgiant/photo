@@ -12,6 +12,7 @@ import com.photo.act.photo_act.services.WeatherService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.PageSeoUtil;
 import com.photo.act.photo_act.utils.UtilsDate;
+import com.photo.act.photo_act.utils.UtilsString;
 import com.photo.act.photo_act.views.components.AvatarItem;
 import com.photo.act.photo_act.views.components.GenericView;
 import com.photo.act.photo_act.views.components.LikeButton;
@@ -205,9 +206,9 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
 
     @Override
     public void beforeEnter(@OptionalParameter BeforeEnterEvent event) {
-        strMember = event.getRouteParameters().get("member").orElse(STR_ALL_MEMBERS);
-        strSlug = event.getRouteParameters().get("story").orElse(STR_ALL_TITLES);
-        strCategory = event.getRouteParameters().get("category").orElse(STR_ALL_CATEGORIES);
+        strMember = event.getRouteParameters().get("member").map(UtilsString::decodeRouteParam).orElse(STR_ALL_MEMBERS);
+        strSlug = event.getRouteParameters().get("story").map(UtilsString::decodeRouteParam).orElse(STR_ALL_TITLES);
+        strCategory = event.getRouteParameters().get("category").map(UtilsString::decodeRouteParam).orElse(STR_ALL_CATEGORIES);
 
 
         logger.info("strMember:"+strMember+" story:"+strSlug+" strCategory:"+strCategory);

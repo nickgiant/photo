@@ -6,6 +6,7 @@ import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.PageSeoUtil;
 import com.photo.act.photo_act.utils.UtilsDate;
+import com.photo.act.photo_act.utils.UtilsString;
 import com.photo.act.photo_act.views.components.GenericView;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.HasStyle;
@@ -161,7 +162,7 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
 
     @Override
     public void beforeEnter(@OptionalParameter BeforeEnterEvent event) {
-        country = event.getRouteParameters().get("country").orElse(STR_ALL_COUNTRIES);
+        country = event.getRouteParameters().get("country").map(UtilsString::decodeRouteParam).orElse(STR_ALL_COUNTRIES);
 
         PageSeoUtil.setMetaDescription("Get informed about recent future events related to photography.");
         getUserClientInfo();

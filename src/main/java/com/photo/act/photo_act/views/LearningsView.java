@@ -22,6 +22,7 @@ import com.photo.act.photo_act.services.TutorService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.PageSeoUtil;
 import com.photo.act.photo_act.utils.UtilsDate;
+import static com.photo.act.photo_act.utils.UtilsString.decodeRouteParam;
 import com.photo.act.photo_act.views.components.AuthDialog;
 import com.photo.act.photo_act.views.components.AvatarItem;
 import com.photo.act.photo_act.views.components.FilterDestinationTypeCard;
@@ -216,10 +217,10 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
 
     @Override
     public void beforeEnter(@OptionalParameter BeforeEnterEvent event) {
-        category = event.getRouteParameters().get("category").orElse(STR_ALL_CATEGORIES);
-        tutor = event.getRouteParameters().get("tutor").orElse(STR_ALL_TUTORS);
-        title = event.getRouteParameters().get("title").orElse(STR_ALL_TITLES);
-        genre = event.getRouteParameters().get("genre").orElse(STR_ALL_GENRES);
+        category = event.getRouteParameters().get("category").map(v -> decodeRouteParam(v)).orElse(STR_ALL_CATEGORIES);
+        tutor = event.getRouteParameters().get("tutor").map(v -> decodeRouteParam(v)).orElse(STR_ALL_TUTORS);
+        title = event.getRouteParameters().get("title").map(v -> decodeRouteParam(v)).orElse(STR_ALL_TITLES);
+        genre = event.getRouteParameters().get("genre").map(v -> decodeRouteParam(v)).orElse(STR_ALL_GENRES);
 
         PageSeoUtil.setMetaDescription("Read latest important photography news posted by fellow photographers and connect with them");
         getUserClientInfo();

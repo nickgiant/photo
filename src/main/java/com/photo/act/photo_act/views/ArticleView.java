@@ -5,6 +5,7 @@ import com.photo.act.photo_act.model.ContentEntity;
 import com.photo.act.photo_act.model.ContentType;
 import com.photo.act.photo_act.repository.ContentRepository;
 import com.photo.act.photo_act.utils.PageSeoUtil;
+import com.photo.act.photo_act.utils.UtilsString;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
@@ -50,7 +51,7 @@ public class ArticleView extends VerticalLayout implements BeforeEnterObserver {
 
     @Override
     public void beforeEnter(BeforeEnterEvent event) {
-        String slug = event.getRouteParameters().get("slug").orElse("");
+        String slug = event.getRouteParameters().get("slug").map(UtilsString::decodeRouteParam).orElse("");
 
         contentRepository.findByContentTypeAndSlug(ContentType.ARTICLE, slug)
                 .ifPresentOrElse(

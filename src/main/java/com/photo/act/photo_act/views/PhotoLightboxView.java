@@ -8,6 +8,7 @@ import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.services.PhotoViewService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
+import com.photo.act.photo_act.utils.UtilsString;
 import com.photo.act.photo_act.views.components.GenericView;
 import com.photo.act.photo_act.views.components.LikeButton;
 import com.photo.act.photo_act.views.components.PhotoFrameComponent;
@@ -227,8 +228,8 @@ public class PhotoLightboxView extends VerticalLayout
 
     @Override
     public void beforeEnter(BeforeEnterEvent event) {
-        currentSlug = event.getRouteParameters().get("slug").orElse("");
-        strPhotoId = event.getRouteParameters().get("photo-id").orElse("");
+        currentSlug = event.getRouteParameters().get("slug").map(UtilsString::decodeRouteParam).orElse("");
+        strPhotoId = event.getRouteParameters().get("photo-id").map(UtilsString::decodeRouteParam).orElse("");
 
         // Detect ?tab=rate — set when arriving from a Rate It button on a card or hero
         boolean openOnRateTab = event.getLocation().getQueryParameters()

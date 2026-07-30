@@ -5,6 +5,7 @@ import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
+import com.photo.act.photo_act.utils.UtilsString;
 import com.photo.act.photo_act.views.components.GenericView;
 import com.photo.act.photo_act.views.components.LocalWeatherForecast;
 import com.vaadin.flow.component.Composite;
@@ -129,9 +130,9 @@ public class TravelView extends Composite<VerticalLayout> implements HasUrlParam
 
     @Override
     public void beforeEnter(@OptionalParameter BeforeEnterEvent event) {
-        section = event.getRouteParameters().get("section").orElse("explore");
-        username = event.getRouteParameters().get("member").orElse("members");
-        subsection = event.getRouteParameters().get("subsection").orElse("all");
+        section = event.getRouteParameters().get("section").map(UtilsString::decodeRouteParam).orElse("explore");
+        username = event.getRouteParameters().get("member").map(UtilsString::decodeRouteParam).orElse("members");
+        subsection = event.getRouteParameters().get("subsection").map(UtilsString::decodeRouteParam).orElse("all");
 
         getUserClientInfo();
 
