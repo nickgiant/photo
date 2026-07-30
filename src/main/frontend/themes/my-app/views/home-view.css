@@ -1,4 +1,651 @@
 
+/* ============================================================
+   Home page — option 2a ("Sidebar layout + photo-story composer")
+   ============================================================ */
+
+.home-view .hero-2a {
+    width: 100%;
+    max-width: 760px;
+    padding: 12px 4px 8px;
+}
+
+.hero-kicker {
+    display: block;
+    font-family: var(--font-body, "Inter", sans-serif);
+    font-size: 12.5px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    color: var(--brand-orange, #e8823c);
+    text-transform: uppercase;
+    text-shadow: none;
+    margin-bottom: 14px;
+}
+
+.home-view h1.hero-title {
+    font-family: var(--font-display, "Fraunces", serif);
+    font-size: 44px;
+    line-height: 1.1;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    text-align: left;
+    text-transform: none;
+    text-shadow: none;
+    color: var(--brand-ink, #1c2430);
+    padding: 0 0 18px;
+    margin: 0;
+    text-shadow: 1px 2px 6px var(--shadow-strong);
+}
+
+.hero-subtitle {
+    font-family: var(--font-body, "Inter", sans-serif);
+    font-size: 16px;
+    line-height: 1.7;
+    color: var(--brand-body, #4a5568);
+    text-shadow: none;
+    max-width: 480px;
+    margin: 0 0 26px;
+}
+
+.hero-actions {
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.hero-auth-panel {
+    width: 100%;
+    max-width: 760px;
+    padding: 0 4px 8px;
+}
+
+/* ---------- Shared pill buttons ---------- */
+.home-view .btn-hero-primary {
+    background: var(--brand-navy, #1b3a5c) !important;
+    color: #fff !important;
+    font-weight: 700;
+    border-radius: 6px;
+    padding: 18px 32px;
+    border: none;
+}
+
+.btn-hero-outline,
+.home-view .btn-hero-outline {
+    background: transparent !important;
+    color: var(--brand-ink, #1c2430) !important;
+    font-weight: 700;
+    border-radius: 6px;
+    padding: 18px 32px;
+    border: 1.5px solid var(--brand-border-strong, #d7d2c4) !important;
+}
+
+.btn-hero-cta,
+.home-view .btn-hero-cta {
+    background: var(--brand-orange, #e8823c) !important;
+    color: white; /*var(--brand-ink, #1c2430) !important;*/
+    font-weight: 700;
+    border-radius: 6px;
+    padding: 12px 22px;
+    border: none;
+    display: inline-block;
+    text-decoration: none;
+    text-align: center;
+}
+
+.home-view .btn-hero-primary:hover,
+.home-view .btn-hero-outline:hover,
+.home-view .btn-hero-cta:hover {
+    filter: brightness(1.06);
+    cursor: pointer;
+}
+
+/* ---------- Section header row (title + link) ---------- */
+.home-view .section-header-row {
+    width: 100%;
+    max-width: 1200px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 0 4px;
+    margin-bottom: 6px;
+}
+
+.home-view .section-header-row h2 {
+    font-family: var(--font-display, "Fraunces", serif);
+    font-size: 23px;
+    font-weight: 600;
+    text-align: left;
+    text-transform: none;
+    letter-spacing: 0;
+    text-shadow: none;
+    color: var(--brand-ink, #1c2430);
+    padding: 0;
+    margin: 0;
+}
+
+.section-intro {
+    width: 100%;
+    max-width: 720px;
+    font-family: var(--font-body, "Inter", sans-serif);
+    font-size: 14px;
+    line-height: 1.65;
+    color: var(--brand-body, #4a5568);
+    text-shadow: none;
+    padding: 0 4px;
+    margin: 0 0 18px;
+}
+
+/* ---------- Tell it as a Photo Story — composer card, real last-story data ---------- */
+.home-view .story-section {
+    width: 100%;
+    max-width: 1200px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 28px 4px;
+}
+
+.story-preview-empty {
+    font-family: var(--font-body, "Inter", sans-serif);
+    font-size: 14px;
+    color: var(--brand-muted, #8a8578);
+    padding: 12px 4px;
+}
+
+.composer-card {
+    width: 100%;
+    /*max-width: 760px;*/
+    background: #fff;
+    border: 1px solid var(--brand-border, #e4e0d6);
+    border-radius: 10px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    box-shadow: 1px 1px 8px rgba(27, 58, 92, 0.06);
+    box-sizing: border-box;
+}
+
+.composer-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+}
+
+.composer-name-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.composer-avatar {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.composer-story-name {
+    font-family: var(--font-body, "Inter", sans-serif);
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--brand-ink, #1c2430);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.composer-draft-badge {
+    font-family: var(--font-body, "Inter", sans-serif);
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--brand-muted, #8a8578);
+    white-space: nowrap;
+}
+
+/* Real story photos — sized to a common height, full image, never cropped */
+.composer-photo-grid {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 10px;
+    width: 100%;
+}
+
+.composer-photo {
+    height: 140px;
+    width: auto;
+    max-width: 100%;
+    border-radius: 6px;
+}
+
+.composer-quote {
+    background: var(--brand-cream, #faf8f4);
+    border-radius: 6px;
+    padding: 14px 16px;
+    font-family: var(--font-display, "Fraunces", serif);
+    font-size: 14px;
+    font-style: italic;
+    line-height: 1.6;
+    color: var(--brand-body, #4a5568);
+    text-shadow: none;
+}
+
+.composer-footer-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    width: 100%;
+}
+
+.composer-meta {
+    font-family: var(--font-body, "Inter", sans-serif);
+    font-size: 12.5px;
+    color: var(--brand-muted, #8a8578);
+}
+
+.composer-footer-row .btn-hero-cta {
+    padding: 9px 18px;
+    font-size: 13px;
+}
+
+/* ---------- Feature grid ---------- */
+.home-view .feature-grid {
+    width: 100%;
+    max-width: 1200px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 28px;
+    padding: 20px 4px 40px;
+}
+
+.feature-card-link {
+
+    width: 100%;
+    /*max-width: 760px;*/
+    background: #fff;
+    border: 1px solid var(--brand-border, #e4e0d6);
+    border-radius: 10px;
+    padding: 24px;
+    /*box-shadow: 1px 1px 8px rgba(27, 58, 92, 0.06);*/
+    gap: 16px;
+
+    box-sizing: border-box;
+
+    display: block;
+    color: inherit;
+    transition: all 0.3s ease;
+}
+.feature-card-link:hover{
+    cursor: pointer;
+    text-decoration: none;
+    box-shadow: 1px 1px 8px rgba(27, 58, 92, 0.06);
+    border: 1px solid #466ca8;
+}
+
+.feature-icon-box {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background: #eef3f8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 14px;
+}
+
+.feature-icon-circle {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 3px solid var(--brand-navy, #1b3a5c);
+}
+
+.feature-icon-square {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    border: 3px solid var(--brand-orange, #e8823c);
+}
+
+.feature-icon-dot {
+    width: 14px;
+    height: 14px;
+    background: var(--brand-navy, #1b3a5c);
+}
+
+.home-view h3.feature-title {
+    font-family: var(--font-display, "Fraunces", serif);
+    font-size: 16px;
+    font-weight: 600;
+    text-align: left;
+    text-transform: none;
+    letter-spacing: 0;
+    text-shadow: none;
+    color: var(--brand-ink, #1c2430);
+    margin: 0 0 8px;
+}
+
+.feature-description {
+    font-family: var(--font-body, "Inter", sans-serif);
+    font-size: 13.5px;
+    line-height: 1.6;
+    color: var(--brand-body, #4a5568);
+}
+
+/* ---------- Fresh from the community grid ---------- */
+.home-view .community-section {
+    width: 100%;
+    max-width: 1200px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 4px 4px 40px;
+}
+
+.community-grid {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    /*gap: 14px;*/
+
+
+    /*max-width: 760px;*/
+
+}
+
+.community-card {
+    display: flex;
+    flex-direction: column;
+    flex: 0 1 auto;
+
+    background: #fff;
+    border: 1px solid var(--brand-border, #e4e0d6);
+    border-radius: 10px;
+    padding: 24px;
+    box-shadow: 1px 1px 8px rgba(27, 58, 92, 0.06);
+    gap: 16px;
+
+    text-decoration: none;
+    color: inherit;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.community-card:hover {
+    cursor: pointer;
+    box-shadow: 1px 1px 10px rgba(27, 58, 92, 0.14);
+    border-color: var(--brand-navy, #1b3a5c);
+    text-decoration: none;
+}
+
+/* Real member photos — sized to a common height, full image, never cropped */
+.community-photo {
+    height: 220px;
+    width: auto;
+    max-width: 100%;
+    border-radius: 6px;
+    background: var(--brand-cream-alt, #efece5);
+    display: block;
+}
+
+.community-caption {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 9px 2px;
+    font-family: var(--font-body, "Inter", sans-serif);
+    color: var(--brand-ink, #1c2430);
+}
+
+/* AvatarItem — reused from the rest of the app for avatar + name */
+.community-avatar-item {
+    gap: 10px;
+    min-width: 0;
+}
+
+.community-avatar-item img {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.community-avatar-item vaadin-vertical-layout div:first-child {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--brand-ink, #1c2430);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.community-avatar-item vaadin-vertical-layout div:last-child {
+    display: none;
+}
+
+.community-time-ago {
+    flex-shrink: 0;
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--brand-muted, #8a8578);
+    white-space: nowrap;
+}
+
+/* ---------- Most viewed locations ---------- */
+.home-view .locations-section {
+    width: 100%;
+    max-width: 1200px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 4px 4px 40px;
+}
+
+.locations-grid {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 14px;
+}
+
+.location-card {
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+    color: inherit;
+
+    /*width: 100%;*/
+    /*max-width: 760px;*/
+    background: #fff;
+    border: 1px solid var(--brand-border, #e4e0d6);
+    border-radius: 10px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    box-shadow: 1px 1px 8px rgba(27, 58, 92, 0.06);
+    box-sizing: border-box;
+}
+
+.location-card:hover{
+    cursor: pointer;
+    text-decoration: none;
+    box-shadow: 1px 1px 8px rgba(27, 58, 92, 0.06);
+    border: 1px solid #466ca8;
+}
+
+/* Real location photos — sized to a common height, full image, never cropped */
+.location-photo {
+    height: 220px;
+    width: auto;
+    max-width: 100%;
+    border-radius: 6px;
+    background: var(--brand-cream-alt, #efece5);
+    display: block;
+}
+
+.location-caption {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 9px 2px;
+    font-family: var(--font-body, "Inter", sans-serif);
+    color: var(--brand-ink, #1c2430);
+}
+
+.location-name-row {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    justify-content: start;
+}
+
+.location-city {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.location-country {
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--brand-muted, #8a8578);
+}
+
+.location-stats-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: space-between;
+}
+
+.location-stat-badge {
+    font-family: var(--font-mono, "JetBrains Mono", monospace);
+    font-size: 11.5px;
+    font-weight: 500;
+    color: var(--brand-orange, #e8823c);
+    background: var(--brand-cream, #faf8f4);
+    border-radius: 10px;
+    padding: 2px 8px;
+}
+
+@media (max-width: 640px) {
+    .location-photo {
+        height: 140px;
+    }
+}
+
+.home-view .learnings-horizontal-panel{
+    /*max-width: 1100px;*/
+    gap: 12px;
+    a {
+        /*color: #666666; /* #466ca8; /* #6c9494;*/
+        /* min-height: 180px;*/
+        /*background-color: #ffffff; /* #e3ebf7; /* #ffffff;/*#d9e5f7;*/
+        /*border-radius: 14px;*/
+        border: 1px solid #c7d8f1;
+       /* padding: 18px 10px 12px;*/
+        margin: 0;
+        text-decoration: none;
+        overflow: hidden;
+        /*    display: block;
+            position: relative;*/
+        /*box-shadow: 1px 1px 6px lightgrey;*/
+        transition: all 0.3s ease;
+
+        background: #fff;
+        border: 1px solid var(--brand-border, #e4e0d6);
+        border-radius: 10px;
+        padding: 24px;
+        box-shadow: 1px 1px 8px rgba(27, 58, 92, 0.06);
+        gap: 10px;
+
+        &:hover {
+            color: #466ca8; /* #6c9494;*/
+            /* background-color: #e3ebf7; *//* #eaeff7; /*#ffffff;/*#d9e5f7;*/
+            border: 1px solid #466ca8;
+            /*border: #466ca8 1px solid; /* #6c9494;*/
+            box-shadow: 2px 2px 10px lightgrey;
+            /*transition: all 0.3s ease;*/
+            cursor: pointer;
+            /* scale: 1.09;*/
+
+            h6 {
+                transition: all 0.3s ease;
+                letter-spacing: 4px;
+            }
+
+            h3 {
+                transition: all 0.3s ease;
+                letter-spacing: 3px;
+            }
+        }
+    }
+
+}
+
+/* ---------- CTA banner ---------- */
+.cta-banner {
+    width: 100%;
+    padding: 44px 52px;
+    background: var(--brand-navy, #1b3a5c);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 20px;
+    border-radius: 12px;
+    box-sizing: border-box;
+
+}
+
+.cta-banner-heading {
+    font-family: var(--font-display, "Fraunces", serif);
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.cta-banner-sub {
+    font-family: var(--font-body, "Inter", sans-serif);
+    font-size: 14.5px;
+    color: #c8d5e2;
+}
+
+.cta-banner .btn-hero-cta {
+    white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+    .home-view h1.hero-title {
+        font-size: 32px;
+    }
+
+    .composer-photo {
+        height: 100px;
+    }
+
+    .community-photo {
+        height: 140px;
+    }
+
+    .cta-banner {
+        padding: 32px 24px;
+        justify-content: center;
+        text-align: center;
+    }
+}
+
 header {
   background-color: transparent;
 
@@ -15,7 +662,7 @@ header h1 {
   letter-spacing: 3px;
   line-height: 0.8;
   padding: 40px 0 25px;
-  font-family:  "Lucida Console", "Lucida Sans Typewriter", sans-serif;
+    font-family: var(--font-display, "Fraunces", serif);
     text-shadow: 1px 2px 6px var(--shadow-strong);
 }
 
@@ -101,7 +748,7 @@ header p {
 .home-view .learning-photo-genres {
     max-width: 1100px;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); /*minmax(min(70px, 8vw), 1fr)); /*repeat(auto-fit, minmax(80px, 1fr));*/
+    grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
     grid-gap: 1.8rem;
     padding: 21px;
     margin: 0;
@@ -123,7 +770,6 @@ header p {
 }
 
 .home-view .learning-photo-genres div{
-
          border-top: 1px solid #c7d8f1; /*#666666;*/
          border-bottom: 1px solid #c7d8f1; /* #666666;*/
         min-height: 110px;

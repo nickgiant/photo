@@ -14,7 +14,6 @@ import com.github.appreciated.apexcharts.config.legend.HorizontalAlign;
 import com.github.appreciated.apexcharts.helper.Series;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
-import com.photo.act.photo_act.dto.LearningCategoryDto;
 import com.photo.act.photo_act.dto.LearningDto;
 import com.photo.act.photo_act.services.EmailSendService;
 import com.photo.act.photo_act.services.LearningService;
@@ -30,6 +29,7 @@ import com.photo.act.photo_act.utils.PageSeoUtil;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.photo.act.photo_act.utils.UtilsString;
 import com.photo.act.photo_act.views.components.*;
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.HasStyle;
 import com.vaadin.flow.component.UI;
@@ -51,7 +51,6 @@ import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
-import com.vaadin.flow.server.streams.DownloadHandler;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import com.vaadin.flow.theme.lumo.LumoUtility.*;
 import org.slf4j.Logger;
@@ -243,6 +242,12 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
                 " AND usr.userId = pm.uploaderId";
         sqlGalleryAll = sqlGalleryAll + " ORDER BY pm.date_inserted DESC, pm.title ASC, pm.meta_date DESC, pm.name_new ASC ";
 
+        // Latest uploaded photo per distinct member — one card per uploader, most recent first.
+        String sqlGalleryLatestPerMember = sqlReadGallery + " WHERE pm.visible_to = 'ALL' " +
+                " AND usr.userId = pm.uploaderId " +
+                " AND pm.id = (SELECT pm2.id FROM photo_meta pm2 WHERE pm2.uploaderId = pm.uploaderId AND pm2.visible_to = 'ALL' ORDER BY pm2.date_inserted DESC LIMIT 1) " +
+                " ORDER BY pm.date_inserted DESC ";
+
         String[] arrColsUploadsGrouped = {"Month", "Photos"};
 
         String sqlUploadsGrouped = "SELECT DATE_FORMAT(pm.date_inserted, '%M %Y') as 'month', DATE_FORMAT(pm.date_inserted, '%V-%Y') as 'week', COUNT(pm.id) AS 'Photos'" +
@@ -252,71 +257,18 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         String sqlGroupByWeekly = " GROUP BY DATE_FORMAT(pm.date_inserted, '%V-%Y') ";
         String sqlUploadsGroupedOrderBy = " ORDER BY DATE_FORMAT(pm.date_inserted, '%Y-%m-%V') DESC LIMIT 10";
 
-        H1 titlePage = new H1(APP_NAME);
-        Span subTitle = new Span("[ Through Photography, We Connect and Act ]");
-
-        Header siteHeader = new Header(titlePage, subTitle);
-        siteHeader.addClassNames(Width.FULL);
-
-        verticalLayout.add(siteHeader);
-
-        Div divMainImage = new Div();
-        divMainImage.setWidthFull();
-        divMainImage.setHeight("auto");
-        divMainImage.setMaxWidth("44rem");
-        divMainImage.setMaxHeight("30rem");
-        Image mainImage = new Image();
-        String strMainImagePath = DIR_PHOTOS_SERVER + dirChar + "photographer.png";
-
-
-        Path path = Paths.get(strMainImagePath);
-        File file = path.toFile();
-
-        mainImage.setSrc(DownloadHandler.forFile(file));
-        mainImage.setAlt("sketch image of a photographer");
-        mainImage.setSizeFull();
-//        mainImage.setHeight("24rem");
-//        mainImage.setWidth("auto");
-        mainImage.getStyle().setBorderRadius("20px");
-        mainImage.getStyle().setPadding("10px");
-
-        divMainImage.add(mainImage);
-
-        Div div1 = new Div("We are a community site, with members exchanging info and links in order to improve our skills in photography!");
-        Div div2 = new Div("Currently, we share info about events and learnings. Of course, we also have space for our photos and albums.");
-
-        Button btnLogin = new Button("Login");
-        btnLogin.addClassName("btn-register");
-        btnLogin.addClickListener(click ->{
-            displayLoginDialog();
-        });
-
-
-        Button btnRegister = new Button("Register");
-        btnRegister.addClassName("btn-register");
-//        btnSuggestEvent.setIcon(svgComments);
-        btnRegister.addClickListener(click -> {
-            displayRegisterDialog();
-        });
-
-
-        HorizontalLayout layoutUserBtns = new HorizontalLayout();
-        layoutUserBtns.setAlignItems(FlexComponent.Alignment.CENTER);
-        layoutUserBtns.setJustifyContentMode(FlexComponent.JustifyContentMode.AROUND);
-        layoutUserBtns.setWrap(true);
         String usrName = genericView.checkIfAuthUserName();
-        if (usrName == null) {
-            mainImage.setVisible(true);
-            layoutUserBtns.add(btnLogin,btnRegister);
-        } else {
 
-            mainImage.setVisible(false);
-            layoutUserBtns.add(genericView.getAuthUserPanel(usrName));
-        }
+        // ── Hero — option 2a: kicker + headline + CTAs ──────────────
+        verticalLayout.add(createHeroSection(usrName));
 
-        verticalLayout.add(divMainImage, div1, div2);
+/*        if (usrName != null) {
+            Div authPanel = new Div(genericView.getAuthUserPanel(usrName));
+            authPanel.addClassName("hero-auth-panel");
+            verticalLayout.add(authPanel);
+        }*/
 
-        // ── Hero slider — top of page ──────────────────────────────
+        // ── Hero slider — real community photos ─────────────────────
         HeroSliderComponent heroSlider = new HeroSliderComponent(
                 recordService, photoStatisticsService,
                 photoViewService, photoRatingService,
@@ -325,25 +277,14 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         verticalLayout.add(heroSlider);
         // ──────────────────────────────────────────────────────────
 
-        Div divLearningTopics = loadLearningTopics();
-        VerticalLayout layoutLearningTopics = new VerticalLayout();
-        H2 titleLearnTopics = new H2("Learning Categories");
+        // ── Tell it as a Photo Story — composer promo ───────────────
+        verticalLayout.add(createStoryComposerSection());
 
-        HorizontalLayout layoutLearningsActions = new HorizontalLayout();
-        layoutLearningsActions.addClassName("view-more");
-        Button btnMoreLearnings = new Button("View All Learnings");
-        btnMoreLearnings.addClassName("view-more");
-        btnMoreLearnings.addClickListener(click -> {
-            btnMoreLearnings.getUI().ifPresent(ui ->
-                    ui.navigate(LearningsView.class)
-            );
-        });
-        layoutLearningsActions.add(btnMoreLearnings);
-        layoutLearningTopics.add(titleLearnTopics, divLearningTopics, layoutLearningsActions);
+        // ── Showcase / Feedback / Learn feature grid ────────────────
+        verticalLayout.add(createFeatureGrid());
 
-        layoutLearningTopics.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER, Padding.MEDIUM);
-        verticalLayout.add(layoutLearningTopics);
-
+        // ── Fresh from the community ─────────────────────────────────
+        verticalLayout.add(createCommunityGrid(sqlGalleryLatestPerMember, arrColumnNamesGallery));
 
         //Div layoutLearningGenres = loadLearningsAboutGenres(sqlLearningGenres, arrColLearningGenres);
 
@@ -365,7 +306,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 //        verticalLayout.add(titleCarousel, getCarousel(lstImage));
 
 
-        VerticalLayout layoutPhotoUploads = new VerticalLayout();
+ /*       VerticalLayout layoutPhotoUploads = new VerticalLayout();
         layoutPhotoUploads.addClassNames(AlignItems.CENTER, JustifyContent.CENTER,
         Padding.SMALL, Margin.NONE);
         layoutPhotoUploads.addClassName("page-section");
@@ -378,9 +319,9 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
                 Padding.NONE, Margin.NONE);
         layoutGraph.add(loadGraphUploads(sqlUploadsGrouped + sqlGroupByMonthly + sqlUploadsGroupedOrderBy, arrColsUploadsGrouped, "month"));
         layoutPhotoUploads.add(titleGraphLastPhotos, layoutFilterUploadsPeriod, layoutGraph);
-        verticalLayout.add(layoutPhotoUploads);
+        verticalLayout.add(layoutPhotoUploads);*/
 
-        HorizontalLayout layoutTabSelectPeriod = new HorizontalLayout();
+/*        HorizontalLayout layoutTabSelectPeriod = new HorizontalLayout();
         layoutTabSelectPeriod.addClassName("tab-select");
         RadioButtonGroup<String> btnGroupSelectPeriod = new RadioButtonGroup<>();
         btnGroupSelectPeriod.setItems("Last 10 Months", "Last 10 Weeks");
@@ -394,15 +335,14 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         });
         btnGroupSelectPeriod.setValue("Last 10 Months");
 
-        layoutFilterUploadsPeriod.add(btnGroupSelectPeriod);
+        layoutFilterUploadsPeriod.add(btnGroupSelectPeriod);*/
 
 
 
-        VerticalLayout layoutLastNewsSection = new VerticalLayout();
-        layoutLastNewsSection.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER, Padding.MEDIUM);
-        H2 titleLastNews = new H2("Last Posted News");
+        Div layoutLastNewsSection = new Div();
+
         VerticalLayout layoutLastNews = loadLastNews();
-        layoutLastNewsSection.add(titleLastNews, layoutLastNews);
+        layoutLastNewsSection.add( layoutLastNews);
         verticalLayout.add(layoutLastNewsSection);
 
         String finalSqlGalleryAll = sqlGalleryAll;
@@ -428,7 +368,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         });
         btnGroupShowPhotos.setValue("Last 5 Photos");
         layoutTabViewPhotos.add(btnGroupShowPhotos);*/
-
+/*
         HorizontalLayout layoutMorePhotosActions = new HorizontalLayout();
         layoutMorePhotosActions.addClassName("view-more");
         Button btnMorePhotos = new Button("More Photos");
@@ -438,32 +378,49 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
                     ui.navigate(GalleryView.class)
             );
         });
-        layoutMorePhotosActions.add(btnMorePhotos);
+        layoutMorePhotosActions.add(btnMorePhotos);*/
 
 
-        H2 titleWeather = new H2("Current Weather at:");
+
+
+
+        // ── Most viewed locations ─────────────────────────────────────
+        verticalLayout.add(createLocationsSection());
+
+        H2 titleWeather = new H2("Current Weather");
 
         Div layoutWeather = new Div();
-        layoutWeather.addClassNames(Width.FULL);
-        layoutWeather.addClassName("container-weather");
+        layoutWeather.addClassName("learnings-horizontal-panel");
+        layoutWeather.addClassName("section-header-row");
 
-        H4 titleA = new H4("Athens");
+        layoutWeather.add(titleWeather);
+
+        HorizontalLayout layoutCities = new HorizontalLayout();
+        layoutCities.addClassName("container-weather");
+        layoutCities.setWrap(true);
+
+//        H4 titleA = new H4("Athens");
         VerticalLayout layoutResultsA = loadWeather("Athens", "Greece");
-        VerticalLayout layoutAllA = new VerticalLayout();
+/*        VerticalLayout layoutAllA = new VerticalLayout();
         layoutAllA.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER);
-        layoutAllA.add(titleA, layoutResultsA);
+        layoutAllA.add(titleA, layoutResultsA);*/
 
-        H4 titleB = new H4("Thessaloniki");
+//        H4 titleB = new H4("Thessaloniki");
         VerticalLayout layoutResultsB = loadWeather("Thessaloniki", "Greece");
-        VerticalLayout layoutAllB = new VerticalLayout();
+        /*VerticalLayout layoutAllB = new VerticalLayout();
         layoutAllB.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER);
-        layoutAllB.add(titleB, layoutResultsB);
+        layoutAllB.add(titleB, layoutResultsB);*/
 
-        layoutWeather.add(layoutAllA, layoutAllB);
-        verticalLayout.add(titleWeather, layoutWeather);
+        layoutCities.add(layoutResultsA, layoutResultsB);
+        verticalLayout.add( layoutWeather,layoutCities);
+
+        Div divBanner = new Div();
+        divBanner.addClassNames(Padding.LARGE, Margin.NONE);
+        divBanner.add(createCtaBanner(usrName));
 
         this.removeAll();
         this.add(verticalLayout);
+        this.add(divBanner);
         this.add(genericView.loadFooter(isMobile));
 
         logVisitorToDb();
@@ -626,6 +583,381 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
     }
 
+    // ================================================================
+    // Option 2a — "Sidebar layout + photo-story composer" home sections
+    // ================================================================
+
+    private Div createHeroSection(String usrName) {
+        Div hero = new Div();
+        hero.addClassName("hero-2a");
+
+        Span kicker = new Span("Photography Community");
+        kicker.addClassName("hero-kicker");
+
+        H1 heroTitle = new H1("Upload and share in our community.");
+        heroTitle.addClassName("hero-title");
+
+        Paragraph heroSubtitle = new Paragraph("Post your best shots, tell them as a story, and trade feedback "
+                + "with photographers who take the craft seriously.");
+        heroSubtitle.addClassName("hero-subtitle");
+
+        Button btnUpload = new Button("Upload Photos");
+        btnUpload.addClassName("btn-hero-primary");
+        btnUpload.addClickListener(click -> {
+            if (usrName == null) {
+                displayRegisterDialog();
+            } else {
+                btnUpload.getUI().ifPresent(ui -> ui.navigate(UploadView.class));
+            }
+        });
+
+        Button btnExplore = new Button("Explore Community");
+        btnExplore.addClassName("btn-hero-outline");
+        btnExplore.addClickListener(click ->
+                btnExplore.getUI().ifPresent(ui -> ui.navigate(PhotographersView.class)));
+
+        HorizontalLayout heroActions = new HorizontalLayout(btnUpload, btnExplore);
+        heroActions.addClassName("hero-actions");
+        heroActions.setWrap(true);
+
+        hero.add(kicker, heroTitle, heroSubtitle, heroActions);
+        return hero;
+    }
+
+    private Div createStoryComposerSection() {
+        Div section = new Div();
+        section.addClassName("story-section");
+
+        Div headerRow = new Div();
+        headerRow.addClassName("section-header-row");
+        H2 title = new H2("Tell it as a Photo Story");
+        Button seeAll = new Button("See all stories →");
+        seeAll.addClassName("btn-hero-outline");
+        seeAll.addClickListener(e -> seeAll.getUI().ifPresent(ui -> ui.navigate(StoriesView.class)));
+        headerRow.add(title, seeAll);
+
+        Paragraph intro = new Paragraph("Sequence multiple photos with your own narration — a walkthrough of a "
+                + "shoot, a trip, or the story behind one shot.");
+        intro.addClassName("section-intro");
+
+        Div card = new Div();
+        card.addClassName("composer-card");
+
+        String[] arrColumnsLastStory = {"title", "slug", "description", "user_id", "date_inserted",
+                "datetime_story_created", "username", "name", "surname", "avatar_path", "story_id"
+        };
+        String sqlLastStory = "SELECT s.title, s.slug, s.`description`, s.user_id, s.date_inserted " +
+                " , getDateDiffFromNow(s.date_inserted) AS datetime_story_created " +
+                " , usr.username, usr.name, usr.surname, usr.avatar_path " +
+                " , s.id AS story_id " +
+                " FROM photo_stories s, dbuser usr " +
+                " WHERE s.user_id = usr.userId AND s.story_visible_to = 'ALL' " +
+                " ORDER BY s.date_inserted DESC LIMIT 1";
+
+        List<Record> lstLastStory = getRecordsFromDb(sqlLastStory, arrColumnsLastStory);
+
+        if (lstLastStory.isEmpty()) {
+            Div empty = new Div("No stories published yet — be the first to tell yours.");
+            empty.addClassName("story-preview-empty");
+            card.add(empty);
+        } else {
+            Record story = lstLastStory.get(0);
+            String strStoryId = story.getColumnData("story_id");
+            String strTitle = story.getColumnData("title");
+            String strSlug = story.getColumnData("slug");
+            String strDescription = story.getColumnData("description");
+            String strMemberUsername = story.getColumnData("username");
+            String strName = story.getColumnData("name");
+            String strSurname = story.getColumnData("surname");
+            String strAvatarPath = story.getColumnData("avatar_path");
+            String strDateCreated = story.getColumnData("datetime_story_created");
+            String strFullName = (strName + " " + strSurname).trim();
+            String strStoryTitle = (strTitle == null || strTitle.isBlank() || strTitle.equalsIgnoreCase("null"))
+                    ? "Untitled story" : strTitle;
+
+            Div cardHeader = new Div();
+            cardHeader.addClassName("composer-card-header");
+
+            Image avatar = genericView.getAvatarThumbImage(strAvatarPath, strFullName, "28px", "28px");
+            avatar.addClassName("composer-avatar");
+            Span storyName = new Span(strStoryTitle + " — " + strFullName);
+            storyName.addClassName("composer-story-name");
+            Div nameRow = new Div(avatar, storyName);
+            nameRow.addClassName("composer-name-row");
+
+            Span dateBadge = new Span(strDateCreated);
+            dateBadge.addClassName("composer-draft-badge");
+            cardHeader.add(nameRow, dateBadge);
+
+            Div photoGrid = new Div();
+            photoGrid.addClassName("composer-photo-grid");
+
+            int intStoryId = 0;
+            try {
+                intStoryId = Integer.parseInt(strStoryId);
+            } catch (NumberFormatException ignored) {
+            }
+
+            String[] arrColumnsStoryPhotos = {"name_new"};
+            String sqlStoryPhotos = "SELECT pm.name_new FROM photo_stories_photo sp, photo_meta pm " +
+                    " WHERE sp.story_id = " + intStoryId + " AND sp.photo_id = pm.id AND pm.visible_to = 'ALL' " +
+                    " ORDER BY sp.inc ASC LIMIT 4";
+            List<Record> lstStoryPhotos = getRecordsFromDb(sqlStoryPhotos, arrColumnsStoryPhotos);
+            String strStoryImagePath = DIR_PHOTOS_SERVER + dirChar + subPathMedium;
+            for (Record photoRecord : lstStoryPhotos) {
+                Image photo = getImageThumbFromDb(photoRecord, strStoryImagePath);
+                photo.addClassName("composer-photo");
+                photoGrid.add(photo);
+            }
+
+            Div quote = new Div();
+            quote.addClassName("composer-quote");
+            if (strDescription != null && !strDescription.isBlank() && !strDescription.equalsIgnoreCase("null")) {
+                quote.setText("\"" + strDescription + "\"");
+            } else {
+                quote.setVisible(false);
+            }
+
+            Div footerRow = new Div();
+            footerRow.addClassName("composer-footer-row");
+            String strPhotoCountLabel = lstStoryPhotos.size() + (lstStoryPhotos.size() == 1 ? " photo" : " photos");
+            Span meta = new Span(strPhotoCountLabel + " · " + strDateCreated);
+            meta.addClassName("composer-meta");
+
+            RouteParam routeMember = new RouteParam("member", strMemberUsername);
+            RouteParam routeStory = new RouteParam("story", strSlug);
+            RouterLink btnView = new RouterLink("View Story", StoriesView.class, new RouteParameters(routeMember, routeStory));
+            btnView.addClassName("btn-hero-cta");
+
+            footerRow.add(meta, btnView);
+
+            card.add(cardHeader, photoGrid, quote, footerRow);
+        }
+
+        section.add(headerRow, intro, card);
+        return section;
+    }
+
+    private Div createFeatureGrid() {
+        Div grid = new Div();
+        grid.addClassName("feature-grid");
+
+        grid.add(
+                createFeatureCard("Showcase your work",
+                        "Build a portfolio your whole community can discover and follow.",
+                        GalleryView.class, "feature-icon-circle"),
+                createFeatureCard("Get real feedback",
+                        "Trade critiques with photographers who take the craft seriously.",
+                        StoriesView.class, "feature-icon-square"),
+                createFeatureCard("Learn & attend events",
+                        "Workshops, meetups and guides from members further down the road.",
+                        FestivalsView.class, "feature-icon-dot")
+        );
+        return grid;
+    }
+
+    private Div createFeatureCard(String title, String description, Class<? extends Component> route, String iconClass) {
+        Div card = new Div();
+        card.addClassName("feature-card");
+
+        Div iconBox = new Div();
+        iconBox.addClassName("feature-icon-box");
+        Div iconShape = new Div();
+        iconShape.addClassName(iconClass);
+        iconBox.add(iconShape);
+
+        H3 titleEl = new H3(title);
+        titleEl.addClassName("feature-title");
+        Div descEl = new Div(description);
+        descEl.addClassName("feature-description");
+
+        RouterLink link = new RouterLink();
+        link.setRoute(route);
+        link.addClassName("feature-card-link");
+        link.add(iconBox, titleEl, descEl);
+
+        card.add(link);
+        return card;
+    }
+
+    private Div createCommunityGrid(String sqlRead, String[] arrColumnNames) {
+        Div section = new Div();
+        section.addClassName("community-section");
+
+        Div headerRow = new Div();
+        headerRow.addClassName("section-header-row");
+        H2 title = new H2("Fresh from the community");
+        Button viewAll = new Button("View all >");
+        viewAll.addClassName("btn-hero-outline");
+        RouteParameters routeParametersMonth = new RouteParameters("month-uploaded", STR_ALL_MONTHS);
+        viewAll.addClickListener(e -> viewAll.getUI().ifPresent(ui -> ui.navigate(GalleryView.class,routeParametersMonth)));
+        headerRow.add(title, viewAll);
+
+        Div grid = new Div();
+        grid.addClassName("community-grid");
+
+        String strPathThumb = DIR_PHOTOS_SERVER + dirChar + subPathSmall;
+        List<Record> lstRecords = getRecordsFromDb(sqlRead + " LIMIT 4", arrColumnNames);
+        for (Record record : lstRecords) {
+            Image image = getImageThumbFromDb(record, strPathThumb);
+            image.addClassName("community-photo");
+
+            String strName = nvl(record.getColumnData("name"));
+            String strSurname = nvl(record.getColumnData("surname"));
+            String strUsername = nvl(record.getColumnData("username"));
+            String strAvatarPath = nvl(record.getColumnData("avatar_path"));
+            String strUploadedAgo = nvl(record.getColumnData("date_inserted"));
+            String strFullName = (strName + " " + strSurname).trim();
+            if (strFullName.isEmpty()) {
+                strFullName = !strUsername.isEmpty() ? "@" + strUsername : "Member";
+            }
+
+            Image avatarImg = genericView.getAvatarThumbImage(strAvatarPath, strFullName, "40px", "40px");
+            AvatarItem avatarItem = new AvatarItem(strFullName, "", avatarImg);
+            avatarItem.addClassName("community-avatar-item");
+
+            Span timeAgoSpan = new Span(strUploadedAgo);
+            timeAgoSpan.addClassName("community-time-ago");
+
+            Div caption = new Div(avatarItem, timeAgoSpan);
+            caption.addClassName("community-caption");
+
+            RouterLink card = new RouterLink();
+            card.setRoute(GalleryView.class, new RouteParameters(new RouteParam("member", strUsername)));
+            card.addClassName("community-card");
+            card.add(image, caption);
+            grid.add(card);
+        }
+
+        section.add(headerRow, grid);
+        return section;
+    }
+
+    private Div createLocationsSection() {
+        Div section = new Div();
+        section.addClassName("locations-section");
+
+        Div headerRow = new Div();
+        headerRow.addClassName("section-header-row");
+        H2 title = new H2("Most Viewed Locations");
+        Button viewAll = new Button("View all >");
+        viewAll.addClassName("btn-hero-outline");
+        RouteParameters routeParametersDestination = new RouteParameters("destination-type", "Cities");
+        viewAll.addClickListener(e -> viewAll.getUI().ifPresent(ui ->
+                ui.navigate(GalleryView.class, routeParametersDestination)));
+        headerRow.add(title, viewAll);
+
+        Div grid = new Div();
+        grid.addClassName("locations-grid");
+
+        String[] arrColumnsLocations = {"city_name", "country", "total_views", "total_likes", "total_ratings", "name_new"};
+        String sqlMostViewedLocations =
+                "SELECT d.city_name, d.country, " +
+                " SUM(COALESCE(pv.view_count, 0)) AS total_views, " +
+                " SUM(COALESCE(pl.like_count, 0)) AS total_likes, " +
+                " SUM(COALESCE(pr.rating_count, 0)) AS total_ratings, " +
+                " (SELECT pm2.name_new FROM photo_meta pm2 " +
+                "    LEFT JOIN (SELECT photo_id, COUNT(*) AS vc FROM photo_view WHERE view_type IN ('List', 'Full') GROUP BY photo_id) pv2 " +
+                "      ON pm2.id = pv2.photo_id " +
+                "    WHERE pm2.destination_Id = d.id AND pm2.visible_to = 'ALL' " +
+                "    ORDER BY COALESCE(pv2.vc, 0) DESC, pm2.date_inserted DESC LIMIT 1) AS name_new " +
+                " FROM destination d " +
+                " JOIN photo_meta pm ON pm.destination_Id = d.id AND pm.visible_to = 'ALL' " +
+                " LEFT JOIN (SELECT photo_id, COUNT(*) AS view_count FROM photo_view WHERE view_type IN ('List', 'Full') GROUP BY photo_id) pv " +
+                "   ON pm.id = pv.photo_id " +
+                " LEFT JOIN (SELECT photo_id, COUNT(DISTINCT ip_address) AS like_count FROM photo_view WHERE view_type = 'Like' GROUP BY photo_id) pl " +
+                "   ON pm.id = pl.photo_id " +
+                " LEFT JOIN (SELECT photo_id, COUNT(*) AS rating_count FROM photo_rating GROUP BY photo_id) pr " +
+                "   ON pm.id = pr.photo_id " +
+                " GROUP BY d.id, d.city_name, d.country " +
+                " ORDER BY total_views DESC " +
+                " LIMIT 6";
+
+        List<Record> lstLocations = getRecordsFromDb(sqlMostViewedLocations, arrColumnsLocations);
+        String strPathThumb = DIR_PHOTOS_SERVER + dirChar + subPathSmall;
+        for (Record record : lstLocations) {
+            String strCity = nvl(record.getColumnData("city_name"));
+            String strCountry = nvl(record.getColumnData("country"));
+            String strViews = nvl(record.getColumnData("total_views"));
+            String strLikes = nvl(record.getColumnData("total_likes"));
+            String strRatings = nvl(record.getColumnData("total_ratings"));
+
+            Image image = getImageThumbFromDb(record, strPathThumb);
+            image.addClassName("location-photo");
+
+            Div nameRow = new Div();
+            nameRow.addClassName("location-name-row");
+            Span citySpan = new Span(strCity);
+            citySpan.addClassName("location-city");
+            nameRow.add(citySpan);
+            if (!strCountry.isEmpty()) {
+                Span countrySpan = new Span(" · " + strCountry);
+                countrySpan.addClassName("location-country");
+                nameRow.add(countrySpan);
+            }
+
+            Div statsRow = new Div();
+            statsRow.addClassName("location-stats-row");
+            addLocationBadge(statsRow, strViews, "view", "views");
+            addLocationBadge(statsRow, strLikes, "like", "likes");
+            addLocationBadge(statsRow, strRatings, "rating", "ratings");
+
+            Div caption = new Div(nameRow, statsRow);
+            caption.addClassName("location-caption");
+
+            RouterLink link = new RouterLink();
+            link.setRoute(GalleryView.class, new RouteParameters(new RouteParam("destination", strCity)));
+            link.addClassName("location-card");
+            link.add(image, caption);
+
+            grid.add(link);
+        }
+
+        if (lstLocations.isEmpty()) {
+            Div empty = new Div("No location data yet.");
+            empty.addClassName("story-preview-empty");
+            grid.add(empty);
+        }
+
+        section.add(headerRow, grid);
+        return section;
+    }
+
+    private void addLocationBadge(Div statsRow, String strCount, String singular, String plural) {
+        if (strCount.isEmpty() || strCount.equals("0")) {
+            return;
+        }
+        Span badge = new Span(strCount + " " + (strCount.equals("1") ? singular : plural));
+        badge.addClassName("location-stat-badge");
+        statsRow.add(badge);
+    }
+
+    private Div createCtaBanner(String usrName) {
+        Div banner = new Div();
+        banner.addClassName("cta-banner");
+
+        Div textBlock = new Div();
+        textBlock.addClassName("cta-banner-text");
+        Div heading = new Div("Every photo has a story.");
+        heading.addClassName("cta-banner-heading");
+        Div sub = new Div("Upload and share in our community today.");
+        sub.addClassName("cta-banner-sub");
+        textBlock.add(heading, sub);
+
+        Button btn = new Button("Upload Photos");
+        btn.addClassName("btn-hero-cta");
+        btn.addClickListener(click -> {
+            if (usrName == null) {
+                displayRegisterDialog();
+            } else {
+                btn.getUI().ifPresent(ui -> ui.navigate(UploadView.class));
+            }
+        });
+
+        banner.add(textBlock, btn);
+        return banner;
+    }
+
     private VerticalLayout loadWeather(String city, String country) {
 
 //        String strWhereSubClause ="";
@@ -657,7 +989,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
 
         Button btnNow = new Button("Weather @ "+city);
-        btnNow.setIcon(VaadinIcon.REFRESH.create());
+        /*btnNow.setIcon(VaadinIcon.SUN_RISE.create());*/
         btnNow.addClickListener(event -> {
 
            Dialog dialog = getWeatherCurrent(city, country);
@@ -770,12 +1102,12 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
     private VerticalLayout loadLastNews() {
         VerticalLayout layoutLastNews = new VerticalLayout();
-        layoutLastNews.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER,
-                Margin.XSMALL,
-                Padding.LARGE,
-                Gap.XLARGE);
         layoutLastNews.addClassName("learnings-horizontal-panel");
+        layoutLastNews.addClassName("section-header-row");
 
+
+        H2 titleLastNews = new H2("Last Posted News");
+        layoutLastNews.add(titleLastNews);
         List<LearningDto> news = learningService.getLatestLearnings(0, 3).getContent();
         for (LearningDto dto : news) {
             layoutLastNews.add(new LearningHorizontalPanel(dto));
@@ -1335,54 +1667,6 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 //        }
 //        return layoutLearnings;
 //    }
-    private Div loadLearningTopics() {
-        Div panelOfTopics = new Div();
-        if (isMobile) {
-            panelOfTopics.addClassNames(
-                    Overflow.HIDDEN, Width.FULL,
-                    AlignItems.CENTER, JustifyContent.CENTER,
-                    Margin.NONE, Padding.MEDIUM, Gap.SMALL,
-                    BorderRadius.NONE);
-        } else {
-            panelOfTopics.addClassNames(
-                    Overflow.HIDDEN, Width.FULL,
-                    AlignItems.CENTER, JustifyContent.CENTER,
-                    Margin.NONE, Padding.XLARGE, Gap.SMALL,
-                    BorderRadius.LARGE);
-        }
-        panelOfTopics.addClassName("learning-photo-genres");
-
-        List<LearningCategoryDto> categories = learningService.getAllCategories().stream()
-                .filter(c -> c.getCatType() != null
-                        && !c.getCatType().toLowerCase().contains("genre")
-                        && !"not show".equalsIgnoreCase(c.getCatType()))
-                .limit(6)
-                .toList();
-
-        for (LearningCategoryDto cat : categories) {
-            String captionCategory = cat.getCatTitle();
-            H3 categoryTitle = new H3(captionCategory);
-
-            String catDescr = cat.getCatDescriptionMin() != null ? cat.getCatDescriptionMin() : "";
-            Div categoryDescription = new Div(catDescr);
-            if (catDescr.isEmpty() || catDescr.equalsIgnoreCase("null")) {
-                categoryDescription.setVisible(false);
-            }
-
-            long count = cat.getLearningCount();
-            String strCount = count + (count == 1 ? " Learning" : " Learnings");
-            H6 divCount = new H6(strCount);
-
-            RouteParam routeCategory = new RouteParam("category", captionCategory);
-            RouterLink linkPhotoCategory = new RouterLink(LearningsView.class, new RouteParameters(routeCategory));
-            linkPhotoCategory.addClassNames(AlignItems.CENTER, JustifyContent.BETWEEN);
-            linkPhotoCategory.add(categoryTitle, categoryDescription, divCount);
-            panelOfTopics.add(linkPhotoCategory);
-        }
-        return panelOfTopics;
-    }
-
-
     private HorizontalLayout getActions() {
 
         StreamResource iconLike = new StreamResource("star-empty-icon.svg",

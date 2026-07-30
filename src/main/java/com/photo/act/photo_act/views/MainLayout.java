@@ -2,6 +2,7 @@ package com.photo.act.photo_act.views;
 
 import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.views.components.GoogleAnalytics;
+import com.photo.act.photo_act.views.components.LoginDialog;
 import com.vaadin.flow.component.*;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
@@ -104,12 +105,10 @@ public class MainLayout extends AppLayout{
 
     private boolean drawerMinimized = false;
 
-    VerticalLayout layoutMenu;
+//    VerticalLayout layoutMenu;
 
     private int userId;
     private String strUsername;
-
-    private VerticalLayout sidebarLayout;
 
     public MainLayout() {
 
@@ -133,10 +132,6 @@ public class MainLayout extends AppLayout{
 
         isMobile = VaadinSession.getCurrent().getBrowser().isAndroid() || VaadinSession.getCurrent().getBrowser().isIPhone() || VaadinSession.getCurrent().getBrowser().isWindowsPhone();
 
-        layoutMenu = new VerticalLayout();
-
-//        userId = 1;
-//        strUsername = "visitor-user";
 
         logger.info("hostname:" + hostname + " isMobile:" + isMobile);
         this.addClassName("background");
@@ -203,8 +198,6 @@ public class MainLayout extends AppLayout{
     }
 
 
-
-
     private Component createMobileHeader() {
         Header header = new Header();
         header.addClassNames(BoxSizing.BORDER, Display.FLEX, FlexDirection.ROW, Width.FULL,
@@ -223,8 +216,7 @@ public class MainLayout extends AppLayout{
         H1 appName = new H1(APP_NAME);
         appName.addClassNames(FontSize.MEDIUM, FontWeight.SEMIBOLD, TextColor.TERTIARY,
                 Padding.NONE, Margin.NONE);
-//        appName.getStyle().set("font-family", "Times-New-Roman, serif");
-//        appName.getStyle().set("font-stretch", "semi-expanded");
+
         appName.setClassName("brand-text");
 
         header.add(toggle, divLogo, appName);
@@ -259,7 +251,6 @@ public class MainLayout extends AppLayout{
                     new MenuItemInfo("", FontAwesome.Solid.UPLOAD.create(), UploadView.class), //
                     new MenuItemInfo("", svgMember, MeView.class), //
 
-                    // new MenuItemInfo("Checkout Form", LineAwesomeIcon.CREDIT_CARD.create(), CheckoutFormView.class), //
             };
 
         } else {
@@ -276,7 +267,6 @@ public class MainLayout extends AppLayout{
                     new MenuItemInfo("Upload", FontAwesome.Solid.UPLOAD.create(), UploadView.class), //
                     new MenuItemInfo("Me", svgMember, MeView.class), //
 
-                    // new MenuItemInfo("Checkout Form", LineAwesomeIcon.CREDIT_CARD.create(), CheckoutFormView.class), //
             };
         }
 
@@ -329,7 +319,6 @@ public class MainLayout extends AppLayout{
 
         logoLayout.add(toggle, divLogo, appName);
 
-
         HorizontalLayout layoutControls = new HorizontalLayout();
         if (isMobile) {
             layoutControls.addClassNames(
@@ -350,16 +339,6 @@ public class MainLayout extends AppLayout{
         Avatar avatar = new Avatar("User Name");
         avatar.addThemeVariants(AvatarVariant.LUMO_SMALL);
 
-//        AvatarGroup avatarGroup = new AvatarGroup();
-//        int colorIndex = 0;
-//
-//        for (int i =0; i<3;i++) {
-//            String name = "whoever "+i;//person.getFirstName() + " " + person.getLastName();
-//            AvatarGroup.AvatarGroupItem avatarGroupItem = new AvatarGroup.AvatarGroupItem(name);
-//            avatarGroupItem.setImage("https://randomuser.me/api/portraits/men/1"+i+".jpg");
-//            avatar.setColorIndex(colorIndex++);
-//            avatarGroup.add(avatarGroupItem);
-//        }
 
         MenuBar menuBarUser = new MenuBar();
         menuBarUser.addThemeVariants(MenuBarVariant.LUMO_TERTIARY_INLINE);
@@ -419,7 +398,6 @@ public class MainLayout extends AppLayout{
 //        buttonUser.addThemeVariants(ButtonVariant.LUMO_ICON,  ButtonVariant.LUMO_TERTIARY_INLINE);
         buttonUser.getStyle().set("margin", "var(--lumo-space-s)");
         buttonUser.getStyle().set("margin-inline-start", "auto");
-//        buttonUser.getStyle().set("border-radius", "50%");
 
         Popover popover = new Popover();
         popover.setModal(true);
@@ -510,11 +488,7 @@ public class MainLayout extends AppLayout{
 //        return nav;
 //    }
 
-    private Footer createFooter() {
-        Footer layout = new Footer();
 
-        return layout;
-    }
 
     @Override
     protected void afterNavigation() {
@@ -736,6 +710,11 @@ public class MainLayout extends AppLayout{
         H1 appName = new H1(APP_NAME);
         appName.addClassName("brand-text");
 //        appName.getStyle().set("font-stretch", "semi-expanded");
+        VerticalLayout sidebarLayout = new VerticalLayout();
+        sidebarLayout.setSizeFull();
+        sidebarLayout.setPadding(false);
+        sidebarLayout.setSpacing(false);
+        sidebarLayout.addClassName("sidebar");
 
         Div divLogo = new Div();
         divLogo.add(VaadinIcon.CAMERA.create());
@@ -757,23 +736,64 @@ public class MainLayout extends AppLayout{
             }
         });
 
-        sidebarLayout = new VerticalLayout();
-        sidebarLayout.setSizeFull();
-        sidebarLayout.setPadding(false);
-        sidebarLayout.setSpacing(false);
-        sidebarLayout.addClassName("sidebar");
-
         logoLayout.add(divLogo, appName, toggleBtn);
 
-        layoutMenu.add(createSideMenu());
-        Scroller scroller = new Scroller(layoutMenu);
+//        layoutMenu.add(createSideMenu());
+        Scroller scroller = new Scroller(createSideMenu());
         scroller.addClassNames(AlignItems.CENTER, JustifyContent.CENTER,
-                Padding.NONE, Margin.NONE,Height.FULL);
+                Padding.NONE, Margin.NONE);
 
-        sidebarLayout.add(logoLayout, scroller);
+        // "Members" is pinned below the scrollable "Sections" list, fixed at the bottom of the sidebar.
+        VerticalLayout sidebarFooter = createSidebarFooter();
+
+        Scroller scrollerFooter = new Scroller(sidebarFooter);
+        scrollerFooter.addClassNames(AlignItems.CENTER, JustifyContent.CENTER,
+                Padding.NONE, Margin.NONE);
+
+        sidebarLayout.add(logoLayout, scroller, scrollerFooter);
+        sidebarLayout.expand(scroller);
 
         addToDrawer(sidebarLayout);
 
+    }
+
+    /**
+     * "Members" navigation — pinned to the bottom of the sidebar, outside the
+     * scrollable "Sections" area, so it stays visible regardless of scroll position.
+     */
+    private VerticalLayout createSidebarFooter() {
+        VerticalLayout leftLayout = new VerticalLayout();
+        leftLayout.setPadding(false);
+        leftLayout.setSpacing(false);
+        leftLayout.addClassName("nav-wrapper");
+        leftLayout.addClassName("sidebar-footer");
+
+        SideNav navUser = new SideNav();
+        navUser.setWidthFull();
+        navUser.addClassName("label-text");
+
+        Div divMemberStories = new Div(FontAwesome.Solid.PHOTO_FILM.create());
+        navUser.addItem(createSideNavItem("Create Photo-Stories", divMemberStories, "Manage my photo-stories",
+                MemberStoriesView.class));
+
+        Div divMemberPhotos = new Div(FontAwesome.Solid.CAMERA_ALT.create());
+        navUser.addItem(createSideNavItem("My Photos", divMemberPhotos, "Manage my photos",
+                MemberPhotosView.class));
+
+        Div divMembers = new Div(FontAwesome.Solid.UPLOAD.create());
+        SideNavItem navItem = createSideNavItem("Upload Photos", divMembers, "Upload photos",
+                UploadView.class);
+        navItem.addClassName("sidebar-cta-btn");
+        navUser.addItem(navItem);
+
+        Div divMe = new Div(FontAwesome.Solid.USER.create());
+        navUser.addItem(createSideNavItem("Me", divMe, "Manage my account",
+                MeView.class));
+
+        navUser.setLabel("Members");
+
+        leftLayout.add(navUser);
+        return leftLayout;
     }
 
     private VerticalLayout createSideMenu() {
@@ -822,20 +842,23 @@ public class MainLayout extends AppLayout{
         RouteParameters routeParametersMonth = new RouteParameters("month-uploaded", STR_ALL_MONTHS);
 
         Div divImage = new Div(FontAwesome.Solid.IMAGE.create());
-        SideNavItem itemPhotos = createSideNavItem("Photos", divImage, null, null);
-        itemPhotos.setExpanded(true);
+        SideNavItem itemPhotos = createSideNavItem("Photos", divImage, "Photos Uploaded over a Month",
+                GalleryView.class, routeParametersMonth);
+        nav.addItem(itemPhotos);
 
         Div divImageLocation = new Div(FontAwesome.Solid.LOCATION_DOT.create());
-        SideNavItem itemPhotosLocation = createSideNavItem("by Location", divImageLocation, "Photos about a Location",
+        SideNavItem itemPhotosLocation = createSideNavItem("In Location", divImageLocation, "Photos and Info about a Location",
                 GalleryView.class, routeParametersDestination);
-        itemPhotos.addItem(itemPhotosLocation);
+        nav.addItem(itemPhotosLocation);
 
-        Div divImageMonth = new Div(FontAwesome.Solid.CALENDAR_WEEK.create());
-        SideNavItem itemPhotosMonth = createSideNavItem("by Month", divImageMonth, "Photos Uploaded over a Month",
-                GalleryView.class, routeParametersMonth);
-        itemPhotos.addItem(itemPhotosMonth);
+//        itemPhotos.addItem(itemPhotosLocation);
 
-        nav.addItem(itemPhotos);
+//        Div divImageMonth = new Div(FontAwesome.Solid.CALENDAR_WEEK.create());
+//        SideNavItem itemPhotosMonth = createSideNavItem("by Month", divImageMonth, "Photos Uploaded over a Month",
+//                GalleryView.class, routeParametersMonth);
+//        itemPhotos.addItem(itemPhotosMonth);
+
+
 
         Div divImageFestivals = new Div(VaadinIcon.CALENDAR_USER.create());
         nav.addItem(createSideNavItem("Events", divImageFestivals, "Photo events around the globe",
@@ -845,30 +868,9 @@ public class MainLayout extends AppLayout{
         nav.addItem(createSideNavItem("Photographers", divImagePhotographers, "Photographer Information",
                 PhotographersView.class));
 
-        SideNav navUser = new SideNav();
-        navUser.setWidthFull();
-        navUser.addClassName("label-text");
-
-        Div divMemberStories = new Div(FontAwesome.Solid.PHOTO_FILM.create());
-        navUser.addItem(createSideNavItem("My Photo-Stories", divMemberStories, "Manage my photo-stories",
-                MemberStoriesView.class));
-
-        Div divMemberPhotos = new Div(FontAwesome.Solid.CAMERA_ALT.create());
-        navUser.addItem(createSideNavItem("My Photos", divMemberPhotos, "Manage my photos",
-                MemberPhotosView.class));
-
-        Div divMembers = new Div(FontAwesome.Solid.UPLOAD.create());
-        navUser.addItem(createSideNavItem("Upload My Photos", divMembers, "Upload photos",
-                UploadView.class));
-
-        Div divMe = new Div(FontAwesome.Solid.USER.create());
-        navUser.addItem(createSideNavItem("Me", divMe, "Manage my account",
-                MeView.class));
-
         nav.setLabel("Sections");
-        navUser.setLabel("Members");
 
-        leftLayout.add(nav, navUser);
+        leftLayout.add(nav);
 
         return leftLayout;
     }

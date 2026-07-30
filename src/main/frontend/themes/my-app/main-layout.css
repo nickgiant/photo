@@ -281,11 +281,10 @@
 }
 
 .background{
-   background-color: #f8f8f8;
+   background-color: #f7f6f2;
 
         width: 100%;
         min-height: 100vh;
-/*        background: #f0f2f5;*/
 }
 
 .header-layout-panel{
@@ -1302,76 +1301,141 @@ nav ul:hover li:hover ~ li:before {
     transition: 0.2s;
 }
 
-.learnings-horizontal-panel{
-    max-width: 1100px;
-    a {
-        /*color: #666666; /* #466ca8; /* #6c9494;*/
-        /* min-height: 180px;*/
-        background-color: #ffffff; /* #e3ebf7; /* #ffffff;/*#d9e5f7;*/
-        border-radius: 14px;
-        border: 1px solid #c7d8f1;
-        padding: 18px 10px 12px;
-        margin: 12px;
-        text-decoration: none;
-        overflow: hidden;
-        /*    display: block;
-            position: relative;*/
-        box-shadow: 1px 1px 6px lightgrey;
-        transition: all 0.3s ease;
-
-        &:hover {
-            color: #466ca8; /* #6c9494;*/
-            background-color: #e3ebf7; /* #eaeff7; /*#ffffff;/*#d9e5f7;*/
-            border: 1px solid #466ca8;
-            /*border: #466ca8 1px solid; /* #6c9494;*/
-            box-shadow: 2px 2px 10px lightgrey;
-            transition: all 0.3s ease;
-            cursor: pointer;
-            /* scale: 1.09;*/
-
-            h6 {
-                transition: all 0.3s ease;
-                letter-spacing: 4px;
-            }
-
-            h3 {
-                transition: all 0.3s ease;
-                letter-spacing: 3px;
-            }
-        }
-    }
-
-}
 
 footer {
-    background-color: #b0b0b0;
-    color:  #777777;
+    width: 100%;
+    background-color: #efece5;
+    color:  var(--brand-navy, #1b3a5c);
     text-align: center;
-    padding: 30px 0 20px;
-    div{
-       background-color:  #bd0852;
-    }
+    padding: 30px 0 26px;
+    box-sizing: border-box;
 }
 
 footer h1 {
-    color: #bd0852;
+    color: #1b3a5c;
     text-align: center;
-    text-transform: lowercase;
-    font-size: 38px;
+    text-transform: none;
+    font-size: 26px;
     font-weight: 600;
-    letter-spacing: 2px;
-    line-height: 0.8;
-    padding: 32px 0 20px;
-    font-family:  "Lucida Console", "Lucida Sans Typewriter", sans-serif;
+    letter-spacing: 0;
+    line-height: 1.1;
+    padding: 12px 0 10px;
+    font-family: var(--font-display, 'Fraunces', serif);
     text-shadow: 1px 2px 6px var(--shadow-strong);
 }
 
 footer span {
+    text-transform: none;
+    letter-spacing: 0;
+    font-style: italic;
+    font-family: var(--font-display, 'Fraunces', serif);
+    color: #1b3a5c;
+    padding: 5px 0 20px;
+    line-height: 1.4;
+
+}
+
+/* ── Footer row: Explore (2 cols) | brand (title + moto) | Connect ── */
+.footer-row {
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 40px;
+/*    max-width: 1200px;
+    margin: 20px auto 10px;*/
+    padding: 20px 34px 0;
+    border-top: 1px solid rgba(27, 58, 92, 0.12);
+    text-align: left;
+}
+
+.footer-column {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 160px;
+}
+
+.footer-column:last-child {
+    text-align: right;
+    align-items: flex-end;
+}
+
+.footer-column-title {
+    font-family: var(--font-display, 'Fraunces', serif);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--brand-navy, #1b3a5c);
     text-transform: uppercase;
-    letter-spacing: 5px;
-    /*font-size: 19px;*/
-    padding: 5px 0 27px;
-    line-height: 1;
+    letter-spacing: 0.06em;
+}
+
+.footer-explore-columns {
+    display: flex;
+    gap: 32px;
+}
+
+.footer-links {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.footer-brand-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1 1 auto;
+    text-align: center;
+}
+
+.footer-links a {
+    font-family: var(--font-body, 'Inter', sans-serif);
+    font-size: 14px;
+    text-decoration: none;
+}
+
+.footer-links a:hover {
+    color: var(--brand-orange, #e8823c);
+    /*text-decoration: underline;*/
+}
+
+.footer-email-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-body, 'Inter', sans-serif);
+    font-size: 14px;
+    /*font-weight: 600;*/
+    /*color: var(--brand-navy, #1b3a5c);*/
+    text-decoration: none;
+}
+
+.footer-email-link:hover {
+    color: var(--brand-orange, #e8823c);
+    text-decoration: none;
+}
+
+.footer-email-link vaadin-icon {
+    width: 16px;
+    height: 16px;
+}
+
+@media (max-width: 640px) {
+    .footer-row {
+        justify-content: flex-start;
+    }
+
+    .footer-column:last-child {
+        text-align: left;
+        align-items: flex-start;
+    }
+
+    .footer-explore-columns {
+        gap: 20px;
+    }
 }
 
 
