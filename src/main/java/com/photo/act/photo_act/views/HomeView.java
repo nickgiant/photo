@@ -261,11 +261,11 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         // ── Hero — option 2a: kicker + headline + CTAs ──────────────
         verticalLayout.add(createHeroSection(usrName));
 
-        if (usrName != null) {
+/*        if (usrName != null) {
             Div authPanel = new Div(genericView.getAuthUserPanel(usrName));
             authPanel.addClassName("hero-auth-panel");
             verticalLayout.add(authPanel);
-        }
+        }*/
 
         // ── Hero slider — real community photos ─────────────────────
         HeroSliderComponent heroSlider = new HeroSliderComponent(
@@ -786,9 +786,10 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         Div headerRow = new Div();
         headerRow.addClassName("section-header-row");
         H2 title = new H2("Fresh from the community");
-        Button viewAll = new Button("View all →");
+        Button viewAll = new Button("View all >");
         viewAll.addClassName("btn-hero-outline");
-        viewAll.addClickListener(e -> viewAll.getUI().ifPresent(ui -> ui.navigate(GalleryView.class)));
+        RouteParameters routeParametersMonth = new RouteParameters("month-uploaded", STR_ALL_MONTHS);
+        viewAll.addClickListener(e -> viewAll.getUI().ifPresent(ui -> ui.navigate(GalleryView.class,routeParametersMonth)));
         headerRow.add(title, viewAll);
 
         Div grid = new Div();
@@ -838,10 +839,11 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         Div headerRow = new Div();
         headerRow.addClassName("section-header-row");
         H2 title = new H2("Most Viewed Locations");
-        Button viewAll = new Button("View all →");
+        Button viewAll = new Button("View all >");
         viewAll.addClassName("btn-hero-outline");
+        RouteParameters routeParametersDestination = new RouteParameters("destination-type", "Cities");
         viewAll.addClickListener(e -> viewAll.getUI().ifPresent(ui ->
-                ui.navigate(GalleryView.class, new RouteParameters(new RouteParam("destination", STR_ALL_DESTINATIONS)))));
+                ui.navigate(GalleryView.class, routeParametersDestination)));
         headerRow.add(title, viewAll);
 
         Div grid = new Div();
@@ -868,7 +870,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
                 "   ON pm.id = pr.photo_id " +
                 " GROUP BY d.id, d.city_name, d.country " +
                 " ORDER BY total_views DESC " +
-                " LIMIT 4";
+                " LIMIT 6";
 
         List<Record> lstLocations = getRecordsFromDb(sqlMostViewedLocations, arrColumnsLocations);
         String strPathThumb = DIR_PHOTOS_SERVER + dirChar + subPathSmall;

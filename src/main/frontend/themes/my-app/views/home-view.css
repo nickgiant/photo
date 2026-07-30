@@ -33,6 +33,7 @@
     color: var(--brand-ink, #1c2430);
     padding: 0 0 18px;
     margin: 0;
+    text-shadow: 1px 2px 6px var(--shadow-strong);
 }
 
 .hero-subtitle {
@@ -506,6 +507,7 @@
     display: flex;
     align-items: baseline;
     flex-wrap: wrap;
+    justify-content: start;
 }
 
 .location-city {
@@ -523,6 +525,7 @@
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
+    justify-content: space-between;
 }
 
 .location-stat-badge {

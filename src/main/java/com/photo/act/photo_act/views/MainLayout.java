@@ -132,10 +132,6 @@ public class MainLayout extends AppLayout{
 
         isMobile = VaadinSession.getCurrent().getBrowser().isAndroid() || VaadinSession.getCurrent().getBrowser().isIPhone() || VaadinSession.getCurrent().getBrowser().isWindowsPhone();
 
-//        layoutMenu = new VerticalLayout();
-
-//        userId = 1;
-//        strUsername = "visitor-user";
 
         logger.info("hostname:" + hostname + " isMobile:" + isMobile);
         this.addClassName("background");
@@ -202,8 +198,6 @@ public class MainLayout extends AppLayout{
     }
 
 
-
-
     private Component createMobileHeader() {
         Header header = new Header();
         header.addClassNames(BoxSizing.BORDER, Display.FLEX, FlexDirection.ROW, Width.FULL,
@@ -222,8 +216,7 @@ public class MainLayout extends AppLayout{
         H1 appName = new H1(APP_NAME);
         appName.addClassNames(FontSize.MEDIUM, FontWeight.SEMIBOLD, TextColor.TERTIARY,
                 Padding.NONE, Margin.NONE);
-//        appName.getStyle().set("font-family", "Times-New-Roman, serif");
-//        appName.getStyle().set("font-stretch", "semi-expanded");
+
         appName.setClassName("brand-text");
 
         header.add(toggle, divLogo, appName);
@@ -258,7 +251,6 @@ public class MainLayout extends AppLayout{
                     new MenuItemInfo("", FontAwesome.Solid.UPLOAD.create(), UploadView.class), //
                     new MenuItemInfo("", svgMember, MeView.class), //
 
-                    // new MenuItemInfo("Checkout Form", LineAwesomeIcon.CREDIT_CARD.create(), CheckoutFormView.class), //
             };
 
         } else {
@@ -275,7 +267,6 @@ public class MainLayout extends AppLayout{
                     new MenuItemInfo("Upload", FontAwesome.Solid.UPLOAD.create(), UploadView.class), //
                     new MenuItemInfo("Me", svgMember, MeView.class), //
 
-                    // new MenuItemInfo("Checkout Form", LineAwesomeIcon.CREDIT_CARD.create(), CheckoutFormView.class), //
             };
         }
 
@@ -328,7 +319,6 @@ public class MainLayout extends AppLayout{
 
         logoLayout.add(toggle, divLogo, appName);
 
-
         HorizontalLayout layoutControls = new HorizontalLayout();
         if (isMobile) {
             layoutControls.addClassNames(
@@ -349,16 +339,6 @@ public class MainLayout extends AppLayout{
         Avatar avatar = new Avatar("User Name");
         avatar.addThemeVariants(AvatarVariant.LUMO_SMALL);
 
-//        AvatarGroup avatarGroup = new AvatarGroup();
-//        int colorIndex = 0;
-//
-//        for (int i =0; i<3;i++) {
-//            String name = "whoever "+i;//person.getFirstName() + " " + person.getLastName();
-//            AvatarGroup.AvatarGroupItem avatarGroupItem = new AvatarGroup.AvatarGroupItem(name);
-//            avatarGroupItem.setImage("https://randomuser.me/api/portraits/men/1"+i+".jpg");
-//            avatar.setColorIndex(colorIndex++);
-//            avatarGroup.add(avatarGroupItem);
-//        }
 
         MenuBar menuBarUser = new MenuBar();
         menuBarUser.addThemeVariants(MenuBarVariant.LUMO_TERTIARY_INLINE);
@@ -418,7 +398,6 @@ public class MainLayout extends AppLayout{
 //        buttonUser.addThemeVariants(ButtonVariant.LUMO_ICON,  ButtonVariant.LUMO_TERTIARY_INLINE);
         buttonUser.getStyle().set("margin", "var(--lumo-space-s)");
         buttonUser.getStyle().set("margin-inline-start", "auto");
-//        buttonUser.getStyle().set("border-radius", "50%");
 
         Popover popover = new Popover();
         popover.setModal(true);

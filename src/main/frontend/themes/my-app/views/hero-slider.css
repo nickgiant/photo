@@ -51,8 +51,8 @@
   color: #888;
   background: transparent;
   font-family: 'Poppins', sans-serif;
-  font-weight: 600;
-  font-size: 0.86rem;
+  font-weight: 700;
+  font-size: 0.96rem;
   letter-spacing: normal;
   text-transform: none;
   border: none;
@@ -87,12 +87,12 @@
 }
 
 .hero-slider__filter-bar .hero-filter-btn--active {
-  color: #6c63ff;
+  color: var(--brand-navy, #1b3a5c);
   background: #fff;
   box-shadow: 0 2px 8px rgba(108, 99, 255, .18);
 
   &:hover {
-    color: #6c63ff;
+    color: var(--brand-navy, #1b3a5c);
     background: #fff;
   }
 }
