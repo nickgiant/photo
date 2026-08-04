@@ -1,0 +1,174 @@
+
+/* ============================================================
+   Photographers directory — full-width studio-card rows
+   ============================================================ */
+
+.photographers-list {
+    max-width: 100%;
+    padding: 8px 4px 32px;
+    gap: 20px;
+}
+
+.photographer-row {
+    background: #ffffff;
+    border: 1px solid var(--brand-border, #e4e0d6);
+    border-radius: 10px;
+    padding: 26px 32px;
+    box-shadow: 1px 1px 8px rgba(27, 58, 92, 0.06);
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.photographer-row:hover {
+    box-shadow: 1px 1px 10px rgba(27, 58, 92, 0.14);
+    border-color: var(--brand-navy, #1b3a5c);
+}
+
+.photographer-avatar {
+    width: 180px;
+    height: 180px;
+    min-width: 180px;
+    border-radius: 50%;
+    object-fit: cover;
+    box-shadow: 0 0 0 4px var(--brand-cream-alt, #efece5);
+}
+
+.photographer-info {
+    flex: 1 1 auto;
+    min-width: 240px;
+}
+
+.photographer-info h3.photographer-name {
+    font-family: var(--font-display, "Fraunces", serif);
+    font-weight: 600;
+    font-size: 24px;
+    line-height: 1.2;
+    color: var(--brand-ink, #1c2430);
+    margin: 0;
+    padding: 0;
+}
+
+.photographer-loc {
+    font-family: var(--font-mono, "JetBrains Mono", monospace);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--brand-orange, #e8823c);
+}
+
+.photographer-bio {
+    font-family: var(--font-body, "Inter", sans-serif);
+    font-size: 14.5px;
+    line-height: 1.6;
+    color: var(--brand-body, #4a5568);
+    max-width: 62ch;
+    margin-top: 4px;
+}
+
+.photographer-side {
+    flex-shrink: 0;
+}
+
+.photographer-stats {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.stat-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono, "JetBrains Mono", monospace);
+    font-size: 12.5px;
+    font-variant-numeric: tabular-nums;
+    color: var(--brand-navy, #1b3a5c);
+    background: var(--brand-cream-alt, #efece5);
+    border-radius: 999px;
+    padding: 7px 14px;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.stat-link:hover {
+    background: var(--brand-navy, #1b3a5c);
+    color: #ffffff;
+}
+
+.stat-link svg {
+    width: 13px;
+    height: 13px;
+}
+
+.photographer-social {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.social-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid var(--brand-border-strong, #d7d2c4);
+    color: var(--brand-navy, #1b3a5c);
+    text-decoration: none;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.social-link:hover {
+    background: var(--brand-navy, #1b3a5c);
+    border-color: var(--brand-navy, #1b3a5c);
+    color: #ffffff;
+}
+
+.social-link svg {
+    width: 14px;
+    height: 14px;
+}
+
+.photographer-cta {
+    display: inline-block;
+    font-family: var(--font-body, "Inter", sans-serif);
+    font-weight: 600;
+    font-size: 12.5px;
+    color: var(--brand-navy, #1b3a5c);
+    border: 1.5px solid var(--brand-border-strong, #d7d2c4);
+    border-radius: 6px;
+    padding: 8px 18px;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.photographer-cta:hover {
+    background: var(--brand-navy, #1b3a5c);
+    border-color: var(--brand-navy, #1b3a5c);
+    color: #ffffff;
+}
+
+@media (max-width: 860px) {
+    .photographer-row {
+        flex-direction: column;
+        align-items: center !important;
+        text-align: center;
+        padding: 28px 20px;
+    }
+
+    .photographer-info {
+        align-items: center !important;
+        text-align: center;
+    }
+
+    .photographer-side {
+        align-items: center !important;
+        width: 100%;
+    }
+
+    .photographer-stats,
+    .photographer-social {
+        justify-content: center;
+    }
+}

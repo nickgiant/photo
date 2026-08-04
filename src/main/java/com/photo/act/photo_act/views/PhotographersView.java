@@ -9,6 +9,7 @@ import com.photo.act.photo_act.utils.PageSeoUtil;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.photo.act.photo_act.utils.UtilsString;
 import com.photo.act.photo_act.views.components.*;
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.HasStyle;
 import com.vaadin.flow.component.UI;
@@ -1146,40 +1147,25 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
                 AlignItems.CENTER, JustifyContent.CENTER,
                 Padding.MEDIUM,
                 Margin.NONE,
-                Gap.XLARGE
+                Gap.LARGE
         );
+        layoutMembersAll.addClassName("photographers-list");
 
         List<Record> lstRecords = getRecordsFromDb(sqlRead, arrColumnNames);
 
-        for (int p = 0; p < lstRecords.size(); p++) {
+        if (lstRecords == null) {
+            logger.warn(" lstRecords is null");
+        } else if (lstRecords.isEmpty()) {
+            logger.warn(" lstRecords is empty");
+        } else {
+            for (Record rec : lstRecords) {
 
-            VerticalLayout layoutMember = new VerticalLayout();
-            layoutMember.addClassNames(Width.FULL,
-                    AlignItems.CENTER, JustifyContent.CENTER,
-                    TextColor.TERTIARY,
-                    Padding.NONE,
-                    Gap.SMALL
-//                BorderRadius.LARGE, Background.CONTRAST_5
-            );
-            layoutMember.addClassNames("member-profile");
-
-
-            if (lstRecords == null) {
-                logger.warn(" lstRecords is null");
-            } else if (lstRecords.isEmpty()) {
-                logger.warn(" lstRecords is empty");
-            } else {
-
-                Record rec = lstRecords.get(p);
                 String strUserId = rec.getColumnData("userId");
                 intUserId = Integer.parseInt(strUserId);
 
                 String strName = rec.getColumnData("name");
                 String strSurname = rec.getColumnData("surname");
-
                 String strUsername = rec.getColumnData("username");
-                String strCountOfPhotosOfAlbums = rec.getColumnData("photo_count");
-                String strMemberSince = rec.getColumnData("member_since");
                 String strAvatarPath = rec.getColumnData("avatar_path");
 
                 String strResident = rec.getColumnData("resident");
@@ -1195,217 +1181,93 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
                 String strCountStories = rec.getColumnData("count_stories");
                 String strCountPhotos = rec.getColumnData("count_photos");
 
-                Anchor linkWebsite = new Anchor();
-                linkWebsite.add(FontAwesome.Solid.LINK.create());
+                HorizontalLayout layoutMember = new HorizontalLayout();
+                layoutMember.addClassNames(Width.FULL, AlignItems.CENTER, Gap.XLARGE, Padding.NONE, Margin.NONE);
+                layoutMember.addClassName("photographer-row");
 
-                if (strWebsite != null && !strWebsite.equalsIgnoreCase("null") && !strWebsite.isEmpty()) {
-                    linkWebsite.setVisible(true);
-                    linkWebsite.setHref(strWebsite);
-                    linkWebsite.setTarget("_blank");
-                }
-
-                Anchor linkTutorYt = new Anchor();
-                linkTutorYt.add(FontAwesome.Brands.YOUTUBE.create());
-                // linkTutorYt.getStyle().setColor(strColorExternalweb);
-                // linkTutorYt.setClassName("lazy-result-line-button");
-
-                if (strYt != null && !strYt.equalsIgnoreCase("null") && !strYt.isEmpty()) {
-
-                    linkTutorYt.setHref(strYt);
-                    linkTutorYt.setTarget("_blank");
-                    linkTutorYt.setVisible(true);
-                }
-
-
-
-                // linkTutorWikipedia.getStyle().setColor(strColorExternalweb);
-                //   linkTutorWikipedia.setClassName("lazy-result-line-button");
-//            linkTutorFacebook.setVisible(false);
-                Anchor linkProfile = new Anchor("photographer/" + strUsername, FontAwesome.Solid.USER_ALT.create());
-                linkProfile.addClassName("member-action-link");
-                linkProfile.getElement().setAttribute("title", "View Profile");
-
-                Span spanStoriesCount = new Span(strCountStories);
-                spanStoriesCount.addClassName("member-action-count");
-
-                Anchor linkStories = new Anchor("stories/member/" + strUsername, FontAwesome.Solid.PHOTO_FILM.create());
-                linkStories.add(spanStoriesCount);
-                linkStories.addClassName("member-action-link");
-                linkStories.getElement().setAttribute("title", "View Stories");
-
-                Span spanPhotosCount = new Span(strCountPhotos);
-                spanPhotosCount.addClassName("member-action-count");
-
-                Anchor linkPhotos = new Anchor("photos/member/" + strUsername, FontAwesome.Solid.IMAGE.create());
-                linkPhotos.add(spanPhotosCount);
-                linkPhotos.addClassName("member-action-link");
-                linkPhotos.getElement().setAttribute("title", "View Photos");
-
-                Span spanProfileCaption = new Span("profile");
-                spanProfileCaption.addClassNames(TextColor.SECONDARY, FontSize.XSMALL);
-
-                Span spanStoriesCaption = new Span("stories");
-                spanStoriesCaption.addClassNames(TextColor.SECONDARY, FontSize.XSMALL);
-
-                Span spanPhotosCaption = new Span("photos");
-                spanPhotosCaption.addClassNames(TextColor.SECONDARY, FontSize.XSMALL);
-
-                VerticalLayout layoutProfileBtn = new VerticalLayout();
-                layoutProfileBtn.addClassNames(AlignItems.CENTER, JustifyContent.CENTER, Padding.NONE, Margin.NONE);
-                layoutProfileBtn.add(linkProfile, spanProfileCaption);
-
-                VerticalLayout layoutStoriesBtn = new VerticalLayout();
-                layoutStoriesBtn.addClassNames(AlignItems.CENTER, JustifyContent.CENTER, Padding.NONE, Margin.NONE);
-                layoutStoriesBtn.add(linkStories, spanStoriesCaption);
-
-                VerticalLayout layoutPhotosBtn = new VerticalLayout();
-                layoutPhotosBtn.addClassNames(AlignItems.CENTER, JustifyContent.CENTER, Padding.NONE, Margin.NONE);
-                layoutPhotosBtn.add(linkPhotos, spanPhotosCaption);
-
-
-
-                Anchor linkTutorFacebook = new Anchor();
-                linkTutorFacebook.add(FontAwesome.Brands.FACEBOOK_F.create());
-                // linkTutorWikipedia.getStyle().setColor(strColorExternalweb);
-                //   linkTutorWikipedia.setClassName("lazy-result-line-button");
-//            linkTutorFacebook.setVisible(false);
-
-                if (strFb != null && !strFb.equalsIgnoreCase("null") && !strFb.isEmpty()) {
-                    //linkTutorYt.setText("YouTube");
-                    //strUrlTutorWikipedia = "https://www.youtube.com/"+strUrlTutorYt;
-                    linkTutorFacebook.setHref(strFb);
-                    linkTutorFacebook.setTarget("_blank");
-                    linkTutorFacebook.setVisible(true);
-                }
-
-                Anchor linkTutorInsta = new Anchor();
-                //  linkTutorInsta.setClassName("lazy-result-line-button");
-                linkTutorInsta.add(FontAwesome.Brands.INSTAGRAM.create());
-                // linkTutorInsta.getStyle().setColor(strColorExternalweb);
-//            linkTutorInsta.setVisible(false);
-                if (strInsta != null && !strInsta.equalsIgnoreCase("null") && !strInsta.isEmpty()) {
-                    linkTutorInsta.setHref(strInsta);
-                    linkTutorInsta.setTarget("_blank");
-//                linkTutorInsta.setVisible(true);
-                }
-
-                Anchor linkFlickr = new Anchor();
-                linkFlickr.add(FontAwesome.Brands.FLICKR.create());
-                // linkTutorYt.getStyle().setColor(strColorExternalweb);
-                // linkTutorYt.setClassName("lazy-result-line-button");
-
-                if (strFlickr != null && !strFlickr.equalsIgnoreCase("null") && !strFlickr.isEmpty()) {
-
-                    linkFlickr.setHref(strFlickr);
-                    linkFlickr.setTarget("_blank");
-//                linkFlickr.setVisible(true);
-                }
-
-                Div divBioTitle = new Div("Short Bio");
-                divBioTitle.addClassNames(TextColor.TERTIARY, FontWeight.BOLD);
-
-                VerticalLayout layoutMemberLinks = new VerticalLayout();
-                layoutMemberLinks.addClassNames(AlignItems.CENTER, JustifyContent.BETWEEN);
-                layoutMemberLinks.add(linkTutorFacebook, linkTutorYt, linkTutorInsta, linkTutorYt, linkFlickr, linkWebsite);
-                layoutMemberLinks.setMaxWidth("60px");
-                layoutMemberLinks.setMinWidth("50px");
-
-                Div divBio = new Div();
-//            divBio.setVisible(false);
-                if (strShortBio != null && !strShortBio.equalsIgnoreCase("null") && !strShortBio.isEmpty()) {
-                    divBio.setVisible(true);
-                    divBio.setText(strShortBio);
-                    divBio.setMaxWidth("360px");
-                    divBio.setMinWidth("190px");
-                } else {
-//                divBio.setVisible(false);
-                }
-
-                Image imgAvatar = genericView.getAvatarThumbImage(strAvatarPath, strMember, "150px", "150px");
+                Image imgAvatar = genericView.getAvatarThumbImage(strAvatarPath, strUsername, "180px", "180px");
+                imgAvatar.addClassName("photographer-avatar");
 
                 H3 objName = new H3(strName + " " + strSurname);
-                objName.addClassNames(TextColor.SECONDARY, FontWeight.EXTRABOLD);
-                H4 objMember = new H4(strUsername);
-                objMember.addClassNames(TextColor.SECONDARY, FontWeight.EXTRABOLD);
+                objName.addClassName("photographer-name");
 
-                HorizontalLayout layoutAll = new HorizontalLayout();
-
-                VerticalLayout layoutMemberCard = new VerticalLayout();
-                layoutMemberCard.setMinWidth("220px");
-                layoutMemberCard.setMaxWidth("340px");
-
-                layoutMemberCard.addClassNames(AlignItems.CENTER, JustifyContent.CENTER, TextAlignment.CENTER);
-                layoutMemberCard.add(imgAvatar, objName);
-
-                layoutAll.add(layoutMemberCard, layoutMemberLinks, divBio);
-
-/*                VerticalLayout layoutStories = new VerticalLayout();
-                layoutStories.addClassNames(AlignItems.CENTER, JustifyContent.CENTER);
-                layoutStories.addClassName("member-photos-count");
-                Icon iconAlbum = FontAwesome.Solid.PHOTO_FILM.create();
-                Div spAlbums = new Div("Stories");
-                H2 divAlbums = new H2(strCountStories);
-                layoutStories.add(divAlbums, spAlbums);*/
-
-/*                VerticalLayout layoutPhotos = new VerticalLayout();
-                layoutPhotos.addClassNames(AlignItems.CENTER, JustifyContent.CENTER);
-                layoutPhotos.addClassName("member-photos-count");
-                Icon iconPhotos = VaadinIcon.PICTURE.create();
-                Div spPhotos = new Div("Photos");
-                H2 divPhotos = new H2(strCountPhotos);
-                layoutPhotos.add(divPhotos, spPhotos);*/
-
-                HorizontalLayout layoutCounts = new HorizontalLayout();
-                layoutCounts.addClassNames(AlignItems.STRETCH, JustifyContent.AROUND,
-                        Padding.LARGE, LumoUtility.Margin.NONE,
-                        Gap.XLARGE);
-                layoutCounts.add(layoutProfileBtn, layoutStoriesBtn, layoutPhotosBtn);
-                layoutCounts.addClassName("member-count-panel");
-
-                Div divResident = new Div("Lives at " + strResident);
-
-                layoutMember.add(layoutAll, layoutCounts);
-
-                String sqlGallerForMember = sqlReadGallery+" AND usr.userId = "+strUserId+" "+sqlGalleryOrderBy;
-
-                Div layoutLastPhotos = new Div();
-                layoutLastPhotos.addClassNames(Overflow.HIDDEN, Width.FULL, Height.FULL,
-                        AlignItems.CENTER, JustifyContent.CENTER,
-                        Margin.NONE, Padding.NONE,
-                        Gap.LARGE
-                );
-
-
-/*
-                HorizontalLayout layoutTabViewPhotos = new HorizontalLayout();
-                layoutTabViewPhotos.addClassNames(Width.FULL, AlignItems.CENTER, JustifyContent.CENTER);
-                layoutTabViewPhotos.addClassName("tab-select");
-                RadioButtonGroup<String> btnGroupShowPhotos = new RadioButtonGroup<>();
-                btnGroupShowPhotos.setItems("Last 5 Photos", "Last 10 Photos", "Last 15 Photos");
-                btnGroupShowPhotos.addValueChangeListener(e -> {
-                    String strSelection = e.getSource().getValue();
-                    if (strSelection.indexOf(" 5 ") != -1) {
-                        layoutLastPhotos.removeAll();
-                        layoutLastPhotos.add(loadUploadedPhotos(sqlGallerForMember + " LIMIT 5", arrColumnNamesGallery, false, true));
-                    } else if (strSelection.indexOf(" 10 ") != -1) {
-                        layoutLastPhotos.removeAll();
-                        layoutLastPhotos.add(loadUploadedPhotos(sqlGallerForMember + " LIMIT 10", arrColumnNamesGallery, false, true));
-                    } else if (strSelection.indexOf(" 15 ") != -1) {
-                        layoutLastPhotos.removeAll();
-                        layoutLastPhotos.add(loadUploadedPhotos(sqlGallerForMember + " LIMIT 15", arrColumnNamesGallery, false, true));
+                StringBuilder strLocation = new StringBuilder();
+                if (strResident != null && !strResident.equalsIgnoreCase("null") && !strResident.isEmpty()) {
+                    strLocation.append(strResident);
+                }
+                if (strResidentCountry != null && !strResidentCountry.equalsIgnoreCase("null") && !strResidentCountry.isEmpty()) {
+                    if (strLocation.length() > 0) {
+                        strLocation.append(", ");
                     }
-                });
-                btnGroupShowPhotos.setValue("Last 5 Photos");
-                layoutTabViewPhotos.add(btnGroupShowPhotos);
+                    strLocation.append(strResidentCountry);
+                }
+                Div divLocation = new Div(strLocation.toString());
+                divLocation.addClassName("photographer-loc");
+                divLocation.setVisible(strLocation.length() > 0);
 
-                layoutMember.add(layoutTabViewPhotos,layoutLastPhotos);
-*/
+                Div divBio = new Div();
+                divBio.addClassName("photographer-bio");
+                if (strShortBio != null && !strShortBio.equalsIgnoreCase("null") && !strShortBio.isEmpty()) {
+                    divBio.setText(strShortBio);
+                } else {
+                    divBio.setVisible(false);
+                }
+
+                VerticalLayout layoutInfo = new VerticalLayout();
+                layoutInfo.addClassNames(AlignItems.START, JustifyContent.CENTER, Padding.NONE, Margin.NONE, Gap.XSMALL, Width.FULL);
+                layoutInfo.addClassName("photographer-info");
+                layoutInfo.add(objName, divLocation, divBio);
+
+                Anchor linkPhotos = new Anchor("photos/member/" + strUsername, FontAwesome.Solid.IMAGE.create());
+                linkPhotos.add(new Span((strCountPhotos == null ? "0" : strCountPhotos) + " photos"));
+                linkPhotos.addClassName("stat-link");
+                linkPhotos.getElement().setAttribute("title", "View Photos");
+
+                Anchor linkStories = new Anchor("stories/member/" + strUsername, FontAwesome.Solid.PHOTO_FILM.create());
+                linkStories.add(new Span((strCountStories == null ? "0" : strCountStories) + " stories"));
+                linkStories.addClassName("stat-link");
+                linkStories.getElement().setAttribute("title", "View Stories");
+
+                HorizontalLayout layoutStats = new HorizontalLayout();
+                layoutStats.addClassNames(Gap.SMALL, Padding.NONE, Margin.NONE);
+                layoutStats.addClassName("photographer-stats");
+                layoutStats.add(linkPhotos, linkStories);
+
+                HorizontalLayout layoutSocial = new HorizontalLayout();
+                layoutSocial.addClassNames(Gap.XSMALL, Padding.NONE, Margin.NONE);
+                layoutSocial.addClassName("photographer-social");
+                addSocialLink(layoutSocial, strInsta, FontAwesome.Brands.INSTAGRAM.create(), "Instagram");
+                addSocialLink(layoutSocial, strFb, FontAwesome.Brands.FACEBOOK_F.create(), "Facebook");
+                addSocialLink(layoutSocial, strYt, FontAwesome.Brands.YOUTUBE.create(), "YouTube");
+                addSocialLink(layoutSocial, strFlickr, FontAwesome.Brands.FLICKR.create(), "Flickr");
+                addSocialLink(layoutSocial, strWebsite, FontAwesome.Solid.LINK.create(), "Website");
+
+                Anchor linkViewProfile = new Anchor("photographer/" + strUsername, "View profile");
+                linkViewProfile.addClassName("photographer-cta");
+
+                VerticalLayout layoutSide = new VerticalLayout();
+                layoutSide.addClassNames(AlignItems.END, JustifyContent.CENTER, Padding.NONE, Margin.NONE, Gap.SMALL);
+                layoutSide.addClassName("photographer-side");
+                layoutSide.add(layoutStats, layoutSocial, linkViewProfile);
+
+                layoutMember.add(imgAvatar, layoutInfo, layoutSide);
 
                 layoutMembersAll.add(layoutMember);
             }
         }
 
         return layoutMembersAll;
+    }
+
+    private void addSocialLink(HorizontalLayout container, String strUrl, Component icon, String label) {
+        if (strUrl != null && !strUrl.equalsIgnoreCase("null") && !strUrl.isEmpty()) {
+            Anchor link = new Anchor(strUrl, icon);
+            link.addClassName("social-link");
+            link.setTarget("_blank");
+            link.getElement().setAttribute("rel", "noopener noreferrer");
+            link.getElement().setAttribute("title", label);
+            container.add(link);
+        }
     }
 
 
