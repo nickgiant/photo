@@ -1185,7 +1185,7 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
                 layoutMember.addClassNames(Width.FULL, AlignItems.CENTER, Gap.XLARGE, Padding.NONE, Margin.NONE);
                 layoutMember.addClassName("photographer-row");
 
-                Image imgAvatar = genericView.getAvatarThumbImage(strAvatarPath, strUsername, "180px", "180px");
+                Image imgAvatar = genericView.getAvatarThumbImage(strAvatarPath, strUsername, "150px", "150px");
                 imgAvatar.addClassName("photographer-avatar");
 
                 H3 objName = new H3(strName + " " + strSurname);
