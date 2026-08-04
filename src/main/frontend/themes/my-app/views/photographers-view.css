@@ -16,11 +16,23 @@
     padding: 26px 32px;
     box-shadow: 1px 1px 8px rgba(27, 58, 92, 0.06);
     transition: box-shadow 0.2s ease, border-color 0.2s ease;
+    max-width: 910px;
 }
 
 .photographer-row:hover {
     box-shadow: 1px 1px 10px rgba(27, 58, 92, 0.14);
-    border-color: var(--brand-navy, #1b3a5c);
+    /*border-color: var(--brand-navy, #1b3a5c);*/
+}
+
+.photographer-row-top {
+    align-items: center;
+}
+
+.photographer-row-main {
+    flex: 1 1 auto;
+    min-width: 0;
+    flex-wrap: wrap;
+    row-gap: 20px;
 }
 
 .photographer-avatar {
@@ -65,16 +77,57 @@
     margin-top: 4px;
 }
 
+.photographer-recent-photos {
+    display: grid;
+    flex-shrink: 0;
+    flex-basis: auto;
+    width: auto;
+    margin-left: auto;
+    padding: 12px;
+    gap: 16px;
+}
+
+.recent-photo-link {
+    display: block;
+    width: 122px;
+    height: 122px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--brand-cream-alt, #efece5);
+}
+
+.recent-photo-link img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.2s ease;
+}
+
+.recent-photo-link:hover img {
+    transform: scale(1.08);
+}
+
 .photographer-side {
     flex-shrink: 0;
+    flex-basis: auto;
+    width: auto;
+    margin-left: auto;
+    gap: 22px;
 }
 
-.photographer-stats {
+.photographer-cta-social {
     flex-wrap: wrap;
-    justify-content: flex-end;
+    gap: 26px;
 }
 
-.stat-link {
+.photographer-engagement {
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.engagement-item {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -82,27 +135,64 @@
     font-size: 12.5px;
     font-variant-numeric: tabular-nums;
     color: var(--brand-navy, #1b3a5c);
+    background: transparent;
+    border: 1px solid var(--brand-cream-alt);
+    border-radius: 10px;
+    padding: 7px 14px;
+    white-space: nowrap;
+}
+
+.engagement-item svg {
+    width: 13px;
+    height: 13px;
+    color: var(--brand-orange, #e8823c);
+}
+
+.photographer-stats {
+    display: grid;
+    flex-shrink: 0;
+    width: 200px;
+    gap: 15px;
+}
+
+.stat-link {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    font-family: var(--font-body, "Inter", sans-serif);
+    font-size: 15px;
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+    color: var(--brand-navy, #1b3a5c);
     background: var(--brand-cream-alt, #efece5);
     border-radius: 999px;
-    padding: 7px 14px;
+    padding: 7px 18px;
     text-decoration: none;
     white-space: nowrap;
+    border: 2px solid transparent;
     transition: background 0.15s ease, color 0.15s ease;
 }
 
 .stat-link:hover {
-    background: var(--brand-navy, #1b3a5c);
-    color: #ffffff;
+    border: 2px solid var(--brand-navy, #1b3a5c);
+    color: var(--brand-navy);
+    text-decoration: none;
 }
 
 .stat-link svg {
+    width: 17px;
+    height: 17px;
+}
+
+.photo-stat-item svg {
     width: 13px;
     height: 13px;
+    color: var(--brand-orange, #e8823c);
 }
 
 .photographer-social {
     flex-wrap: wrap;
-    justify-content: flex-end;
+    justify-content: center;
 }
 
 .social-link {
@@ -122,6 +212,7 @@
     background: var(--brand-navy, #1b3a5c);
     border-color: var(--brand-navy, #1b3a5c);
     color: #ffffff;
+    text-decoration: none;
 }
 
 .social-link svg {
@@ -129,11 +220,20 @@
     height: 14px;
 }
 
+.social-link.disabled {
+    color: var(--brand-muted, #8a8578);
+    border-color: var(--brand-border, #e4e0d6);
+    opacity: 0.45;
+    cursor: default;
+    pointer-events: none;
+}
+
 .photographer-cta {
     display: inline-block;
+    gap: 11px;
     font-family: var(--font-body, "Inter", sans-serif);
-    font-weight: 600;
-    font-size: 12.5px;
+    font-size: 15px;
+    font-weight: 900;
     color: #ffffff;
     background: var(--brand-navy, #1b3a5c);
     border: 1.5px solid var(--brand-navy, #1b3a5c);
@@ -149,14 +249,28 @@
     background: var(--brand-navy-light, #254b73);
     border-color: var(--brand-navy-light, #254b73);
     color: #ffffff;
+    text-decoration: none;
 }
 
 @media (max-width: 860px) {
     .photographer-row {
+        padding: 28px 20px;
+    }
+
+    .photographer-row-top {
         flex-direction: column;
         align-items: center !important;
         text-align: center;
-        padding: 28px 20px;
+    }
+
+    .photographer-row-main {
+        flex-direction: column;
+        align-items: center !important;
+        text-align: center;
+    }
+
+    .photographer-recent-photos {
+        margin-left: 0;
     }
 
     .photographer-info {
@@ -170,7 +284,10 @@
     }
 
     .photographer-stats,
-    .photographer-social {
+    .photographer-social,
+    .photographer-cta-social,
+    .photographer-engagement,
+    .photographer-recent-photos {
         justify-content: center;
     }
 }

@@ -73,20 +73,15 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
     public static String subPathUpload = "photo-upload";
     public static String subPathShow = "photo-show";
     public static String DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
-    String[] arrColumnsMemberStories = {"stories_count"
-            , "username", "surname", "name", "resident", "date_joined", "member_since", "avatar_path", "short_bio"
-    };
+    String[] arrColumnsMemberStories = {"userId", "name", "surname", "username", "avatar_path", "resident", "resident_country",
+            "short_bio", "url_fb", "url_yt", "url_insta", "url_flickr", "url_website", "count_stories", "count_photos"};
 
-    String sqlMemberOfStories = "SELECT usr.username, usr.name, usr.surname,  usr.resident, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined " +
-            " , DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since " +
-            " , usr.avatar_path, usr.short_bio " +
-            " , count(usr.userId) AS stories_count " +
-            " FROM dbuser usr LEFT JOIN photo_stories s ON s.user_id = usr.userId " +
-            " WHERE  1 = 1 " +
-            " AND s.story_visible_to = 'ALL' ";
-    String sqlMemberOfStoriesGroupBy =
-            " GROUP BY usr.userId " +
-                    " ORDER BY usr.username ASC ";
+    String sqlMemberOfStories = "SELECT usr.userId, usr.name, usr.surname, usr.username, usr.avatar_path, usr.resident, usr.resident_country, " +
+            " usr.short_bio, usr.url_fb, usr.url_yt, usr.url_insta, usr.url_flickr, usr.url_website, " +
+            " ux.count_stories, ux.count_photos " +
+            " FROM dbuser usr, dbuser_extra ux " +
+            " WHERE usr.userId = ux.user_id ";
+    String sqlMemberOfStoriesGroupBy = "";
     String[] arrColumnsStories = {"title", "slug", "description", "story_visible_to", "user_id", "date_inserted", "story_photo_count", "story_photo_size",
             "name_new", "photo_1", "photo_2", "datetime_story_created"
             , "cat_title", "cat_title"
@@ -385,57 +380,11 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
 
     private void loadMemberOfStoriesFromDb(String sqlRead, String[] arrColumnNames, boolean isEditable) {
 
-
-        VerticalLayout layoutMember = new VerticalLayout();
-        layoutMember.addClassNames(Width.FULL,
-                AlignItems.CENTER, JustifyContent.CENTER,
-                TextAlignment.CENTER
-        );
-
-
-        HorizontalLayout horizontalLayout = new HorizontalLayout();
-        horizontalLayout.addClassNames(Width.FULL,
-                AlignItems.CENTER, JustifyContent.CENTER,
-                TextAlignment.CENTER
-        );
-        horizontalLayout.addClassName("member-profile");
-
-
         List<Record> lstRecords = getRecordsFromDb(sqlRead, arrColumnNames);
 
-        if (lstRecords == null || lstRecords.size() == 0) {
-
-        } else if (lstRecords.size() == 1) {
-            Record rec = lstRecords.get(0);
-            String strNameOfUser = rec.getColumnData("username");
-            String strName = rec.getColumnData("name");
-            String strSurname = rec.getColumnData("surname");
-            String strCountOfAlbums = rec.getColumnData("stories_count");
-//            String strCountOfPhotosOfAlbums = rec.getColumnData("album_photo_count");
-            String strMemberSince = rec.getColumnData("member_since");
-            String strAvatarPath = rec.getColumnData("avatar_path");
-            String strShortBio = rec.getColumnData("short_bio");
-
-            Div divBio = new Div(strShortBio);
-            divBio.addClassNames(Width.FULL,
-                    AlignItems.CENTER, JustifyContent.CENTER,
-                    Padding.LARGE
-            );
-
-
-            Image imgAvatar = genericView.getAvatarThumbImage(strAvatarPath, strNameOfUser, "120px", "120px");
-
-            H3 objMember = new H3(strName+" "+strSurname);
-            Div divUserName = new Div(strNameOfUser);
-            Div divMemberSince = new Div("Member since " + strMemberSince);
-            Div divAlbumsAndPhotos = new Div("Has " + strCountOfAlbums + " stories");
-            layoutMember.add(imgAvatar, objMember,divUserName,  divMemberSince, divAlbumsAndPhotos);
-            horizontalLayout.add(layoutMember,divBio);
-        } else {
-
+        if (lstRecords != null && lstRecords.size() == 1) {
+            verticalLayout.add(genericView.buildPhotographerCard(lstRecords.get(0), false));
         }
-
-        verticalLayout.add(horizontalLayout);
     }
 
     private void loadStoriesFromDb(String sqlRead, String[] arrColumnNames, boolean isEditable) {

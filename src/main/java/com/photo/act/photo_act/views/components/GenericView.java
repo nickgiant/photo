@@ -34,6 +34,7 @@ import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.streams.DownloadHandler;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import com.vaadin.flow.theme.lumo.LumoUtility.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
@@ -661,6 +662,220 @@ public class GenericView {
         image.setSrc(DownloadHandler.forFile(file));
 
         return image;
+    }
+
+    public VerticalLayout buildPhotographerCard(Record rec, boolean showRecentPhotos) {
+
+        String strUserId = rec.getColumnData("userId");
+        String strName = rec.getColumnData("name");
+        String strSurname = rec.getColumnData("surname");
+        String strUsername = rec.getColumnData("username");
+        String strAvatarPath = rec.getColumnData("avatar_path");
+
+        String strResident = rec.getColumnData("resident");
+        String strResidentCountry = rec.getColumnData("resident_country");
+
+        String strShortBio = rec.getColumnData("short_bio");
+        String strFb = rec.getColumnData("url_fb");
+        String strYt = rec.getColumnData("url_yt");
+        String strInsta = rec.getColumnData("url_insta");
+        String strFlickr = rec.getColumnData("url_flickr");
+        String strWebsite = rec.getColumnData("url_website");
+
+        String strCountStories = rec.getColumnData("count_stories");
+        String strCountPhotos = rec.getColumnData("count_photos");
+
+        boolean isOwnProfile = strUserId != null && strUserId.equals(checkIfAuthMemberId());
+
+        VerticalLayout layoutMember = new VerticalLayout();
+        layoutMember.addClassNames(Width.FULL, AlignItems.CENTER, Gap.MEDIUM, Padding.NONE, Margin.NONE);
+        layoutMember.addClassName("photographer-row");
+
+        HorizontalLayout layoutTop = new HorizontalLayout();
+        layoutTop.addClassNames(Width.FULL, AlignItems.CENTER, Gap.XLARGE, Padding.NONE, Margin.NONE);
+        layoutTop.addClassName("photographer-row-top");
+
+        HorizontalLayout layoutMain = new HorizontalLayout();
+        layoutMain.addClassNames(AlignItems.CENTER, Gap.XLARGE, Padding.NONE, Margin.NONE);
+        layoutMain.addClassName("photographer-row-main");
+
+        Image imgAvatar = getAvatarThumbImage(strAvatarPath, strUsername, "150px", "150px");
+        imgAvatar.addClassName("photographer-avatar");
+
+        H3 objName = new H3(strName + " " + strSurname);
+        objName.addClassName("photographer-name");
+
+        StringBuilder strLocation = new StringBuilder();
+        if (strResident != null && !strResident.equalsIgnoreCase("null") && !strResident.isEmpty()) {
+            strLocation.append(strResident);
+        }
+        if (strResidentCountry != null && !strResidentCountry.equalsIgnoreCase("null") && !strResidentCountry.isEmpty()) {
+            if (strLocation.length() > 0) {
+                strLocation.append(", ");
+            }
+            strLocation.append(strResidentCountry);
+        }
+        Div divLocation = new Div(strLocation.toString());
+        divLocation.addClassName("photographer-loc");
+        divLocation.setVisible(strLocation.length() > 0);
+
+        Div divBio = new Div();
+        divBio.addClassName("photographer-bio");
+        if (strShortBio != null && !strShortBio.equalsIgnoreCase("null") && !strShortBio.isEmpty()) {
+            divBio.setText(strShortBio);
+        } else {
+            divBio.setVisible(false);
+        }
+
+        VerticalLayout layoutInfo = new VerticalLayout();
+        layoutInfo.addClassNames(AlignItems.START, JustifyContent.CENTER, Padding.NONE, Margin.NONE, Gap.XSMALL, Width.FULL);
+        layoutInfo.addClassName("photographer-info");
+        layoutInfo.add(objName, divLocation, divBio);
+
+        Anchor linkPhotos = new Anchor("photos/member/" + strUsername, FontAwesome.Solid.IMAGE.create());
+        linkPhotos.add(new Span((strCountPhotos == null ? "0" : strCountPhotos) + " photos"));
+        linkPhotos.addClassName("stat-link");
+        linkPhotos.getElement().setAttribute("title", "View Photos");
+
+        Anchor linkStories = new Anchor("stories/member/" + strUsername, FontAwesome.Solid.PHOTO_FILM.create());
+        linkStories.add(new Span((strCountStories == null ? "0" : strCountStories) + " stories"));
+        linkStories.addClassName("stat-link");
+        linkStories.getElement().setAttribute("title", "View Stories");
+
+        Div layoutStats = new Div();
+        layoutStats.addClassNames(AlignItems.CENTER, Gap.SMALL, Padding.NONE, Margin.NONE);
+        layoutStats.addClassName("photographer-stats");
+        layoutStats.add(linkPhotos, linkStories);
+
+        HorizontalLayout layoutSocial = new HorizontalLayout();
+        layoutSocial.addClassNames(Gap.XSMALL, Padding.NONE, Margin.NONE);
+        layoutSocial.addClassName("photographer-social");
+        addSocialLinkOrDisabled(layoutSocial, strInsta, FontAwesome.Brands.INSTAGRAM.create(), "Instagram");
+        addSocialLinkOrDisabled(layoutSocial, strFb, FontAwesome.Brands.FACEBOOK_F.create(), "Facebook");
+        addSocialLinkOrDisabled(layoutSocial, strYt, FontAwesome.Brands.YOUTUBE.create(), "YouTube");
+        addSocialLinkOrDisabled(layoutSocial, strFlickr, FontAwesome.Brands.FLICKR.create(), "Flickr");
+        addSocialLinkOrDisabled(layoutSocial, strWebsite, FontAwesome.Solid.LINK.create(), "Website");
+
+        Anchor linkCta = isOwnProfile
+                ? new Anchor("me", "Edit profile")
+                : new Anchor("photographer/" + strUsername, "View profile");
+        linkCta.addClassName("photographer-cta");
+
+        HorizontalLayout layoutCtaSocial = new HorizontalLayout();
+        layoutCtaSocial.addClassNames(AlignItems.CENTER, JustifyContent.AROUND, Padding.NONE, Margin.NONE, Gap.SMALL);
+        layoutCtaSocial.addClassName("photographer-cta-social");
+        layoutCtaSocial.add(linkCta, layoutSocial);
+
+        VerticalLayout layoutSide = new VerticalLayout();
+        layoutSide.addClassNames(AlignItems.CENTER, JustifyContent.CENTER, Padding.NONE, Margin.NONE, Gap.SMALL);
+        layoutSide.addClassName("photographer-side");
+        layoutSide.add(buildEngagementPanel(strUserId), layoutCtaSocial);
+
+        layoutMain.add(imgAvatar, layoutStats, layoutInfo, layoutSide);
+        layoutTop.add(layoutMain);
+
+        if (showRecentPhotos) {
+            layoutTop.add(buildRecentPhotosStrip(strUserId, strUsername));
+        }
+
+        layoutMember.add(layoutTop);
+
+        return layoutMember;
+    }
+
+    private void addSocialLinkOrDisabled(HorizontalLayout container, String strUrl, Component icon, String label) {
+        boolean hasUrl = strUrl != null && !strUrl.equalsIgnoreCase("null") && !strUrl.isEmpty();
+        if (hasUrl) {
+            Anchor link = new Anchor(strUrl, icon);
+            link.addClassName("social-link");
+            link.setTarget("_blank");
+            link.getElement().setAttribute("rel", "noopener noreferrer");
+            link.getElement().setAttribute("title", label);
+            container.add(link);
+        } else {
+            Span disabled = new Span(icon);
+            disabled.addClassNames("social-link", "disabled");
+            disabled.getElement().setAttribute("title", label + " not set");
+            container.add(disabled);
+        }
+    }
+
+    private HorizontalLayout buildEngagementPanel(String strUserId) {
+
+        HorizontalLayout layoutEngagement = new HorizontalLayout();
+        layoutEngagement.addClassNames(AlignItems.CENTER, Gap.SMALL, Padding.NONE, Margin.NONE);
+        layoutEngagement.addClassName("photographer-engagement");
+
+        String strViews = "0";
+        String strLikes = "0";
+        String strRatings = "0";
+
+        if (strUserId != null && !strUserId.isEmpty()) {
+            String[] arrColumnsTotals = {"total_views", "total_likes", "total_ratings"};
+            String sqlTotals = "SELECT " +
+                    " SUM(COALESCE(pv.view_count, 0)) AS total_views, " +
+                    " SUM(COALESCE(pl.like_count, 0)) AS total_likes, " +
+                    " SUM(COALESCE(pr.rating_count, 0)) AS total_ratings " +
+                    " FROM photo_meta pm " +
+                    " LEFT JOIN (SELECT photo_id, COUNT(*) AS view_count FROM photo_view" +
+                    "   WHERE view_type IN ('List', 'Full') GROUP BY photo_id) pv ON pm.id = pv.photo_id " +
+                    " LEFT JOIN (SELECT photo_id, COUNT(DISTINCT ip_address) AS like_count FROM photo_view" +
+                    "   WHERE view_type = 'Like' GROUP BY photo_id) pl ON pm.id = pl.photo_id " +
+                    " LEFT JOIN (SELECT photo_id, COUNT(*) AS rating_count FROM photo_rating GROUP BY photo_id) pr ON pm.id = pr.photo_id " +
+                    " WHERE pm.uploaderId = " + Integer.parseInt(strUserId) + " AND pm.visible_to = 'ALL'";
+
+            List<Record> lstTotals = getRecordsFromDb(sqlTotals, arrColumnsTotals);
+            if (!lstTotals.isEmpty()) {
+                Record totals = lstTotals.get(0);
+                strViews = nonEmptyOrZero(totals.getColumnData("total_views"));
+                strLikes = nonEmptyOrZero(totals.getColumnData("total_likes"));
+                strRatings = nonEmptyOrZero(totals.getColumnData("total_ratings"));
+            }
+        }
+
+        layoutEngagement.add(buildEngagementItem(FontAwesome.Solid.EYE.create(), strViews, "views"));
+        layoutEngagement.add(buildEngagementItem(FontAwesome.Solid.HEART.create(), strLikes, "likes"));
+        layoutEngagement.add(buildEngagementItem(FontAwesome.Solid.STAR.create(), strRatings, "ratings"));
+
+        return layoutEngagement;
+    }
+
+    private String nonEmptyOrZero(String value) {
+        return (value == null || value.isEmpty()) ? "0" : value;
+    }
+
+    private Span buildEngagementItem(Component icon, String value, String label) {
+        Span item = new Span(icon, new Span(value + " " + label));
+        item.addClassName("engagement-item");
+        return item;
+    }
+
+    private Div buildRecentPhotosStrip(String strUserId, String strUsername) {
+
+        Div layoutRecentPhotos = new Div();
+        layoutRecentPhotos.addClassNames(AlignItems.CENTER, Gap.SMALL, Padding.NONE, Margin.NONE);
+        layoutRecentPhotos.addClassName("photographer-recent-photos");
+
+        if (strUserId == null || strUserId.isEmpty()) {
+            return layoutRecentPhotos;
+        }
+
+        String[] arrColumnsRecentPhotos = {"name_new", "title"};
+        String sqlRecentPhotos = "SELECT pm.name_new, pm.title FROM photo_meta pm " +
+                " WHERE pm.visible_to = 'ALL' AND pm.uploaderId = " + Integer.parseInt(strUserId) +
+                " ORDER BY pm.date_inserted DESC LIMIT 3";
+
+        List<Record> lstRecentPhotos = getRecordsFromDb(sqlRecentPhotos, arrColumnsRecentPhotos);
+        for (Record rec : lstRecentPhotos) {
+            Image imgThumb = getImageThumb(rec);
+            imgThumb.addClassName("recent-photo-thumb");
+
+            Anchor linkThumb = new Anchor("photographer/" + strUsername, imgThumb);
+            linkThumb.addClassName("recent-photo-link");
+            layoutRecentPhotos.add(linkThumb);
+        }
+
+        return layoutRecentPhotos;
     }
 
     public Dialog showCarouselDialog(int isType, String sqlRead, String sqlReadOrderBy, String[] arrColumnNames, String strSelection, String filterColumn,
