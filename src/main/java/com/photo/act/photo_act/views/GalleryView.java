@@ -357,7 +357,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
                 strCountry = lstLocationRecs.get(0).getColumnData("country");
             }
 
-            HorizontalLayout layoutWeatherMap = new HorizontalLayout();
+            VerticalLayout layoutWeatherMap = new VerticalLayout();
             layoutWeatherMap.setAlignItems(FlexComponent.Alignment.CENTER);
             layoutWeatherMap.setJustifyContentMode(FlexComponent.JustifyContentMode.AROUND);
             layoutWeatherMap.setWrap(true);
@@ -1401,10 +1401,10 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
                 BorderRadius.LARGE)
         ;
 
-//        IFrame frameMapResult = getDestinationMap(strForMap, country);
-//        frameMapResult.setMaxWidth("970px");
-//
-//        layoutMapResult.add(frameMapResult);
+        IFrame frameMapResult = getDestinationMap(strForMap, country);
+        frameMapResult.setMaxWidth("970px");
+
+        layoutMapResult.add(frameMapResult);
 
         return layoutMapResult;
     }
@@ -1413,7 +1413,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
     private VerticalLayout loadWeatherSmall(String cityLabel, String strForWeather, String country) {
 
         VerticalLayout layoutWeatherResult = new VerticalLayout();
-        layoutWeatherResult.addClassNames(
+        layoutWeatherResult.addClassNames(Width.FULL,
                 AlignItems.CENTER, JustifyContent.CENTER,
                 Padding.SMALL, Margin.NONE,
                 BorderRadius.LARGE)

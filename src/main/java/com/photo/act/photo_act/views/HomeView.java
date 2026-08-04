@@ -295,7 +295,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         Button btnMoreLearningGenres = new Button("View All Learnings");
         btnMoreLearningGenres.addClickListener(click -> {
             btnMoreLearningGenres.getUI().ifPresent(ui ->
-                    ui.navigate(LearningsView.class)
+                    ui.navigate(NewsView.class)
             );
         });
         layoutLearningsActionsGenres.add(btnMoreLearningGenres);

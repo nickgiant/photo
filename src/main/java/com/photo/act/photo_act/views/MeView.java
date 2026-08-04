@@ -8,6 +8,7 @@ import com.photo.act.photo_act.services.EmailSendService;
 import com.photo.act.photo_act.services.ImageService;
 import com.photo.act.photo_act.services.PasswordResetService;
 import com.photo.act.photo_act.services.PhotoProcessingService;
+import com.photo.act.photo_act.seo.SlugMaintenanceService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.photo.act.photo_act.utils.UtilsString;
@@ -220,15 +221,18 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
     private  PhotoProcessingService photoProcessingService;
     private final AuthenticationContext authenticationContext;
     private final PasswordResetService passwordResetService;
+    private final SlugMaintenanceService slugMaintenanceService;
 
 
     public MeView(RecordService recordService, EmailSendService emailSendService, PhotoProcessingService photoProcessingService,
-                  AuthenticationContext authenticationContext, PasswordResetService passwordResetService) {
+                  AuthenticationContext authenticationContext, PasswordResetService passwordResetService,
+                  SlugMaintenanceService slugMaintenanceService) {
         this.recordService = recordService;
         this.emailSendService = emailSendService;
         this.photoProcessingService = photoProcessingService;
         this.authenticationContext = authenticationContext;
         this.passwordResetService = passwordResetService;
+        this.slugMaintenanceService = slugMaintenanceService;
 
         utilsDate = new UtilsDate();
         utilsString = new UtilsString();
@@ -400,8 +404,6 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
         List<Record> lstMember = recordService.findAll(sqlMemberMe, arrColumnsMember);
 
         Record record = lstMember.get(0);
-
-        String txtUserRights = record.getColumnData("user_rights_id");
 
         // ==================== View Profile panel ====================
 
@@ -634,8 +636,19 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
             dlg.open();
         });
 
-        if (txtUserRights.equalsIgnoreCase("3")) {
-            layoutButtons.add(btnRefreshAMembersPhotosMeta, btnCalcAMembersSums, btnEvictCache, btnEvictCacheLearnings);
+        Button btnUpdateMissingSlugs = new Button("Update Missing Slugs", VaadinIcon.REFRESH.create());
+        btnUpdateMissingSlugs.addClassName("member-settings-save-btn");
+//        btnUpdateMissingSlugs.setVisible(genericView.isAdmin(strMember));
+        btnUpdateMissingSlugs.addClickListener(event -> {
+            SlugMaintenanceService.BackfillResult result = slugMaintenanceService.backfillAllMissingSlugs();
+            Notification.show(
+                    "Slugs updated — News: " + result.newsUpdated() + ", Photos: " + result.photosUpdated(),
+                    5000, Notification.Position.TOP_CENTER
+            ).addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+        });
+
+        if (genericView.isAdmin(strMember)) {
+            layoutButtons.add(btnRefreshAMembersPhotosMeta, btnCalcAMembersSums, btnEvictCache, btnEvictCacheLearnings,btnUpdateMissingSlugs);
         }
 
         Button btnChangePassword = new Button("Change Password", VaadinIcon.LOCK.create());
@@ -688,6 +701,8 @@ public class MeView extends Main implements HasUrlParameter<String>, BeforeEnter
                 }
 //            });
         });
+
+
 
         Button btnLogout = new Button("Logout", VaadinIcon.SIGN_OUT.create());
         btnLogout.addClassName("member-settings-logout-btn");

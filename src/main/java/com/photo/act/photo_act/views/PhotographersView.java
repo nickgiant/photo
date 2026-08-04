@@ -403,9 +403,6 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
 //        formLayout.setExpandFields(true);
 //        formLayout.setLabelsAside(true);
 
-        String txtUserRights = record.getColumnData("user_rights_id");
-
-
         TextField txtUserName = new TextField();
         txtUserName.setValue(record.getColumnData("username"));
         txtUserName.setEnabled(false);
@@ -664,7 +661,7 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
 
 
         layoutTabsAll.add(layoutTabs);
-        if (txtUserRights.equalsIgnoreCase("3")) {
+        if (genericView.isAdmin(strMember)) {
             layoutButtons.add(btnRefreshAMembersPhotosMeta, btnCalcAMembersSums, btnEvictCache);
         }
 

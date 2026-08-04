@@ -6,6 +6,7 @@ import com.photo.act.photo_act.services.EmailSendService;
 import com.photo.act.photo_act.services.PhotoProcessingService;
 import com.photo.act.photo_act.services.WeatherService;
 import com.photo.act.photo_act.utils.ImageUtilsMeta;
+import com.photo.act.photo_act.utils.SlugUtil;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
@@ -1049,6 +1050,45 @@ public class UploadImageCard extends VerticalLayout {
                         " destination_id = '" + strDestination + "' " +
                         " WHERE name_new = '" + strNewFileName + "'";
                 recordService.insertOneRecordWithQuery(strUpdateDest, null, null);
+            }
+
+            // Slug tracks the assigned destination (plus the description, when set). When
+            // neither is set, fall back to a fixed "010"-prefixed id so the photo still gets
+            // a stable slug.
+            boolean hasDescription = strSubtitle != null && !strSubtitle.isBlank();
+            if (!strDestination.isEmpty() || !hasDescription) {
+                String[] arrPhotoId = {"id"};
+                List<Record> lstPhotoId = recordService.findAll(
+                        "SELECT id FROM photo_meta WHERE name_new = '" + strNewFileName + "'", arrPhotoId);
+
+                if (!lstPhotoId.isEmpty()) {
+                    String strPhotoId = lstPhotoId.get(0).getColumnData("id");
+                    String strPhotoSlug = null;
+
+                    if (!strDestination.isEmpty()) {
+                        String[] arrDestName = {"city_name", "country"};
+                        List<Record> lstDestName = recordService.findAll(
+                                "SELECT city_name, country FROM destination WHERE id = ?",
+                                arrDestName, new Object[]{Integer.parseInt(strDestination)}, new String[]{"java.lang.Integer"});
+
+                        if (!lstDestName.isEmpty()) {
+                            String strDestDisplay = lstDestName.get(0).getColumnData("city_name") + " (" + lstDestName.get(0).getColumnData("country") + ")";
+                            String strSlugBase = hasDescription ? strDestDisplay + " " + strSubtitle : strDestDisplay;
+                            strPhotoSlug = SlugUtil.toSlug(strSlugBase) + "-" + strPhotoId;
+                        }
+                    } else if (!hasDescription) {
+                        // Hyphenated — PhotoLightboxView resolves a photo route by extracting the
+                        // trailing digit run, which needs a non-numeric marker before the id.
+                        strPhotoSlug = "010-" + strPhotoId;
+                    }
+
+                    if (strPhotoSlug != null) {
+                        recordService.insertOneRecordWithQuery(
+                                "UPDATE photo_meta SET slug = ? WHERE id = ?",
+                                new Object[]{strPhotoSlug, Integer.parseInt(strPhotoId)},
+                                new String[]{"java.lang.String", "java.lang.Integer"});
+                    }
+                }
             }
             if (!strSubject.isEmpty()) {
                 String strUpdateSubj = "UPDATE photo_meta SET " +

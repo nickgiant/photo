@@ -118,6 +118,10 @@ public class PhotoMetaEntity {
     @Column(name = "subject_id")
     private Integer subjectId;
 
+    /** Derived from the assigned destination — regenerated whenever the destination is (re)assigned. */
+    @Column(name = "slug", length = 255)
+    private String slug;
+
     protected PhotoMetaEntity() {}
 
     public Integer getId()               { return id; }
@@ -155,6 +159,7 @@ public class PhotoMetaEntity {
     public Integer getUploaderId()       { return uploaderId; }
     public Integer getDestinationId()    { return destinationId; }
     public Integer getSubjectId()        { return subjectId; }
+    public String  getSlug()             { return slug; }
 
     public void setVisibleTo(String visibleTo)        { this.visibleTo = visibleTo; }
     public void setTitle(String title)                { this.title = title; }
@@ -162,4 +167,5 @@ public class PhotoMetaEntity {
     public void setNotes(String notes)                { this.notes = notes; }
     public void setDestinationId(Integer destinationId) { this.destinationId = destinationId; }
     public void setSubjectId(Integer subjectId)       { this.subjectId = subjectId; }
+    public void setSlug(String slug)                  { this.slug = slug; }
 }

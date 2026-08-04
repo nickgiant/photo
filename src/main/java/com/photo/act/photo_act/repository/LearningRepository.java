@@ -8,8 +8,11 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface LearningRepository extends JpaRepository<LearningEntity, Long> {
+
+    Optional<LearningEntity> findBySlug(String slug);
 
     Page<LearningEntity> findAllByOrderByDateInsertDesc(Pageable pageable);
 

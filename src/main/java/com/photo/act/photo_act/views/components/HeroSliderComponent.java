@@ -382,7 +382,7 @@ public class HeroSliderComponent extends Div {
                 !subtitle.isEmpty() ? subtitle : title,
                 "",
                 baseUrl + "/photo/" + nameNew,
-                baseUrl + "/photo/" + photoId
+                baseUrl + "/photo/" + resolvePhotoUrlSegment(photoId)
         );
 
         ShareBottomBar bar = new ShareBottomBar(shareResource, shareService, shareMetricService);
@@ -415,7 +415,7 @@ public class HeroSliderComponent extends Div {
             photoViewService.recordView(photoId, nameNew, uid, publicIp,
                     PhotoViewService.TYPE_FULL, sessionId, sessionDateTime);
         }
-        getUI().ifPresent(ui -> ui.navigate("photo/" + photoId));
+        getUI().ifPresent(ui -> ui.navigate("photo/" + resolvePhotoUrlSegment(photoId)));
     }
 
     private void showPhotoPageOnRateTab(int photoId, String nameNew) {
@@ -424,8 +424,21 @@ public class HeroSliderComponent extends Div {
             photoViewService.recordView(photoId, nameNew, uid, publicIp,
                     PhotoViewService.TYPE_FULL, sessionId, sessionDateTime);
         }
-        getUI().ifPresent(ui -> ui.navigate("photo/" + photoId,
+        getUI().ifPresent(ui -> ui.navigate("photo/" + resolvePhotoUrlSegment(photoId),
                 QueryParameters.simple(Map.of("tab", "rate"))));
+    }
+
+    /** Prefer the photo's slug (destination/description-based) for its URL; falls back to the raw id. */
+    private String resolvePhotoUrlSegment(int photoId) {
+        if (photoId <= 0) return String.valueOf(photoId);
+        List<Record> lstSlug = recordService.findAll(
+                "SELECT slug FROM photo_meta WHERE id = ?",
+                new String[]{"slug"}, new Object[]{photoId}, new String[]{"java.lang.Integer"});
+        if (!lstSlug.isEmpty()) {
+            String slug = lstSlug.get(0).getColumnData("slug");
+            if (slug != null && !slug.isBlank()) return slug;
+        }
+        return String.valueOf(photoId);
     }
 
     // ══════════════════════════════════════════════════════════════════════

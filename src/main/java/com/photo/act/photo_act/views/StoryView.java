@@ -26,7 +26,6 @@ import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.theme.lumo.LumoUtility.*;
-import jakarta.annotation.security.PermitAll;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,7 +41,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import static com.photo.act.photo_act.views.LearningsView.STR_ALL_TITLES;
+import static com.photo.act.photo_act.views.NewsView.STR_ALL_TITLES;
 import static com.photo.act.photo_act.views.MainLayout.*;
 
 @AnonymousAllowed

@@ -2,14 +2,12 @@ package com.photo.act.photo_act.views;
 
 import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.views.components.GoogleAnalytics;
-import com.photo.act.photo_act.views.components.LoginDialog;
 import com.vaadin.flow.component.*;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.avatar.Avatar;
 import com.vaadin.flow.component.avatar.AvatarVariant;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.Icon;
@@ -26,7 +24,6 @@ import com.vaadin.flow.component.popover.PopoverPosition;
 import com.vaadin.flow.component.popover.PopoverVariant;
 import com.vaadin.flow.component.sidenav.SideNav;
 import com.vaadin.flow.component.sidenav.SideNavItem;
-import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.Layout;
 import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.router.RouterLink;
@@ -39,7 +36,6 @@ import com.vaadin.flow.theme.lumo.LumoIcon;
 import com.vaadin.flow.theme.lumo.LumoUtility.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -244,7 +240,7 @@ public class MainLayout extends AppLayout{
                     //  new MenuItemInfo("Stories", svgStories, StoriesView.class), //  LineAwesomeIcon.PENCIL_RULER_SOLID.create(),
                     new MenuItemInfo("", VaadinIcon.PICTURE.create(), GalleryView.class), //
                     new MenuItemInfo("", FontAwesome.Solid.PHOTO_FILM.create(), AlbumsView.class), //
-                    new MenuItemInfo("", VaadinIcon.BOOK.create(), LearningsView.class), //  LineAwesomeIcon.PENCIL_RULER_SOLID.create(),
+                    new MenuItemInfo("", VaadinIcon.BOOK.create(), NewsView.class), //  LineAwesomeIcon.PENCIL_RULER_SOLID.create(),
                     new MenuItemInfo("", VaadinIcon.CALENDAR_USER.create(), FestivalsView.class), //  LineAwesomeIcon.PENCIL_RULER_SOLID.create(),
                     new MenuItemInfo("", svgGroup, PhotographersView.class),
 
@@ -260,7 +256,7 @@ public class MainLayout extends AppLayout{
                     //  new MenuItemInfo("Stories", svgStories, StoriesView.class), //  LineAwesomeIcon.PENCIL_RULER_SOLID.create(),
                     new MenuItemInfo("Albums", FontAwesome.Solid.PHOTO_FILM.create(), AlbumsView.class), //
                     new MenuItemInfo("Photos", VaadinIcon.PICTURE.create(), GalleryView.class), //
-                    new MenuItemInfo("Learnings", VaadinIcon.BOOK.create(), LearningsView.class), //  LineAwesomeIcon.PENCIL_RULER_SOLID.create(),
+                    new MenuItemInfo("Learnings", VaadinIcon.BOOK.create(), NewsView.class), //  LineAwesomeIcon.PENCIL_RULER_SOLID.create(),
                     new MenuItemInfo("Events", VaadinIcon.CALENDAR_USER.create(), FestivalsView.class), //  LineAwesomeIcon.PENCIL_RULER_SOLID.create(),
                     new MenuItemInfo("Photographers", svgGroup, PhotographersView.class),
                     new MenuItemInfo("My Photos", FontAwesome.Solid.CAMERA_ALT.create(), MemberPhotosView.class), //
@@ -832,7 +828,7 @@ public class MainLayout extends AppLayout{
 
         Div divImageNews = new Div(FontAwesome.Solid.NEWSPAPER.create());
         nav.addItem(createSideNavItem("News", divImageNews, "News and Updates",
-                LearningsView.class));
+                NewsView.class));
 
         Div divStories = new Div(FontAwesome.Solid.PHOTO_FILM.create());
         nav.addItem(createSideNavItem("Photo-Stories", divStories, "Collections of photos from members",

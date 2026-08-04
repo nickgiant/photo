@@ -52,10 +52,15 @@ public class SecurityConfiguration {
                         "/og/**",           // OG Thymeleaf bot pages
                         "/static/**",       // static images, favicon
                         "/uploads/**",      // media files
-                        "/actuator/health", // load balancer health check
-                        "/actuator/**",
+                    //    "/actuator/health", // load balancer health check
+//                        "/actuator/**",
                         "/og/ping",
                         "/admin/cache/**",
+                        "/news/**",
+                        "/stories/**",
+                        "/photos/**",
+                        "/events/**",
+                        "/photographers/**",
                         "/vaadin-forward/**" // OgMetaController non-bot pass-through to Vaadin
                 ).permitAll()
         );

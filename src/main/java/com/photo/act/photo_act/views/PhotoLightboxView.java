@@ -30,6 +30,7 @@ import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.server.streams.DownloadHandler;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import elemental.json.Json;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -153,15 +154,15 @@ public class PhotoLightboxView extends VerticalLayout
             " FROM photo_meta pm LEFT JOIN subject s ON pm.subject_id = s.id " +
             " ORDER BY subject_name ASC ";
 
-    private String[] arrAlbumNames = new String[]{"user_id", "id", "title", "description", "city_name", "country"};
+/*    private String[] arrAlbumNames = new String[]{"user_id", "id", "title", "description", "city_name", "country"};
     private String sqlReadAlbums = "SELECT distinct a.title , a.id, a.description, a.user_id, d.city_name, d.country " +
             " FROM  destination d RIGHT JOIN photo_album a  ON (d.id = a.destination_id )  LEFT JOIN photo_album_photo pap ON (pap.photo_album_id = a.id AND a.user_id = pap.user_id), dbuser usr " +
             " WHERE usr.userId = a.user_id ";
     //     "  AND usr.username = '" + strAlbumUsername + "' " +
-    private String sqlReadAlbumsOrderby = " ORDER BY title ASC ";
+    private String sqlReadAlbumsOrderby = " ORDER BY title ASC ";*/
 
 
-    private String[] arrColumnNamesGallery = {"id", "name_new", "title", "subtitle", "notes", "photo_type", "uploader", "creator", "visible_to", "meta_date", "photo_date", "photo_time", "photo_time_shot"
+    private String[] arrColumnNamesGallery = {"id", "slug", "name_new", "title", "subtitle", "notes", "photo_type", "uploader", "creator", "visible_to", "meta_date", "photo_date", "photo_time", "photo_time_shot"
             , "space_size", "space_size_medium", "space_size_thumb", "meta_camera_make", "meta_camera_model", "meta_lens_make", "meta_lens_model"
             , "meta_focal_length", "meta_focal_length_ff", "meta_iso", "meta_aperture", "meta_shutter_speed", "meta_orientation", "meta_i_height", "meta_i_length", "meta_i_width"
             , "location_by_user", "location_area", "location_country_code", "location_lat", "location_lon"
@@ -173,7 +174,7 @@ public class PhotoLightboxView extends VerticalLayout
     };
 
     private String sqlReadGalleryDestinations =
-            " SELECT pm.id, pm.name_new, pm.title, pm.subtitle, pm.notes, pm.photo_type, pm.uploader, pm.creator, pm.visible_to,  DATE_FORMAT(pm.meta_date, '%W %D %M %Y %H:%i %p') AS meta_date, DATE_FORMAT(pm.meta_date, '%M %Y') AS photo_date, DATE_FORMAT(pm.meta_date, '%H:%i') AS photo_time " +
+            " SELECT pm.id, pm.slug, pm.name_new, pm.title, pm.subtitle, pm.notes, pm.photo_type, pm.uploader, pm.creator, pm.visible_to,  DATE_FORMAT(pm.meta_date, '%W %D %M %Y %H:%i %p') AS meta_date, DATE_FORMAT(pm.meta_date, '%M %Y') AS photo_date, DATE_FORMAT(pm.meta_date, '%H:%i') AS photo_time " +
                     " , DATE_FORMAT(pm.meta_date, '%d/%m/%Y - %H:%i:%S') AS photo_time_shot,  pm.space_size, pm.space_size_medium, pm.space_size_thumb, pm.meta_camera_make, pm.meta_camera_model, pm.meta_lens_make, pm.meta_lens_model,  pm.meta_focal_length, pm.meta_focal_length_ff, pm.meta_iso, meta_aperture,  meta_shutter_speed, meta_orientation ,  pm.meta_i_height, pm.meta_i_length, pm.meta_i_width , pm.location_by_user, pm.location_area, pm.location_country_code, pm.location_lat, pm.location_lon " +
                     " , getDateDiffFromNow(pm.date_inserted) AS date_inserted_diff_from_now " +
                     " , d.city_name, d.prefecture, d.country " +
@@ -184,6 +185,27 @@ public class PhotoLightboxView extends VerticalLayout
                     " LEFT JOIN destination d ON pm.destination_id = d.id " +
                     " WHERE pm.uploaderId = usr.userId AND pm.visible_to = 'ALL' " +
                     " AND usr.userId = ux.user_id ";
+
+    /**
+     * Same column shape as {@link #sqlReadGalleryDestinations}, but every join is a LEFT JOIN —
+     * used to fetch a single photo directly by id without depending on the uploader having a
+     * matching dbuser_extra row or the photo having a destination assigned. The "album" query
+     * above uses inner joins for those, so a data gap there shouldn't take down viewing a photo
+     * that otherwise exists and is visible.
+     */
+    private String sqlReadPhotoById =
+            " SELECT pm.id, pm.slug, pm.name_new, pm.title, pm.subtitle, pm.notes, pm.photo_type, pm.uploader, pm.creator, pm.visible_to,  DATE_FORMAT(pm.meta_date, '%W %D %M %Y %H:%i %p') AS meta_date, DATE_FORMAT(pm.meta_date, '%M %Y') AS photo_date, DATE_FORMAT(pm.meta_date, '%H:%i') AS photo_time " +
+                    " , DATE_FORMAT(pm.meta_date, '%d/%m/%Y - %H:%i:%S') AS photo_time_shot,  pm.space_size, pm.space_size_medium, pm.space_size_thumb, pm.meta_camera_make, pm.meta_camera_model, pm.meta_lens_make, pm.meta_lens_model,  pm.meta_focal_length, pm.meta_focal_length_ff, pm.meta_iso, meta_aperture,  meta_shutter_speed, meta_orientation ,  pm.meta_i_height, pm.meta_i_length, pm.meta_i_width , pm.location_by_user, pm.location_area, pm.location_country_code, pm.location_lat, pm.location_lon " +
+                    " , getDateDiffFromNow(pm.date_inserted) AS date_inserted_diff_from_now " +
+                    " , d.city_name, d.prefecture, d.country " +
+                    " , usr.username, usr.surname, usr.name, usr.resident, usr.resident_country, DATE_FORMAT(usr.date_joined, '%d-%m-%Y') AS date_joined, DATE_FORMAT(usr.date_joined, '%M %Y') AS member_since, usr.avatar_path " +
+                    " , usr.short_bio " +
+                    " , ux.count_photos, ux.count_stories " +
+                    " FROM photo_meta pm " +
+                    " LEFT JOIN destination d ON pm.destination_id = d.id " +
+                    " LEFT JOIN dbuser usr ON pm.uploaderId = usr.userId " +
+                    " LEFT JOIN dbuser_extra ux ON usr.userId = ux.user_id " +
+                    " WHERE pm.visible_to = 'ALL' AND pm.id = ? ";
     private String sqlReadGalleryDestinationsOrderBy = " ORDER BY pm.date_inserted DESC  LIMIT 80 ";
     private String strBrowser;
     private String hostname;
@@ -230,6 +252,16 @@ public class PhotoLightboxView extends VerticalLayout
     public void beforeEnter(BeforeEnterEvent event) {
         currentSlug = event.getRouteParameters().get("slug").map(UtilsString::decodeRouteParam).orElse("");
         strPhotoId = event.getRouteParameters().get("photo-id").map(UtilsString::decodeRouteParam).orElse("");
+
+        // The "photo-id" segment may be a plain numeric id (legacy links) or a destination-based
+        // slug ending in "-{id}" (see PhotoMetaEntity.slug) — either way, the id is the trailing
+        // digit run, so extract it and keep every downstream "WHERE id = ..." lookup unchanged.
+        if (!strPhotoId.isEmpty()) {
+            java.util.regex.Matcher photoIdMatcher = java.util.regex.Pattern.compile("(\\d+)$").matcher(strPhotoId);
+            if (photoIdMatcher.find()) {
+                strPhotoId = photoIdMatcher.group(1);
+            }
+        }
 
         // Detect ?tab=rate — set when arriving from a Rate It button on a card or hero
         boolean openOnRateTab = event.getLocation().getQueryParameters()
@@ -293,9 +325,16 @@ public class PhotoLightboxView extends VerticalLayout
         // Load all photos in the album (ordered)
         photos = getRecordsFromDb(sqlReadPhotos, arrNames); //contentRepo.findBySlug(currentSlug);//.findByAlbumSlugOrderByPosition(currentSlug);
 
+        if (photos.isEmpty() && !strPhotoId.isEmpty()) {
+            // The sibling/album window (date-ordered, same destination/subject) found nothing for
+            // this id — can happen at the edges of that window. Fall back to fetching just the
+            // requested photo directly so a genuinely valid photo never hits a hard error.
+            photos = getPhotoByIdDirectly(strPhotoId, arrNames);
+        }
+
         if (photos.isEmpty()) {
             event.rerouteToError(IllegalArgumentException.class,
-                    "Album not found: " + currentSlug);
+                    "Photo not found: " + strPhotoId);
             return;
         }
 
@@ -378,6 +417,7 @@ public class PhotoLightboxView extends VerticalLayout
             currentPhotoId = photoId;
             updatePhotoImage(dir != 0 ? dir : +1);
             loadInfoPanel(photoId);
+            updateBrowserUrlForCurrentPhoto();
         });
 
         add(topSection, thumbnailStrip);
@@ -424,8 +464,24 @@ public class PhotoLightboxView extends VerticalLayout
             try {
                 currentPhotoId = Long.parseLong(photos.get(currentIndex).getColumnData("id"));
                 loadInfoPanel(currentPhotoId);
+                updateBrowserUrlForCurrentPhoto();
             } catch (NumberFormatException ignored) {}
         }
+    }
+
+    /**
+     * Reflects the photo now on screen in the address bar — prefers its slug, falls back to the
+     * numeric id — without a real navigation/route re-resolution (browser history only).
+     */
+    private void updateBrowserUrlForCurrentPhoto() {
+        if (photos.isEmpty() || currentIndex < 0 || currentIndex >= photos.size()) return;
+
+        Record photo = photos.get(currentIndex);
+        String id = photo.getColumnData("id");
+        String slug = photo.getColumnData("slug");
+        String urlSegment = (slug != null && !slug.isBlank()) ? slug : id;
+
+        UI.getCurrent().getPage().getHistory().replaceState(Json.createNull(), "photo/" + urlSegment);
     }
 
     /** Returns the index of the photo matching strPhotoId, or 0 if not found. */
@@ -937,6 +993,20 @@ public class PhotoLightboxView extends VerticalLayout
 
         logger.info(" photo  getRecordsFromDb:   " + sql);
         return recordService.findAll(sql, arrColumnNames);
+    }
+
+    /**
+     * Fallback used when the sibling/album-window query comes back empty: fetches the requested
+     * photo directly by id (still respecting visible_to = 'ALL'), with no destination/subject or
+     * date-window filtering. Used so a valid photo id/slug never dead-ends on "not found".
+     */
+    private List<Record> getPhotoByIdDirectly(String photoId, String[] arrColumnNames) {
+        try {
+            int id = Integer.parseInt(photoId);
+            return recordService.findAll(sqlReadPhotoById, arrColumnNames, new Object[]{id}, new String[]{"java.lang.Integer"});
+        } catch (NumberFormatException e) {
+            return List.of();
+        }
     }
 
     private void getUserClientInfo() {

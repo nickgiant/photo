@@ -13,6 +13,7 @@ import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Paragraph;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
@@ -404,6 +405,12 @@ public class DialogRegistration extends Dialog {
         });
         formLayoutCode.addFormItem(txtUserName, "Username");
 
+        Span spanProfileUrlHint = new Span("Your public profile link: photoact.net/photographer/your-username");
+        spanProfileUrlHint.getStyle()
+                .set("font-size", "var(--lumo-font-size-xs)")
+                .set("color", "var(--lumo-secondary-text-color)");
+        formLayoutCode.addFormItem(spanProfileUrlHint, "");
+
         String strMessagePass = "Password is not the same in both fields. Please retype.";
 
         PasswordField txtPassword = new PasswordField();
@@ -489,7 +496,8 @@ public class DialogRegistration extends Dialog {
                 );
 
                 if (ref.getStrCode() == null || ref.getStrCode().isEmpty() ||
-                        ref.getStrUsername() == null || ref.getStrUsername().isEmpty() || ref.getStrPassword() == null || ref.getStrPassword().isEmpty()) {
+                        ref.getStrUsername() == null || ref.getStrUsername().isEmpty() ||
+                        ref.getStrPassword() == null || ref.getStrPassword().isEmpty()) {
                     dialog1.open();
                 } else {
                     formLayoutBasic.setVisible(true);
@@ -550,7 +558,8 @@ public class DialogRegistration extends Dialog {
 
             if (ref.getStrName() == null || ref.getStrName().isEmpty() || ref.getStrSurname() == null || ref.getStrSurname().isEmpty() ||
                     ref.getStrEmail() == null || ref.getStrEmail().isEmpty() || ref.getStrCode() == null || ref.getStrCode().isEmpty() ||
-                    ref.getStrUsername() == null || ref.getStrUsername().isEmpty() || ref.getStrPassword() == null || ref.getStrPassword().isEmpty()) {
+                    ref.getStrUsername() == null || ref.getStrUsername().isEmpty() ||
+                    ref.getStrPassword() == null || ref.getStrPassword().isEmpty()) {
 
                 dialog.open();
             } else {

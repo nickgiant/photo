@@ -144,7 +144,7 @@
     width: 100%;
     align-items: center;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
     grid-gap: 12px;
 
     margin: 0;
@@ -191,7 +191,7 @@
 }
 
 .top-tall-filters{
-    min-width: 123px;
+    min-width: 132px;
     padding: 1px;
     margin: 1px;
 
@@ -226,7 +226,7 @@
     font-weight: 600;
     font-size: 11pt;
     text-align: center;
-    /*letter-spacing: 1px;*/
+    letter-spacing: 1px;
     padding: 1px;
     /*padding-bottom: 1px;*/
     color:  #4f5a83; /* #466ca8;*/
@@ -868,7 +868,6 @@
     padding: 10px;
     border-radius: 12px;
     border: 2px #ededec solid;
-
 /*    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);*/
 }
 
@@ -885,7 +884,7 @@
     padding: 12px;
     border-radius: 12px;
     color: #8b94a0;
-
+    width: 100%;
     border: 1px #ededec solid;
 }
 

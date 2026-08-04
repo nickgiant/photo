@@ -9,6 +9,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 import static com.photo.act.photo_act.views.MainLayout.baseMoto;
 
@@ -17,6 +18,7 @@ import static com.photo.act.photo_act.views.MainLayout.baseMoto;
         "com.photo.act.photo_act.db", "com.photo.act.photo_act.utils", "com.photo.act.photo_act.views",
         "com.photo.act.photo_act.controllers", "com.photo.act.photo_act.repository"})
 @EnableAsync
+@EnableScheduling
 @Push
 @Theme(value = "my-app")
 @Viewport("width=device-width, initial-scale=1")
