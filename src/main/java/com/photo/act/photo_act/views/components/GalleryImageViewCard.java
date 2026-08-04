@@ -10,6 +10,7 @@ import com.photo.act.photo_act.services.PhotoViewService;
 import com.photo.act.photo_act.services.ShareMetricService;
 import com.photo.act.photo_act.services.ShareService;
 import com.photo.act.photo_act.services.WeatherService;
+import com.photo.act.photo_act.utils.SlugUtil;
 import com.photo.act.photo_act.views.PhotographersView;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Text;
@@ -785,7 +786,7 @@ public class GalleryImageViewCard extends Div {
                 strSubTitle,
                 "",
                 baseUrl + "/photo/" + strFileName,
-                baseUrl + "/photo/" + strPhotoId
+                baseUrl + "/photo/" + resolvePhotoUrlSegment(strPhotoId)
         );
         ShareBottomBar shareBottomBar = new ShareBottomBar(photo, shareService, shareMetricService);
         if(size == CardSize.COMPACT){
@@ -937,6 +938,20 @@ public class GalleryImageViewCard extends Div {
         return item;
     }
 
+    /** Prefer the photo's slug (destination/description-based) for its URL; falls back to the raw id. */
+    private String resolvePhotoUrlSegment(String photoId) {
+        if (photoId == null || photoId.isEmpty()) return photoId;
+        try {
+            List<Record> lstSlug = recordService.findAll(
+                    "SELECT slug FROM photo_meta WHERE id = ?",
+                    new String[]{"slug"}, new Object[]{Integer.parseInt(photoId)}, new String[]{"java.lang.Integer"});
+            if (!lstSlug.isEmpty()) {
+                String slug = lstSlug.get(0).getColumnData("slug");
+                if (slug != null && !slug.isBlank()) return slug;
+            }
+        } catch (NumberFormatException ignored) {}
+        return photoId;
+    }
 
     private void showFullPhoto(String strPhotoId) {
         if (photoViewService != null && strPhotoId != null) {
@@ -951,7 +966,7 @@ public class GalleryImageViewCard extends Div {
                         cardSessionId, cardSessionDateTime);
             } catch (NumberFormatException ignored) {}
         }
-        getUI().ifPresent(ui -> ui.navigate("photo/" + strPhotoId));
+        getUI().ifPresent(ui -> ui.navigate("photo/" + resolvePhotoUrlSegment(strPhotoId)));
     }
 
     private void showFullPhotoOnRateTab(String strPhotoId) {
@@ -967,7 +982,7 @@ public class GalleryImageViewCard extends Div {
                         PhotoViewService.TYPE_FULL, cardSessionId, cardSessionDateTime);
             } catch (NumberFormatException ignored) {}
         }
-        getUI().ifPresent(ui -> ui.navigate("photo/" + strPhotoId,
+        getUI().ifPresent(ui -> ui.navigate("photo/" + resolvePhotoUrlSegment(strPhotoId),
                 QueryParameters.simple(Map.of("tab", "rate"))));
     }
 
@@ -1205,6 +1220,8 @@ public class GalleryImageViewCard extends Div {
                 }
             }
 
+            String strTxtSubtitle = txtSubtitle.getValue().trim();
+
             if (!strGenreId.isEmpty()) {
                 String strUpdateGenre = "UPDATE photo_meta SET " +
                         " genre_id = '" + strGenreId + "' " +
@@ -1217,6 +1234,27 @@ public class GalleryImageViewCard extends Div {
                         " destination_id = '" + strDestinationId + "' " +
                         " WHERE id = '" + strPhotoId + "'";
                 recordService.insertOneRecordWithQuery(strUpdateDest, null, null);
+            }
+
+            // Slug tracks the assigned destination (plus the description, when set) —
+            // regenerated every time the destination is reassigned. When neither is set,
+            // fall back to a fixed "010"-prefixed id so the photo still gets a stable slug.
+            String strPhotoSlug = null;
+            if (!strDestinationId.isEmpty()) {
+                String strSlugBase = !strTxtSubtitle.isEmpty()
+                        ? strSelectedDestination + " " + strTxtSubtitle
+                        : strSelectedDestination;
+                strPhotoSlug = SlugUtil.toSlug(strSlugBase) + "-" + strPhotoId;
+            } else if (strTxtSubtitle.isEmpty()) {
+                // Hyphenated — PhotoLightboxView resolves a photo route by extracting the
+                // trailing digit run, which needs a non-numeric marker before the id.
+                strPhotoSlug = "010-" + strPhotoId;
+            }
+            if (strPhotoSlug != null) {
+                recordService.insertOneRecordWithQuery(
+                        "UPDATE photo_meta SET slug = ? WHERE id = ?",
+                        new Object[]{strPhotoSlug, Integer.parseInt(strPhotoId)},
+                        new String[]{"java.lang.String", "java.lang.Integer"});
             }
 
             if (!strSubjectId.isEmpty()) {
@@ -1233,7 +1271,6 @@ public class GalleryImageViewCard extends Div {
                 int retProf = recordService.insertOneRecordWithQuery(strUpdateIsProfile, null, null);
             }
 
-            String strTxtSubtitle = txtSubtitle.getValue().trim();
             String strTxtPersonalNotes = txtPersonalNotes.getValue().trim();
             Object[] fieldValue = {strTxtSubtitle, strTxtPersonalNotes};
             String[] fieldType = {"java.lang.String", "java.lang.String"};

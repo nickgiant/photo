@@ -171,8 +171,8 @@ public class ConfirmView extends Main implements HasUrlParameter<String>, Before
 
     @Override
     public void beforeEnter(@OptionalParameter BeforeEnterEvent event) {
-        strMember = event.getRouteParameters().get("member").orElse("all-members");
-        strValidationcode = event.getRouteParameters().get("validationcode").orElse("val-code");
+        strMember = event.getRouteParameters().get("member").map(UtilsString::decodeRouteParam).orElse("all-members");
+        strValidationcode = event.getRouteParameters().get("validationcode").map(UtilsString::decodeRouteParam).orElse("val-code");
         if (!strMember.matches("^[a-z0-9_\\-]+$")) {
 
 

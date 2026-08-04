@@ -146,6 +146,10 @@ public class LearningService {
                 .map(this::toDto);
     }
 
+    public Optional<LearningDto> getLearningBySlug(String slug) {
+        return learningRepo.findBySlug(slug).map(this::toDto);
+    }
+
     @Transactional
     public LearningDto createLearning(LearningDto dto) {
         LearningEntity entity = new LearningEntity(
@@ -173,7 +177,11 @@ public class LearningService {
             entity.setPublished(dto.getPublished());
             entity.setCategoryId(dto.getCategoryId());
 //            entity.setCatGenreId(dto.getCatGenreId());
-            entity.setSlug(SlugUtil.toSlug(dto.getTitle()) + "-" + id);
+            // Slug is generated once and kept stable — regenerating it on every title edit
+            // would break already-shared/indexed URLs.
+            if (entity.getSlug() == null || entity.getSlug().isBlank()) {
+                entity.setSlug(SlugUtil.toSlug(dto.getTitle()) + "-" + id);
+            }
             return toDto(learningRepo.save(entity));
         });
     }

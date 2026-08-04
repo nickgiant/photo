@@ -364,7 +364,7 @@ vaadin-side-nav-item[current]::part(content) {
 
 .sidebar-cta-btn {
     display: block;
-/*    text-align: center;*/
+    text-align: start;
     background: var(--brand-orange, #e8823c);
     color: var(--brand-ink, #1c2430) !important;
     font-size: 0.86rem;

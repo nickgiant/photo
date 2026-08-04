@@ -27,6 +27,7 @@ import com.photo.act.photo_act.services.WeatherService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.PageSeoUtil;
 import com.photo.act.photo_act.utils.UtilsDate;
+import com.photo.act.photo_act.utils.UtilsString;
 import com.photo.act.photo_act.views.components.*;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HasComponents;
@@ -215,7 +216,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
 
     @Override
     public void beforeEnter(@OptionalParameter BeforeEnterEvent event) {
-        category = event.getRouteParameters().get("category").orElse(STR_ALL_CATEGORIES);
+        category = event.getRouteParameters().get("category").map(UtilsString::decodeRouteParam).orElse(STR_ALL_CATEGORIES);
 //        tutor = event.getRouteParameters().get("tutor").orElse(STR_ALL_TUTORS);
 
         PageSeoUtil.setMetaDescription("Community website of photographers, sharing their photos, stories, learning sources and events.");
@@ -294,7 +295,7 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
         Button btnMoreLearningGenres = new Button("View All Learnings");
         btnMoreLearningGenres.addClickListener(click -> {
             btnMoreLearningGenres.getUI().ifPresent(ui ->
-                    ui.navigate(LearningsView.class)
+                    ui.navigate(NewsView.class)
             );
         });
         layoutLearningsActionsGenres.add(btnMoreLearningGenres);

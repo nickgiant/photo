@@ -26,7 +26,7 @@ import java.io.FileNotFoundException;
  *   [description excerpt]
  *   [external links]
  *
- * Reuses the visual conventions from LearningsView.getLearningItem().
+ * Reuses the visual conventions from NewsView.getLearningItem().
  * Drop anywhere in the app — it is a self-contained VerticalLayout.
  *
  * Example:

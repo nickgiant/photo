@@ -21,7 +21,9 @@ import com.photo.act.photo_act.services.ShareService;
 import com.photo.act.photo_act.services.TutorService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.PageSeoUtil;
+import com.photo.act.photo_act.utils.SlugUtil;
 import com.photo.act.photo_act.utils.UtilsDate;
+import static com.photo.act.photo_act.utils.UtilsString.decodeRouteParam;
 import com.photo.act.photo_act.views.components.AuthDialog;
 import com.photo.act.photo_act.views.components.AvatarItem;
 import com.photo.act.photo_act.views.components.FilterDestinationTypeCard;
@@ -32,7 +34,6 @@ import com.photo.act.photo_act.views.components.ShareBottomBar;
 import com.vaadin.flow.component.*;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.checkbox.CheckboxGroup;
 import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.SvgIcon;
@@ -73,21 +74,22 @@ import static com.photo.act.photo_act.views.MainLayout.*;
 @AnonymousAllowed
 
 @PageTitle("PhotoAct.net - Photography Community | News")
-@Route(value = "news") //":category?")
+@Route(value = "news", layout = MainLayout.class) //":category?")
 @RouteAlias(value = "news/category/:category?", layout = MainLayout.class)
 @RouteAlias(value = "news/genre/:genre?", layout = MainLayout.class)
 @RouteAlias(value = "news/tutor/:tutor?", layout = MainLayout.class)
-@RouteAlias(value = "news/title/:title?", layout = MainLayout.class)
+@RouteAlias(value = "news/:slug?", layout = MainLayout.class)
+
 
 
 //@Menu(order = 0, icon = "line-awesome/svg/th-list-solid.svg")
-public class LearningsView extends Main implements HasUrlParameter<String>, BeforeEnterObserver, HasComponents, HasStyle {
+public class NewsView extends Main implements HasUrlParameter<String>, BeforeEnterObserver, HasComponents, HasStyle {
 
     private String strColorOfIcons = "#a62f03"; //"#f9943b";//"#a62c5c";//"#7d1e32";
 
 
 
-    private static final Logger logger = LoggerFactory.getLogger(LearningsView.class);
+    private static final Logger logger = LoggerFactory.getLogger(NewsView.class);
 
     private VerticalLayout verticalLayout;
     private String sessionid;
@@ -105,7 +107,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
     private String category;
     private String genre;
     private String tutor;
-    private String title;
+    private String slug = STR_ALL_TITLES;
     String[] arrColLearningCategories = {"id", "cat_title", "cat_title_type", "cat_type", "cat_location_count", "cat_title_count", "cat_description_min", "cat_description_big"};
 
     public static String STR_ALL_TUTORS = "all-tutors";
@@ -193,10 +195,10 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
     private LocalDateTime sessionDateTimeLDT;
     private boolean isLoggedIn;
 
-    public LearningsView(RecordService recordService, LearningService learningService,
-                         LearningViewService learningViewService,
-                         ShareService shareService, ShareMetricService shareMetricService,
-                         TutorService tutorService, EmailSendService emailSendService) {
+    public NewsView(RecordService recordService, LearningService learningService,
+                    LearningViewService learningViewService,
+                    ShareService shareService, ShareMetricService shareMetricService,
+                    TutorService tutorService, EmailSendService emailSendService) {
         this.recordService = recordService;
         this.learningService = learningService;
         this.learningViewService = learningViewService;
@@ -216,10 +218,13 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
 
     @Override
     public void beforeEnter(@OptionalParameter BeforeEnterEvent event) {
-        category = event.getRouteParameters().get("category").orElse(STR_ALL_CATEGORIES);
-        tutor = event.getRouteParameters().get("tutor").orElse(STR_ALL_TUTORS);
-        title = event.getRouteParameters().get("title").orElse(STR_ALL_TITLES);
-        genre = event.getRouteParameters().get("genre").orElse(STR_ALL_GENRES);
+        category = event.getRouteParameters().get("category").map(v -> decodeRouteParam(v)).orElse(STR_ALL_CATEGORIES);
+        tutor = event.getRouteParameters().get("tutor").map(v -> decodeRouteParam(v)).orElse(STR_ALL_TUTORS);
+        // A single trailing segment ("/news/{slug}") is matched via HasUrlParameter.setParameter(),
+        // called before beforeEnter — NOT via this alias's named RouteParameters. Only overwrite
+        // what setParameter already put in `slug` when this navigation actually used the named alias.
+        slug = event.getRouteParameters().get("slug").map(v -> decodeRouteParam(v)).orElse(slug);
+        genre = event.getRouteParameters().get("genre").map(v -> decodeRouteParam(v)).orElse(STR_ALL_GENRES);
 
         PageSeoUtil.setMetaDescription("Read latest important photography news posted by fellow photographers and connect with them");
         getUserClientInfo();
@@ -240,7 +245,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
             layoutHeaderParameters = loadHeader("News", "News around the globe related to photography", "Photo Genre", genre);
             VerticalLayout layoutResults = loadResults(0);
             verticalLayout.add(layoutResults);
-        } else if (!title.equalsIgnoreCase(STR_ALL_TITLES)) {
+        } else if (!slug.equalsIgnoreCase(STR_ALL_TITLES)) {
             layoutHeaderParameters = loadHeader("News", "News around the globe related to photography", "","");
             VerticalLayout layoutResults = loadResults(0);
             verticalLayout.add(layoutResults);
@@ -286,7 +291,10 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
 
     @Override
     public void setParameter(BeforeEvent beforeEvent, @OptionalParameter String o) {
-//        category = o;//beforeEvent.getRouteParameters().get("category").orElse("pictures");
+        // Vaadin resolves a single trailing segment ("/news/{value}") through this
+        // HasUrlParameter callback rather than the "news/:slug?" alias's RouteParameters —
+        // this runs before beforeEnter(), which then only falls back to this value.
+        slug = (o != null && !o.isBlank()) ? decodeRouteParam(o) : STR_ALL_TITLES;
     }
 
     private void constructUI() {
@@ -342,8 +350,8 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         int pageSize = intLimit > 0 ? intLimit : 25;
         String sortOption = cmbSortBy != null && cmbSortBy.getValue() != null ? cmbSortBy.getValue() : SORT_TIME;
 
-        if (!title.isEmpty() && !title.equalsIgnoreCase(STR_ALL_TITLES)) {
-            learnings = learningService.searchLearnings(title, 0, pageSize).getContent();
+        if (!slug.isEmpty() && !slug.equalsIgnoreCase(STR_ALL_TITLES)) {
+            learnings = learningService.getLearningBySlug(slug).map(List::of).orElse(List.of());
         } else if (!tutor.isEmpty() && !tutor.equalsIgnoreCase(STR_ALL_TUTORS)) {
             learnings = learningService.getLearningsByTutorName(tutor);
         } else if (!category.isEmpty() && !category.equalsIgnoreCase(STR_ALL_CATEGORIES)) {
@@ -626,10 +634,10 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         layoutSection.add(divImage, titleRelated);
 
         RouteParam routeTutor = new RouteParam("tutor", strTutor);
-        RouterLink linkLearningTutor = new RouterLink(strTutor, LearningsView.class, new RouteParameters(routeTutor));
+        RouterLink linkLearningTutor = new RouterLink(strTutor, NewsView.class, new RouteParameters(routeTutor));
 
 //        RouteParam routeTitle = new RouteParam("title", strTitle);
-//        RouterLink linkLearningTitle = new RouterLink(strTitle, LearningsView.class, new RouteParameters(routeTitle));
+//        RouterLink linkLearningTitle = new RouterLink(strTitle, NewsView.class, new RouteParameters(routeTitle));
 
         H4 titleName = new H4(strTitle);
         titleName.addClassName(TextColor.SECONDARY);
@@ -1177,7 +1185,13 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         int learningId = dto.getId() != null ? dto.getId().intValue() : 0;
         Integer viewUserId = userId > 0 ? userId : null;
 
-        String learningPublicUrl = baseUrl + "/news/title/" + strTitle;
+        // Slug should already be set (generated once on create/update, backfilled for legacy
+        // rows) — this fallback only guards against a not-yet-backfilled article slipping through.
+        String articleSlug = dto.getSlug() != null && !dto.getSlug().isBlank()
+                ? dto.getSlug()
+                : SlugUtil.toSlug(strTitle) + "-" + learningId;
+
+        String learningPublicUrl = baseUrl + "/news/" + articleSlug;
         ShareableResource learningResource = new ShareableResource(
                 ShareType.LEARNING,
                 String.valueOf(learningId),
@@ -1187,9 +1201,9 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
                 learningPublicUrl
         );
 
-        RouteParam routeTitle = new RouteParam("title", strTitle);
+        RouteParam routeTitle = new RouteParam("slug", articleSlug);
 
-        if (title.equalsIgnoreCase(STR_ALL_TITLES) || title.isEmpty()) {
+        if (slug.equalsIgnoreCase(STR_ALL_TITLES) || slug.isEmpty()) {
             // ── List mode: record List view and build list ButtonBar ──────────
             if (learningViewService != null && learningId > 0) {
                 learningViewService.recordView(learningId, dto.getSlug(), viewUserId, publicIp,
@@ -1224,7 +1238,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
 
             listBar.addButton("View", FontAwesome.Solid.ARROW_RIGHT.create(),
                     () -> getUI().ifPresent(ui ->
-                            ui.navigate(LearningsView.class, new RouteParameters(routeTitle))),
+                            ui.navigate(NewsView.class, new RouteParameters(routeTitle))),
                     "btn-bar-view");
 
             listBar.addShareItemMenu();
@@ -1395,7 +1409,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
         for (int c = 0; c < lstCategories.size(); c++) {
             String captionCategory = lstCategories.get(c);
             RouteParam routeCategory = new RouteParam("category", captionCategory);
-            RouterLink linkPhotoCategory = new RouterLink(captionCategory, LearningsView.class, new RouteParameters(routeCategory));
+            RouterLink linkPhotoCategory = new RouterLink(captionCategory, NewsView.class, new RouteParameters(routeCategory));
             layoutFiltersType.add(linkPhotoCategory);
         }
 
@@ -1419,7 +1433,7 @@ public class LearningsView extends Main implements HasUrlParameter<String>, Befo
 
     private void filter(String sqlOrderBy) {
         verticalLayout.removeAll();
-        title = STR_ALL_TITLES;
+        slug = STR_ALL_TITLES;
 
 
         String strWhereSubClause = "";

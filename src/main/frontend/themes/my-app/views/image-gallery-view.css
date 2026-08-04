@@ -57,9 +57,7 @@
         h3{
             letter-spacing: 3px;
         }
-        h5{
-            letter-spacing: 4px;
-        }
+
     }
     &:active{
         scale: 0.97;
@@ -71,7 +69,7 @@
     overflow: hidden;
     top: 0;
     opacity: 0.9;
-    height: 14%;
+    height: 18%;
     left: 0;
     width: 100%;
     margin: 0;
@@ -83,18 +81,22 @@
 
     backdrop-filter: blur(6px);
 
-    box-shadow: 0 0 20px rgba(0,0,0, 0.3);
+    box-shadow: 2px 2px 20px rgba(0,0,0, 0.2);
     color: #f2f1f0; /* #ededec;*/
     line-height: 1;
     transition: all .3s ease-in;
 
     div{
+        font-size: 16px;
         color: #f2f1f0; /* #ededec;*/
+        text-shadow: 3px 3px 20px rgba(0,0,0, 0.8);
     }
     h3{
+        font-size: 26px;
         font-weight: 700;
         letter-spacing: 2px;
         color: #f2f1f0; /* #ededec;*/
+        text-shadow: 4px 4px 20px rgba(0,0,0, 0.8);
     }
 }
 
@@ -128,9 +130,10 @@
     }
     h5{
         padding: 8px;
-        color: #f2f1f0; /* #ededec;*/
         transition: all 0.3s ease;
-        letter-spacing: 3px;
+        font-size: 16px;
+        color: #f2f1f0; /* #ededec;*/
+        text-shadow: 3px 3px 20px rgba(0,0,0, 0.8);
     }
 }
 

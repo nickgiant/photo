@@ -1,22 +1,13 @@
 package com.photo.act.photo_act.views.components;
 
 import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
-import com.github.prominence.openweathermap.api.exception.NoDataFoundException;
-import com.github.prominence.openweathermap.api.model.forecast.WeatherForecast;
-import com.github.prominence.openweathermap.api.model.weather.Weather;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.services.PhotoRatingService;
-import com.photo.act.photo_act.services.WeatherImageService;
 import com.photo.act.photo_act.services.WeatherService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
-import com.photo.act.photo_act.views.FestivalsView;
-import com.photo.act.photo_act.views.GalleryView;
-import com.photo.act.photo_act.views.HomeView;
-import com.photo.act.photo_act.views.LearningsView;
-import com.photo.act.photo_act.views.PhotographersView;
-import com.photo.act.photo_act.views.StoriesView;
+import com.photo.act.photo_act.views.*;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.UI;
@@ -36,7 +27,6 @@ import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.component.radiobutton.RadioGroupVariant;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
-import com.vaadin.flow.dom.Style;
 import com.vaadin.flow.router.RouteParameters;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.StreamResource;
@@ -1592,6 +1582,19 @@ public class GenericView {
 
     }
 
+    /** True if the given username holds the 'Admin' role, checked via dbuser_rights.role rather than a magic id. */
+    public boolean isAdmin(String strUsername) {
+        if (strUsername == null || strUsername.isBlank()) return false;
+
+        String sqlCheckAdmin = "SELECT ur.role FROM dbuser u JOIN dbuser_rights ur ON u.user_rights_id = ur.id WHERE u.username = ? ";
+        String[] arrColRole = {"role"};
+        Object[] objUsername = {strUsername};
+        String[] arrTypeUsername = {"java.lang.String"};
+
+        List<Record> lstRole = recordService.findAll(sqlCheckAdmin, arrColRole, objUsername, arrTypeUsername);
+        return !lstRole.isEmpty() && "Admin".equalsIgnoreCase(lstRole.get(0).getColumnData("role"));
+    }
+
     public String checkIfCodeExistsOrAppliedForMember(String strValue, String userId) {
 
 
@@ -1899,7 +1902,7 @@ public class GenericView {
 
         RouterLink[] exploreLinks = {
                 new RouterLink("Home", HomeView.class),
-                new RouterLink("News", LearningsView.class),
+                new RouterLink("News", NewsView.class),
                 new RouterLink("Photo-Stories", StoriesView.class),
                 new RouterLink("Photos", GalleryView.class,
                         new RouteParameters("month-uploaded", STR_ALL_MONTHS)),

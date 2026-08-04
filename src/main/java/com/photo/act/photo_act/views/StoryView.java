@@ -4,6 +4,7 @@ import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.UtilsDate;
+import com.photo.act.photo_act.utils.UtilsString;
 import com.photo.act.photo_act.views.components.GenericView;
 import com.photo.act.photo_act.views.components.HeaderFilterTabs;
 import com.photo.act.photo_act.views.components.StoryItemViewCard;
@@ -25,7 +26,6 @@ import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.theme.lumo.LumoUtility.*;
-import jakarta.annotation.security.PermitAll;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,7 +41,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import static com.photo.act.photo_act.views.LearningsView.STR_ALL_TITLES;
+import static com.photo.act.photo_act.views.NewsView.STR_ALL_TITLES;
 import static com.photo.act.photo_act.views.MainLayout.*;
 
 @AnonymousAllowed
@@ -146,8 +146,8 @@ public class StoryView extends Main implements BeforeEnterObserver, HasComponent
 
     @Override
     public void beforeEnter(@OptionalParameter BeforeEnterEvent event) {
-        strMember = event.getRouteParameters().get("member").orElse(STR_ALL_MEMBERS);
-        strTitle = event.getRouteParameters().get("story").orElse(STR_ALL_TITLES);
+        strMember = event.getRouteParameters().get("member").map(UtilsString::decodeRouteParam).orElse(STR_ALL_MEMBERS);
+        strTitle = event.getRouteParameters().get("story").map(UtilsString::decodeRouteParam).orElse(STR_ALL_TITLES);
 
 
         logger.info("strMember:"+strMember+" story:"+strTitle);

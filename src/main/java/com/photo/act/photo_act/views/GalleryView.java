@@ -57,6 +57,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import static com.photo.act.photo_act.utils.UtilsString.decodeRouteParam;
 import static com.photo.act.photo_act.utils.UtilsString.sanitizeLocation;
 import static com.photo.act.photo_act.views.HomeView.subPathMedium;
 import static com.photo.act.photo_act.views.MainLayout.*;
@@ -274,11 +275,11 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
 
     @Override
     public void beforeEnter(@OptionalParameter BeforeEnterEvent event) {
-        strMember = event.getRouteParameters().get("member").orElse(STR_ALL_MEMBERS);
-        strDestination = event.getRouteParameters().get("destination").orElse(STR_ALL_DESTINATIONS);
-        strDestinationType = event.getRouteParameters().get("destination-type").orElse(STR_ALL_DESTINATION_TYPES);
-        strUploadedMonth = event.getRouteParameters().get("month-uploaded").orElse(STR_ALL_MONTHS);
-        strPhotoId = event.getRouteParameters().get("id").orElse("");
+        strMember = event.getRouteParameters().get("member").map(v -> decodeRouteParam(v)).orElse(STR_ALL_MEMBERS);
+        strDestination = event.getRouteParameters().get("destination").map(v -> decodeRouteParam(v)).orElse(STR_ALL_DESTINATIONS);
+        strDestinationType = event.getRouteParameters().get("destination-type").map(v -> decodeRouteParam(v)).orElse(STR_ALL_DESTINATION_TYPES);
+        strUploadedMonth = event.getRouteParameters().get("month-uploaded").map(v -> decodeRouteParam(v)).orElse(STR_ALL_MONTHS);
+        strPhotoId = event.getRouteParameters().get("id").map(v -> decodeRouteParam(v)).orElse("");
 
         PageSeoUtil.setMetaDescription("View photos uploaded by our members and filter them based on location, date uploaded etc.");
         getUserClientInfo();
@@ -356,7 +357,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
                 strCountry = lstLocationRecs.get(0).getColumnData("country");
             }
 
-            HorizontalLayout layoutWeatherMap = new HorizontalLayout();
+            VerticalLayout layoutWeatherMap = new VerticalLayout();
             layoutWeatherMap.setAlignItems(FlexComponent.Alignment.CENTER);
             layoutWeatherMap.setJustifyContentMode(FlexComponent.JustifyContentMode.AROUND);
             layoutWeatherMap.setWrap(true);
@@ -1400,10 +1401,10 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
                 BorderRadius.LARGE)
         ;
 
-//        IFrame frameMapResult = getDestinationMap(strForMap, country);
-//        frameMapResult.setMaxWidth("970px");
-//
-//        layoutMapResult.add(frameMapResult);
+        IFrame frameMapResult = getDestinationMap(strForMap, country);
+        frameMapResult.setMaxWidth("970px");
+
+        layoutMapResult.add(frameMapResult);
 
         return layoutMapResult;
     }
@@ -1412,7 +1413,7 @@ public class GalleryView extends Main implements HasUrlParameter<String>, Before
     private VerticalLayout loadWeatherSmall(String cityLabel, String strForWeather, String country) {
 
         VerticalLayout layoutWeatherResult = new VerticalLayout();
-        layoutWeatherResult.addClassNames(
+        layoutWeatherResult.addClassNames(Width.FULL,
                 AlignItems.CENTER, JustifyContent.CENTER,
                 Padding.SMALL, Margin.NONE,
                 BorderRadius.LARGE)

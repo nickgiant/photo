@@ -2,7 +2,8 @@ package com.photo.act.photo_act.views.components;
 
 import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.dto.LearningDto;
-import com.photo.act.photo_act.views.LearningsView;
+import com.photo.act.photo_act.utils.SlugUtil;
+import com.photo.act.photo_act.views.NewsView;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -22,8 +23,8 @@ import java.time.temporal.ChronoUnit;
  * Shows a "posted N days ago" tag in the top-right corner while the post is
  * less than {@value #RECENT_DAYS_THRESHOLD} days old.
  *
- * The whole card links to the post's page on LearningsView (same URL scheme
- * used by the share buttons there: /news/title/{title}).
+ * The whole card links to the post's page on NewsView (same URL scheme
+ * used by the share buttons there: /news/{slug}).
  *
  * Drop anywhere in the app — it is a self-contained RouterLink.
  *
@@ -36,7 +37,7 @@ public class LearningHorizontalPanel extends RouterLink {
     private static final int RECENT_DAYS_THRESHOLD = 30;
 
     public LearningHorizontalPanel(LearningDto dto) {
-        super(LearningsView.class, new RouteParameters(new RouteParam("title", nvl(dto.getTitle()))));
+        super(NewsView.class, new RouteParameters(new RouteParam("slug", resolveSlug(dto))));
 
         addClassNames(
                 Display.FLEX,
@@ -162,5 +163,13 @@ public class LearningHorizontalPanel extends RouterLink {
 
     private static String nvl(String s) {
         return s == null ? "" : s;
+    }
+
+    /** Slug should already be set (see LearningService) — this only guards a not-yet-backfilled row. */
+    private static String resolveSlug(LearningDto dto) {
+        if (dto.getSlug() != null && !dto.getSlug().isBlank()) {
+            return dto.getSlug();
+        }
+        return SlugUtil.toSlug(nvl(dto.getTitle())) + "-" + dto.getId();
     }
 }

@@ -188,7 +188,7 @@ public class RegistrationFormPanel extends VerticalLayout {
         txtUserName = createStyledTextField("Username", VaadinIcon.USER);
         txtUserName.setRequiredIndicatorVisible(true);
         txtUserName.setRequired(true);
-        txtUserName.setHelperComponent(divTextDescription);
+        txtUserName.setHelperText("Your public profile link: photoact.net/photographer/your-username");
         txtUserName.setAllowedCharPattern("^[a-z0-9_\\-]+$");
         txtUserName.setErrorMessage("Min 6 to max 20 characters. Valid are: letters, numbers _ and - ");
         txtUserName.setMinLength(6);

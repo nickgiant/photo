@@ -12,6 +12,7 @@ import com.photo.act.photo_act.services.WeatherService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.PageSeoUtil;
 import com.photo.act.photo_act.utils.UtilsDate;
+import com.photo.act.photo_act.utils.UtilsString;
 import com.photo.act.photo_act.views.components.AvatarItem;
 import com.photo.act.photo_act.views.components.GenericView;
 import com.photo.act.photo_act.views.components.LikeButton;
@@ -21,19 +22,14 @@ import com.photo.act.photo_act.views.components.StoryItemViewCard;
 import com.photo.act.photo_act.views.components.StoryViewCard;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.HasStyle;
-import com.vaadin.flow.component.Html;
 import com.vaadin.flow.component.UI;
-import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.html.*;
-import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.*;
-import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
@@ -43,7 +39,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.access.method.P;
 
 import java.io.File;
 import java.net.InetAddress;
@@ -54,9 +49,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import static com.helger.commons.locale.LocaleHelper.STR_ALL;
-import static com.photo.act.photo_act.views.LearningsView.STR_ALL_CATEGORIES;
-import static com.photo.act.photo_act.views.LearningsView.STR_ALL_TITLES;
+import static com.photo.act.photo_act.views.NewsView.STR_ALL_CATEGORIES;
+import static com.photo.act.photo_act.views.NewsView.STR_ALL_TITLES;
 import static com.photo.act.photo_act.views.MainLayout.*;
 
 @AnonymousAllowed
@@ -205,9 +199,9 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
 
     @Override
     public void beforeEnter(@OptionalParameter BeforeEnterEvent event) {
-        strMember = event.getRouteParameters().get("member").orElse(STR_ALL_MEMBERS);
-        strSlug = event.getRouteParameters().get("story").orElse(STR_ALL_TITLES);
-        strCategory = event.getRouteParameters().get("category").orElse(STR_ALL_CATEGORIES);
+        strMember = event.getRouteParameters().get("member").map(UtilsString::decodeRouteParam).orElse(STR_ALL_MEMBERS);
+        strSlug = event.getRouteParameters().get("story").map(UtilsString::decodeRouteParam).orElse(STR_ALL_TITLES);
+        strCategory = event.getRouteParameters().get("category").map(UtilsString::decodeRouteParam).orElse(STR_ALL_CATEGORIES);
 
 
         logger.info("strMember:"+strMember+" story:"+strSlug+" strCategory:"+strCategory);
@@ -796,7 +790,7 @@ public class StoriesView extends Main implements BeforeEnterObserver, HasCompone
         }
 
 //        RouteParam routeCategoryAll = new RouteParam("category", STR_ALL_CATEGORIES);
-//        RouterLink linkPhotoCategoryAll = new RouterLink("All Categories", LearningsView.class, new RouteParameters(routeCategoryAll));
+//        RouterLink linkPhotoCategoryAll = new RouterLink("All Categories", NewsView.class, new RouteParameters(routeCategoryAll));
 //        layoutFilters.add(linkPhotoCategoryAll);
 
         for (int c = 0; c < lstCategories.size(); c++) {

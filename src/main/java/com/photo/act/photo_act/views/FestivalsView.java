@@ -6,6 +6,7 @@ import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.PageSeoUtil;
 import com.photo.act.photo_act.utils.UtilsDate;
+import com.photo.act.photo_act.utils.UtilsString;
 import com.photo.act.photo_act.views.components.GenericView;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.HasStyle;
@@ -561,6 +562,7 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
         String strCityName = record.getColumnData("city_name");
         String strTitleOfPlace = record.getColumnData("title_of_place");
         String strAddressOfPlace = record.getColumnData("address_of_place");
+        String strCuntry = record.getColumnData("country");
         String strType = record.getColumnData("type");
         String strImageLogo;
         String strImageTop;

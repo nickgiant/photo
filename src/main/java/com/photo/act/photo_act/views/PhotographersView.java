@@ -216,7 +216,7 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
 
     @Override
     public void beforeEnter(@OptionalParameter BeforeEnterEvent event) {
-        strMember = event.getRouteParameters().get("member").orElse(STR_ALL_MEMBERS);
+        strMember = event.getRouteParameters().get("member").map(UtilsString::decodeRouteParam).orElse(STR_ALL_MEMBERS);
         PageSeoUtil.setMetaDescription("View profile of other photographers and their most popular photos as well as their latest uploads.");
         getUserClientInfo();
 
@@ -402,9 +402,6 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
         formLayout.setResponsiveSteps(new FormLayout.ResponsiveStep(strWidthOfFields, 1));
 //        formLayout.setExpandFields(true);
 //        formLayout.setLabelsAside(true);
-
-        String txtUserRights = record.getColumnData("user_rights_id");
-
 
         TextField txtUserName = new TextField();
         txtUserName.setValue(record.getColumnData("username"));
@@ -664,7 +661,7 @@ public class PhotographersView extends Main implements HasUrlParameter<String>, 
 
 
         layoutTabsAll.add(layoutTabs);
-        if (txtUserRights.equalsIgnoreCase("3")) {
+        if (genericView.isAdmin(strMember)) {
             layoutButtons.add(btnRefreshAMembersPhotosMeta, btnCalcAMembersSums, btnEvictCache);
         }
 
