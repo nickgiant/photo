@@ -607,6 +607,7 @@
     border-radius: 6px;
     box-shadow: 0 0 10px 2px var(--lumo-contrast-10pct);
     font-size: 0.78rem;
+    background: #fff;
 }
 
 .stats-gallery .gallery-view-card .image-container {
