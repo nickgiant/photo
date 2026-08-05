@@ -1,0 +1,334 @@
+/* ============================================================
+   Events — season timeline view (/events)
+   Editions grouped by month, each rendered as a full-width card
+   carrying the same detail the old single-column festival card
+   had (logo, banner, description, place, link).
+   ============================================================ */
+
+.season-timeline-view {
+    width: 100%;
+}
+
+.timeline-view {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.tl-month {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 108px 1fr;
+    gap: 24px;
+    padding: 28px 0;
+    border-top: 1px solid var(--brand-border, var(--lumo-contrast-10pct));
+}
+
+.tl-month:first-child {
+    border-top: none;
+    padding-top: 4px;
+}
+
+.tl-label {
+    font-family: var(--font-display, "Fraunces", serif);
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--brand-navy, var(--lumo-primary-text-color));
+    position: sticky;
+    top: 12px;
+    align-self: start;
+}
+
+.tl-items {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.tl-row {
+    width: 90%;
+    display: grid;
+    grid-template-columns: 64px 1fr;
+    gap: 18px;
+    background: var(--lumo-base-color, #fff);
+    border-radius: 18px;
+    padding: 22px 24px;
+    box-shadow: 1px 1px 4px lightgrey;
+}
+
+.tl-day {
+    font-family: var(--font-mono, "JetBrains Mono", monospace);
+    text-align: center;
+    line-height: 1.1;
+    padding-top: 2px;
+}
+
+.tl-day:empty {
+    visibility: hidden;
+}
+
+.tl-day div:first-child {
+    font-size: 22px;
+    color: var(--brand-navy, var(--lumo-primary-text-color));
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.tl-day div:last-child {
+    font-size: 10px;
+    color: var(--brand-muted, var(--lumo-tertiary-text-color));
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    margin-top: 2px;
+}
+
+.tl-card {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    min-width: 0;
+}
+
+.tl-card-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.tl-card-head .titles h3 {
+    font-family: var(--font-display, "Fraunces", serif);
+    font-size: 21px;
+    font-weight: 600;
+    margin: 0 0 3px;
+    color: var(--brand-ink, var(--lumo-header-text-color));
+    text-transform: none;
+}
+
+.tl-card-head .titles .edition-sub {
+    font-family: var(--font-body, "Inter", sans-serif);
+    font-style: italic;
+    font-size: 13.5px;
+    color: var(--brand-muted, var(--lumo-tertiary-text-color));
+    margin: 0;
+}
+
+.tl-card-head .titles .cat {
+    display: block;
+    font-family: var(--font-mono, "JetBrains Mono", monospace);
+    font-size: 11px;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--brand-muted, var(--lumo-tertiary-text-color));
+    margin: 0 0 4px;
+}
+
+.tl-card-head .when {
+    flex-shrink: 0;
+    text-align: right;
+    font-family: var(--font-mono, "JetBrains Mono", monospace);
+    font-size: 13px;
+    color: var(--brand-navy, var(--lumo-primary-text-color));
+    font-weight: 700;
+    background: var(--lumo-contrast-5pct);
+    border: 1px solid var(--lumo-contrast-10pct);
+    padding: 7px 13px;
+    border-radius: 10px;
+    white-space: nowrap;
+}
+
+/* photo sits directly below the edition text; logo overlaps its corner like a profile badge */
+.tl-card-media {
+    position: relative;
+    height: 220px;
+    border-radius: 16px;
+    margin-bottom: 22px; /* clears the overlapping logo below */
+}
+
+.tl-banner {
+    position: absolute;
+    inset: 0;
+    border-radius: 16px;
+    overflow: hidden;
+    background-size: cover;
+    background-position: center;
+    box-shadow: 1px 1px 4px lightgrey;
+}
+
+.tl-banner .tl-banner-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.tl-logo {
+    position: absolute;
+    left: 18px;
+    bottom: -20px;
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 3px solid var(--lumo-base-color, #fff);
+    box-shadow: 0 6px 16px rgba(27, 58, 92, .28);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-family: var(--font-display, "Fraunces", serif);
+    font-weight: 700;
+    font-size: 20px;
+    z-index: 2;
+}
+
+.tl-logo .tl-logo-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.tl-card .pills {
+    display: flex;
+    gap: 7px;
+    flex-wrap: wrap;
+}
+
+.tl-card .pills .tag-pill {
+    display: inline-flex;
+    align-items: center;
+    font-family: var(--font-body, "Inter", sans-serif);
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+    color: var(--brand-navy, var(--lumo-primary-text-color));
+    background: var(--lumo-primary-color-10pct);
+    border: 1px solid var(--lumo-primary-color-50pct);
+    padding: 5px 11px;
+    border-radius: 999px;
+}
+
+.tl-card-desc {
+    font-size: 14px;
+    line-height: 1.65;
+    color: var(--brand-body, var(--lumo-secondary-text-color));
+    margin: 0;
+    max-width: 68ch;
+}
+
+.tl-card-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding-top: 12px;
+    border-top: 1px solid var(--brand-border, var(--lumo-contrast-10pct));
+}
+
+.tl-place {
+    font-size: 12.5px;
+    color: var(--brand-body, var(--lumo-secondary-text-color));
+    max-width: 42ch;
+    line-height: 1.5;
+}
+
+.tl-links {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+    justify-content: flex-end;
+}
+
+.tl-links .btn-edit-event{
+    font-family: var(--font-body, "Inter", sans-serif);
+    font-weight: 700;
+    font-size: 13px;
+    text-decoration: none;
+    background-color: #fff;
+    padding: 20px 22px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: .2s;
+    border:1px solid var(--brand-navy, var(--lumo-primary-color));
+    &:hover{
+        cursor: pointer;
+        background: var(--brand-navy, var(--lumo-primary-color));
+        border:1px solid var(--brand-navy, var(--lumo-primary-color));
+        color: #fff;
+    }
+}
+
+.tl-links .btn {
+    font-family: var(--font-body, "Inter", sans-serif);
+    font-weight: 700;
+    font-size: 13px;
+    text-decoration: none;
+    color: #fff;
+    background: var(--brand-navy, var(--lumo-primary-color));
+    border: 1px solid var(--brand-navy, var(--lumo-primary-color));
+    padding: 9px 18px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: .2s;
+}
+
+.tl-links .btn:hover {
+    background: var(--brand-navy-light, #254b73); /* var(--brand-orange, var(--lumo-primary-color));*/
+    border-color: var(--brand-navy-light, #254b73); /* var(--brand-orange, var(--lumo-primary-color));*/
+}
+
+.tl-links .icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 1px solid var(--brand-border-strong, var(--lumo-contrast-20pct));
+    color: var(--brand-navy, var(--lumo-primary-text-color));
+    text-decoration: none;
+    flex-shrink: 0;
+    transition: .2s;
+}
+
+.tl-links .icon-btn:hover {
+    background: var(--brand-navy, var(--lumo-primary-color));
+    border-color: var(--brand-navy, var(--lumo-primary-color));
+    color: #fff;
+}
+
+.tl-links .icon-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+@media (max-width: 640px) {
+    .tl-month {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .tl-row {
+        grid-template-columns: 1fr;
+    }
+
+    .tl-day {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        text-align: left;
+    }
+
+    .tl-card-head .when {
+        order: -1;
+    }
+}

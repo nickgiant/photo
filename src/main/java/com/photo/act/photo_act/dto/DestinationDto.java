@@ -26,7 +26,7 @@ public class DestinationDto implements Serializable {
     String  categoryTitle;
     long    photoCount;
 
-    public static DestinationDto from(DestinationEntity e) {
+    public static DestinationDto from(DestinationEntity e, String categoryTitle) {
         return DestinationDto.builder()
                 .id(e.getId())
                 .cityName(e.getCityName())
@@ -37,7 +37,7 @@ public class DestinationDto implements Serializable {
                 .nameForMap(e.getNameForMap())
                 .nameForWeather(e.getNameForWeather())
                 .categoryId(e.getCategoryId())
-                .categoryTitle(e.getCategory() != null ? e.getCategory().getDestCatTitle() : null)
+                .categoryTitle(categoryTitle)
                 .build();
     }
 }
