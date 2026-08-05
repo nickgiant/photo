@@ -201,7 +201,9 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
             );
             filtersColumn.removeAll();
             filtersColumn.setMaxWidth("290px");
-            verticalLayout.setMaxWidth("1040px");
+            // Events rows are meant to run full width — the old 1040px cap was left over from
+            // when this content sat beside filtersColumn; that column is stacked (and empty) now.
+            verticalLayout.setMaxWidth("100%");
 
 //            filtersColumn.add(loadFiltersColumn());
 
@@ -216,7 +218,8 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
             );
             filtersColumn.removeAll();
             filtersColumn.setMaxWidth("290px");
-            verticalLayout.setMaxWidth("980px");
+            // Same as above — let event rows use the full content width instead of the old 980px cap.
+            verticalLayout.setMaxWidth("100%");
 
 //            filtersColumn.add(loadFiltersColumn());
 
