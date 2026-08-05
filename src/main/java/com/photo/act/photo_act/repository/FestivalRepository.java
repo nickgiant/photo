@@ -12,7 +12,7 @@ public interface FestivalRepository extends JpaRepository<FestivalEntity, Long> 
 
     List<FestivalEntity> findAllByOrderByNameShortAsc();
 
-    List<FestivalEntity> findByCountryOrderByNameShortAsc(String country);
+    List<FestivalEntity> findByDestinationIdOrderByNameShortAsc(Integer destinationId);
 
     List<FestivalEntity> findByTypeOrderByNameShortAsc(String type);
 
@@ -22,7 +22,9 @@ public interface FestivalRepository extends JpaRepository<FestivalEntity, Long> 
 
     @Query("SELECT f FROM FestivalEntity f WHERE " +
            "LOWER(f.nameShort) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-           "LOWER(f.country) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-           "LOWER(f.type) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+           "LOWER(f.nameFull) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(f.type) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(f.destination.cityName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(f.destination.country) LIKE LOWER(CONCAT('%', :keyword, '%'))")
     List<FestivalEntity> searchByKeyword(@Param("keyword") String keyword);
 }

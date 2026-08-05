@@ -27,11 +27,13 @@ public class FestivalDto implements Serializable {
     String        activities;
     String        imageTop;
     String        imageLogo;
-    String        country;
+    Integer       destinationId;
+    /** Denormalized "City (Country)" label, resolved from the destination table. */
+    String        destinationLabel;
     LocalDateTime dateInsert;
     long          editionCount;
 
-    public static FestivalDto from(FestivalEntity e, long editionCount) {
+    public static FestivalDto from(FestivalEntity e, long editionCount, String destinationLabel) {
         return FestivalDto.builder()
                 .id(e.getId())
                 .nameShort(e.getNameShort())
@@ -45,7 +47,8 @@ public class FestivalDto implements Serializable {
                 .activities(e.getActivities())
                 .imageTop(e.getImageTop())
                 .imageLogo(e.getImageLogo())
-                .country(e.getCountry())
+                .destinationId(e.getDestinationId())
+                .destinationLabel(destinationLabel)
                 .dateInsert(e.getDateInsert())
                 .editionCount(editionCount)
                 .build();

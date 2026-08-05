@@ -5,6 +5,7 @@ import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
 import com.photo.act.photo_act.dto.FestivalDto;
 import com.photo.act.photo_act.dto.FestivalEditionDto;
+import com.photo.act.photo_act.services.DestinationService;
 import com.photo.act.photo_act.services.EmailSendService;
 import com.photo.act.photo_act.services.FestivalService;
 import com.photo.act.photo_act.utils.NetUtils;
@@ -84,6 +85,7 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
     private String strHeader;
 
     private FestivalService festivalService;
+    private DestinationService destinationService;
     private EmailSendService emailSendService;
     private String strCurrentUsername;
     private boolean isLoggedIn;
@@ -156,9 +158,10 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
     private String strUrlRequestToBeLogged;
 
     public FestivalsView(RecordService recordService, FestivalService festivalService,
-                         EmailSendService emailSendService) {
+                         DestinationService destinationService, EmailSendService emailSendService) {
         this.recordService = recordService;
         this.festivalService = festivalService;
+        this.destinationService = destinationService;
         this.emailSendService = emailSendService;
         utilsDate = new UtilsDate();
 
@@ -273,7 +276,7 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
     }
 
     private void openCreateEventDialog() {
-        new EventDialog(festivalService, saved -> reloadResults()).open();
+        new EventDialog(festivalService, destinationService, saved -> reloadResults()).open();
     }
 
     private void openEditEventDialog(Long festivalId, Long editionId) {
@@ -285,7 +288,7 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
         }
         FestivalEditionDto edition = editionId != null
                 ? festivalService.getEditionById(editionId).orElse(null) : null;
-        new EventDialog(festival, edition, festivalService, saved -> reloadResults()).open();
+        new EventDialog(festival, edition, festivalService, destinationService, saved -> reloadResults()).open();
     }
 
     private void constructUI() {

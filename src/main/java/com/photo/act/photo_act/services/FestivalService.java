@@ -4,6 +4,7 @@ import com.photo.act.photo_act.dto.FestivalDto;
 import com.photo.act.photo_act.dto.FestivalEditionDto;
 import com.photo.act.photo_act.model.FestivalEditionEntity;
 import com.photo.act.photo_act.model.FestivalEntity;
+import com.photo.act.photo_act.repository.DestinationRepository;
 import com.photo.act.photo_act.repository.FestivalEditionRepository;
 import com.photo.act.photo_act.repository.FestivalRepository;
 import org.slf4j.Logger;
@@ -24,10 +25,13 @@ public class FestivalService {
 
     private final FestivalRepository        festivalRepo;
     private final FestivalEditionRepository editionRepo;
+    private final DestinationRepository     destinationRepo;
 
-    public FestivalService(FestivalRepository festivalRepo, FestivalEditionRepository editionRepo) {
-        this.festivalRepo = festivalRepo;
-        this.editionRepo  = editionRepo;
+    public FestivalService(FestivalRepository festivalRepo, FestivalEditionRepository editionRepo,
+                           DestinationRepository destinationRepo) {
+        this.festivalRepo   = festivalRepo;
+        this.editionRepo    = editionRepo;
+        this.destinationRepo = destinationRepo;
     }
 
     // ─────────────────────── Festivals ─────────────────────────────────────
@@ -50,8 +54,8 @@ public class FestivalService {
         return festivalRepo.findByNameShortIgnoreCase(nameShort).map(this::toDto);
     }
 
-    public List<FestivalDto> getFestivalsByCountry(String country) {
-        return festivalRepo.findByCountryOrderByNameShortAsc(country).stream()
+    public List<FestivalDto> getFestivalsByDestination(Integer destinationId) {
+        return festivalRepo.findByDestinationIdOrderByNameShortAsc(destinationId).stream()
                 .map(this::toDto).toList();
     }
 
@@ -75,7 +79,7 @@ public class FestivalService {
         FestivalEntity entity = new FestivalEntity(
                 dto.getNameShort(), dto.getNameFull(), dto.getPeriodOfYear(), dto.getType(), dto.getWebsite(),
                 dto.getUrlFacebook(), dto.getUrlInstagram(), dto.getUrlYoutube(),
-                dto.getActivities(), dto.getImageTop(), dto.getImageLogo(), dto.getCountry());
+                dto.getActivities(), dto.getImageTop(), dto.getImageLogo(), dto.getDestinationId());
         return toDto(festivalRepo.save(entity));
     }
 
@@ -93,7 +97,7 @@ public class FestivalService {
             entity.setActivities(dto.getActivities());
             entity.setImageTop(dto.getImageTop());
             entity.setImageLogo(dto.getImageLogo());
-            entity.setCountry(dto.getCountry());
+            entity.setDestinationId(dto.getDestinationId());
             return toDto(festivalRepo.save(entity));
         });
     }
@@ -176,7 +180,12 @@ public class FestivalService {
     // ───────────────────────── Mapping helpers ─────────────────────────────
 
     private FestivalDto toDto(FestivalEntity e) {
-        return FestivalDto.from(e, editionRepo.countByFestivalId(e.getId()));
+        String destinationLabel = e.getDestinationId() != null
+                ? destinationRepo.findById(e.getDestinationId())
+                        .map(d -> d.getCityName() + " (" + d.getCountry() + ")")
+                        .orElse(null)
+                : null;
+        return FestivalDto.from(e, editionRepo.countByFestivalId(e.getId()), destinationLabel);
     }
 
     private FestivalEditionDto toDto(FestivalEditionEntity e) {

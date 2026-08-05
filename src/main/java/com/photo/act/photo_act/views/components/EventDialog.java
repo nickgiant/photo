@@ -1,10 +1,13 @@
 package com.photo.act.photo_act.views.components;
 
+import com.photo.act.photo_act.dto.DestinationDto;
 import com.photo.act.photo_act.dto.FestivalDto;
 import com.photo.act.photo_act.dto.FestivalEditionDto;
+import com.photo.act.photo_act.services.DestinationService;
 import com.photo.act.photo_act.services.FestivalService;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
@@ -39,11 +42,11 @@ import java.util.function.Consumer;
  * buttons), each opening its own EditionDialog rather than an inline form.
  *
  * Usage:
- *   new EventDialog(festivalService, saved -> reloadResults()).open();                          // create
- *   new EventDialog(existingFestival, festivalService, saved -> reloadResults()).open();         // edit
- *   new EventDialog(existingFestival, editionToOpen, festivalService, saved -> ...).open();      // edit, jumps
- *                                                                                                 // straight into
- *                                                                                                 // editing that edition
+ *   new EventDialog(festivalService, destinationService, saved -> reloadResults()).open();                    // create
+ *   new EventDialog(existingFestival, festivalService, destinationService, saved -> reloadResults()).open();  // edit
+ *   new EventDialog(existingFestival, editionToOpen, festivalService, destinationService, saved -> ...)       // edit, jumps
+ *       .open();                                                                                              // straight into
+ *                                                                                                              // editing that edition
  */
 public class EventDialog extends Dialog {
 
@@ -55,6 +58,7 @@ public class EventDialog extends Dialog {
     private static final DateTimeFormatter EDITION_DATE_FORMAT = DateTimeFormatter.ofPattern("d MMM yyyy");
 
     private final FestivalService       festivalService;
+    private final DestinationService    destinationService;
     private final Consumer<FestivalDto> onSaved;
 
     /** Flips from false to true once a brand-new festival is first saved. */
@@ -66,7 +70,7 @@ public class EventDialog extends Dialog {
     private final TextField   fldNameShort     = new TextField("Short Name");
     private final TextField   fldNameFull      = new TextField("Full Name");
     private final Select<String> fldType       = new Select<>();
-    private final TextField   fldCountry       = new TextField("Country");
+    private final ComboBox<DestinationDto> fldDestination = new ComboBox<>("Destination");
     private final TextField   fldPeriodOfYear  = new TextField("Period of Year");
     private final TextField   fldWebsite       = new TextField("Website");
     private final TextField   fldUrlFacebook   = new TextField("Facebook URL");
@@ -87,11 +91,13 @@ public class EventDialog extends Dialog {
     private Registration deferredEditionOpenReg;
 
     /** Create mode. */
-    public EventDialog(FestivalService festivalService, Consumer<FestivalDto> onSaved) {
-        this.festivalService = festivalService;
-        this.onSaved         = onSaved;
-        this.editMode         = false;
-        this.festivalId       = null;
+    public EventDialog(FestivalService festivalService, DestinationService destinationService,
+                       Consumer<FestivalDto> onSaved) {
+        this.festivalService   = festivalService;
+        this.destinationService = destinationService;
+        this.onSaved           = onSaved;
+        this.editMode           = false;
+        this.festivalId         = null;
 
         setDraggable(true);
         setCloseOnEsc(true);
@@ -102,17 +108,20 @@ public class EventDialog extends Dialog {
     }
 
     /** Edit mode — pre-fills the festival form; lists all its editions as cards. */
-    public EventDialog(FestivalDto editingFestival, FestivalService festivalService, Consumer<FestivalDto> onSaved) {
-        this(editingFestival, null, festivalService, onSaved);
+    public EventDialog(FestivalDto editingFestival, FestivalService festivalService,
+                       DestinationService destinationService, Consumer<FestivalDto> onSaved) {
+        this(editingFestival, null, festivalService, destinationService, onSaved);
     }
 
     /** Edit mode, opening straight into editing one specific edition (e.g. from a timeline card). */
     public EventDialog(FestivalDto editingFestival, FestivalEditionDto initialEdition,
-                       FestivalService festivalService, Consumer<FestivalDto> onSaved) {
-        this.festivalService = festivalService;
-        this.onSaved         = onSaved;
-        this.editMode         = true;
-        this.festivalId       = editingFestival.getId();
+                       FestivalService festivalService, DestinationService destinationService,
+                       Consumer<FestivalDto> onSaved) {
+        this.festivalService   = festivalService;
+        this.destinationService = destinationService;
+        this.onSaved           = onSaved;
+        this.editMode           = true;
+        this.festivalId         = editingFestival.getId();
 
         setDraggable(true);
         setCloseOnEsc(true);
@@ -162,12 +171,18 @@ public class EventDialog extends Dialog {
         fldNameFull.setPlaceholder("e.g. Xposure International Photography Festival");
         fldActivities.setMinHeight("80px");
 
+        List<DestinationDto> destinations = destinationService.getAllDestinations(); // already ordered by country, city
+        fldDestination.setItems(destinations);
+        fldDestination.setItemLabelGenerator(EventDialog::destinationLabel);
+        fldDestination.setPlaceholder("Select destination…");
+        fldDestination.setClearButtonVisible(true);
+
         FormLayout festivalForm = new FormLayout();
         festivalForm.setResponsiveSteps(
                 new FormLayout.ResponsiveStep("0",     1),
                 new FormLayout.ResponsiveStep("480px", 2));
         festivalForm.add(fldNameShort, fldNameFull,
-                fldType, fldCountry,
+                fldType, fldDestination,
                 fldPeriodOfYear, fldWebsite,
                 fldUrlFacebook, fldUrlInstagram,
                 fldUrlYoutube, fldImageTop,
@@ -233,7 +248,11 @@ public class EventDialog extends Dialog {
         fldNameShort.setValue(nvl(festival.getNameShort()));
         fldNameFull.setValue(nvl(festival.getNameFull()));
         if (festival.getType() != null) fldType.setValue(festival.getType());
-        fldCountry.setValue(nvl(festival.getCountry()));
+        if (festival.getDestinationId() != null) {
+            fldDestination.getListDataView().getItems()
+                    .filter(d -> d.getId().equals(festival.getDestinationId()))
+                    .findFirst().ifPresent(fldDestination::setValue);
+        }
         fldPeriodOfYear.setValue(nvl(festival.getPeriodOfYear()));
         fldWebsite.setValue(nvl(festival.getWebsite()));
         fldUrlFacebook.setValue(nvl(festival.getUrlFacebook()));
@@ -289,7 +308,7 @@ public class EventDialog extends Dialog {
         dto.setNameShort(fldNameShort.getValue().trim());
         dto.setNameFull(emptyToNull(fldNameFull.getValue()));
         dto.setType(fldType.getValue());
-        dto.setCountry(emptyToNull(fldCountry.getValue()));
+        dto.setDestinationId(fldDestination.getValue() != null ? fldDestination.getValue().getId() : null);
         dto.setPeriodOfYear(emptyToNull(fldPeriodOfYear.getValue()));
         dto.setWebsite(emptyToNull(fldWebsite.getValue()));
         dto.setUrlFacebook(emptyToNull(fldUrlFacebook.getValue()));
@@ -410,6 +429,10 @@ public class EventDialog extends Dialog {
             Notification.show("Error: " + ex.getMessage(), 5000, Notification.Position.BOTTOM_END)
                     .addThemeVariants(NotificationVariant.LUMO_ERROR);
         }
+    }
+
+    private static String destinationLabel(DestinationDto d) {
+        return d.getCityName() + " (" + d.getCountry() + ")";
     }
 
     private static String nvl(String s)        { return s == null ? "" : s; }
