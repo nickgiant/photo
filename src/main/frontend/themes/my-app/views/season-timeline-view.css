@@ -6,7 +6,7 @@
    ============================================================ */
 
 .season-timeline-view {
-    max-width: 900px;
+    width: 100%;
 }
 
 .timeline-view {
@@ -236,6 +236,8 @@
 
 .tl-links {
     display: flex;
+    align-items: center;
+    gap: 10px;
     margin-left: auto;
 }
 

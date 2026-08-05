@@ -3,18 +3,28 @@ package com.photo.act.photo_act.views;
 import com.flowingcode.vaadin.addons.fontawesome.FontAwesome;
 import com.photo.act.photo_act.db.Record;
 import com.photo.act.photo_act.db.RecordService;
+import com.photo.act.photo_act.dto.FestivalDto;
+import com.photo.act.photo_act.dto.FestivalEditionDto;
+import com.photo.act.photo_act.services.EmailSendService;
+import com.photo.act.photo_act.services.FestivalService;
 import com.photo.act.photo_act.utils.NetUtils;
 import com.photo.act.photo_act.utils.PageSeoUtil;
 import com.photo.act.photo_act.utils.UtilsDate;
 import com.photo.act.photo_act.utils.UtilsString;
+import com.photo.act.photo_act.views.components.AuthDialog;
+import com.photo.act.photo_act.views.components.EventDialog;
 import com.photo.act.photo_act.views.components.GenericView;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.HasStyle;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.notification.NotificationVariant;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.Scroller;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -73,6 +83,12 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
     private RecordService recordService;
     private String strHeader;
 
+    private FestivalService festivalService;
+    private EmailSendService emailSendService;
+    private String strCurrentUsername;
+    private boolean isLoggedIn;
+    private boolean isAdmin;
+
     private String dirChar = FileSystems.getDefault().getSeparator();
     public static String subPathThumbs = "photo-thumbs";
     public static String subPathMedium = "photo-medium";
@@ -83,7 +99,7 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
 
     String[] arrFestivalsColumnNames = {"nameShort", "city_name", "country", "periodOfYear", "type", "website", "url_facebook", "url_instagram", "url_youtube", "activities", "image_top", "image_logo", "dateInsert", "title", "subtitle", "formatedDateFrom", "formatedDateTo",
             "edition_description", "formatedDateUpdated", "title_of_place", "address_of_place", "url_planned", "url_fb", "url_insta",
-            "monthLabel", "dayNum", "dayName", "shortDateFrom", "shortDateTo"};
+            "monthLabel", "dayNum", "dayName", "shortDateFrom", "shortDateTo", "festivalId", "editionId"};
 
     private int userId;
     private String publicIp;
@@ -100,6 +116,8 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
             // Season-timeline grouping/display: month bucket + compact date-rail fields, all derived from e.dateFrom/e.dateTo.
             ", DATE_FORMAT(e.dateFrom, '%M %Y') AS monthLabel, DATE_FORMAT(e.dateFrom, '%d') AS dayNum, DATE_FORMAT(e.dateFrom, '%a') AS dayName " +
             ", DATE_FORMAT(e.dateFrom, '%e %b') AS shortDateFrom, DATE_FORMAT(e.dateTo, '%e %b %Y') AS shortDateTo " +
+            // Row identity, needed to open the edit-event dialog against the right festival/edition.
+            ", f.id AS festivalId, e.id AS editionId " +
             " FROM  festivals f LEFT JOIN festivals_edition e ON f.id = e.festival_id " +
             " WHERE 1 = 1 ";
 //            " LEFT JOIN destination d ON  d.id = e.destination_id " +
@@ -137,8 +155,11 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
     String sessionDateTime;
     private String strUrlRequestToBeLogged;
 
-    public FestivalsView(RecordService recordService) {
+    public FestivalsView(RecordService recordService, FestivalService festivalService,
+                         EmailSendService emailSendService) {
         this.recordService = recordService;
+        this.festivalService = festivalService;
+        this.emailSendService = emailSendService;
         utilsDate = new UtilsDate();
 
         genericView = new GenericView(recordService);
@@ -156,6 +177,10 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
     public void beforeEnter(@OptionalParameter BeforeEnterEvent event) {
         PageSeoUtil.setMetaDescription("Get informed about recent future events related to photography.");
         getUserClientInfo();
+
+        strCurrentUsername = genericView.checkIfAuthUserName();
+        isLoggedIn = strCurrentUsername != null;
+        isAdmin = isLoggedIn && genericView.isAdmin(strCurrentUsername);
 
         verticalLayout.removeAll();
 
@@ -233,6 +258,31 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
     @Override
     public void setParameter(BeforeEvent beforeEvent, @OptionalParameter String o) {
 //        section = o;//beforeEvent.getRouteParameters().get("section").orElse("pictures");
+    }
+
+    private void reloadResults() {
+        verticalLayout.removeAll();
+        verticalLayout.add(loadResults(15));
+    }
+
+    private void openAuthDialog() {
+        new AuthDialog("", publicIp, recordService, section, "auth-from-events-view", emailSendService).open();
+    }
+
+    private void openCreateEventDialog() {
+        new EventDialog(festivalService, saved -> reloadResults()).open();
+    }
+
+    private void openEditEventDialog(Long festivalId, Long editionId) {
+        FestivalDto festival = festivalService.getFestivalById(festivalId).orElse(null);
+        if (festival == null) {
+            Notification.show("That festival could not be found — it may have just been deleted.",
+                    4000, Notification.Position.TOP_CENTER).addThemeVariants(NotificationVariant.LUMO_ERROR);
+            return;
+        }
+        FestivalEditionDto edition = editionId != null
+                ? festivalService.getEditionById(editionId).orElse(null) : null;
+        new EventDialog(festival, edition, festivalService, saved -> reloadResults()).open();
     }
 
     private void constructUI() {
@@ -360,6 +410,26 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
 
 
         H1 header = new H1(strHeader);
+        header.getStyle().set("margin", "0");
+
+        // "Insert Event" — always visible top-right; requires login to actually open the dialog.
+        Button btnInsertEvent = new Button("Insert Event", VaadinIcon.PLUS.create());
+        btnInsertEvent.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        btnInsertEvent.addClassName("btn-insert-event");
+        btnInsertEvent.getStyle().set("border-radius", "999px");
+        btnInsertEvent.addClickListener(e -> {
+            if (!isLoggedIn) {
+                openAuthDialog();
+                return;
+            }
+            openCreateEventDialog();
+        });
+
+        HorizontalLayout titleRow = new HorizontalLayout(header, btnInsertEvent);
+        titleRow.setWidthFull();
+        titleRow.setAlignItems(FlexComponent.Alignment.CENTER);
+        titleRow.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
+        titleRow.addClassName("events-title-row");
 
         Div subheader = new Div(strSubHeader);
         subheader.addClassNames(
@@ -378,7 +448,7 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
         Div divLine = new Div();
         divLine.addClassNames(Border.BOTTOM, Width.FULL);
 
-        headerContainer.add(header, subheader, divLine, headerSection);
+        headerContainer.add(titleRow, subheader, divLine, headerSection);
 
         return headerContainer;
     }
@@ -587,6 +657,25 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
 
         Div links = new Div();
         links.addClassName("tl-links");
+
+        if (isAdmin) {
+            Long festivalId = parseLongOrNull(record.getColumnData("festivalId"));
+            Long editionId = parseLongOrNull(record.getColumnData("editionId"));
+            if (festivalId != null) {
+                Button btnEdit = new Button("Edit event", VaadinIcon.PENCIL.create());
+                btnEdit.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+                btnEdit.addClassName("btn-edit-event");
+                btnEdit.getStyle()
+                        .set("color", "var(--brand-navy, var(--lumo-primary-text-color))")
+                        .set("border", "1px solid var(--brand-border-strong, var(--lumo-contrast-20pct))")
+                        .set("border-radius", "999px")
+                        .set("font-weight", "700")
+                        .set("font-size", "13px");
+                btnEdit.addClickListener(e -> openEditEventDialog(festivalId, editionId));
+                links.add(btnEdit);
+            }
+        }
+
         String strLink = resolveFestivalLink(record);
         Anchor viewFestival = new Anchor(strLink.isEmpty() ? "#" : strLink, "View festival →");
         viewFestival.addClassName("btn");
@@ -632,6 +721,15 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
             return strWebsite;
         }
         return "";
+    }
+
+    private Long parseLongOrNull(String value) {
+        if (value == null || value.isEmpty() || value.equalsIgnoreCase("null")) return null;
+        try {
+            return Long.parseLong(value.trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     private Span tagPill(String text) {
