@@ -16,10 +16,10 @@ public class FestivalEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "nameShort", nullable = false, length = 255)
+    @Column(name = "name_short", nullable = false, length = 255)
     private String nameShort;
 
-    @Column(name = "nameFull", length = 512)
+    @Column(name = "name_full", length = 512)
     private String nameFull;
 
     @Column(name = "periodOfYear", length = 100)

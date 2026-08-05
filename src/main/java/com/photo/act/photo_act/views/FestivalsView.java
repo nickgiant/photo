@@ -61,9 +61,9 @@ import static com.photo.act.photo_act.views.MainLayout.*;
 
 @PageTitle("PhotoAct.net - Photography Community | Events")
 @Route(value = "events")
-@RouteAlias(value = "events/genre/:genre?", layout = MainLayout.class)
-@RouteAlias(value = "events/organizer/:organizer?", layout = MainLayout.class)
-@RouteAlias(value = "events/title/:title?", layout = MainLayout.class)
+/*@RouteAlias(value = "events/genre/:genre?", layout = MainLayout.class)*/
+/*@RouteAlias(value = "events/organizer/:organizer?", layout = MainLayout.class)
+@RouteAlias(value = "events/title/:title?", layout = MainLayout.class)*/
 
 public class FestivalsView extends Main implements HasUrlParameter<String>, BeforeEnterObserver, HasComponents, HasStyle {
 
@@ -72,7 +72,7 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
     private static final Logger logger = LoggerFactory.getLogger(FestivalsView.class);
 
     private VerticalLayout verticalLayout;
-    String sqlLearningsReadOrderBy;
+    private String sqlLearningsReadOrderBy;
     private String sessionid;
     private long sessionCreation;
     private String sysUserName;
@@ -100,9 +100,9 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
 
     public static String DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
 
-    String[] arrFestivalsColumnNames = {"nameShort", "city_name", "country", "periodOfYear", "type", "website", "url_facebook", "url_instagram", "url_youtube", "activities", "image_top", "image_logo", "dateInsert", "title", "subtitle", "formatedDateFrom", "formatedDateTo",
+    String[] arrFestivalsColumnNames = {"name_short", "name_full", "city_name", "country", "periodOfYear", "type", "website", "url_facebook", "url_instagram", "url_youtube", "activities", "image_top", "image_logo", "dateInsert", "title", "subtitle", "formatedDateFrom", "formatedDateTo",
             "edition_description", "formatedDateUpdated", "title_of_place", "address_of_place", "url_planned", "url_fb", "url_insta",
-            "monthLabel", "dayNum", "dayName", "shortDateFrom", "shortDateTo", "festivalId", "editionId"};
+            "monthLabel", "dayNum", "dayName", "date_from", "date_to", "festivalId", "editionId"};
 
     private int userId;
     private String publicIp;
@@ -112,22 +112,22 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
     private String canonicalHostname;
     private String strOS;
     private String strBrowser;
-    String sqlFestivalsRead = "SELECT  f.nameShort, f.periodOfYear, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert " +
-            ", e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description, DATE_FORMAT(f.dateInsert , '%D %M %Y') AS formatedDateUpdated " +
+    String sqlFestivalsRead = "SELECT  f.name_short, f.periodOfYear, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert " +
+            ", e.title, e.subtitle, DATE_FORMAT(e.date_from , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.date_to , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description, DATE_FORMAT(f.dateInsert , '%D %M %Y') AS formatedDateUpdated " +
             ", e.title_of_place, e.address_of_place, e.url_planned, e.url_fb, e.url_insta " +
             // Location — driven by the festival's linked destination (festivals.destination_id)
             // rather than the old free-text festivals.country column.
             ", dest.city_name AS city_name, dest.country AS country " +
-            // Season-timeline grouping/display: month bucket + compact date-rail fields, all derived from e.dateFrom/e.dateTo.
-            ", DATE_FORMAT(e.dateFrom, '%M %Y') AS monthLabel, DATE_FORMAT(e.dateFrom, '%d') AS dayNum, DATE_FORMAT(e.dateFrom, '%a') AS dayName " +
-            ", DATE_FORMAT(e.dateFrom, '%e %b') AS shortDateFrom, DATE_FORMAT(e.dateTo, '%e %b %Y') AS shortDateTo " +
+            // Season-timeline grouping/display: month bucket + compact date-rail fields, all derived from e.date_from/e.date_to.
+            ", DATE_FORMAT(e.date_from, '%M %Y') AS monthLabel, DATE_FORMAT(e.date_from, '%d') AS dayNum, DATE_FORMAT(e.date_from, '%a') AS dayName " +
+            ", DATE_FORMAT(e.date_from, '%e %b') AS date_from, DATE_FORMAT(e.date_to, '%e %b %Y') AS date_to " +
             // Row identity, needed to open the edit-event dialog against the right festival/edition.
             ", f.id AS festivalId, e.id AS editionId " +
             " FROM  festivals f LEFT JOIN festivals_edition e ON f.id = e.festival_id " +
             "                   LEFT JOIN destination dest ON f.destination_id = dest.id " +
             " WHERE 1 = 1 " +
             // Hide editions that have already ended; undated ones (dateTo not set yet) stay visible.
-            " AND (e.dateTo IS NULL OR e.dateTo >= CURDATE()) ";
+            " AND (e.date_to IS NULL OR e.date_to >= CURDATE()) ";
 //            " LEFT JOIN destination d ON  d.id = e.destination_id " +
 //            " , destination d " +
 //            " WHERE d.id = e.destination_id ";
@@ -150,12 +150,12 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
             , "location_by_user", "location_area", "location_country_code", "location_lat", "location_lon"
             , "date_inserted"};
 
-    private String sqlReadGallery = "SELECT pm.name_new, pm.title, pm.subtitle, pm.photo_type, pm.uploader, DATE_FORMAT(pm.meta_date, '%W %D %M %Y %H:%i %p') AS meta_date, " +
+ /*   private String sqlReadGallery = "SELECT pm.name_new, pm.title, pm.subtitle, pm.photo_type, pm.uploader, DATE_FORMAT(pm.meta_date, '%W %D %M %Y %H:%i %p') AS meta_date, " +
             " pm.space_size, pm.space_size_medium, pm.space_size_thumb, pm.meta_camera_make, pm.meta_camera_model, pm.meta_lens_make, pm.meta_lens_model, " +
             " pm.meta_focal_length, pm.meta_focal_length_ff, pm.meta_iso, " +
             "  pm.location_by_user, pm.location_area, pm.location_country_code, pm.location_lat, pm.location_lon " +
-            //, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description, DATE_FORMAT(f.dateInsert , '%D %M %Y') AS formatedDateUpdated  " +
-            " FROM  photo_meta pm LEFT JOIN destination d ON pm.destination_Id = d.id ";
+            //, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, e.title, e.subtitle, DATE_FORMAT(e.date_from , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.date_to , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description, DATE_FORMAT(f.dateInsert , '%D %M %Y') AS formatedDateUpdated  " +
+            " FROM  photo_meta pm LEFT JOIN destination d ON pm.destination_Id = d.id ";*/
     private VerticalLayout filtersColumn;
     private GenericView genericView;
 
@@ -194,7 +194,7 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
         verticalLayout.removeAll();
 
         VerticalLayout layoutHeaderParameters = loadHeader("Events", "Photo events around the globe", "");
-        VerticalLayout layoutResults = loadResults(15);
+        VerticalLayout layoutResults = loadResults(20);
         verticalLayout.add(layoutResults);
 
         this.removeAll();
@@ -257,8 +257,8 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
 //
 //        String[] arrColumnNames = {"nameShort", "location", "country", "periodOfYear", "type", "website", "url_facebook", "url_instagram", "url_youtube", "activities", "image_top", "image_logo", "dateInsert", "title", "subtitle", "formatedDateFrom", "formatedDateTo", "edition_description", "formatedDateUpdated"};
 //
-//        String sqlRead = "SELECT  f.nameShort, f.location, f.country, f.periodOfYear, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, " +
-//                "e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description, DATE_FORMAT(f.dateInsert , '%D %M %Y') AS formatedDateUpdated  " +
+//        String sqlRead = "SELECT  f.name_short, f.location, f.country, f.periodOfYear, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert, " +
+//                "e.title, e.subtitle, DATE_FORMAT(e.date_from , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.date_to , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description, DATE_FORMAT(f.dateInsert , '%D %M %Y') AS formatedDateUpdated  " +
 //                "FROM  festivals f LEFT JOIN festivals_edition e ON f.id = e.festival_id ORDER BY f.dateInsert DESC";
 //        verticalLayout.add(loadResults(sqlRead, arrColumnNames));
 
@@ -274,7 +274,7 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
 
     private void reloadResults() {
         verticalLayout.removeAll();
-        verticalLayout.add(loadResults(15));
+        verticalLayout.add(loadResults(20));
     }
 
     private void openAuthDialog() {
@@ -468,7 +468,7 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
     private VerticalLayout loadResults(int intLimit) {
 
         // Chronological (season timeline) order — soonest edition first, undated editions pushed to the end.
-        sqlLearningsReadOrderBy = " ORDER BY (e.dateFrom IS NULL) ASC, e.dateFrom ASC";
+        sqlLearningsReadOrderBy = " ORDER BY (e.date_from IS NULL) ASC, e.date_from ASC";
 
         String sqlLimit = "";
         if (intLimit == 0) {
@@ -563,7 +563,7 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
 
     private Div buildTimelineCard(Record record) {
 
-        String strNameShort = record.getColumnData("nameShort");
+        String strNameShort = record.getColumnData("name_short");
         String strType = record.getColumnData("type");
         String strCountry = record.getColumnData("country");
         String strCityName = record.getColumnData("city_name");
@@ -574,8 +574,8 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
         String strAddressOfPlace = record.getColumnData("address_of_place");
         String strDayNum = record.getColumnData("dayNum");
         String strDayName = record.getColumnData("dayName");
-        String strShortDateFrom = record.getColumnData("shortDateFrom");
-        String strShortDateTo = record.getColumnData("shortDateTo");
+        String strdate_from = record.getColumnData("date_from");
+        String strdate_to = record.getColumnData("date_to");
         String strImgLogoPath = record.getColumnData("image_logo");
         String strImgTopPath = record.getColumnData("image_top");
 
@@ -606,9 +606,9 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
         head.addClassName("tl-card-head");
         head.add(titles);
 
-        if (!strShortDateFrom.trim().isEmpty() && !strShortDateFrom.equalsIgnoreCase("null")) {
-            String strWhen = strShortDateTo.trim().isEmpty() || strShortDateTo.equalsIgnoreCase("null")
-                    ? strShortDateFrom : strShortDateFrom + " – " + strShortDateTo;
+        if (!strdate_from.trim().isEmpty() && !strdate_from.equalsIgnoreCase("null")) {
+            String strWhen = strdate_to.trim().isEmpty() || strdate_to.equalsIgnoreCase("null")
+                    ? strdate_from : strdate_from + " – " + strdate_to;
             Div when = new Div(strWhen);
             when.addClassName("when");
             head.add(when);
@@ -665,11 +665,11 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
         Div foot = new Div();
         foot.addClassName("tl-card-foot");
 
-        Div place = new Div();
+/*        Div place = new Div();
         place.addClassName("tl-place");
         String strPlaceText = (!strTitleOfPlace.isEmpty() && !strTitleOfPlace.equalsIgnoreCase("null") ? strTitleOfPlace : strNameShort)
                 + (!strAddressOfPlace.isEmpty() && !strAddressOfPlace.equalsIgnoreCase("null") ? " — " + strAddressOfPlace : "");
-        place.setText("📍 " + strPlaceText);
+        place.setText("📍 " + strPlaceText);*/
 
         Div links = new Div();
         links.addClassName("tl-links");
@@ -681,12 +681,12 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
                 Button btnEdit = new Button("Edit event", VaadinIcon.PENCIL.create());
                 btnEdit.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
                 btnEdit.addClassName("btn-edit-event");
-                btnEdit.getStyle()
+/*                btnEdit.getStyle()
                         .set("color", "var(--brand-navy, var(--lumo-primary-text-color))")
                         .set("border", "1px solid var(--brand-border-strong, var(--lumo-contrast-20pct))")
-                        .set("border-radius", "999px")
+                        .set("border-radius", "5px")
                         .set("font-weight", "700")
-                        .set("font-size", "13px");
+                        .set("font-size", "13px");*/
                 btnEdit.addClickListener(e -> openEditEventDialog(festivalId, editionId));
                 links.add(btnEdit);
             }
@@ -709,7 +709,7 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
         }
         links.add(viewFestival);
 
-        foot.add(place, links);
+        foot.add( links);
 
         Div card = new Div();
         card.addClassName("tl-card");
@@ -829,7 +829,7 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
         divImage.add(LineAwesomeIcon.OBJECT_GROUP.create());
         layoutSection.add(divImage, linkCategoryRelated);
 
-        String strName = record.getColumnData("nameShort");
+        String strName = record.getColumnData("name_short");
         H5 titleName = new H5(strName);
         titleName.addClassName(TextColor.SECONDARY);
 //        titleName.setClassName("lazy-result-line-title");
