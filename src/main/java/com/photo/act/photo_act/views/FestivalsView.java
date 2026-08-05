@@ -114,13 +114,16 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
     String sqlFestivalsRead = "SELECT  f.nameShort, f.periodOfYear, f.type, f.website, f.url_facebook, f.url_instagram, f.url_youtube, f.activities, f.image_top, f.image_logo, f.dateInsert " +
             ", e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description, DATE_FORMAT(f.dateInsert , '%D %M %Y') AS formatedDateUpdated " +
             ", e.title_of_place, e.address_of_place, e.url_planned, e.url_fb, e.url_insta " +
-            ", f.country " +
+            // Location — driven by the festival's linked destination (festivals.destination_id)
+            // rather than the old free-text festivals.country column.
+            ", dest.city_name AS city_name, dest.country AS country " +
             // Season-timeline grouping/display: month bucket + compact date-rail fields, all derived from e.dateFrom/e.dateTo.
             ", DATE_FORMAT(e.dateFrom, '%M %Y') AS monthLabel, DATE_FORMAT(e.dateFrom, '%d') AS dayNum, DATE_FORMAT(e.dateFrom, '%a') AS dayName " +
             ", DATE_FORMAT(e.dateFrom, '%e %b') AS shortDateFrom, DATE_FORMAT(e.dateTo, '%e %b %Y') AS shortDateTo " +
             // Row identity, needed to open the edit-event dialog against the right festival/edition.
             ", f.id AS festivalId, e.id AS editionId " +
             " FROM  festivals f LEFT JOIN festivals_edition e ON f.id = e.festival_id " +
+            "                   LEFT JOIN destination dest ON f.destination_id = dest.id " +
             " WHERE 1 = 1 ";
 //            " LEFT JOIN destination d ON  d.id = e.destination_id " +
 //            " , destination d " +
@@ -560,6 +563,7 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
         String strNameShort = record.getColumnData("nameShort");
         String strType = record.getColumnData("type");
         String strCountry = record.getColumnData("country");
+        String strCityName = record.getColumnData("city_name");
         String strActivities = record.getColumnData("activities");
         String strEditionDescription = record.getColumnData("edition_description");
         String strPeriodOfYear = record.getColumnData("periodOfYear");
@@ -634,11 +638,14 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
         }
         media.add(logo);
 
-        // ---- type / country pills ----
+        // ---- type / city / country pills ----
         Div pills = new Div();
         pills.addClassName("pills");
         if (!strType.isEmpty() && !strType.equalsIgnoreCase("null")) {
             pills.add(tagPill(strType));
+        }
+        if (!strCityName.isEmpty() && !strCityName.equalsIgnoreCase("null")) {
+            pills.add(tagPill(strCityName));
         }
         if (!strCountry.isEmpty() && !strCountry.equalsIgnoreCase("null")) {
             pills.add(tagPill(strCountry));
