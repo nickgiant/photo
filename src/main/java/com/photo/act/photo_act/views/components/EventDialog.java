@@ -19,6 +19,8 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
+import com.vaadin.flow.component.tabs.Tab;
+import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.shared.Registration;
@@ -79,7 +81,8 @@ public class EventDialog extends Dialog {
     private final Button btnSaveFestival = new Button();
 
     private final VerticalLayout editionsListContainer = new VerticalLayout();
-    private final VerticalLayout editionsSection = new VerticalLayout();
+    private final TabSheet tabSheet = new TabSheet();
+    private Tab editionsTab;
 
     private Registration deferredEditionOpenReg;
 
@@ -96,7 +99,6 @@ public class EventDialog extends Dialog {
         setWidth("820px");
 
         add(buildLayout());
-        editionsSection.setVisible(false);
     }
 
     /** Edit mode — pre-fills the festival form; lists all its editions as cards. */
@@ -119,11 +121,12 @@ public class EventDialog extends Dialog {
 
         add(buildLayout());
         populateFestivalForm(editingFestival);
-        editionsSection.setVisible(true);
         refreshEditionsList();
         if (initialEdition != null) {
-            // Deferred until this dialog is actually open, so EditionDialog stacks on top of it
-            // rather than the other way around — the caller opens this dialog after construction.
+            // Land straight on the Editions tab, then deferred-open EditionDialog once this
+            // dialog is actually open, so EditionDialog stacks on top of it rather than the
+            // other way around — the caller opens this dialog after construction.
+            tabSheet.setSelectedTab(editionsTab);
             deferredEditionOpenReg = addOpenedChangeListener(ev -> {
                 if (ev.isOpened() && deferredEditionOpenReg != null) {
                     openEditEditionDialog(initialEdition);
@@ -185,6 +188,10 @@ public class EventDialog extends Dialog {
         festivalFooter.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
         festivalFooter.addClassNames(Padding.Top.MEDIUM);
 
+        VerticalLayout eventPanel = new VerticalLayout(festivalForm, festivalFooter);
+        eventPanel.setPadding(false);
+        eventPanel.addClassNames(Gap.SMALL, Padding.Top.SMALL);
+
         // ── editions panel: cards, each edited/deleted via its own dialog ──
         H4 editionsHeading = new H4("Editions");
         editionsHeading.addClassNames(Margin.Top.NONE, Margin.Bottom.NONE);
@@ -202,13 +209,19 @@ public class EventDialog extends Dialog {
         editionsListContainer.setPadding(false);
         editionsListContainer.addClassNames(Gap.SMALL);
 
-        editionsSection.setPadding(false);
-        editionsSection.addClassNames(Gap.SMALL, Margin.Top.MEDIUM);
-        editionsSection.add(editionsHeadingRow, editionsListContainer);
+        VerticalLayout editionsPanel = new VerticalLayout(editionsHeadingRow, editionsListContainer);
+        editionsPanel.setPadding(false);
+        editionsPanel.addClassNames(Gap.SMALL, Padding.Top.SMALL);
 
-        VerticalLayout root = new VerticalLayout(header, new Hr(),
-                festivalForm, festivalFooter,
-                editionsSection);
+        // ── tabs: Event | Editions ──
+        tabSheet.setWidthFull();
+        tabSheet.add("Event", eventPanel);
+        editionsTab = tabSheet.add("Editions", editionsPanel);
+        // Editions only make sense once the festival exists — hidden until the first save in
+        // create mode, already visible when opened in edit mode.
+        editionsTab.setVisible(editMode);
+
+        VerticalLayout root = new VerticalLayout(header, new Hr(), tabSheet);
         root.setPadding(true);
         root.setSpacing(false);
         root.addClassNames(Gap.SMALL);
@@ -253,9 +266,10 @@ public class EventDialog extends Dialog {
                 editMode = true;
                 dialogTitle.setText("Edit Event");
                 btnSaveFestival.setText("Save Changes");
-                editionsSection.setVisible(true);
+                editionsTab.setVisible(true);
                 refreshEditionsList();
-                Notification.show("Event created — add its edition(s) below.",
+                tabSheet.setSelectedTab(editionsTab);
+                Notification.show("Event created — add its edition(s) in the Editions tab.",
                         4000, Notification.Position.BOTTOM_END)
                         .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
             } else {
