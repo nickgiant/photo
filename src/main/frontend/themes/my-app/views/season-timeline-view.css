@@ -262,6 +262,31 @@
     border-color: var(--brand-orange, var(--lumo-primary-color));
 }
 
+.tl-links .icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 1px solid var(--brand-border-strong, var(--lumo-contrast-20pct));
+    color: var(--brand-navy, var(--lumo-primary-text-color));
+    text-decoration: none;
+    flex-shrink: 0;
+    transition: .2s;
+}
+
+.tl-links .icon-btn:hover {
+    background: var(--brand-navy, var(--lumo-primary-color));
+    border-color: var(--brand-navy, var(--lumo-primary-color));
+    color: #fff;
+}
+
+.tl-links .icon-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
 @media (max-width: 640px) {
     .tl-month {
         grid-template-columns: 1fr;

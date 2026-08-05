@@ -15,6 +15,7 @@ import com.photo.act.photo_act.utils.UtilsString;
 import com.photo.act.photo_act.views.components.AuthDialog;
 import com.photo.act.photo_act.views.components.EventDialog;
 import com.photo.act.photo_act.views.components.GenericView;
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.HasStyle;
 import com.vaadin.flow.component.UI;
@@ -124,7 +125,9 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
             ", f.id AS festivalId, e.id AS editionId " +
             " FROM  festivals f LEFT JOIN festivals_edition e ON f.id = e.festival_id " +
             "                   LEFT JOIN destination dest ON f.destination_id = dest.id " +
-            " WHERE 1 = 1 ";
+            " WHERE 1 = 1 " +
+            // Hide editions that have already ended; undated ones (dateTo not set yet) stay visible.
+            " AND (e.dateTo IS NULL OR e.dateTo >= CURDATE()) ";
 //            " LEFT JOIN destination d ON  d.id = e.destination_id " +
 //            " , destination d " +
 //            " WHERE d.id = e.destination_id ";
@@ -689,6 +692,15 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
             }
         }
 
+        // ---- icon-only social links, edition-level values winning over the festival's own ----
+        String strFacebookLink = firstNonEmpty(record.getColumnData("url_fb"), record.getColumnData("url_facebook"));
+        String strInstaLink = firstNonEmpty(record.getColumnData("url_insta"), record.getColumnData("url_instagram"));
+        String strYoutubeLink = record.getColumnData("url_youtube");
+
+        addSocialIconLink(links, strFacebookLink, FontAwesome.Brands.FACEBOOK.create(), "Facebook");
+        addSocialIconLink(links, strInstaLink, FontAwesome.Brands.INSTAGRAM.create(), "Instagram");
+        addSocialIconLink(links, strYoutubeLink, FontAwesome.Brands.YOUTUBE.create(), "YouTube");
+
         String strLink = resolveFestivalLink(record);
         Anchor viewFestival = new Anchor(strLink.isEmpty() ? "#" : strLink, "View festival →");
         viewFestival.addClassName("btn");
@@ -734,6 +746,23 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
             return strWebsite;
         }
         return "";
+    }
+
+    private String firstNonEmpty(String primary, String fallback) {
+        if (primary != null && !primary.isEmpty() && !primary.equalsIgnoreCase("null")) return primary;
+        if (fallback != null && !fallback.isEmpty() && !fallback.equalsIgnoreCase("null")) return fallback;
+        return "";
+    }
+
+    /** Appends an icon-only anchor to {@code links} if {@code url} is set; a no-op otherwise. */
+    private void addSocialIconLink(Div links, String url, Component icon, String tooltip) {
+        if (url == null || url.isEmpty() || url.equalsIgnoreCase("null")) return;
+        Anchor link = new Anchor(url, "");
+        link.add(icon);
+        link.addClassName("icon-btn");
+        link.setTarget("_blank");
+        link.getElement().setAttribute("title", tooltip);
+        links.add(link);
     }
 
     private Long parseLongOrNull(String value) {
