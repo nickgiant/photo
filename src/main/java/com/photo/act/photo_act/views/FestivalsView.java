@@ -38,8 +38,10 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.FileSystems;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import static com.photo.act.photo_act.views.MainLayout.*;
 
@@ -80,7 +82,8 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
     public static String DIR_PHOTOS_SERVER = "/home/pi/lazy-photos";
 
     String[] arrFestivalsColumnNames = {"nameShort", "city_name", "country", "periodOfYear", "type", "website", "url_facebook", "url_instagram", "url_youtube", "activities", "image_top", "image_logo", "dateInsert", "title", "subtitle", "formatedDateFrom", "formatedDateTo",
-            "edition_description", "formatedDateUpdated", "title_of_place", "address_of_place", "url_planned", "url_fb", "url_insta"};
+            "edition_description", "formatedDateUpdated", "title_of_place", "address_of_place", "url_planned", "url_fb", "url_insta",
+            "monthLabel", "dayNum", "dayName", "shortDateFrom", "shortDateTo"};
 
     private int userId;
     private String publicIp;
@@ -94,6 +97,9 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
             ", e.title, e.subtitle, DATE_FORMAT(e.dateFrom , '%W, %D %M %Y') AS formatedDateFrom , DATE_FORMAT(e.dateTo , '%W, %D %M %Y') AS formatedDateTo ,e.edition_description, DATE_FORMAT(f.dateInsert , '%D %M %Y') AS formatedDateUpdated " +
             ", e.title_of_place, e.address_of_place, e.url_planned, e.url_fb, e.url_insta " +
             ", f.country " +
+            // Season-timeline grouping/display: month bucket + compact date-rail fields, all derived from e.dateFrom/e.dateTo.
+            ", DATE_FORMAT(e.dateFrom, '%M %Y') AS monthLabel, DATE_FORMAT(e.dateFrom, '%d') AS dayNum, DATE_FORMAT(e.dateFrom, '%a') AS dayName " +
+            ", DATE_FORMAT(e.dateFrom, '%e %b') AS shortDateFrom, DATE_FORMAT(e.dateTo, '%e %b %Y') AS shortDateTo " +
             " FROM  festivals f LEFT JOIN festivals_edition e ON f.id = e.festival_id " +
             " WHERE 1 = 1 ";
 //            " LEFT JOIN destination d ON  d.id = e.destination_id " +
@@ -379,7 +385,8 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
 
     private VerticalLayout loadResults(int intLimit) {
 
-        sqlLearningsReadOrderBy = " ORDER BY f.dateInsert DESC";
+        // Chronological (season timeline) order — soonest edition first, undated editions pushed to the end.
+        sqlLearningsReadOrderBy = " ORDER BY (e.dateFrom IS NULL) ASC, e.dateFrom ASC";
 
         String sqlLimit = "";
         if (intLimit == 0) {
@@ -423,15 +430,245 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
 //            layoutFestivals.getStyle().set("gap","3rem");
         }
 
-        layoutFestivals.addClassName("festivals-view");
+        layoutFestivals.addClassName("season-timeline-view");
         List<Record> lstRecords = getRecordsFromDb(sqlRead, arrFestivalsColumnNames);
 
-        for (int r = 0; r < lstRecords.size(); r++) {
-            Record rec = lstRecords.get(r);
-            layoutFestivals.add(getFestival(rec));
-        }
+        layoutFestivals.add(buildSeasonTimeline(lstRecords));
 
         return layoutFestivals;
+    }
+
+    /**
+     * Season-timeline layout: editions grouped by month (chronological), each rendered as a
+     * full-width card carrying the same detail as the previous single-column festival card
+     * (logo, banner, description, place, link) — see buildTimelineCard().
+     */
+    private VerticalLayout buildSeasonTimeline(List<Record> records) {
+
+        VerticalLayout timeline = new VerticalLayout();
+        timeline.addClassNames(Width.FULL, Margin.NONE, Padding.NONE);
+        timeline.setSpacing(false);
+        timeline.addClassName("timeline-view");
+
+        LinkedHashMap<String, List<Record>> byMonth = new LinkedHashMap<>();
+        for (Record rec : records) {
+            String monthLabel = rec.getColumnData("monthLabel");
+            String key = (monthLabel == null || monthLabel.isEmpty() || monthLabel.equalsIgnoreCase("null"))
+                    ? "Dates to be announced" : monthLabel;
+            byMonth.computeIfAbsent(key, k -> new ArrayList<>()).add(rec);
+        }
+
+        for (Map.Entry<String, List<Record>> entry : byMonth.entrySet()) {
+            Div monthBlock = new Div();
+            monthBlock.addClassName("tl-month");
+
+            Div monthLabelDiv = new Div(entry.getKey());
+            monthLabelDiv.addClassName("tl-label");
+
+            VerticalLayout items = new VerticalLayout();
+            items.addClassNames(Width.FULL, Margin.NONE, Padding.NONE);
+            items.addClassName("tl-items");
+            for (Record rec : entry.getValue()) {
+                items.add(buildTimelineCard(rec));
+            }
+
+            monthBlock.add(monthLabelDiv, items);
+            timeline.add(monthBlock);
+        }
+
+        return timeline;
+    }
+
+    private Div buildTimelineCard(Record record) {
+
+        String strNameShort = record.getColumnData("nameShort");
+        String strType = record.getColumnData("type");
+        String strCountry = record.getColumnData("country");
+        String strActivities = record.getColumnData("activities");
+        String strEditionDescription = record.getColumnData("edition_description");
+        String strPeriodOfYear = record.getColumnData("periodOfYear");
+        String strTitleOfPlace = record.getColumnData("title_of_place");
+        String strAddressOfPlace = record.getColumnData("address_of_place");
+        String strDayNum = record.getColumnData("dayNum");
+        String strDayName = record.getColumnData("dayName");
+        String strShortDateFrom = record.getColumnData("shortDateFrom");
+        String strShortDateTo = record.getColumnData("shortDateTo");
+        String strImgLogoPath = record.getColumnData("image_logo");
+        String strImgTopPath = record.getColumnData("image_top");
+
+        Div dateRail = new Div();
+        dateRail.addClassName("tl-day");
+        if (!strDayNum.isEmpty() && !strDayNum.equalsIgnoreCase("null")) {
+            dateRail.add(new Div(strDayNum), new Div(strDayName));
+        }
+
+        // ---- head: type, name, edition subtitle, date badge ----
+        Div titles = new Div();
+        titles.addClassName("titles");
+        if (!strType.isEmpty() && !strType.equalsIgnoreCase("null")) {
+            Span cat = new Span(strType);
+            cat.addClassName("cat");
+            titles.add(cat);
+        }
+        titles.add(new H3(strNameShort));
+
+        String strEditionSub = buildEditionSubtitle(record);
+        if (!strEditionSub.isEmpty()) {
+            Paragraph editionSub = new Paragraph(strEditionSub);
+            editionSub.addClassName("edition-sub");
+            titles.add(editionSub);
+        }
+
+        Div head = new Div();
+        head.addClassName("tl-card-head");
+        head.add(titles);
+
+        if (!strShortDateFrom.trim().isEmpty() && !strShortDateFrom.equalsIgnoreCase("null")) {
+            String strWhen = strShortDateTo.trim().isEmpty() || strShortDateTo.equalsIgnoreCase("null")
+                    ? strShortDateFrom : strShortDateFrom + " – " + strShortDateTo;
+            Div when = new Div(strWhen);
+            when.addClassName("when");
+            head.add(when);
+        }
+
+        // ---- media: banner photo with an overlapping logo badge ----
+        Div media = new Div();
+        media.addClassName("tl-card-media");
+
+        Div banner = new Div();
+        banner.addClassName("tl-banner");
+        Image bannerImg = loadFestivalImage(strImgTopPath, "banner-" + strNameShort);
+        if (bannerImg != null) {
+            bannerImg.addClassName("tl-banner-img");
+            banner.add(bannerImg);
+        } else {
+            banner.getStyle().set("background", gradientFor(strNameShort));
+        }
+        media.add(banner);
+
+        Div logo = new Div();
+        logo.addClassName("tl-logo");
+        Image logoImg = loadFestivalImage(strImgLogoPath, "logo-" + strNameShort);
+        if (logoImg != null) {
+            logoImg.addClassName("tl-logo-img");
+            logo.add(logoImg);
+        } else {
+            logo.getStyle().set("background", gradientFor(strNameShort));
+            logo.add(new Span(strNameShort.isEmpty() ? "?" : strNameShort.substring(0, 1).toUpperCase(Locale.ENGLISH)));
+        }
+        media.add(logo);
+
+        // ---- type / country pills ----
+        Div pills = new Div();
+        pills.addClassName("pills");
+        if (!strType.isEmpty() && !strType.equalsIgnoreCase("null")) {
+            pills.add(tagPill(strType));
+        }
+        if (!strCountry.isEmpty() && !strCountry.equalsIgnoreCase("null")) {
+            pills.add(tagPill(strCountry));
+        }
+
+        // ---- description ----
+        String strDesc = !strEditionDescription.isEmpty() && !strEditionDescription.equalsIgnoreCase("null")
+                ? strEditionDescription
+                : strType + " takes place each year during " + strPeriodOfYear + ". " + strActivities;
+        Paragraph desc = new Paragraph(strDesc.trim());
+        desc.addClassName("tl-card-desc");
+
+        // ---- footer: place + view-festival CTA ----
+        Div foot = new Div();
+        foot.addClassName("tl-card-foot");
+
+        Div place = new Div();
+        place.addClassName("tl-place");
+        String strPlaceText = (!strTitleOfPlace.isEmpty() && !strTitleOfPlace.equalsIgnoreCase("null") ? strTitleOfPlace : strNameShort)
+                + (!strAddressOfPlace.isEmpty() && !strAddressOfPlace.equalsIgnoreCase("null") ? " — " + strAddressOfPlace : "");
+        place.setText("📍 " + strPlaceText);
+
+        Div links = new Div();
+        links.addClassName("tl-links");
+        String strLink = resolveFestivalLink(record);
+        Anchor viewFestival = new Anchor(strLink.isEmpty() ? "#" : strLink, "View festival →");
+        viewFestival.addClassName("btn");
+        if (!strLink.isEmpty()) {
+            viewFestival.setTarget("_blank");
+        }
+        links.add(viewFestival);
+
+        foot.add(place, links);
+
+        Div card = new Div();
+        card.addClassName("tl-card");
+        card.add(head, media, pills, desc, foot);
+
+        Div row = new Div();
+        row.addClassName("tl-row");
+        row.add(dateRail, card);
+
+        return row;
+    }
+
+    private String buildEditionSubtitle(Record record) {
+        String strTitle = record.getColumnData("title");
+        String strSubtitle = record.getColumnData("subtitle");
+        StringBuilder sb = new StringBuilder();
+        if (!strTitle.isEmpty() && !strTitle.equalsIgnoreCase("null")) {
+            sb.append(strTitle);
+        }
+        if (!strSubtitle.isEmpty() && !strSubtitle.equalsIgnoreCase("null")) {
+            if (sb.length() > 0) sb.append(" — ");
+            sb.append(strSubtitle);
+        }
+        return sb.toString();
+    }
+
+    private String resolveFestivalLink(Record record) {
+        String strUrlEdition = record.getColumnData("url_planned");
+        String strWebsite = record.getColumnData("website");
+        if (!strUrlEdition.isEmpty() && !strUrlEdition.equalsIgnoreCase("null")) {
+            return strUrlEdition;
+        }
+        if (!strWebsite.isEmpty() && !strWebsite.equalsIgnoreCase("null")) {
+            return strWebsite;
+        }
+        return "";
+    }
+
+    private Span tagPill(String text) {
+        Span pill = new Span(text);
+        pill.addClassName("tag-pill");
+        return pill;
+    }
+
+    /** Loads a festival/edition image from disk, or returns null if the record has none on file. */
+    private Image loadFestivalImage(String strRelativePath, String resourceName) {
+        if (strRelativePath == null || strRelativePath.isEmpty() || strRelativePath.equalsIgnoreCase("null")) {
+            return null;
+        }
+        String strFullPath = strPath + "/" + strRelativePath;
+        final StreamResource resource = new StreamResource(resourceName, () -> {
+            try {
+                return new FileInputStream(new File(strFullPath));
+            } catch (final FileNotFoundException e) {
+                logger.error("FileNotFoundException season-timeline image " + e.getMessage());
+                return null;
+            }
+        });
+        return new Image(resource, resourceName);
+    }
+
+    /** Deterministic brand-toned gradient per festival, used when no banner/logo image is on file. */
+    private String gradientFor(String seed) {
+        String[] gradients = {
+                "linear-gradient(135deg,#1b3a5c,#3a6ea5)",
+                "linear-gradient(135deg,#5c3a1b,#e8823c)",
+                "linear-gradient(135deg,#1b3a5c,#8a8578)",
+                "linear-gradient(135deg,#254b73,#e8823c)",
+                "linear-gradient(135deg,#1c2430,#1b3a5c)",
+                "linear-gradient(135deg,#8a8578,#254b73)"
+        };
+        int idx = Math.abs((seed == null ? "" : seed).hashCode()) % gradients.length;
+        return gradients[idx];
     }
 
 
