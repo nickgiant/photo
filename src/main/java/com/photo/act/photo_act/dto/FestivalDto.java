@@ -17,6 +17,7 @@ public class FestivalDto implements Serializable {
 
     Long          id;
     String        nameShort;
+    String        nameFull;
     String        periodOfYear;
     String        type;
     String        website;
@@ -34,6 +35,7 @@ public class FestivalDto implements Serializable {
         return FestivalDto.builder()
                 .id(e.getId())
                 .nameShort(e.getNameShort())
+                .nameFull(e.getNameFull())
                 .periodOfYear(e.getPeriodOfYear())
                 .type(e.getType())
                 .website(e.getWebsite())

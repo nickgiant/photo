@@ -19,6 +19,9 @@ public class FestivalEntity {
     @Column(name = "nameShort", nullable = false, length = 255)
     private String nameShort;
 
+    @Column(name = "nameFull", length = 512)
+    private String nameFull;
+
     @Column(name = "periodOfYear", length = 100)
     private String periodOfYear;
 
@@ -54,10 +57,11 @@ public class FestivalEntity {
 
     protected FestivalEntity() {}
 
-    public FestivalEntity(String nameShort, String periodOfYear, String type, String website,
+    public FestivalEntity(String nameShort, String nameFull, String periodOfYear, String type, String website,
                           String urlFacebook, String urlInstagram, String urlYoutube,
                           String activities, String imageTop, String imageLogo, String country) {
         this.nameShort    = nameShort;
+        this.nameFull     = nameFull;
         this.periodOfYear = periodOfYear;
         this.type         = type;
         this.website      = website;
@@ -77,6 +81,7 @@ public class FestivalEntity {
 
     public Long          getId()           { return id; }
     public String        getNameShort()    { return nameShort; }
+    public String        getNameFull()     { return nameFull; }
     public String        getPeriodOfYear() { return periodOfYear; }
     public String        getType()         { return type; }
     public String        getWebsite()      { return website; }
@@ -90,6 +95,7 @@ public class FestivalEntity {
     public LocalDateTime getDateInsert()   { return dateInsert; }
 
     public void setNameShort(String nameShort)       { this.nameShort = nameShort; }
+    public void setNameFull(String nameFull)         { this.nameFull = nameFull; }
     public void setPeriodOfYear(String periodOfYear) { this.periodOfYear = periodOfYear; }
     public void setType(String type)                 { this.type = type; }
     public void setWebsite(String website)           { this.website = website; }

@@ -73,7 +73,7 @@ public class FestivalService {
     @Transactional
     public FestivalDto createFestival(FestivalDto dto) {
         FestivalEntity entity = new FestivalEntity(
-                dto.getNameShort(), dto.getPeriodOfYear(), dto.getType(), dto.getWebsite(),
+                dto.getNameShort(), dto.getNameFull(), dto.getPeriodOfYear(), dto.getType(), dto.getWebsite(),
                 dto.getUrlFacebook(), dto.getUrlInstagram(), dto.getUrlYoutube(),
                 dto.getActivities(), dto.getImageTop(), dto.getImageLogo(), dto.getCountry());
         return toDto(festivalRepo.save(entity));
@@ -83,6 +83,7 @@ public class FestivalService {
     public Optional<FestivalDto> updateFestival(Long id, FestivalDto dto) {
         return festivalRepo.findById(id).map(entity -> {
             entity.setNameShort(dto.getNameShort());
+            entity.setNameFull(dto.getNameFull());
             entity.setPeriodOfYear(dto.getPeriodOfYear());
             entity.setType(dto.getType());
             entity.setWebsite(dto.getWebsite());
