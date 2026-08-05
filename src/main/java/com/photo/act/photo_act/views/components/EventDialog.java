@@ -6,7 +6,6 @@ import com.photo.act.photo_act.services.FestivalService;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
-import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.H3;
@@ -22,6 +21,7 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.shared.Registration;
 import com.vaadin.flow.theme.lumo.LumoUtility.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,15 +32,16 @@ import java.util.List;
 import java.util.function.Consumer;
 
 /**
- * Single dialog reused for creating and editing an event: the festival itself, plus its
- * editions. The festival has its own save; editions are managed underneath as a small,
- * self-contained CRUD panel — a card per edition (far right: edit / delete icon buttons)
- * above a form that either adds a new edition or edits whichever card was picked.
+ * Dialog for creating and editing a festival. Its editions are managed as a separate,
+ * self-contained panel underneath: a card per edition (far right: edit / delete icon
+ * buttons), each opening its own EditionDialog rather than an inline form.
  *
  * Usage:
  *   new EventDialog(festivalService, saved -> reloadResults()).open();                          // create
  *   new EventDialog(existingFestival, festivalService, saved -> reloadResults()).open();         // edit
- *   new EventDialog(existingFestival, editionToPreload, festivalService, saved -> ...).open();   // edit, one edition pre-loaded
+ *   new EventDialog(existingFestival, editionToOpen, festivalService, saved -> ...).open();      // edit, jumps
+ *                                                                                                 // straight into
+ *                                                                                                 // editing that edition
  */
 public class EventDialog extends Dialog {
 
@@ -52,13 +53,12 @@ public class EventDialog extends Dialog {
     private static final DateTimeFormatter EDITION_DATE_FORMAT = DateTimeFormatter.ofPattern("d MMM yyyy");
 
     private final FestivalService       festivalService;
-    private final boolean               editMode;
     private final Consumer<FestivalDto> onSaved;
 
+    /** Flips from false to true once a brand-new festival is first saved. */
+    private boolean editMode;
     /** Null until the festival has been saved at least once (create mode, before first save). */
     private Long festivalId;
-    /** Null while the edition form is in "add new" mode; set to the id being edited otherwise. */
-    private Long currentEditingEditionId;
 
     // ── festival fields ──
     private final TextField   fldNameShort     = new TextField("Short Name");
@@ -74,23 +74,14 @@ public class EventDialog extends Dialog {
     private final TextField   fldImageLogo     = new TextField("Logo Image Path");
     private final TextArea    fldActivities    = new TextArea("Activities");
 
-    // ── edition fields (shared by "add" and "edit" — see currentEditingEditionId) ──
-    private final TextField   fldEditionTitle       = new TextField("Edition Title");
-    private final TextField   fldEditionSubtitle    = new TextField("Edition Subtitle");
-    private final DatePicker  fldDateFrom           = new DatePicker("Date From");
-    private final DatePicker  fldDateTo             = new DatePicker("Date To");
-    private final TextField   fldTitleOfPlace       = new TextField("Venue");
-    private final TextField   fldAddressOfPlace     = new TextField("Address");
-    private final TextField   fldUrlPlanned         = new TextField("Edition URL");
-    private final TextField   fldUrlFb              = new TextField("Edition Facebook URL");
-    private final TextField   fldUrlInsta           = new TextField("Edition Instagram URL");
-    private final TextArea    fldEditionDescription = new TextArea("Edition Description");
+    // ── mutable chrome, updated when create mode flips to edit mode after first save ──
+    private final H3     dialogTitle    = new H3();
+    private final Button btnSaveFestival = new Button();
 
-    private final H4               editionFormHeading = new H4("New Edition");
-    private final Button            btnSaveEdition     = new Button("Add Edition");
-    private final Button            btnCancelEditEdition = new Button("Cancel");
-    private final VerticalLayout    editionsListContainer = new VerticalLayout();
-    private final VerticalLayout    editionsSection = new VerticalLayout();
+    private final VerticalLayout editionsListContainer = new VerticalLayout();
+    private final VerticalLayout editionsSection = new VerticalLayout();
+
+    private Registration deferredEditionOpenReg;
 
     /** Create mode. */
     public EventDialog(FestivalService festivalService, Consumer<FestivalDto> onSaved) {
@@ -102,7 +93,7 @@ public class EventDialog extends Dialog {
         setDraggable(true);
         setCloseOnEsc(true);
         setCloseOnOutsideClick(false);
-        setWidth("880px");
+        setWidth("820px");
 
         add(buildLayout());
         editionsSection.setVisible(false);
@@ -113,7 +104,7 @@ public class EventDialog extends Dialog {
         this(editingFestival, null, festivalService, onSaved);
     }
 
-    /** Edit mode with one specific edition pre-loaded into the edition form (e.g. from a timeline card). */
+    /** Edit mode, opening straight into editing one specific edition (e.g. from a timeline card). */
     public EventDialog(FestivalDto editingFestival, FestivalEditionDto initialEdition,
                        FestivalService festivalService, Consumer<FestivalDto> onSaved) {
         this.festivalService = festivalService;
@@ -124,30 +115,38 @@ public class EventDialog extends Dialog {
         setDraggable(true);
         setCloseOnEsc(true);
         setCloseOnOutsideClick(false);
-        setWidth("880px");
+        setWidth("820px");
 
         add(buildLayout());
         populateFestivalForm(editingFestival);
         editionsSection.setVisible(true);
         refreshEditionsList();
         if (initialEdition != null) {
-            loadEditionIntoForm(initialEdition);
+            // Deferred until this dialog is actually open, so EditionDialog stacks on top of it
+            // rather than the other way around — the caller opens this dialog after construction.
+            deferredEditionOpenReg = addOpenedChangeListener(ev -> {
+                if (ev.isOpened() && deferredEditionOpenReg != null) {
+                    openEditEditionDialog(initialEdition);
+                    deferredEditionOpenReg.remove();
+                    deferredEditionOpenReg = null;
+                }
+            });
         }
     }
 
     private VerticalLayout buildLayout() {
 
-        H3 title = new H3(editMode ? "Edit Event" : "Create Event");
-        title.addClassNames(Margin.NONE);
+        dialogTitle.setText(editMode ? "Edit Event" : "Create Event");
+        dialogTitle.addClassNames(Margin.NONE);
 
         Button btnClose = new Button(VaadinIcon.CLOSE.create());
         btnClose.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
         btnClose.addClickListener(e -> close());
 
-        HorizontalLayout header = new HorizontalLayout(title, btnClose);
+        HorizontalLayout header = new HorizontalLayout(dialogTitle, btnClose);
         header.setWidthFull();
         header.setAlignItems(FlexComponent.Alignment.CENTER);
-        header.setFlexGrow(1, title);
+        header.setFlexGrow(1, dialogTitle);
         header.addClassNames(Padding.Bottom.SMALL);
 
         // ── festival form ──
@@ -173,7 +172,7 @@ public class EventDialog extends Dialog {
         festivalForm.setColspan(fldActivities, 2);
         festivalForm.add(fldActivities);
 
-        Button btnSaveFestival = new Button(editMode ? "Save Changes" : "Create Event");
+        btnSaveFestival.setText(editMode ? "Save Changes" : "Create Event");
         btnSaveFestival.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         btnSaveFestival.addClickListener(e -> saveFestival());
 
@@ -186,43 +185,26 @@ public class EventDialog extends Dialog {
         festivalFooter.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
         festivalFooter.addClassNames(Padding.Top.MEDIUM);
 
-        // ── editions panel: cards + add/edit form ──
+        // ── editions panel: cards, each edited/deleted via its own dialog ──
         H4 editionsHeading = new H4("Editions");
         editionsHeading.addClassNames(Margin.Top.NONE, Margin.Bottom.NONE);
+
+        Button btnAddEdition = new Button("Add Edition", VaadinIcon.PLUS.create());
+        btnAddEdition.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        btnAddEdition.addClickListener(e -> openCreateEditionDialog());
+
+        HorizontalLayout editionsHeadingRow = new HorizontalLayout(editionsHeading, btnAddEdition);
+        editionsHeadingRow.setWidthFull();
+        editionsHeadingRow.setAlignItems(FlexComponent.Alignment.CENTER);
+        editionsHeadingRow.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
 
         editionsListContainer.setWidthFull();
         editionsListContainer.setPadding(false);
         editionsListContainer.addClassNames(Gap.SMALL);
 
-        fldEditionTitle.setPlaceholder("e.g. 10th edition — \"Light Across Borders\"");
-        fldEditionDescription.setMinHeight("80px");
-
-        FormLayout editionForm = new FormLayout();
-        editionForm.setResponsiveSteps(
-                new FormLayout.ResponsiveStep("0",     1),
-                new FormLayout.ResponsiveStep("480px", 2));
-        editionForm.add(fldEditionTitle, fldEditionSubtitle,
-                fldDateFrom, fldDateTo,
-                fldTitleOfPlace, fldAddressOfPlace,
-                fldUrlPlanned, fldUrlFb, fldUrlInsta);
-        editionForm.setColspan(fldEditionDescription, 2);
-        editionForm.add(fldEditionDescription);
-
-        btnSaveEdition.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        btnSaveEdition.addClickListener(e -> saveEdition());
-
-        btnCancelEditEdition.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-        btnCancelEditEdition.setVisible(false);
-        btnCancelEditEdition.addClickListener(e -> clearEditionForm());
-
-        HorizontalLayout editionFormFooter = new HorizontalLayout(btnCancelEditEdition, btnSaveEdition);
-        editionFormFooter.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
-        editionFormFooter.setWidthFull();
-
         editionsSection.setPadding(false);
         editionsSection.addClassNames(Gap.SMALL, Margin.Top.MEDIUM);
-        editionsSection.add(editionsHeading, editionsListContainer, new Hr(),
-                editionFormHeading, editionForm, editionFormFooter);
+        editionsSection.add(editionsHeadingRow, editionsListContainer);
 
         VerticalLayout root = new VerticalLayout(header, new Hr(),
                 festivalForm, festivalFooter,
@@ -263,20 +245,24 @@ public class EventDialog extends Dialog {
                     : festivalService.createFestival(festivalDto);
             festivalId = saved.getId();
 
-            if (!editMode) {
-                // Preserve the original one-shot flow: bundle whatever was typed into the
-                // edition form as the festival's first edition, if anything was entered.
-                FestivalEditionDto editionDto = buildEditionDto(festivalId, null);
-                if (hasEditionData(editionDto)) {
-                    festivalService.createEdition(editionDto);
-                }
-            }
-
-            close();
             if (onSaved != null) onSaved.accept(saved);
-            Notification.show(editMode ? "Event updated." : "Event created.",
-                    3000, Notification.Position.BOTTOM_END)
-                    .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+
+            if (!editMode) {
+                // Newly created — flip this dialog into edit mode in place so editions can be
+                // added right away, instead of closing and forcing a reopen.
+                editMode = true;
+                dialogTitle.setText("Edit Event");
+                btnSaveFestival.setText("Save Changes");
+                editionsSection.setVisible(true);
+                refreshEditionsList();
+                Notification.show("Event created — add its edition(s) below.",
+                        4000, Notification.Position.BOTTOM_END)
+                        .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+            } else {
+                close();
+                Notification.show("Event updated.", 3000, Notification.Position.BOTTOM_END)
+                        .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+            }
         } catch (Exception ex) {
             log.error("Failed to save event", ex);
             Notification.show("Error: " + ex.getMessage(), 5000, Notification.Position.BOTTOM_END)
@@ -309,7 +295,7 @@ public class EventDialog extends Dialog {
 
         List<FestivalEditionDto> editions = festivalService.getEditionsByFestival(festivalId);
         if (editions.isEmpty()) {
-            Span empty = new Span("No editions yet — add one below.");
+            Span empty = new Span("No editions yet — add one above.");
             empty.addClassNames(TextColor.TERTIARY, FontSize.SMALL);
             editionsListContainer.add(empty);
             return;
@@ -343,7 +329,7 @@ public class EventDialog extends Dialog {
         Button btnEdit = new Button(VaadinIcon.PENCIL.create());
         btnEdit.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_ICON);
         btnEdit.setTooltipText("Edit edition");
-        btnEdit.addClickListener(e -> loadEditionIntoForm(edition));
+        btnEdit.addClickListener(e -> openEditEditionDialog(edition));
 
         Button btnDelete = new Button(VaadinIcon.TRASH.create());
         btnDelete.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_ICON, ButtonVariant.LUMO_ERROR);
@@ -372,69 +358,17 @@ public class EventDialog extends Dialog {
         return parts.isEmpty() ? "No dates set" : String.join(" · ", parts);
     }
 
-    private void loadEditionIntoForm(FestivalEditionDto edition) {
-        currentEditingEditionId = edition.getId();
-        fldEditionTitle.setValue(nvl(edition.getTitle()));
-        fldEditionSubtitle.setValue(nvl(edition.getSubtitle()));
-        fldDateFrom.setValue(edition.getDateFrom());
-        fldDateTo.setValue(edition.getDateTo());
-        fldTitleOfPlace.setValue(nvl(edition.getTitleOfPlace()));
-        fldAddressOfPlace.setValue(nvl(edition.getAddressOfPlace()));
-        fldUrlPlanned.setValue(nvl(edition.getUrlPlanned()));
-        fldUrlFb.setValue(nvl(edition.getUrlFb()));
-        fldUrlInsta.setValue(nvl(edition.getUrlInsta()));
-        fldEditionDescription.setValue(nvl(edition.getEditionDescription()));
-
-        String label = (edition.getTitle() == null || edition.getTitle().isBlank())
-                ? "Untitled edition" : edition.getTitle();
-        editionFormHeading.setText("Editing: " + label);
-        btnSaveEdition.setText("Save Edition");
-        btnCancelEditEdition.setVisible(true);
-    }
-
-    private void clearEditionForm() {
-        currentEditingEditionId = null;
-        fldEditionTitle.clear();
-        fldEditionSubtitle.clear();
-        fldDateFrom.clear();
-        fldDateTo.clear();
-        fldTitleOfPlace.clear();
-        fldAddressOfPlace.clear();
-        fldUrlPlanned.clear();
-        fldUrlFb.clear();
-        fldUrlInsta.clear();
-        fldEditionDescription.clear();
-
-        editionFormHeading.setText("New Edition");
-        btnSaveEdition.setText("Add Edition");
-        btnCancelEditEdition.setVisible(false);
-    }
-
-    private void saveEdition() {
+    private void openCreateEditionDialog() {
         if (festivalId == null) {
             Notification.show("Save the festival first.", 3000, Notification.Position.BOTTOM_END)
                     .addThemeVariants(NotificationVariant.LUMO_ERROR);
             return;
         }
-        try {
-            FestivalEditionDto dto = buildEditionDto(festivalId, currentEditingEditionId);
-            if (currentEditingEditionId != null) {
-                festivalService.updateEdition(currentEditingEditionId, dto)
-                        .orElseThrow(() -> new IllegalStateException("Edition not found"));
-                Notification.show("Edition updated.", 3000, Notification.Position.BOTTOM_END)
-                        .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-            } else {
-                festivalService.createEdition(dto);
-                Notification.show("Edition added.", 3000, Notification.Position.BOTTOM_END)
-                        .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-            }
-            clearEditionForm();
-            refreshEditionsList();
-        } catch (Exception ex) {
-            log.error("Failed to save edition", ex);
-            Notification.show("Error: " + ex.getMessage(), 5000, Notification.Position.BOTTOM_END)
-                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
-        }
+        new EditionDialog(festivalId, festivalService, saved -> refreshEditionsList()).open();
+    }
+
+    private void openEditEditionDialog(FestivalEditionDto edition) {
+        new EditionDialog(edition, festivalId, festivalService, saved -> refreshEditionsList()).open();
     }
 
     private void confirmDeleteEdition(FestivalEditionDto edition) {
@@ -454,9 +388,6 @@ public class EventDialog extends Dialog {
     private void deleteEdition(FestivalEditionDto edition) {
         try {
             festivalService.deleteEdition(edition.getId());
-            if (edition.getId().equals(currentEditingEditionId)) {
-                clearEditionForm();
-            }
             refreshEditionsList();
             Notification.show("Edition deleted.", 3000, Notification.Position.BOTTOM_END)
                     .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
@@ -465,30 +396,6 @@ public class EventDialog extends Dialog {
             Notification.show("Error: " + ex.getMessage(), 5000, Notification.Position.BOTTOM_END)
                     .addThemeVariants(NotificationVariant.LUMO_ERROR);
         }
-    }
-
-    private FestivalEditionDto buildEditionDto(Long festivalId, Long editionId) {
-        FestivalEditionDto dto = editionId != null
-                ? FestivalEditionDto.builder().id(editionId).build()
-                : FestivalEditionDto.builder().build();
-        dto.setFestivalId(festivalId);
-        dto.setTitle(emptyToNull(fldEditionTitle.getValue()));
-        dto.setSubtitle(emptyToNull(fldEditionSubtitle.getValue()));
-        dto.setDateFrom(fldDateFrom.getValue());
-        dto.setDateTo(fldDateTo.getValue());
-        dto.setTitleOfPlace(emptyToNull(fldTitleOfPlace.getValue()));
-        dto.setAddressOfPlace(emptyToNull(fldAddressOfPlace.getValue()));
-        dto.setUrlPlanned(emptyToNull(fldUrlPlanned.getValue()));
-        dto.setUrlFb(emptyToNull(fldUrlFb.getValue()));
-        dto.setUrlInsta(emptyToNull(fldUrlInsta.getValue()));
-        dto.setEditionDescription(emptyToNull(fldEditionDescription.getValue()));
-        return dto;
-    }
-
-    /** Skip creating an empty edition row when the optional edition fields were all left blank. */
-    private boolean hasEditionData(FestivalEditionDto dto) {
-        return dto.getTitle() != null || dto.getDateFrom() != null || dto.getDateTo() != null
-                || dto.getTitleOfPlace() != null || dto.getEditionDescription() != null;
     }
 
     private static String nvl(String s)        { return s == null ? "" : s; }
