@@ -183,7 +183,7 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
             layoutMobileContent.add(filtersColumn, verticalLayout);
             this.add(layoutMobileContent);
         } else {
-            HorizontalLayout layoutContent = new HorizontalLayout();
+            VerticalLayout layoutContent = new VerticalLayout();
             layoutContent.addClassNames(Width.FULL,
                     AlignItems.START, JustifyContent.CENTER,
                     Padding.LARGE, Margin.NONE,

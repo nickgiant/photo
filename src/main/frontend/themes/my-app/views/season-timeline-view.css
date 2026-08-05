@@ -45,6 +45,7 @@
 }
 
 .tl-row {
+    width: 100%;
     display: grid;
     grid-template-columns: 64px 1fr;
     gap: 18px;
