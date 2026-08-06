@@ -49,6 +49,9 @@ import java.io.FileNotFoundException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.FileSystems;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -102,7 +105,7 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
 
     String[] arrFestivalsColumnNames = {"name_short", "name_full", "city_name", "country", "periodOfYear", "type", "website", "url_facebook", "url_instagram", "url_youtube", "activities", "image_top", "image_logo", "dateInsert", "title", "subtitle", "formatedDateFrom", "formatedDateTo",
             "edition_description", "formatedDateUpdated", "title_of_place", "address_of_place", "url_planned", "url_fb", "url_insta",
-            "monthLabel", "dayNum", "dayName", "date_from", "date_to", "festivalId", "editionId"};
+            "monthLabel", "dayNum", "dayName", "date_from", "date_to", "date_from_iso", "date_to_iso", "festivalId", "editionId"};
 
     private int userId;
     private String publicIp;
@@ -121,6 +124,9 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
             // Season-timeline grouping/display: month bucket + compact date-rail fields, all derived from e.date_from/e.date_to.
             ", DATE_FORMAT(e.date_from, '%M %Y') AS monthLabel, DATE_FORMAT(e.date_from, '%d') AS dayNum, DATE_FORMAT(e.date_from, '%a') AS dayName " +
             ", DATE_FORMAT(e.date_from, '%e %b') AS date_from, DATE_FORMAT(e.date_to, '%e %b %Y') AS date_to " +
+            // Plain ISO dates (unparsed by DATE_FORMAT) so the "now / in N days / in N months" ribbon
+            // can do real date arithmetic instead of parsing the display-formatted strings above.
+            ", e.date_from AS date_from_iso, e.date_to AS date_to_iso " +
             // Row identity, needed to open the edit-event dialog against the right festival/edition.
             ", f.id AS festivalId, e.id AS editionId " +
             " FROM  festivals f LEFT JOIN festivals_edition e ON f.id = e.festival_id " +
@@ -629,6 +635,11 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
         }
         media.add(banner);
 
+        Div ribbon = buildDateRibbon(record);
+        if (ribbon != null) {
+            media.add(ribbon);
+        }
+
         Div logo = new Div();
         logo.addClassName("tl-logo");
         Image logoImg = loadFestivalImage(strImgLogoPath, "logo-" + strNameShort);
@@ -720,6 +731,76 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
         row.add(dateRail, card);
 
         return row;
+    }
+
+    /**
+     * Diagonal corner ribbon for the banner photo, telling at a glance how close an edition is:
+     *  - "now"          (matte green)    — today falls within [date_from, date_to]
+     *  - "in N days"    (matte red)      — starts within 15 days
+     *  - "in N days"    (matte dark red) — starts in 16-30 days
+     *  - "in N months"  (matte peach)    — starts in 2 or 3 calendar months
+     * Returns null (no ribbon) for undated editions, already-ended ones, or ones further out than
+     * 3 months / in the 31-day-to-2-month gap the spec doesn't cover.
+     */
+    private Div buildDateRibbon(Record record) {
+        LocalDate dateFrom = parseIsoDateOrNull(record.getColumnData("date_from_iso"));
+        if (dateFrom == null) {
+            return null;
+        }
+        LocalDate dateTo = parseIsoDateOrNull(record.getColumnData("date_to_iso"));
+        if (dateTo == null || dateTo.isBefore(dateFrom)) {
+            dateTo = dateFrom; // undated/invalid end -> treat as a single-day event
+        }
+
+        LocalDate today = LocalDate.now();
+
+        String text;
+        String modifierClass;
+
+        if (!today.isBefore(dateFrom) && !today.isAfter(dateTo)) {
+            text = "now";
+            modifierClass = "is-now";
+        } else if (today.isAfter(dateTo)) {
+            return null; // already over
+        } else {
+            long daysUntil = ChronoUnit.DAYS.between(today, dateFrom);
+            if (daysUntil <= 15) {
+                text = "in " + daysUntil + " days";
+                modifierClass = "is-soon";
+            } else if (daysUntil <= 30) {
+                text = "in " + daysUntil + " days";
+                modifierClass = "is-later";
+            } else {
+                long monthsUntil = ChronoUnit.MONTHS.between(today, dateFrom);
+                if (monthsUntil == 2 || monthsUntil == 3) {
+                    text = "in " + monthsUntil + " months";
+                    modifierClass = "is-months";
+                } else {
+                    return null; // more than 3 months out, or in the unspecified 31-day..2-month gap
+                }
+            }
+        }
+
+        Div corner = new Div();
+        corner.addClassName("tl-ribbon-corner");
+
+        Span ribbon = new Span(text);
+        ribbon.addClassNames("tl-ribbon", modifierClass);
+        corner.add(ribbon);
+
+        return corner;
+    }
+
+    private LocalDate parseIsoDateOrNull(String value) {
+        if (value == null || value.trim().isEmpty() || value.equalsIgnoreCase("null")) {
+            return null;
+        }
+        try {
+            // MySQL DATE columns come back rendered as java.sql.Date.toString(), i.e. yyyy-MM-dd.
+            return LocalDate.parse(value.trim().length() > 10 ? value.trim().substring(0, 10) : value.trim());
+        } catch (DateTimeParseException e) {
+            return null;
+        }
     }
 
     private String buildEditionSubtitle(Record record) {

@@ -311,6 +311,69 @@
     height: 16px;
 }
 
+/* ---- date ribbon: diagonal corner banner on the event photo, see buildDateRibbon() ---- */
+.tl-ribbon-corner {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 108px;
+    height: 108px;
+    overflow: hidden;
+    z-index: 3; /* above the banner, below the overlapping logo badge */
+    pointer-events: none;
+}
+
+.tl-ribbon {
+    position: absolute;
+    top: 20px;
+    right: -30px;
+    width: 140px;
+    transform: rotate(45deg);
+    text-align: center;
+    padding: 6px 0 5px;
+    font-family: var(--font-mono, "JetBrains Mono", monospace);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, .28);
+}
+
+/* matte finish: flat fill + a faint fibrous texture, no gloss/highlight */
+.tl-ribbon::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+        90deg,
+        rgba(255, 255, 255, .05) 0px,
+        rgba(255, 255, 255, .05) 1px,
+        transparent 1px,
+        transparent 3px
+    );
+    mix-blend-mode: overlay;
+}
+
+.tl-ribbon.is-now {
+    background: #3f7a52;
+    color: #f2f7f3;
+}
+
+.tl-ribbon.is-soon {
+    background: #a5362a;
+    color: #fbf1ef;
+}
+
+.tl-ribbon.is-later {
+    background: #6e2320;
+    color: #fbeeec;
+}
+
+.tl-ribbon.is-months {
+    background: #dba676;
+    color: #3f2a1c;
+}
+
 @media (max-width: 640px) {
     .tl-month {
         grid-template-columns: 1fr;
