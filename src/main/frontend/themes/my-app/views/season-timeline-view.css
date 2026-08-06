@@ -318,7 +318,7 @@
     right: 0;
     width: 124px;
     height: 124px;
-    overflow: hidden;
+    overflow: visible;
     z-index: 3; /* above the banner, below the overlapping logo badge */
     pointer-events: none;
 }
