@@ -316,8 +316,8 @@
     position: absolute;
     top: 0;
     right: 0;
-    width: 108px;
-    height: 108px;
+    width: 124px;
+    height: 124px;
     overflow: hidden;
     z-index: 3; /* above the banner, below the overlapping logo badge */
     pointer-events: none;
@@ -325,16 +325,16 @@
 
 .tl-ribbon {
     position: absolute;
-    top: 20px;
-    right: -30px;
-    width: 140px;
+    top: 21px;
+    right: -34px;
+    width: 160px;
     transform: rotate(45deg);
     text-align: center;
-    padding: 6px 0 5px;
+    padding: 8px 0 7px;
     font-family: var(--font-mono, "JetBrains Mono", monospace);
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: .07em;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: .05em;
     text-transform: uppercase;
     box-shadow: 0 2px 5px rgba(0, 0, 0, .28);
 }

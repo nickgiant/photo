@@ -771,7 +771,12 @@ public class FestivalsView extends Main implements HasUrlParameter<String>, Befo
                 text = "in " + daysUntil + " days";
                 modifierClass = "is-later";
             } else {
-                long monthsUntil = ChronoUnit.MONTHS.between(today, dateFrom);
+                // Calendar-month distance (Aug -> Oct is "2 months" regardless of day-of-month),
+                // matching how the page already buckets cards by month name. ChronoUnit.MONTHS.between
+                // counts only fully-elapsed months instead, which undercounted e.g. Aug 6 -> Oct 1 as
+                // just 1 month and hid the ribbon entirely.
+                long monthsUntil = (dateFrom.getYear() - today.getYear()) * 12L
+                        + (dateFrom.getMonthValue() - today.getMonthValue());
                 if (monthsUntil == 2 || monthsUntil == 3) {
                     text = "in " + monthsUntil + " months";
                     modifierClass = "is-months";
