@@ -640,102 +640,127 @@ public class HomeView extends Main implements HasUrlParameter<String>, BeforeEnt
                 + "shoot, a trip, or the story behind one shot.");
         intro.addClassName("section-intro");
 
-        Div card = new Div();
-        card.addClassName("composer-card");
+        Div grid = new Div();
+        grid.addClassName("story-grid");
 
         String[] arrColumnsLastStory = {"title", "slug", "description", "user_id", "date_inserted",
                 "datetime_story_created", "username", "name", "surname", "avatar_path", "story_id"
         };
-        String sqlLastStory = "SELECT s.title, s.slug, s.`description`, s.user_id, s.date_inserted " +
+        // Latest story per distinct member — one card per member, up to 3 members, most recent first.
+        String sqlLastStoryPerMember = "SELECT s.title, s.slug, s.`description`, s.user_id, s.date_inserted " +
                 " , getDateDiffFromNow(s.date_inserted) AS datetime_story_created " +
                 " , usr.username, usr.name, usr.surname, usr.avatar_path " +
                 " , s.id AS story_id " +
                 " FROM photo_stories s, dbuser usr " +
                 " WHERE s.user_id = usr.userId AND s.story_visible_to = 'ALL' " +
-                " ORDER BY s.date_inserted DESC LIMIT 1";
+                " AND s.id = (SELECT s2.id FROM photo_stories s2 WHERE s2.user_id = s.user_id AND s2.story_visible_to = 'ALL' ORDER BY s2.date_inserted DESC LIMIT 1) " +
+                " ORDER BY s.date_inserted DESC LIMIT 3";
 
-        List<Record> lstLastStory = getRecordsFromDb(sqlLastStory, arrColumnsLastStory);
+        List<Record> lstLastStories = getRecordsFromDb(sqlLastStoryPerMember, arrColumnsLastStory);
 
-        if (lstLastStory.isEmpty()) {
+        if (lstLastStories.isEmpty()) {
             Div empty = new Div("No stories published yet — be the first to tell yours.");
             empty.addClassName("story-preview-empty");
-            card.add(empty);
+            grid.add(empty);
         } else {
-            Record story = lstLastStory.get(0);
-            String strStoryId = story.getColumnData("story_id");
-            String strTitle = story.getColumnData("title");
-            String strSlug = story.getColumnData("slug");
-            String strDescription = story.getColumnData("description");
-            String strMemberUsername = story.getColumnData("username");
-            String strName = story.getColumnData("name");
-            String strSurname = story.getColumnData("surname");
-            String strAvatarPath = story.getColumnData("avatar_path");
-            String strDateCreated = story.getColumnData("datetime_story_created");
-            String strFullName = (strName + " " + strSurname).trim();
-            String strStoryTitle = (strTitle == null || strTitle.isBlank() || strTitle.equalsIgnoreCase("null"))
-                    ? "Untitled story" : strTitle;
-
-            Div cardHeader = new Div();
-            cardHeader.addClassName("composer-card-header");
-
-            Image avatar = genericView.getAvatarThumbImage(strAvatarPath, strFullName, "28px", "28px");
-            avatar.addClassName("composer-avatar");
-            Span storyName = new Span(strStoryTitle + " — " + strFullName);
-            storyName.addClassName("composer-story-name");
-            Div nameRow = new Div(avatar, storyName);
-            nameRow.addClassName("composer-name-row");
-
-            Span dateBadge = new Span(strDateCreated);
-            dateBadge.addClassName("composer-draft-badge");
-            cardHeader.add(nameRow, dateBadge);
-
-            Div photoGrid = new Div();
-            photoGrid.addClassName("composer-photo-grid");
-
-            int intStoryId = 0;
-            try {
-                intStoryId = Integer.parseInt(strStoryId);
-            } catch (NumberFormatException ignored) {
+            for (Record story : lstLastStories) {
+                grid.add(createStoryPreviewCard(story));
             }
-
-            String[] arrColumnsStoryPhotos = {"name_new"};
-            String sqlStoryPhotos = "SELECT pm.name_new FROM photo_stories_photo sp, photo_meta pm " +
-                    " WHERE sp.story_id = " + intStoryId + " AND sp.photo_id = pm.id AND pm.visible_to = 'ALL' " +
-                    " ORDER BY sp.inc ASC LIMIT 4";
-            List<Record> lstStoryPhotos = getRecordsFromDb(sqlStoryPhotos, arrColumnsStoryPhotos);
-            String strStoryImagePath = DIR_PHOTOS_SERVER + dirChar + subPathMedium;
-            for (Record photoRecord : lstStoryPhotos) {
-                Image photo = getImageThumbFromDb(photoRecord, strStoryImagePath);
-                photo.addClassName("composer-photo");
-                photoGrid.add(photo);
-            }
-
-            Div quote = new Div();
-            quote.addClassName("composer-quote");
-            if (strDescription != null && !strDescription.isBlank() && !strDescription.equalsIgnoreCase("null")) {
-                quote.setText("\"" + strDescription + "\"");
-            } else {
-                quote.setVisible(false);
-            }
-
-            Div footerRow = new Div();
-            footerRow.addClassName("composer-footer-row");
-            String strPhotoCountLabel = lstStoryPhotos.size() + (lstStoryPhotos.size() == 1 ? " photo" : " photos");
-            Span meta = new Span(strPhotoCountLabel + " · " + strDateCreated);
-            meta.addClassName("composer-meta");
-
-            RouteParam routeMember = new RouteParam("member", strMemberUsername);
-            RouteParam routeStory = new RouteParam("story", strSlug);
-            RouterLink btnView = new RouterLink("View Story", StoriesView.class, new RouteParameters(routeMember, routeStory));
-            btnView.addClassName("btn-hero-cta");
-
-            footerRow.add(meta, btnView);
-
-            card.add(cardHeader, photoGrid, quote, footerRow);
         }
 
-        section.add(headerRow, intro, card);
+        section.add(headerRow, intro, grid);
         return section;
+    }
+
+    private Div createStoryPreviewCard(Record story) {
+        String strStoryId = story.getColumnData("story_id");
+        String strTitle = story.getColumnData("title");
+        String strSlug = story.getColumnData("slug");
+        String strDescription = story.getColumnData("description");
+        String strMemberUsername = story.getColumnData("username");
+        String strName = story.getColumnData("name");
+        String strSurname = story.getColumnData("surname");
+        String strAvatarPath = story.getColumnData("avatar_path");
+        String strDateCreated = story.getColumnData("datetime_story_created");
+        String strFullName = (strName + " " + strSurname).trim();
+        String strStoryTitle = (strTitle == null || strTitle.isBlank() || strTitle.equalsIgnoreCase("null"))
+                ? "Untitled story" : strTitle;
+
+        Div card = new Div();
+        card.addClassName("composer-card");
+
+        Div cardMain = new Div();
+        cardMain.addClassName("composer-card-main");
+
+        RouteParam routeMember = new RouteParam("member", strMemberUsername);
+
+        RouterLink profileLink = new RouterLink();
+        profileLink.setRoute(PhotographersView.class, new RouteParameters(routeMember));
+        profileLink.addClassName("composer-profile-link");
+
+        Image avatar = genericView.getAvatarThumbImage(strAvatarPath, strFullName, "52px", "52px");
+        avatar.addClassName("composer-avatar");
+        Span memberName = new Span(strFullName);
+        memberName.addClassName("composer-member-name");
+        profileLink.add(avatar, memberName);
+
+        Div nameRow = new Div(profileLink);
+        nameRow.addClassName("composer-name-row");
+
+        Div storyTitle = new Div(strStoryTitle);
+        storyTitle.addClassName("composer-story-title");
+
+        Div photoGrid = new Div();
+        photoGrid.addClassName("composer-photo-grid");
+
+        int intStoryId = 0;
+        try {
+            intStoryId = Integer.parseInt(strStoryId);
+        } catch (NumberFormatException ignored) {
+        }
+
+        String[] arrColumnsStoryPhotos = {"name_new"};
+        String sqlStoryPhotos = "SELECT pm.name_new FROM photo_stories_photo sp, photo_meta pm " +
+                " WHERE sp.story_id = " + intStoryId + " AND sp.photo_id = pm.id AND pm.visible_to = 'ALL' " +
+                " ORDER BY sp.inc ASC LIMIT 3";
+        List<Record> lstStoryPhotos = getRecordsFromDb(sqlStoryPhotos, arrColumnsStoryPhotos);
+        String strStoryImagePath = DIR_PHOTOS_SERVER + dirChar + subPathMedium;
+        for (Record photoRecord : lstStoryPhotos) {
+            Image photo = getImageThumbFromDb(photoRecord, strStoryImagePath);
+            photo.addClassName("composer-photo");
+            photoGrid.add(photo);
+        }
+
+        Div quote = new Div();
+        quote.addClassName("composer-quote");
+        if (strDescription != null && !strDescription.isBlank() && !strDescription.equalsIgnoreCase("null")) {
+            quote.setText("\"" + strDescription + "\"");
+        } else {
+            quote.setVisible(false);
+        }
+
+        Span meta = new Span(strDateCreated);
+        meta.addClassName("composer-meta");
+
+        cardMain.add(nameRow, storyTitle, photoGrid, quote, meta);
+
+        Div actions = new Div();
+        actions.addClassName("composer-actions");
+
+        RouterLink btnViewProfile = new RouterLink("View Profile", PhotographersView.class, new RouteParameters(routeMember));
+        btnViewProfile.addClassName("btn-hero-outline");
+
+        RouterLink btnViewAllStories = new RouterLink("View All Stories", StoriesView.class, new RouteParameters(routeMember));
+        btnViewAllStories.addClassName("btn-hero-outline");
+
+        RouteParam routeStory = new RouteParam("story", strSlug);
+        RouterLink btnView = new RouterLink("View Story", StoriesView.class, new RouteParameters(routeMember, routeStory));
+        btnView.addClassName("btn-hero-cta");
+
+        actions.add(btnViewProfile, btnViewAllStories, btnView);
+
+        card.add(cardMain, actions);
+        return card;
     }
 
     private Div createFeatureGrid() {
