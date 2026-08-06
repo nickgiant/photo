@@ -155,8 +155,7 @@
 /* Three cards — last story of each of up to three different members */
 .story-grid {
     width: 100%;
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
     align-items: stretch;
     gap: 20px;
 }
