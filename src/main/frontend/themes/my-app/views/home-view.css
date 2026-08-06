@@ -95,6 +95,7 @@
 .home-view .btn-hero-cta:hover {
     filter: brightness(1.06);
     cursor: pointer;
+    text-decoration: none;
 }
 
 /* ---------- Section header row (title + link) ---------- */
@@ -204,6 +205,9 @@
     text-decoration: none;
     color: inherit;
     cursor: pointer;
+    &:hover{
+        text-decoration: none;
+    }
 }
 
 .composer-avatar {
@@ -218,7 +222,8 @@
 
 .composer-profile-link:hover .composer-avatar {
     transform: scale(1.08);
-    box-shadow: 0 0 0 3px var(--brand-orange, #e8823c);
+    /*box-shadow: 0 0 0 3px var(--brand-orange, #e8823c);*/
+    text-decoration: none;
 }
 
 .composer-member-name {
@@ -229,11 +234,14 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    &:hover{
+        text-decoration: none;
+    }
 }
 
 .composer-profile-link:hover .composer-member-name {
     color: var(--brand-navy, #1b3a5c);
-    text-decoration: underline;
+    text-decoration: none;
 }
 
 /* Story title — emphasized, italic */
