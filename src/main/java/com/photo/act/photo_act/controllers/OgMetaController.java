@@ -7,6 +7,7 @@ import com.photo.act.photo_act.services.BotDetectionService;
 import com.photo.act.photo_act.services.OgMetaService;
 import com.photo.act.photo_act.services.StoryOgService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.CacheControl;
@@ -60,10 +61,14 @@ public class OgMetaController {
             @PathVariable String type,
             @PathVariable String slug,
             Model model,
-            HttpServletRequest request) {
+            HttpServletRequest request,
+            HttpServletResponse response) {
 
         ContentType contentType = parseType(type);
-        if (contentType == null) return "error/404";
+        if (contentType == null) {
+            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            return "error/404";
+        }
 
         Optional<OgMetaDto> meta = ogMetaService.resolve(contentType, slug);
 
@@ -78,7 +83,13 @@ public class OgMetaController {
                             type, slug, request.getHeader(HttpHeaders.USER_AGENT));
                     return "og-preview";
                 })
-                .orElse("error/404");
+                .orElseGet(() -> {
+                    // A 200 here would tell crawlers this "not found" content is
+                    // real — set the status explicitly since returning a view
+                    // name doesn't do that on its own.
+                    response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                    return "error/404";
+                });
     }
 
     /**

@@ -85,6 +85,17 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
+		<!-- Renders templates/og-preview.html and templates/error/404.html for
+		     OgMetaController. Without this, returning a view name like "og-preview"
+		     from a @Controller method isn't resolved as a Thymeleaf template at
+		     all — Spring Boot's default MVC autoconfiguration instead treats it as
+		     an internal-resource forward path, which silently falls through to
+		     static-resource handling and, in this app, ends up serving the Vaadin
+		     SPA shell instead of the real OG page. -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-thymeleaf</artifactId>
+		</dependency>
 		<dependency>
 			<groupId>com.vaadin</groupId>
 			<artifactId>vaadin-spring-boot-starter</artifactId>
