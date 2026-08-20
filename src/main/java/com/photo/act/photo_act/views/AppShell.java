@@ -19,6 +19,8 @@ import com.vaadin.flow.theme.Theme;
 @Theme(value = "my-app")
 @Viewport("width=device-width, initial-scale=1")
 public class AppShell implements AppShellConfigurator {
+    // NOTE: AppShell (the AppShellConfigurator carrying @Theme("my-app")) lives in this
+// same "views" package for exactly this reason — see AppShell.java.
 
     /**
      * configurePage() is called once per bootstrap HTML response.
