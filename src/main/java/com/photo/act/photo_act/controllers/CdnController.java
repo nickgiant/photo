@@ -35,8 +35,9 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class CdnController {
 
+    // pinterest/ and medium/ dropped — confirmed unused (see PhotoProcessingService).
     private static final Set<String> ALLOWED_VARIANTS =
-            Set.of("og", "pinterest", "medium", "thumb", "original");
+            Set.of("og", "thumb", "original");
 
     @Value("${app.cdn.root:/var/www/photoact/cdn}")
     private String cdnRoot;

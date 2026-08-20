@@ -10,10 +10,12 @@ import java.nio.file.Paths;
  * Builds absolute CDN URLs for photo variants.
  *
  * CDN variant summary (dimensions × purpose):
- *   og          1200×630   Facebook, LinkedIn, Twitter/X, Threads, WhatsApp, Instagram OG
- *   pinterest   1000×1500  Pinterest portrait (2:3 optimal ratio)
- *   medium      ≤1200×?    Web display — keeps original aspect ratio
- *   thumb       400×300    Gallery grid thumbnails
+ *   og      1200×630   Facebook, LinkedIn, Twitter/X, Threads, WhatsApp, Instagram OG,
+ *                       Pinterest (its own Rich Pin minimum is satisfied by og:image)
+ *   thumb   400×300    Gallery grid thumbnails
+ *
+ * pinterest/ and medium/ were dropped — confirmed unused: OgMetaService builds
+ * og:image straight from coverImage, not via these CDN variants.
  *
  * Nginx serves /cdn/** directly from {app.cdn.root} with 1-year immutable cache.
  * The Spring MVC fallback is CdnController (used only in dev or if nginx misses).
@@ -34,16 +36,6 @@ public class CdnService {
         return baseUrl + "/cdn/og/" + jpg(filename);
     }
 
-    /** 1000×1500 JPEG — use for Pinterest og:image when sharing a pin. */
-    public String pinterestUrl(String filename) {
-        return baseUrl + "/cdn/pinterest/" + jpg(filename);
-    }
-
-    /** ≤1200px wide JPEG — web display, keeps original aspect. */
-    public String mediumUrl(String filename) {
-        return baseUrl + "/cdn/medium/" + jpg(filename);
-    }
-
     /** 400×300 JPEG — grid thumbnail. */
     public String thumbUrl(String filename) {
         return baseUrl + "/cdn/thumb/" + jpg(filename);
@@ -53,14 +45,6 @@ public class CdnService {
 
     public String ogPath(String filename) {
         return "/cdn/og/" + jpg(filename);
-    }
-
-    public String pinterestPath(String filename) {
-        return "/cdn/pinterest/" + jpg(filename);
-    }
-
-    public String mediumPath(String filename) {
-        return "/cdn/medium/" + jpg(filename);
     }
 
     public String thumbPath(String filename) {

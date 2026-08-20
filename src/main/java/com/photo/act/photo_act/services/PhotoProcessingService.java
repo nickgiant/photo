@@ -25,9 +25,11 @@ import java.util.Map;
  *
  * CDN layout under app.cdn.root:
  *   og/          1200×630   Facebook / LinkedIn / Twitter / Threads / WhatsApp
- *   pinterest/   1000×1500  Pinterest 2:3 portrait
- *   medium/      ≤1200×?    Web display (keep aspect ratio)
  *   thumb/       400×300    Gallery grid thumbnails
+ *
+ * (pinterest/ and medium/ were dropped — confirmed unused: OgMetaService
+ * builds og:image straight from coverImage, not via these CDN variants,
+ * and Pinterest's own Rich Pin minimum is satisfied by og:image already.)
  *
  * Call process() synchronously, or processAsync() to fire-and-forget.
  */
@@ -170,25 +172,6 @@ public class PhotoProcessingService {
                     .outputQuality(0.85)
                     .toFile(new File(ogDir, outName));
             urls.put("og", "/cdn/og/" + outName);
-
-            // pinterest: 1000×1500 — portrait crop
-            File pinDir = ensureDir(cdnRoot + "/pinterest");
-            Thumbnails.of(src)
-                    .size(1000, 1500)
-                    .useExifOrientation(true)
-                    .crop(Positions.CENTER)
-                    .outputQuality(0.82)
-                    .toFile(new File(pinDir, outName));
-            urls.put("pinterest", "/cdn/pinterest/" + outName);
-
-            // medium: max 1200 wide, keep original aspect ratio
-            File medDir = ensureDir(cdnRoot + "/medium");
-            Thumbnails.of(src)
-                    .width(1200)
-                    .useExifOrientation(true)
-                    .outputQuality(0.82)
-                    .toFile(new File(medDir, outName));
-            urls.put("medium", "/cdn/medium/" + outName);
 
             // thumb: 400×300 centre crop
             File thumbDir = ensureDir(cdnRoot + "/thumb");
