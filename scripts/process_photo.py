@@ -13,9 +13,12 @@ Install:
 
 CDN variants generated:
     og/          1200×630   Landscape  — Facebook, LinkedIn, Twitter, Threads, WhatsApp
-    pinterest/   1000×1500  Portrait   — Pinterest 2:3 optimal
-    medium/      ≤1200×?    Keep-AR    — Web display (main gallery)
     thumb/       400×300    Crop       — Grid thumbnails
+
+    (pinterest/ and medium/ were dropped — confirmed unused: OgMetaService
+    builds og:image straight from coverImage, not via these CDN variants,
+    and Pinterest's own Rich Pin minimum is satisfied by og:image already.
+    See CdnService.java for the URL helpers that remain.)
 
 Best practices applied:
   • Auto-orient via EXIF before any resize
@@ -58,17 +61,13 @@ except ImportError:
 # ── Constants ─────────────────────────────────────────────────────────────────
 
 VARIANTS: dict[str, tuple[int, int | None]] = {
-    "og":        (1200, 630),   # landscape — exact crop
-    "pinterest": (1000, 1500),  # portrait  — exact crop
-    "medium":    (1200, None),  # keep aspect, max width
-    "thumb":     (400,  300),   # square-ish — exact crop
+    "og":    (1200, 630),  # landscape — exact crop
+    "thumb": (400,  300),  # square-ish — exact crop
 }
 
 JPEG_QUALITY: dict[str, int] = {
-    "og":        85,
-    "pinterest": 82,
-    "medium":    82,
-    "thumb":     75,
+    "og":    85,
+    "thumb": 75,
 }
 
 MAX_UPSCALE = 2.0  # never upscale more than 2× in a single dimension
@@ -209,7 +208,7 @@ def process(input_path: str, cdn_root: str, filename: str) -> dict:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Generate CDN image variants (OG, Pinterest, medium, thumb)"
+        description="Generate CDN image variants (OG, thumb)"
     )
     parser.add_argument("--input",    required=True, help="Source image path")
     parser.add_argument("--cdn-root", required=True, help="CDN root directory")

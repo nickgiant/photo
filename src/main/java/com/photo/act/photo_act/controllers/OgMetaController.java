@@ -54,39 +54,6 @@ public class OgMetaController {
     /**
      * Primary endpoint — returns fully rendered HTML with OG tags in <head>.
      * Thymeleaf template: src/main/resources/templates/og-preview.html
-     *
-     * Cache-Control: 1 h (Nginx + Varnish + CDN will cache this).
-     */
-    @GetMapping("/og/{type}/{slug}")
-    public ResponseEntity<String> ogPreview(
-            @PathVariable String type,
-            @PathVariable String slug,
-            HttpServletRequest request,
-            Model model) {
-
-        ContentType contentType = parseType(type);
-        if (contentType == null) {
-            return ResponseEntity.notFound().build();
-        }
-
-        Optional<OgMetaDto> meta = ogMetaService.resolve(contentType, slug);
-        if (meta.isEmpty()) {
-            log.warn("OG meta not found for {}/{}", type, slug);
-            return ResponseEntity.notFound().build();
-        }
-
-        model.addAttribute("og", meta.get());
-
-        // Return HTML — Spring MVC resolves og-preview.html via Thymeleaf
-        // We use ResponseEntity so we can set Cache-Control explicitly.
-        // Because we're using Model, we delegate actual rendering to
-        // the view resolver by returning the view name string (below).
-        // This method signature uses Model — Spring renders the template.
-        return null; // handled by Thymeleaf via the overload below
-    }
-
-    /**
-     * Real handler — returns view name for Thymeleaf rendering.
      */
     @GetMapping(value = "/og/{type}/{slug}", produces = "text/html")
     public String ogPreviewHtml(
