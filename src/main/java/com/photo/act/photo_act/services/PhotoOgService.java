@@ -66,27 +66,30 @@ public class PhotoOgService {
 
         Record r = rows.get(0);
         String id          = r.getColumnData("id");
-        String title        = r.getColumnData("title");
-        String subtitle     = r.getColumnData("subtitle");
-        String notes        = r.getColumnData("notes");
-        String nameNew      = r.getColumnData("name_new");
-        String uploader     = r.getColumnData("uploader");
-        String published    = r.getColumnData("date_inserted");
-        String cityName     = r.getColumnData("city_name");
-        String country      = r.getColumnData("country");
+        String title        = clean(r.getColumnData("title"));
+        String subtitle     = clean(r.getColumnData("subtitle"));
+        String notes        = clean(r.getColumnData("notes"));
+        String nameNew      = clean(r.getColumnData("name_new"));
+        String uploader     = clean(r.getColumnData("uploader"));
+        String published    = clean(r.getColumnData("date_inserted"));
+        String cityName     = clean(r.getColumnData("city_name"));
+        String country      = clean(r.getColumnData("country"));
 
-        String displayTitle = (title != null && !title.isBlank()) ? title : subtitle;
-        String location = (cityName != null && !cityName.isBlank())
-                ? cityName + (country != null && !country.isBlank() ? ", " + country : "")
+        String location = cityName != null
+                ? cityName + (country != null ? ", " + country : "")
                 : null;
-        String description = (notes != null && !notes.isBlank())
+        String displayTitle = title != null ? title
+                : subtitle != null ? subtitle
+                : location != null ? "Photo in " + location
+                : "Photo on PhotoAct";
+        String description = notes != null
                 ? notes
                 : (location != null ? "Photo taken in " + location : "");
         String desc155 = description.length() > 155
                 ? description.substring(0, 154) + "…"
                 : description;
 
-        String image = (nameNew != null && !nameNew.isBlank())
+        String image = nameNew != null
                 ? cdnService.ogUrl(nameNew)
                 : defaultOgImage;
 
@@ -132,5 +135,16 @@ public class PhotoOgService {
                 image,
                 author != null ? author : "",
                 published != null ? published : "");
+    }
+
+    /**
+     * RecordService.findAll() builds each Record via "value + \"\"", so a
+     * genuine SQL NULL comes back as the literal 4-character string "null"
+     * instead of Java null — normalise that (and blank) here so a missing
+     * column never leaks into an og:title/description/etc as the word "null".
+     * Confirmed live: photo_meta.title NULL rendered og:title as "null".
+     */
+    private static String clean(String v) {
+        return (v == null || v.isBlank() || v.equals("null")) ? null : v;
     }
 }

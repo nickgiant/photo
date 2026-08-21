@@ -65,27 +65,31 @@ public class PhotographerOgService {
         }
 
         Record r = rows.get(0);
-        String username        = r.getColumnData("username");
-        String name             = r.getColumnData("name");
-        String surname          = r.getColumnData("surname");
-        String shortBio         = r.getColumnData("short_bio");
-        String avatarPath       = r.getColumnData("avatar_path");
-        String residentCountry  = r.getColumnData("resident_country");
-        String countPhotos      = r.getColumnData("count_photos");
-        String countStories     = r.getColumnData("count_stories");
+        String username        = clean(r.getColumnData("username"));
+        String name             = clean(r.getColumnData("name"));
+        String surname          = clean(r.getColumnData("surname"));
+        String shortBio         = clean(r.getColumnData("short_bio"));
+        String avatarPath       = clean(r.getColumnData("avatar_path"));
+        String residentCountry  = clean(r.getColumnData("resident_country"));
+        // LEFT JOIN dbuser_extra: a photographer with no row there gets a
+        // genuine SQL NULL for both counts, not a real "0" — clean() would
+        // otherwise let that flow through as the literal word "null".
+        String countPhotos      = clean(r.getColumnData("count_photos"));
+        String countStories     = clean(r.getColumnData("count_stories"));
 
-        String fullName = (name != null ? name : "") + (surname != null && !surname.isBlank() ? " " + surname : "");
+        String fullName = (name != null ? name : "") + (surname != null ? " " + surname : "");
         fullName = fullName.isBlank() ? username : fullName.trim();
 
-        String description = (shortBio != null && !shortBio.isBlank())
+        String description = shortBio != null
                 ? shortBio
-                : "Photographer" + (residentCountry != null && !residentCountry.isBlank() ? " from " + residentCountry : "")
-                    + " — " + countPhotos + " photos, " + countStories + " stories on PhotoAct.";
+                : "Photographer" + (residentCountry != null ? " from " + residentCountry : "")
+                    + " — " + (countPhotos != null ? countPhotos : "0") + " photos, "
+                    + (countStories != null ? countStories : "0") + " stories on PhotoAct.";
         String desc155 = description.length() > 155
                 ? description.substring(0, 154) + "…"
                 : description;
 
-        String image = (avatarPath != null && !avatarPath.isBlank())
+        String image = avatarPath != null
                 ? cdnService.ogUrl(avatarPath)
                 : defaultOgImage;
 
@@ -123,5 +127,17 @@ public class PhotographerOgService {
                 name != null ? name : "",
                 url,
                 image);
+    }
+
+    /**
+     * RecordService.findAll() builds each Record via "value + \"\"", so a
+     * genuine SQL NULL comes back as the literal 4-character string "null"
+     * instead of Java null — normalise that (and blank) here so a missing
+     * column never leaks into an og:title/description/etc as the word "null".
+     * Confirmed live on PhotoOgService for photo_meta.title; same RecordService
+     * quirk applies to every column read this way.
+     */
+    private static String clean(String v) {
+        return (v == null || v.isBlank() || v.equals("null")) ? null : v;
     }
 }
