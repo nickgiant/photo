@@ -32,12 +32,12 @@ public class PhotoOgService {
     private String defaultOgImage;
 
     private static final String[] COLS = {
-            "id", "title", "subtitle", "notes", "name_new", "uploader",
+            "title", "subtitle", "notes", "name_new", "uploader",
             "date_inserted", "city_name", "country"
     };
 
     private static final String SQL =
-            "SELECT pm.id, pm.title, pm.subtitle, pm.notes, pm.name_new, pm.uploader, " +
+            "SELECT pm.title, pm.subtitle, pm.notes, pm.name_new, pm.uploader, " +
             "  DATE_FORMAT(pm.date_inserted, '%Y-%m-%dT%H:%i:%S') AS date_inserted, " +
             "  d.city_name, d.country " +
             " FROM photo_meta pm LEFT JOIN destination d ON pm.destination_id = d.id " +
@@ -65,7 +65,6 @@ public class PhotoOgService {
         }
 
         Record r = rows.get(0);
-        String id          = r.getColumnData("id");
         String title        = clean(r.getColumnData("title"));
         String subtitle     = clean(r.getColumnData("subtitle"));
         String notes        = clean(r.getColumnData("notes"));
@@ -93,9 +92,12 @@ public class PhotoOgService {
                 ? cdnService.ogUrl(nameNew)
                 : defaultOgImage;
 
-        // The real single-photo route is id-based (/photo/{id}); the slug
-        // column only identifies which photo to look up.
-        String canonicalUrl = baseUrl + "/photo/" + id;
+        // /photo/{slug} is the real, shareable route — PhotoLightboxView
+        // resolves it (and a legacy bare-id form) by extracting the trailing
+        // digit run. og:url must match what's actually shared/visited:
+        // confirmed live via a link-preview debugger that flagged og:url
+        // ("/photo/{id}") not matching the input URL ("/photo/{slug}").
+        String canonicalUrl = baseUrl + "/photo/" + slug;
 
         return Optional.of(OgMetaDto.builder()
                 .ogTitle(displayTitle)
