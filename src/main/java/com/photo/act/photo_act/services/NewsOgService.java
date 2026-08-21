@@ -14,15 +14,16 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Builds OgMetaDto for photo stories straight from the photo_stories table —
- * no ORM/repository layer involved, just direct SQL via RecordService.
+ * Builds OgMetaDto for news / tutorials straight from the learnings / tutor
+ * tables — no ORM/repository layer involved, just direct SQL via RecordService.
  */
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class StoryOgService {
+public class NewsOgService {
 
     private final RecordService recordService;
+    private final CdnService cdnService;
 
     @Value("${app.base-url}")
     private String baseUrl;
@@ -31,16 +32,14 @@ public class StoryOgService {
     private String defaultOgImage;
 
     private static final String[] COLS = {
-            "title", "slug", "description", "date_inserted", "author_name", "username"
+            "title", "description", "picture", "tutor_name", "date_insert"
     };
 
     private static final String SQL =
-            "SELECT s.title, s.slug, s.description, " +
-            "  DATE_FORMAT(s.date_inserted, '%Y-%m-%dT%H:%i:%S') AS date_inserted, " +
-            "  CONCAT(usr.name, ' ', usr.surname) AS author_name, " +
-            "  usr.username " +
-            " FROM photo_stories s JOIN dbuser usr ON s.user_id = usr.userId " +
-            " WHERE s.slug = ? ";
+            "SELECT l.title, l.description, l.picture, t.tutor_name, " +
+            "  DATE_FORMAT(l.date_insert, '%Y-%m-%dT%H:%i:%S') AS date_insert " +
+            " FROM learnings l LEFT JOIN tutor t ON l.tutor_id = t.id " +
+            " WHERE l.slug = ? ";
 
     // unless: RedisCache rejects caching null by default. @Cacheable unwraps
     // Optional<T> BEFORE evaluating "unless", so #result here is the plain
@@ -48,11 +47,10 @@ public class StoryOgService {
     // (Optional.empty() -> null) would throw IllegalArgumentException on
     // every miss without this guard. (Do NOT add "|| #result.isEmpty()":
     // OgMetaDto has no isEmpty() method, and #result is never an Optional
-    // here, so that call throws SpelEvaluationException on every HIT instead —
-    // i.e. every time real content is actually found.)
-    @Cacheable(value = "og-meta", key = "'STORY::' + #slug", unless = "#result == null")
+    // here, so that call throws SpelEvaluationException on every HIT instead.)
+    @Cacheable(value = "og-meta", key = "'NEWS::' + #slug", unless = "#result == null")
     public Optional<OgMetaDto> resolve(String slug) {
-        log.debug("Cache miss — loading story OG meta for slug={}", slug);
+        log.debug("Cache miss — loading news OG meta for slug={}", slug);
 
         List<Record> rows = recordService.findAll(
                 SQL, COLS,
@@ -60,21 +58,25 @@ public class StoryOgService {
                 new String[]{"String"});
 
         if (rows.isEmpty()) {
-            log.warn("No photo_story found for slug={}", slug);
+            log.warn("No learnings found for slug={}", slug);
             return Optional.empty();
         }
 
         Record r = rows.get(0);
         String title       = r.getColumnData("title");
         String description = r.getColumnData("description");
-        String author      = r.getColumnData("author_name");
-        String username    = r.getColumnData("username");
-        String published   = r.getColumnData("date_inserted");
+        String picture     = r.getColumnData("picture");
+        String tutorName   = r.getColumnData("tutor_name");
+        String published   = r.getColumnData("date_insert");
 
-        String canonicalUrl = baseUrl + "/stories/member/" + username + "/story/" + slug;
+        String canonicalUrl = baseUrl + "/news/" + slug;
         String desc155 = description != null && description.length() > 155
                 ? description.substring(0, 154) + "…"
                 : (description != null ? description : "");
+
+        String image = (picture != null && !picture.isBlank())
+                ? cdnService.ogUrl(picture)
+                : defaultOgImage;
 
         return Optional.of(OgMetaDto.builder()
                 .ogTitle(title)
@@ -82,27 +84,27 @@ public class StoryOgService {
                 .ogUrl(canonicalUrl)
                 .ogType("article")
                 .ogLocale("en_US")
-                .ogImage(defaultOgImage)
+                .ogImage(image)
                 .ogImageWidth(1200)
                 .ogImageHeight(630)
                 .ogImageAlt(title)
-                .articleAuthor(author)
+                .articleAuthor(tutorName)
                 .articlePublished(published != null ? published + "Z" : null)
-                .articleSection("story")
+                .articleSection("news")
                 .twitterCard("summary_large_image")
                 .twitterTitle(title)
                 .twitterDescription(desc155)
-                .twitterImage(defaultOgImage)
+                .twitterImage(image)
                 .twitterImageAlt(title)
                 .canonicalUrl(canonicalUrl)
                 .siteName("PhotoAct")
-                .schemaOrgJson(buildSchema(title, canonicalUrl, author, published))
-                .contentType(OgContentType.STORY)
+                .schemaOrgJson(buildSchema(title, canonicalUrl, image, tutorName, published))
+                .contentType(OgContentType.NEWS)
                 .slug(slug)
                 .build());
     }
 
-    private String buildSchema(String title, String url, String author, String published) {
+    private String buildSchema(String title, String url, String image, String author, String published) {
         return """
                 {"@context":"https://schema.org","@type":"Article",
                  "headline":"%s","url":"%s","image":"%s",
@@ -111,7 +113,7 @@ public class StoryOgService {
                 """.formatted(
                 title != null ? title : "",
                 url,
-                defaultOgImage,
+                image,
                 author != null ? author : "",
                 published != null ? published : "");
     }

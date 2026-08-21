@@ -1,8 +1,8 @@
 package com.photo.act.photo_act.controllers;
 
-import com.photo.act.photo_act.model.ContentType;
-import com.photo.act.photo_act.services.OgMetaService;
+import com.photo.act.photo_act.model.OgContentType;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,7 +17,7 @@ import java.util.Objects;
  *   .requestMatchers("/admin/**").hasRole("ADMIN")
  *
  * Examples:
- *   DELETE /admin/cache/og-meta/ARTICLE/my-slug
+ *   DELETE /admin/cache/og-meta/STORY/my-slug
  *   DELETE /admin/cache/all
  */
 @RestController
@@ -25,18 +25,27 @@ import java.util.Objects;
 @RequiredArgsConstructor
 public class CacheAdminController {
 
-    private final OgMetaService ogMetaService;
-    private final CacheManager  cacheManager;
+    private final CacheManager cacheManager;
 
-    /** Evict a specific content item from OG cache */
+    /**
+     * Evict a specific content item from OG cache.
+     *
+     * Every *OgService (StoryOgService, PhotoOgService, NewsOgService,
+     * EventOgService, PhotographerOgService) caches under "og-meta" with the
+     * same key convention: "{TYPE}::{slug}" — so eviction doesn't need to go
+     * through any of those services, just the shared cache key format.
+     */
     @DeleteMapping("/og-meta/{type}/{slug}")
     public ResponseEntity<Map<String, String>> evict(
             @PathVariable String type,
             @PathVariable String slug) {
         try {
-            ContentType ct = ContentType.valueOf(type.toUpperCase());
-            ogMetaService.evict(ct, slug);
-            return ResponseEntity.ok(Map.of("status", "evicted", "key", type + "::" + slug));
+            OgContentType ct = OgContentType.valueOf(type.toUpperCase());
+            Cache cache = cacheManager.getCache("og-meta");
+            if (cache != null) {
+                cache.evict(ct.name() + "::" + slug);
+            }
+            return ResponseEntity.ok(Map.of("status", "evicted", "key", ct.name() + "::" + slug));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", "Unknown type: " + type));
         }

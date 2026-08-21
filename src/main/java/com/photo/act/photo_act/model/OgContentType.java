@@ -1,25 +1,28 @@
 package com.photo.act.photo_act.model;
 
 /**
- * Mirrors the content_type discriminator column in MariaDB.
- * Maps to og:type and twitter:card values per platform.
+ * Discriminator for the /og/{type}/{slug} route — each value is resolved by
+ * its own dedicated *OgService, running direct SQL against the real table
+ * that backs that content (no shared "content" table involved):
+ *
+ *   STORY        → StoryOgService        → photo_stories
+ *   PHOTO        → PhotoOgService        → photo_meta / destination
+ *   NEWS         → NewsOgService         → learnings / tutor
+ *   EVENT        → EventOgService        → festivals / destination
+ *   PHOTOGRAPHER → PhotographerOgService → dbuser / dbuser_extra
  */
-public enum ContentType {
+public enum OgContentType {
 
-    ARTICLE,      // og:type=article  — news / story / learning
-    PHOTO,        // og:type=article  — single photographer image
-    ALBUM,        // og:type=website  — photo gallery
-    LEARNING,     // og:type=article  — tutorial / course
-    EVENT,        // og:type=event    (custom schema.org)
     STORY,        // og:type=article
+    PHOTO,        // og:type=article
     NEWS,         // og:type=article
+    EVENT,        // og:type=article  (custom schema.org Event)
     PHOTOGRAPHER; // og:type=profile
 
     /** Maps to standard Open Graph types */
     public String toOgType() {
         return switch (this) {
             case PHOTOGRAPHER -> "profile";
-            case ALBUM        -> "website";
             default           -> "article";
         };
     }

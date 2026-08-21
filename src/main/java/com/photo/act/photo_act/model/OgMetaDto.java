@@ -63,6 +63,6 @@ public class OgMetaDto implements Serializable {
     private final String keywords;
 
     // ── Content type (for conditional rendering in Thymeleaf) ────────────────
-    private final ContentType contentType;
+    private final OgContentType contentType;
     private final String slug;
 }
