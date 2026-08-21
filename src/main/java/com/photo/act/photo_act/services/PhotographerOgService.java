@@ -43,11 +43,14 @@ public class PhotographerOgService {
             " FROM dbuser usr LEFT JOIN dbuser_extra ux ON usr.userId = ux.user_id " +
             " WHERE usr.username = ? ";
 
-    // unless: RedisCache rejects caching null by default, and @Cacheable's
-    // built-in Optional<T> unwrapping stores Optional.empty() as null — so a
-    // not-found lookup would throw IllegalArgumentException on every miss
-    // without this. Simplest fix: just don't cache misses.
-    @Cacheable(value = "og-meta", key = "'PHOTOGRAPHER::' + #slug", unless = "#result == null || #result.isEmpty()")
+    // unless: RedisCache rejects caching null by default. @Cacheable unwraps
+    // Optional<T> BEFORE evaluating "unless", so #result here is the plain
+    // OgMetaDto (or null on a miss) — never an Optional. A not-found lookup
+    // (Optional.empty() -> null) would throw IllegalArgumentException on
+    // every miss without this guard. (Do NOT add "|| #result.isEmpty()":
+    // OgMetaDto has no isEmpty() method, and #result is never an Optional
+    // here, so that call throws SpelEvaluationException on every HIT instead.)
+    @Cacheable(value = "og-meta", key = "'PHOTOGRAPHER::' + #slug", unless = "#result == null")
     public Optional<OgMetaDto> resolve(String slug) {
         log.debug("Cache miss — loading photographer OG meta for username={}", slug);
 
