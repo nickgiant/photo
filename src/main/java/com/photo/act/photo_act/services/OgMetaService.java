@@ -87,7 +87,11 @@ public class OgMetaService {
      * Resolve OG metadata by content type + slug.
      * Result is Redis-cached; key = og-meta::{type}::{slug}
      */
-    @Cacheable(value = "og-meta", key = "#type.name() + '::' + #slug")
+    // unless: RedisCache rejects caching null by default, and @Cacheable's
+    // built-in Optional<T> unwrapping stores Optional.empty() as null — so a
+    // not-found lookup would throw IllegalArgumentException on every miss
+    // without this. Simplest fix: just don't cache misses.
+    @Cacheable(value = "og-meta", key = "#type.name() + '::' + #slug", unless = "#result == null || #result.isEmpty()")
     public Optional<OgMetaDto> resolve(ContentType type, String slug) {
         log.debug("Cache miss — loading OG meta for {}/{}", type, slug);
         return contentRepository.findByContentTypeAndSlug(type, slug)
@@ -97,7 +101,8 @@ public class OgMetaService {
     /**
      * Resolve by slug alone (slug is globally unique).
      */
-    @Cacheable(value = "og-meta", key = "'slug::' + #slug")
+    // See the note on resolve() above — same null-caching issue applies here.
+    @Cacheable(value = "og-meta", key = "'slug::' + #slug", unless = "#result == null || #result.isEmpty()")
     public Optional<OgMetaDto> resolveBySlug(String slug) {
         log.debug("Cache miss — loading OG meta for slug={}", slug);
         return contentRepository.findBySlug(slug)

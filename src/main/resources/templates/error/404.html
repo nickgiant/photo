@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<!--
+  templates/error/404.html — served by OgMetaController.ogPreviewHtml() when the
+  requested type/slug has no matching content. Kept deliberately minimal: the
+  only real audience is social-media crawlers and search bots hitting a stale
+  or invalid /og/{type}/{slug} link (real users never see this — they get the
+  Vaadin SPA's own not-found handling instead).
+-->
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="robots" content="noindex, nofollow"/>
+    <title>Not found — PhotoAct.net</title>
+</head>
+<body>
+<h1>Page not found</h1>
+<p>The content you're looking for doesn't exist or may have been removed.</p>
+<p><a href="/">Return to PhotoAct.net</a></p>
+</body>
+</html>

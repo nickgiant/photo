@@ -42,7 +42,11 @@ public class StoryOgService {
             " FROM photo_stories s JOIN dbuser usr ON s.user_id = usr.userId " +
             " WHERE s.slug = ? ";
 
-    @Cacheable(value = "og-meta", key = "'photo_story::' + #slug")
+    // unless: RedisCache rejects caching null by default, and @Cacheable's
+    // built-in Optional<T> unwrapping stores Optional.empty() as null — so a
+    // not-found lookup would throw IllegalArgumentException on every miss
+    // without this. Simplest fix: just don't cache misses.
+    @Cacheable(value = "og-meta", key = "'photo_story::' + #slug", unless = "#result == null || #result.isEmpty()")
     public Optional<OgMetaDto> resolve(String slug) {
         log.debug("Cache miss — loading story OG meta for slug={}", slug);
 

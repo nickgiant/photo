@@ -43,7 +43,10 @@ public class CacheService {
         return lstLearnings;
     }
 
-    @Cacheable(value = "learnings", key = "#id")
+    // unless: RedisCache rejects caching null by default — a not-found id
+    // would throw IllegalArgumentException on every miss without this
+    // (see OgMetaService/StoryOgService for the same fix and full explanation).
+    @Cacheable(value = "learnings", key = "#id", unless = "#result == null")
     public Record getLearningById(String id) {
         logger.info("Fetching learning from in-memory list..." + id);
         for (int r = 0; r < lstLearnings.size(); r++) {
