@@ -23,6 +23,7 @@ import java.util.Optional;
 public class StoryOgService {
 
     private final RecordService recordService;
+    private final CdnService cdnService;
 
     @Value("${app.base-url}")
     private String baseUrl;
@@ -31,15 +32,19 @@ public class StoryOgService {
     private String defaultOgImage;
 
     private static final String[] COLS = {
-            "title", "slug", "description", "date_inserted", "author_name", "username"
+            "title", "slug", "description", "date_inserted", "author_name", "username", "cover_photo"
     };
 
+    // photo_stories.photo_id1 is the story's designated cover photo (same FK
+    // StoriesView/MemberStoriesView use to render story cards) — join it in
+    // so og:image is the real story photo, not always the generic default.
     private static final String SQL =
             "SELECT s.title, s.slug, s.description, " +
             "  DATE_FORMAT(s.date_inserted, '%Y-%m-%dT%H:%i:%S') AS date_inserted, " +
             "  CONCAT(usr.name, ' ', usr.surname) AS author_name, " +
-            "  usr.username " +
+            "  usr.username, cp.name_new AS cover_photo " +
             " FROM photo_stories s JOIN dbuser usr ON s.user_id = usr.userId " +
+            "  LEFT JOIN photo_meta cp ON s.photo_id1 = cp.id " +
             " WHERE s.slug = ? ";
 
     // unless: RedisCache rejects caching null by default. @Cacheable unwraps
@@ -72,12 +77,17 @@ public class StoryOgService {
         String author      = clean(r.getColumnData("author_name"));
         String username    = clean(r.getColumnData("username"));
         String published   = clean(r.getColumnData("date_inserted"));
+        String coverPhoto  = clean(r.getColumnData("cover_photo"));
 
         String displayTitle = title != null ? title : "Story on PhotoAct";
         String canonicalUrl = baseUrl + "/stories/member/" + username + "/story/" + slug;
         String desc155 = description != null && description.length() > 155
                 ? description.substring(0, 154) + "…"
-                : (description != null ? description : "");
+                : (description != null ? description : "Read " + displayTitle + " on PhotoAct.");
+
+        String image = coverPhoto != null
+                ? cdnService.ogUrl(coverPhoto)
+                : defaultOgImage;
 
         return Optional.of(OgMetaDto.builder()
                 .ogTitle(displayTitle)
@@ -85,7 +95,7 @@ public class StoryOgService {
                 .ogUrl(canonicalUrl)
                 .ogType("article")
                 .ogLocale("en_US")
-                .ogImage(defaultOgImage)
+                .ogImage(image)
                 .ogImageWidth(1200)
                 .ogImageHeight(630)
                 .ogImageAlt(displayTitle)
@@ -95,17 +105,17 @@ public class StoryOgService {
                 .twitterCard("summary_large_image")
                 .twitterTitle(displayTitle)
                 .twitterDescription(desc155)
-                .twitterImage(defaultOgImage)
+                .twitterImage(image)
                 .twitterImageAlt(displayTitle)
                 .canonicalUrl(canonicalUrl)
                 .siteName("PhotoAct")
-                .schemaOrgJson(buildSchema(displayTitle, canonicalUrl, author, published))
+                .schemaOrgJson(buildSchema(displayTitle, canonicalUrl, image, author, published))
                 .contentType(OgContentType.STORY)
                 .slug(slug)
                 .build());
     }
 
-    private String buildSchema(String title, String url, String author, String published) {
+    private String buildSchema(String title, String url, String image, String author, String published) {
         return """
                 {"@context":"https://schema.org","@type":"Article",
                  "headline":"%s","url":"%s","image":"%s",
@@ -114,7 +124,7 @@ public class StoryOgService {
                 """.formatted(
                 title != null ? title : "",
                 url,
-                defaultOgImage,
+                image,
                 author != null ? author : "",
                 published != null ? published : "");
     }
