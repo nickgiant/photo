@@ -65,19 +65,22 @@ public class StoryOgService {
         }
 
         Record r = rows.get(0);
-        String title       = r.getColumnData("title");
-        String description = r.getColumnData("description");
-        String author      = r.getColumnData("author_name");
-        String username    = r.getColumnData("username");
-        String published   = r.getColumnData("date_inserted");
+        String title       = clean(r.getColumnData("title"));
+        String description = clean(r.getColumnData("description"));
+        // CONCAT(usr.name, ' ', usr.surname) in SQL: NULL in either name or
+        // surname makes CONCAT return NULL overall, not a partial name.
+        String author      = clean(r.getColumnData("author_name"));
+        String username    = clean(r.getColumnData("username"));
+        String published   = clean(r.getColumnData("date_inserted"));
 
+        String displayTitle = title != null ? title : "Story on PhotoAct";
         String canonicalUrl = baseUrl + "/stories/member/" + username + "/story/" + slug;
         String desc155 = description != null && description.length() > 155
                 ? description.substring(0, 154) + "…"
                 : (description != null ? description : "");
 
         return Optional.of(OgMetaDto.builder()
-                .ogTitle(title)
+                .ogTitle(displayTitle)
                 .ogDescription(desc155)
                 .ogUrl(canonicalUrl)
                 .ogType("article")
@@ -85,18 +88,18 @@ public class StoryOgService {
                 .ogImage(defaultOgImage)
                 .ogImageWidth(1200)
                 .ogImageHeight(630)
-                .ogImageAlt(title)
+                .ogImageAlt(displayTitle)
                 .articleAuthor(author)
                 .articlePublished(published != null ? published + "Z" : null)
                 .articleSection("story")
                 .twitterCard("summary_large_image")
-                .twitterTitle(title)
+                .twitterTitle(displayTitle)
                 .twitterDescription(desc155)
                 .twitterImage(defaultOgImage)
-                .twitterImageAlt(title)
+                .twitterImageAlt(displayTitle)
                 .canonicalUrl(canonicalUrl)
                 .siteName("PhotoAct")
-                .schemaOrgJson(buildSchema(title, canonicalUrl, author, published))
+                .schemaOrgJson(buildSchema(displayTitle, canonicalUrl, author, published))
                 .contentType(OgContentType.STORY)
                 .slug(slug)
                 .build());
@@ -114,5 +117,17 @@ public class StoryOgService {
                 defaultOgImage,
                 author != null ? author : "",
                 published != null ? published : "");
+    }
+
+    /**
+     * RecordService.findAll() builds each Record via "value + \"\"", so a
+     * genuine SQL NULL comes back as the literal 4-character string "null"
+     * instead of Java null — normalise that (and blank) here so a missing
+     * column never leaks into an og:title/description/etc as the word "null".
+     * Confirmed live on PhotoOgService for photo_meta.title; same RecordService
+     * quirk applies to every column read this way.
+     */
+    private static String clean(String v) {
+        return (v == null || v.isBlank() || v.equals("null")) ? null : v;
     }
 }

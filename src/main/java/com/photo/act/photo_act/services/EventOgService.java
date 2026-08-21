@@ -77,28 +77,30 @@ public class EventOgService {
         }
 
         Record r = rows.get(0);
-        String nameShort   = r.getColumnData("name_short");
-        String nameFull    = r.getColumnData("name_full");
-        String activities  = r.getColumnData("activities");
-        String imageTop    = r.getColumnData("image_top");
-        String periodOfYear = r.getColumnData("period_of_year");
-        String cityName    = r.getColumnData("city_name");
-        String country     = r.getColumnData("country");
-        String published   = r.getColumnData("date_insert");
+        String nameShort   = clean(r.getColumnData("name_short"));
+        String nameFull    = clean(r.getColumnData("name_full"));
+        String activities  = clean(r.getColumnData("activities"));
+        String imageTop    = clean(r.getColumnData("image_top"));
+        String periodOfYear = clean(r.getColumnData("period_of_year"));
+        String cityName    = clean(r.getColumnData("city_name"));
+        String country     = clean(r.getColumnData("country"));
+        String published   = clean(r.getColumnData("date_insert"));
 
-        String title = (nameFull != null && !nameFull.isBlank()) ? nameFull : nameShort;
-        String location = (cityName != null && !cityName.isBlank())
-                ? cityName + (country != null && !country.isBlank() ? ", " + country : "")
+        String title = nameFull != null ? nameFull
+                : nameShort != null ? nameShort
+                : "Event on PhotoAct";
+        String location = cityName != null
+                ? cityName + (country != null ? ", " + country : "")
                 : null;
-        String description = (activities != null && !activities.isBlank())
+        String description = activities != null
                 ? activities
                 : ((location != null ? title + " in " + location : title)
-                    + (periodOfYear != null && !periodOfYear.isBlank() ? " — " + periodOfYear : ""));
+                    + (periodOfYear != null ? " — " + periodOfYear : ""));
         String desc155 = description.length() > 155
                 ? description.substring(0, 154) + "…"
                 : description;
 
-        String image = (imageTop != null && !imageTop.isBlank())
+        String image = imageTop != null
                 ? cdnService.ogUrl(imageTop)
                 : defaultOgImage;
 
@@ -141,5 +143,17 @@ public class EventOgService {
                 image,
                 location != null ? location : "",
                 published != null ? published : "");
+    }
+
+    /**
+     * RecordService.findAll() builds each Record via "value + \"\"", so a
+     * genuine SQL NULL comes back as the literal 4-character string "null"
+     * instead of Java null — normalise that (and blank) here so a missing
+     * column never leaks into an og:title/description/etc as the word "null".
+     * Confirmed live on PhotoOgService for photo_meta.title; same RecordService
+     * quirk applies to every column read this way.
+     */
+    private static String clean(String v) {
+        return (v == null || v.isBlank() || v.equals("null")) ? null : v;
     }
 }
