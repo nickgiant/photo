@@ -14,8 +14,9 @@ import java.nio.file.Paths;
  *                       Pinterest (its own Rich Pin minimum is satisfied by og:image)
  *   thumb   400×300    Gallery grid thumbnails
  *
- * pinterest/ and medium/ were dropped — confirmed unused: OgMetaService builds
- * og:image straight from coverImage, not via these CDN variants.
+ * pinterest/ and medium/ were dropped — confirmed unused: the *OgService
+ * classes (StoryOgService, PhotoOgService, NewsOgService, EventOgService,
+ * PhotographerOgService) only ever request the og/ and thumb/ variants.
  *
  * Nginx serves /cdn/** directly from {app.cdn.root} with 1-year immutable cache.
  * The Spring MVC fallback is CdnController (used only in dev or if nginx misses).

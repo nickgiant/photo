@@ -1,10 +1,13 @@
 package com.photo.act.photo_act.controllers;
 
 
-import com.photo.act.photo_act.model.ContentType;
+import com.photo.act.photo_act.model.OgContentType;
 import com.photo.act.photo_act.model.OgMetaDto;
 import com.photo.act.photo_act.services.BotDetectionService;
-import com.photo.act.photo_act.services.OgMetaService;
+import com.photo.act.photo_act.services.EventOgService;
+import com.photo.act.photo_act.services.NewsOgService;
+import com.photo.act.photo_act.services.PhotoOgService;
+import com.photo.act.photo_act.services.PhotographerOgService;
 import com.photo.act.photo_act.services.StoryOgService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -24,6 +27,19 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Spring MVC controller that serves pre-rendered OG HTML pages to social crawlers.
+ *
+ * ── Architecture: no shared "content" table ──────────────────────────────────
+ *
+ *  There used to be a generic ContentEntity/ContentRepository backed by a
+ *  single "content" table — it was never actually wired to real data, so it
+ *  has been removed. Each content kind now has its own dedicated *OgService
+ *  that runs direct SQL against the real table it lives in:
+ *
+ *    STORY        → StoryOgService        → photo_stories
+ *    PHOTO        → PhotoOgService        → photo_meta / destination
+ *    NEWS         → NewsOgService         → learnings / tutor
+ *    EVENT        → EventOgService        → festivals / destination
+ *    PHOTOGRAPHER → PhotographerOgService → dbuser / dbuser_extra
  *
  * ── Architecture: TWO routing strategies ─────────────────────────────────────
  *
@@ -48,8 +64,11 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class OgMetaController {
 
-    private final OgMetaService ogMetaService;
     private final StoryOgService storyOgService;
+    private final PhotoOgService photoOgService;
+    private final NewsOgService newsOgService;
+    private final EventOgService eventOgService;
+    private final PhotographerOgService photographerOgService;
     private final BotDetectionService botDetectionService;
 
     /**
@@ -64,18 +83,13 @@ public class OgMetaController {
             HttpServletRequest request,
             HttpServletResponse response) {
 
-        ContentType contentType = parseType(type);
+        OgContentType contentType = parseType(type);
         if (contentType == null) {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
             return "error/404";
         }
 
-        Optional<OgMetaDto> meta = ogMetaService.resolve(contentType, slug);
-
-        // For STORY type: fall back to photo_stories table when not in content table
-        if (meta.isEmpty() && contentType == ContentType.STORY) {
-            meta = storyOgService.resolve(slug);
-        }
+        Optional<OgMetaDto> meta = resolve(contentType, slug);
 
         return meta.map(dto -> {
                     model.addAttribute("og", dto);
@@ -122,10 +136,10 @@ public class OgMetaController {
             @PathVariable String type,
             @PathVariable String slug) {
 
-        ContentType contentType = parseType(type);
+        OgContentType contentType = parseType(type);
         if (contentType == null) return ResponseEntity.notFound().build();
 
-        return ogMetaService.resolve(contentType, slug)
+        return resolve(contentType, slug)
                 .map(dto -> ResponseEntity.ok()
                         .cacheControl(CacheControl.maxAge(1, TimeUnit.HOURS))
                         .body(dto))
@@ -156,9 +170,20 @@ public class OgMetaController {
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    private ContentType parseType(String raw) {
+    /** Dispatches to the dedicated service for this content type — each hits its own real table directly. */
+    private Optional<OgMetaDto> resolve(OgContentType type, String slug) {
+        return switch (type) {
+            case STORY -> storyOgService.resolve(slug);
+            case PHOTO -> photoOgService.resolve(slug);
+            case NEWS -> newsOgService.resolve(slug);
+            case EVENT -> eventOgService.resolve(slug);
+            case PHOTOGRAPHER -> photographerOgService.resolve(slug);
+        };
+    }
+
+    private OgContentType parseType(String raw) {
         try {
-            return ContentType.valueOf(raw.toUpperCase());
+            return OgContentType.valueOf(raw.toUpperCase());
         } catch (IllegalArgumentException e) {
             return null;
         }
