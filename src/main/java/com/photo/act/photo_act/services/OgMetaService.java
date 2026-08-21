@@ -87,11 +87,16 @@ public class OgMetaService {
      * Resolve OG metadata by content type + slug.
      * Result is Redis-cached; key = og-meta::{type}::{slug}
      */
-    // unless: RedisCache rejects caching null by default, and @Cacheable's
-    // built-in Optional<T> unwrapping stores Optional.empty() as null — so a
-    // not-found lookup would throw IllegalArgumentException on every miss
-    // without this. Simplest fix: just don't cache misses.
-    @Cacheable(value = "og-meta", key = "#type.name() + '::' + #slug", unless = "#result == null || #result.isEmpty()")
+    // unless: RedisCache rejects caching null by default. @Cacheable unwraps
+    // Optional<T> BEFORE evaluating "unless", so #result here is the plain
+    // OgMetaDto (or null on a miss) — never an Optional. A not-found lookup
+    // (Optional.empty() -> null) would throw IllegalArgumentException on
+    // every miss without this guard. (Do NOT add "|| #result.isEmpty()":
+    // OgMetaDto has no isEmpty() method, and #result is never an Optional
+    // here, so that call throws SpelEvaluationException on every HIT instead —
+    // i.e. every time real content is actually found. Confirmed live: this is
+    // exactly why /og/photo/{slug} 500s for every real photo.)
+    @Cacheable(value = "og-meta", key = "#type.name() + '::' + #slug", unless = "#result == null")
     public Optional<OgMetaDto> resolve(ContentType type, String slug) {
         log.debug("Cache miss — loading OG meta for {}/{}", type, slug);
         return contentRepository.findByContentTypeAndSlug(type, slug)
@@ -101,8 +106,8 @@ public class OgMetaService {
     /**
      * Resolve by slug alone (slug is globally unique).
      */
-    // See the note on resolve() above — same null-caching issue applies here.
-    @Cacheable(value = "og-meta", key = "'slug::' + #slug", unless = "#result == null || #result.isEmpty()")
+    // See the note on resolve() above — same SpelEvaluationException-on-hit issue applies here.
+    @Cacheable(value = "og-meta", key = "'slug::' + #slug", unless = "#result == null")
     public Optional<OgMetaDto> resolveBySlug(String slug) {
         log.debug("Cache miss — loading OG meta for slug={}", slug);
         return contentRepository.findBySlug(slug)
